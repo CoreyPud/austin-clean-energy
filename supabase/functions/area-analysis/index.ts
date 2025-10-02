@@ -29,20 +29,19 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const aiPrompt = `You are an expert in clean energy policy and urban sustainability. Analyze this Austin energy data for ZIP code ${zipCode}:
+    const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
 
-Solar Programs Data: ${JSON.stringify(solarData.slice(0, 10))}
-Energy Audit Data: ${JSON.stringify(auditData.slice(0, 10))}
-Weatherization Data: ${JSON.stringify(weatherizationData.slice(0, 5))}
+Solar Programs: ${solarData.length} active programs
+Energy Audits: ${auditData.length} completed
+Weatherization Projects: ${weatherizationData.length} in progress
 
-Provide a comprehensive area analysis including:
-1. Solar adoption potential and current status
-2. Energy efficiency opportunities
-3. Battery storage recommendations
-4. Top 3-5 specific opportunities for this area
-5. Community engagement strategies
+Provide a brief 3-4 paragraph analysis covering:
+- Solar adoption trends and potential
+- Energy efficiency opportunities  
+- Battery storage recommendations
+- Key actionable insights for activists and policymakers
 
-Format your response as detailed insights that climate activists and policymakers can act on.`;
+Keep it concise and action-oriented. Use plain text paragraphs, no markdown formatting.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -70,6 +69,7 @@ Format your response as detailed insights that climate activists and policymaker
 
     // Calculate basic metrics
     const solarPotential = solarData.length > 20 ? "High" : solarData.length > 10 ? "Medium" : "Moderate";
+    const solarAdoption = `${Math.min(35, Math.round((solarData.length / 100) * 20))}%`;
     const efficiencyScore = `${Math.min(10, 5 + (auditData.length / 10)).toFixed(1)}/10`;
     const storageAdoption = `${Math.min(25, Math.round((solarData.length / 100) * 15))}%`;
 
@@ -77,6 +77,7 @@ Format your response as detailed insights that climate activists and policymaker
       JSON.stringify({
         zipCode,
         solarPotential,
+        solarAdoption,
         efficiencyScore,
         storageAdoption,
         insights,

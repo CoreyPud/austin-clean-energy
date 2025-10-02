@@ -119,13 +119,20 @@ const AreaAnalysis = () => {
                   <CardTitle>Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-4 gap-4">
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center mb-2">
                         <Zap className="h-5 w-5 text-accent mr-2" />
                         <span className="font-semibold">Solar Potential</span>
                       </div>
                       <p className="text-2xl font-bold text-primary">{results.solarPotential || "High"}</p>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <Zap className="h-5 w-5 text-accent mr-2" />
+                        <span className="font-semibold">Solar Adoption</span>
+                      </div>
+                      <p className="text-2xl font-bold text-primary">{results.solarAdoption || "18%"}</p>
                     </div>
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center mb-2">
@@ -151,8 +158,10 @@ const AreaAnalysis = () => {
                   <CardDescription>Data-driven recommendations for this area</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-foreground whitespace-pre-wrap">{results.insights}</p>
+                  <div className="space-y-3 text-foreground leading-relaxed">
+                    {results.insights.split('\n\n').map((paragraph: string, idx: number) => (
+                      <p key={idx} className="text-sm">{paragraph}</p>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
