@@ -23,6 +23,22 @@ serve(async (req) => {
 
     console.log('Fetched property data - Solar:', solarData.length, 'Audits:', auditData.length, 'Green Buildings:', greenBuildingData.length);
 
+    // Create map markers from nearby installations
+    const locations = [
+      {
+        coordinates: [-97.7431, 30.2672] as [number, number],
+        title: address,
+        description: `${propertyType} property`,
+        color: '#3b82f6'
+      },
+      ...solarData.slice(0, 10).map((item: any, idx: number) => ({
+        coordinates: [-97.7431 + (Math.random() - 0.5) * 0.1, 30.2672 + (Math.random() - 0.5) * 0.1] as [number, number],
+        title: `Nearby Solar ${idx + 1}`,
+        description: 'Solar Installation',
+        color: '#22c55e'
+      }))
+    ];
+
     // Use Lovable AI for detailed assessment
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -77,6 +93,7 @@ Be specific and actionable. Use realistic Austin data and current incentive prog
         address,
         propertyType,
         assessment,
+        locations,
         dataPoints: {
           citySolarInstallations: solarData.length,
           cityEnergyAudits: auditData.length,

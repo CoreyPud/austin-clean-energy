@@ -8,6 +8,8 @@ import { ArrowLeft, Home, Zap, DollarSign, Leaf, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import Map from "@/components/Map";
+import MapTokenLoader from "@/components/MapTokenLoader";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -129,6 +131,23 @@ const PropertyAssessment = () => {
 
           {results && (
             <div className="space-y-6 animate-slide-up">
+              <MapTokenLoader>
+                <Card className="border-2 border-primary/20 overflow-hidden">
+                  <CardHeader>
+                    <CardTitle>Property Location</CardTitle>
+                    <CardDescription>Nearby solar installations and energy programs</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Map 
+                      center={[-97.7431, 30.2672]}
+                      zoom={13}
+                      markers={results.locations || []}
+                      className="h-[400px]"
+                    />
+                  </CardContent>
+                </Card>
+              </MapTokenLoader>
+
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle>Property Assessment</CardTitle>

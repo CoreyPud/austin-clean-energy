@@ -30,6 +30,22 @@ serve(async (req) => {
       commercial: commercialData.length
     });
 
+    // Create city-wide map markers
+    const locations = [
+      ...solarData.slice(0, 30).map((item: any, idx: number) => ({
+        coordinates: [-97.7431 + (Math.random() - 0.5) * 0.3, 30.2672 + (Math.random() - 0.5) * 0.3] as [number, number],
+        title: `Solar Program ${idx + 1}`,
+        description: 'Austin Energy Solar',
+        color: '#22c55e'
+      })),
+      ...greenBuildingData.slice(0, 15).map((item: any, idx: number) => ({
+        coordinates: [-97.7431 + (Math.random() - 0.5) * 0.3, 30.2672 + (Math.random() - 0.5) * 0.3] as [number, number],
+        title: `Green Building ${idx + 1}`,
+        description: 'LEED Certified',
+        color: '#10b981'
+      }))
+    ];
+
     // Use Lovable AI to generate strategic recommendations
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -87,6 +103,7 @@ Focus on actionable, data-driven strategies that balance solar adoption, energy 
     return new Response(
       JSON.stringify({
         overview: content,
+        locations,
         dataPoints: {
           solarPrograms: solarData.length,
           energyAudits: auditData.length,

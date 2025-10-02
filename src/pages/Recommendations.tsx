@@ -5,6 +5,8 @@ import { ArrowLeft, Lightbulb, Target, TrendingUp, Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import Map from "@/components/Map";
+import MapTokenLoader from "@/components/MapTokenLoader";
 
 const Recommendations = () => {
   const navigate = useNavigate();
@@ -94,6 +96,23 @@ const Recommendations = () => {
 
           {results && (
             <div className="space-y-6 animate-slide-up">
+              <MapTokenLoader>
+                <Card className="border-2 border-primary/20 overflow-hidden">
+                  <CardHeader>
+                    <CardTitle>City-Wide Overview</CardTitle>
+                    <CardDescription>Austin clean energy installations and programs</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Map 
+                      center={[-97.7431, 30.2672]}
+                      zoom={10}
+                      markers={results.locations || []}
+                      className="h-[500px]"
+                    />
+                  </CardContent>
+                </Card>
+              </MapTokenLoader>
+
               <Card className="border-2 border-primary/20">
                 <CardHeader>
                   <CardTitle>Strategic Recommendations</CardTitle>

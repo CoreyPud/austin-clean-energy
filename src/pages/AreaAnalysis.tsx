@@ -7,6 +7,8 @@ import { ArrowLeft, MapPin, TrendingUp, Zap, Battery, Loader2 } from "lucide-rea
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import Map from "@/components/Map";
+import MapTokenLoader from "@/components/MapTokenLoader";
 
 const AreaAnalysis = () => {
   const navigate = useNavigate();
@@ -114,6 +116,23 @@ const AreaAnalysis = () => {
 
           {results && (
             <div className="space-y-6 animate-slide-up">
+              <MapTokenLoader>
+                <Card className="border-2 border-primary/20 overflow-hidden">
+                  <CardHeader>
+                    <CardTitle>Area Map</CardTitle>
+                    <CardDescription>Solar installations and energy programs in ZIP code {results.zipCode}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Map 
+                      center={[-97.7431, 30.2672]}
+                      zoom={11}
+                      markers={results.locations || []}
+                      className="h-[400px]"
+                    />
+                  </CardContent>
+                </Card>
+              </MapTokenLoader>
+
               <Card className="border-2 border-primary/20">
                 <CardHeader>
                   <CardTitle>Data Sources</CardTitle>
