@@ -23,11 +23,18 @@ serve(async (req) => {
 
     console.log('Fetched data - Solar:', solarData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
 
-    // Create map markers from real data
+    // Create map markers from real data with detailed information
     const locations = solarData.slice(0, 20).map((item: any, idx: number) => ({
-      coordinates: [-97.7431 + (Math.random() - 0.5) * 0.2, 30.2672 + (Math.random() - 0.5) * 0.2],
-      title: `Solar Installation ${idx + 1}`,
-      description: 'Austin Energy Solar Program',
+      coordinates: [
+        parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.2,
+        parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.2
+      ] as [number, number],
+      title: item.project_name || `Solar Installation ${idx + 1}`,
+      address: item.service_address || item.address || 'Address not available',
+      capacity: item.system_size_kw ? `${item.system_size_kw} kW` : item.capacity || 'Capacity data unavailable',
+      programType: item.program_type || 'Austin Energy Solar Program',
+      installDate: item.installation_date || item.date_completed,
+      id: item.application_id || `solar-${idx}`,
       color: '#22c55e'
     }));
 

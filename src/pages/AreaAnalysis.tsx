@@ -128,6 +128,7 @@ const AreaAnalysis = () => {
                       zoom={11}
                       markers={results.locations || []}
                       className="h-[400px]"
+                      onMarkerClick={(id) => window.open(`/installation/${id}`, '_blank')}
                     />
                   </CardContent>
                 </Card>

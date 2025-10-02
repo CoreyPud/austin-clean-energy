@@ -30,18 +30,32 @@ serve(async (req) => {
       commercial: commercialData.length
     });
 
-    // Create city-wide map markers
+    // Create city-wide map markers with detailed information
     const locations = [
       ...solarData.slice(0, 30).map((item: any, idx: number) => ({
-        coordinates: [-97.7431 + (Math.random() - 0.5) * 0.3, 30.2672 + (Math.random() - 0.5) * 0.3] as [number, number],
-        title: `Solar Program ${idx + 1}`,
-        description: 'Austin Energy Solar',
+        coordinates: [
+          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.3,
+          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.3
+        ] as [number, number],
+        title: item.project_name || `Solar Program ${idx + 1}`,
+        address: item.service_address || item.address || 'Address not available',
+        capacity: item.system_size_kw ? `${item.system_size_kw} kW` : 'Capacity data unavailable',
+        programType: item.program_type || 'Austin Energy Solar',
+        installDate: item.installation_date || item.date_completed,
+        id: item.application_id || `solar-${idx}`,
         color: '#22c55e'
       })),
       ...greenBuildingData.slice(0, 15).map((item: any, idx: number) => ({
-        coordinates: [-97.7431 + (Math.random() - 0.5) * 0.3, 30.2672 + (Math.random() - 0.5) * 0.3] as [number, number],
-        title: `Green Building ${idx + 1}`,
-        description: 'LEED Certified',
+        coordinates: [
+          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.3,
+          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.3
+        ] as [number, number],
+        title: item.building_name || `Green Building ${idx + 1}`,
+        address: item.address || 'Address not available',
+        capacity: item.certification_level || 'LEED Certified',
+        programType: item.certification_type || 'Green Building',
+        installDate: item.certification_date,
+        id: item.building_id || `green-${idx}`,
         color: '#10b981'
       }))
     ];

@@ -23,18 +23,28 @@ serve(async (req) => {
 
     console.log('Fetched property data - Solar:', solarData.length, 'Audits:', auditData.length, 'Green Buildings:', greenBuildingData.length);
 
-    // Create map markers from nearby installations
+    // Create map markers from nearby installations with detailed info
     const locations = [
       {
         coordinates: [-97.7431, 30.2672] as [number, number],
-        title: address,
-        description: `${propertyType} property`,
+        title: 'Your Property',
+        address: address,
+        capacity: 'Assessment Pending',
+        programType: propertyType,
+        id: 'target-property',
         color: '#3b82f6'
       },
       ...solarData.slice(0, 10).map((item: any, idx: number) => ({
-        coordinates: [-97.7431 + (Math.random() - 0.5) * 0.1, 30.2672 + (Math.random() - 0.5) * 0.1] as [number, number],
-        title: `Nearby Solar ${idx + 1}`,
-        description: 'Solar Installation',
+        coordinates: [
+          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.1,
+          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.1
+        ] as [number, number],
+        title: item.project_name || `Nearby Solar ${idx + 1}`,
+        address: item.service_address || item.address || 'Address not available',
+        capacity: item.system_size_kw ? `${item.system_size_kw} kW` : 'Capacity data unavailable',
+        programType: item.program_type || 'Solar Installation',
+        installDate: item.installation_date || item.date_completed,
+        id: item.application_id || `solar-${idx}`,
         color: '#22c55e'
       }))
     ];

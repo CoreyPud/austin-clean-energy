@@ -108,6 +108,7 @@ const Recommendations = () => {
                       zoom={10}
                       markers={results.locations || []}
                       className="h-[500px]"
+                      onMarkerClick={(id) => window.open(`/installation/${id}`, '_blank')}
                     />
                   </CardContent>
                 </Card>
