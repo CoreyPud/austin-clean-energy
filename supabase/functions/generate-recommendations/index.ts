@@ -84,53 +84,15 @@ Focus on actionable, data-driven strategies that balance solar adoption, energy 
     const aiData = await aiResponse.json();
     const content = aiData.choices[0].message.content;
 
-    // Parse the AI response into structured data
-    // For now, return a structured format that the frontend expects
     return new Response(
       JSON.stringify({
-        overview: content.split('**Priority Opportunities**')[0]?.replace('**Strategic Overview**:', '').trim() || content.substring(0, 500),
-        priorities: [
-          {
-            title: "Accelerate Residential Solar Adoption",
-            description: "Launch targeted outreach in neighborhoods with high solar potential but low current adoption rates. Focus on making rebate processes easier and connecting residents with trusted installers.",
-            impact: "Could add 500+ residential installations in 12 months, generating 6MW of distributed solar"
-          },
-          {
-            title: "Commercial Building Efficiency Blitz",
-            description: "Mandatory benchmarking shows significant efficiency gaps. Create a fast-track program for commercial retrofits combining audit subsidies with attractive financing.",
-            impact: "Potential to reduce commercial energy use by 15-20%, saving $2M+ annually"
-          },
-          {
-            title: "Battery Storage Pilot Districts",
-            description: "Select 2-3 neighborhoods for coordinated solar + storage deployment to demonstrate grid resilience and demand response benefits.",
-            impact: "Prove model for virtual power plants, enabling 5MW+ of dispatchable clean capacity"
-          }
-        ],
-        actionPlan: {
-          immediate: [
-            "Map high-opportunity ZIP codes using current data",
-            "Engage neighborhood associations in target areas",
-            "Apply for federal grant programs for battery storage pilots",
-            "Update incentive program messaging to emphasize combined solar + efficiency + storage"
-          ],
-          mediumTerm: [
-            "Launch installer certification program to expand trusted provider network",
-            "Create one-stop-shop for residents: audit → efficiency → solar → storage",
-            "Partner with local lenders for attractive clean energy financing",
-            "Establish community solar projects in apartment-heavy neighborhoods"
-          ],
-          advocacy: [
-            "Promote success stories showing financial + resilience + climate benefits",
-            "Work with city council to streamline permitting for residential storage",
-            "Advocate for higher rebate funding using updated ROI data",
-            "Build coalition with environmental justice groups to ensure equitable access"
-          ]
-        },
-        dataInsights: {
-          totalSolarPrograms: solarData.length,
-          totalAudits: auditData.length,
+        overview: content,
+        dataPoints: {
+          solarPrograms: solarData.length,
+          energyAudits: auditData.length,
           weatherizationProjects: weatherizationData.length,
-          greenBuildings: greenBuildingData.length
+          greenBuildings: greenBuildingData.length,
+          commercialBuildings: commercialData.length
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

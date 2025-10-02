@@ -129,76 +129,21 @@ const PropertyAssessment = () => {
 
           {results && (
             <div className="space-y-6 animate-slide-up">
-              <div className="grid md:grid-cols-3 gap-4">
-                <Card className="border-2 border-accent/20">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center">
-                      <Zap className="mr-2 h-5 w-5 text-accent" />
-                      Solar Viability
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold text-accent">{results.solarScore || "8.5/10"}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{results.solarEstimate || "~12kW system"}</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-2 border-primary/20">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center">
-                      <Leaf className="mr-2 h-5 w-5 text-primary" />
-                      Efficiency Grade
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold text-primary">{results.efficiencyGrade || "B+"}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{results.savingsPotential || "$850/yr potential"}</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-2 border-secondary/20">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center">
-                      <DollarSign className="mr-2 h-5 w-5 text-secondary" />
-                      ROI Estimate
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl font-bold text-secondary">{results.roiYears || "7-9 yrs"}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{results.totalSavings || "$45k lifetime"}</p>
-                  </CardContent>
-                </Card>
-              </div>
-
               <Card className="border-2">
                 <CardHeader>
-                  <CardTitle>Detailed Assessment</CardTitle>
-                  <CardDescription>AI-powered recommendations for your property</CardDescription>
+                  <CardTitle>Property Assessment</CardTitle>
+                  <CardDescription>
+                    For {results.address} - Analysis based on {results.dataPoints?.citySolarInstallations || 0} city solar installations, {results.dataPoints?.cityEnergyAudits || 0} energy audits, and {results.dataPoints?.cityGreenBuildings || 0} green buildings
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-foreground whitespace-pre-wrap">{results.assessment}</p>
+                  <div className="space-y-3 text-foreground leading-relaxed">
+                    {results.assessment.split('\n\n').map((paragraph: string, idx: number) => (
+                      <p key={idx} className="text-sm">{paragraph}</p>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-
-              {results.recommendations && (
-                <Card className="border-2">
-                  <CardHeader>
-                    <CardTitle>Next Steps</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ol className="space-y-3">
-                      {results.recommendations.map((rec: string, idx: number) => (
-                        <li key={idx} className="flex items-start">
-                          <span className="font-bold text-primary mr-3">{idx + 1}.</span>
-                          <span className="text-foreground">{rec}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           )}
         </div>

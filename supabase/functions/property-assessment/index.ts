@@ -71,29 +71,17 @@ Be specific and actionable. Use realistic Austin data and current incentive prog
 
     const aiData = await aiResponse.json();
     const assessment = aiData.choices[0].message.content;
-
-    // Calculate property metrics based on type
-    const solarMultiplier = propertyType === 'commercial' ? 1.5 : propertyType === 'multi-family' ? 1.2 : 1.0;
-    const baseScore = 7.5 + (Math.random() * 2);
     
     return new Response(
       JSON.stringify({
         address,
         propertyType,
-        solarScore: (baseScore * solarMultiplier).toFixed(1) + '/10',
-        solarEstimate: `${Math.round(8 * solarMultiplier)}-${Math.round(15 * solarMultiplier)}kW system`,
-        efficiencyGrade: ['A-', 'B+', 'B', 'B-'][Math.floor(Math.random() * 4)],
-        savingsPotential: `$${Math.round(650 * solarMultiplier)}-$${Math.round(1200 * solarMultiplier)}/yr`,
-        roiYears: `${Math.floor(6 + Math.random() * 4)}-${Math.floor(8 + Math.random() * 3)} yrs`,
-        totalSavings: `$${Math.round(35 * solarMultiplier)}-${Math.round(55 * solarMultiplier)}k lifetime`,
         assessment,
-        recommendations: [
-          "Schedule a professional energy audit with Austin Energy",
-          "Apply for Austin Energy solar rebates and federal tax credits",
-          "Get quotes from certified solar installers",
-          "Consider energy efficiency upgrades before solar installation",
-          "Explore battery storage options for backup power and grid services"
-        ]
+        dataPoints: {
+          citySolarInstallations: solarData.length,
+          cityEnergyAudits: auditData.length,
+          cityGreenBuildings: greenBuildingData.length
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

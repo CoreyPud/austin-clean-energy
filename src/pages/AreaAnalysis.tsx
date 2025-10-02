@@ -116,37 +116,31 @@ const AreaAnalysis = () => {
             <div className="space-y-6 animate-slide-up">
               <Card className="border-2 border-primary/20">
                 <CardHeader>
-                  <CardTitle>Overview</CardTitle>
+                  <CardTitle>Data Sources</CardTitle>
+                  <CardDescription>Real data from Austin's public datasets</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-4 gap-4">
+                  <div className="grid md:grid-cols-3 gap-4">
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center mb-2">
                         <Zap className="h-5 w-5 text-accent mr-2" />
-                        <span className="font-semibold">Solar Potential</span>
+                        <span className="font-semibold">Solar Programs</span>
                       </div>
-                      <p className="text-2xl font-bold text-primary">{results.solarPotential || "High"}</p>
-                    </div>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center mb-2">
-                        <Zap className="h-5 w-5 text-accent mr-2" />
-                        <span className="font-semibold">Solar Adoption</span>
-                      </div>
-                      <p className="text-2xl font-bold text-primary">{results.solarAdoption || "18%"}</p>
+                      <p className="text-2xl font-bold text-primary">{results.dataPoints?.solarPrograms || 0}</p>
                     </div>
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center mb-2">
                         <TrendingUp className="h-5 w-5 text-secondary mr-2" />
-                        <span className="font-semibold">Efficiency Score</span>
+                        <span className="font-semibold">Energy Audits</span>
                       </div>
-                      <p className="text-2xl font-bold text-primary">{results.efficiencyScore || "7.5/10"}</p>
+                      <p className="text-2xl font-bold text-primary">{results.dataPoints?.energyAudits || 0}</p>
                     </div>
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center mb-2">
                         <Battery className="h-5 w-5 text-primary mr-2" />
-                        <span className="font-semibold">Storage Adoption</span>
+                        <span className="font-semibold">Weatherization Projects</span>
                       </div>
-                      <p className="text-2xl font-bold text-primary">{results.storageAdoption || "12%"}</p>
+                      <p className="text-2xl font-bold text-primary">{results.dataPoints?.weatherizationProjects || 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -154,8 +148,8 @@ const AreaAnalysis = () => {
 
               <Card className="border-2">
                 <CardHeader>
-                  <CardTitle>AI Insights</CardTitle>
-                  <CardDescription>Data-driven recommendations for this area</CardDescription>
+                  <CardTitle>AI Analysis</CardTitle>
+                  <CardDescription>Recommendations for ZIP code {results.zipCode}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 text-foreground leading-relaxed">
@@ -165,24 +159,6 @@ const AreaAnalysis = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              {results.topOpportunities && (
-                <Card className="border-2">
-                  <CardHeader>
-                    <CardTitle>Top Opportunities</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {results.topOpportunities.map((opp: string, idx: number) => (
-                        <li key={idx} className="flex items-start">
-                          <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3 flex-shrink-0" />
-                          <span className="text-foreground">{opp}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           )}
         </div>

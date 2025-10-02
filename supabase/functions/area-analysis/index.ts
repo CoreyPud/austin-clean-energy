@@ -67,27 +67,10 @@ Keep it concise and action-oriented. Use plain text paragraphs, no markdown form
     const aiData = await aiResponse.json();
     const insights = aiData.choices[0].message.content;
 
-    // Calculate basic metrics
-    const solarPotential = solarData.length > 20 ? "High" : solarData.length > 10 ? "Medium" : "Moderate";
-    const solarAdoption = `${Math.min(35, Math.round((solarData.length / 100) * 20))}%`;
-    const efficiencyScore = `${Math.min(10, 5 + (auditData.length / 10)).toFixed(1)}/10`;
-    const storageAdoption = `${Math.min(25, Math.round((solarData.length / 100) * 15))}%`;
-
     return new Response(
       JSON.stringify({
         zipCode,
-        solarPotential,
-        solarAdoption,
-        efficiencyScore,
-        storageAdoption,
         insights,
-        topOpportunities: [
-          "Residential solar installations with Austin Energy rebates",
-          "Community-wide energy efficiency upgrade programs",
-          "Battery storage integration for grid resilience",
-          "Green building certification initiatives",
-          "Weatherization assistance for low-income households"
-        ],
         dataPoints: {
           solarPrograms: solarData.length,
           energyAudits: auditData.length,

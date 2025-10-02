@@ -94,97 +94,21 @@ const Recommendations = () => {
 
           {results && (
             <div className="space-y-6 animate-slide-up">
-              <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+              <Card className="border-2 border-primary/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <TrendingUp className="mr-2 h-6 w-6 text-primary" />
-                    Strategic Overview
-                  </CardTitle>
+                  <CardTitle>Strategic Recommendations</CardTitle>
+                  <CardDescription>
+                    Based on {results.dataPoints?.solarPrograms || 0} solar programs, {results.dataPoints?.energyAudits || 0} energy audits, {results.dataPoints?.weatherizationProjects || 0} weatherization projects, {results.dataPoints?.greenBuildings || 0} green buildings, and {results.dataPoints?.commercialBuildings || 0} commercial buildings
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-foreground text-lg leading-relaxed whitespace-pre-wrap">
-                    {results.overview}
-                  </p>
+                  <div className="space-y-3 text-foreground leading-relaxed">
+                    {results.overview.split('\n\n').map((paragraph: string, idx: number) => (
+                      <p key={idx} className="text-sm">{paragraph}</p>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
-
-              {results.priorities && results.priorities.length > 0 && (
-                <Card className="border-2">
-                  <CardHeader>
-                    <CardTitle>Priority Opportunities</CardTitle>
-                    <CardDescription>Highest ROI and climate impact initiatives</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {results.priorities.map((priority: any, idx: number) => (
-                        <div key={idx} className="p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
-                          <h3 className="font-bold text-lg mb-2 text-primary">{priority.title}</h3>
-                          <p className="text-foreground mb-2">{priority.description}</p>
-                          {priority.impact && (
-                            <p className="text-sm text-muted-foreground">
-                              <strong>Impact:</strong> {priority.impact}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {results.actionPlan && (
-                <Card className="border-2">
-                  <CardHeader>
-                    <CardTitle>Action Plan</CardTitle>
-                    <CardDescription>Phased implementation strategy</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {results.actionPlan.immediate && (
-                        <div>
-                          <h3 className="font-bold text-accent mb-3">Immediate Actions (0-3 months)</h3>
-                          <ul className="space-y-2">
-                            {results.actionPlan.immediate.map((action: string, idx: number) => (
-                              <li key={idx} className="flex items-start">
-                                <div className="h-2 w-2 rounded-full bg-accent mt-2 mr-3 flex-shrink-0" />
-                                <span className="text-foreground">{action}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {results.actionPlan.mediumTerm && (
-                        <div>
-                          <h3 className="font-bold text-secondary mb-3">Medium-Term Goals (3-12 months)</h3>
-                          <ul className="space-y-2">
-                            {results.actionPlan.mediumTerm.map((action: string, idx: number) => (
-                              <li key={idx} className="flex items-start">
-                                <div className="h-2 w-2 rounded-full bg-secondary mt-2 mr-3 flex-shrink-0" />
-                                <span className="text-foreground">{action}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {results.actionPlan.advocacy && (
-                        <div>
-                          <h3 className="font-bold text-primary mb-3">Advocacy Strategies</h3>
-                          <ul className="space-y-2">
-                            {results.actionPlan.advocacy.map((action: string, idx: number) => (
-                              <li key={idx} className="flex items-start">
-                                <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3 flex-shrink-0" />
-                                <span className="text-foreground">{action}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               <div className="flex justify-center">
                 <Button 
