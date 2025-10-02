@@ -73,13 +73,16 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], className 
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       el.style.cursor = 'pointer';
       el.style.transition = 'transform 0.2s';
+      el.style.position = 'relative';
       
       el.addEventListener('mouseenter', () => {
         el.style.transform = 'scale(1.3)';
+        el.style.zIndex = '1000';
       });
       
       el.addEventListener('mouseleave', () => {
         el.style.transform = 'scale(1)';
+        el.style.zIndex = 'auto';
       });
 
       const popupContent = `

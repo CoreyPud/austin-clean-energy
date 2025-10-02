@@ -24,19 +24,32 @@ serve(async (req) => {
     console.log('Fetched data - Solar:', solarData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
 
     // Create map markers from real data with detailed information
-    const locations = solarData.slice(0, 20).map((item: any, idx: number) => ({
-      coordinates: [
-        parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.2,
-        parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.2
-      ] as [number, number],
-      title: item.project_name || `Solar Installation ${idx + 1}`,
-      address: item.service_address || item.address || 'Address not available',
-      capacity: item.system_size_kw ? `${item.system_size_kw} kW` : item.capacity || 'Capacity data unavailable',
-      programType: item.program_type || 'Austin Energy Solar Program',
-      installDate: item.installation_date || item.date_completed,
-      id: item.application_id || `solar-${idx}`,
-      color: '#22c55e'
-    }));
+    const locations = solarData.slice(0, 20).map((item: any, idx: number) => {
+      const address = item.service_address || item.address || 'Address not available';
+      const capacity = item.system_size_kw ? `${item.system_size_kw} kW` : item.capacity;
+      
+      // Create a meaningful title using address or capacity
+      let title = item.project_name;
+      if (!title || title === '') {
+        // Use address first line as title if no project name
+        title = address.split(',')[0] || `${capacity} Solar System` || 'Solar Installation';
+      }
+      
+      return {
+        coordinates: [
+          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.2,
+          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.2
+        ] as [number, number],
+        title,
+        address,
+        capacity: capacity || 'Capacity data unavailable',
+        programType: item.program_type || 'Austin Energy Solar Program',
+        installDate: item.installation_date || item.date_completed,
+        id: item.application_id || `solar-${idx}`,
+        color: '#22c55e',
+        rawData: item // Store full record for detail page
+      };
+    });
 
     // Use Lovable AI to analyze the data
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
