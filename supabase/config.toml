@@ -1,1 +1,10 @@
 project_id = "tnalryxoxswjofmtdtaf"
+
+[functions.area-analysis]
+verify_jwt = false
+
+[functions.property-assessment]
+verify_jwt = false
+
+[functions.generate-recommendations]
+verify_jwt = false

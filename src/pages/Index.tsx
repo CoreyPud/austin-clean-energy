@@ -1,9 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, BarChart3, Building2, Battery, Leaf } from "lucide-react";
 import heroImage from "@/assets/hero-solar.jpg";
 
 const Index = () => {
+  const navigate = useNavigate();
   const modules = [
     {
       icon: BarChart3,
@@ -56,11 +58,20 @@ const Index = () => {
               policymakers, and activists to make informed decisions that cut costs and reduce emissions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-foreground font-semibold group">
+              <Button 
+                size="lg" 
+                onClick={() => navigate("/area-analysis")}
+                className="bg-accent hover:bg-accent/90 text-foreground font-semibold group"
+              >
                 Explore Opportunities
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => navigate("/recommendations")}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+              >
                 View Sample Analysis
               </Button>
             </div>
@@ -99,31 +110,39 @@ const Index = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {modules.map((module, index) => (
-            <Card 
-              key={index} 
-              className="group hover:shadow-lg transition-all duration-300 animate-scale-in border-2 hover:border-primary/50"
-              style={{ animationDelay: `${index * 0.15}s` }}
-            >
-              <CardHeader>
-                <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${module.gradient} p-3.5 mb-4 group-hover:scale-110 transition-transform`}>
-                  <module.icon className="h-full w-full text-white" />
-                </div>
-                <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
-                <CardDescription className="text-base">{module.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {module.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center text-sm text-muted-foreground">
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ))}
+          {modules.map((module, index) => {
+            const routes = ["/area-analysis", "/property-assessment", "/recommendations"];
+            return (
+              <Card 
+                key={index} 
+                onClick={() => navigate(routes[index])}
+                className="group hover:shadow-lg transition-all duration-300 animate-scale-in border-2 hover:border-primary/50 cursor-pointer"
+                style={{ animationDelay: `${index * 0.15}s` }}
+              >
+                <CardHeader>
+                  <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${module.gradient} p-3.5 mb-4 group-hover:scale-110 transition-transform`}>
+                    <module.icon className="h-full w-full text-white" />
+                  </div>
+                  <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
+                  <CardDescription className="text-base">{module.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 mb-4">
+                    {module.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-center text-sm text-muted-foreground">
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button variant="ghost" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
+                    Get Started
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
