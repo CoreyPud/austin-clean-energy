@@ -63,31 +63,45 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], className 
 
     // Add new markers
     markers.forEach(({ coordinates, title, address, capacity, programType, installDate, id, color = '#22c55e' }) => {
+      // Container element (Mapbox positions this element via CSS transform)
       const el = document.createElement('div');
-      el.className = 'marker';
-      el.style.backgroundColor = color;
+      el.className = 'marker-container';
       el.style.width = '14px';
       el.style.height = '14px';
-      el.style.borderRadius = '50%';
-      el.style.border = '2px solid white';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       el.style.cursor = 'pointer';
-      el.style.transition = 'transform 0.2s';
-      el.style.position = 'relative';
+
+      // Inner dot (we scale this so we don't override Mapbox's translate transform)
+      const dot = document.createElement('div');
+      dot.className = 'marker';
+      dot.style.backgroundColor = color;
+      dot.style.width = '14px';
+      dot.style.height = '14px';
+      dot.style.borderRadius = '50%';
+      dot.style.border = '2px solid white';
+      dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      dot.style.transition = 'transform 0.2s';
+      el.appendChild(dot);
       
       el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.3)';
+        dot.style.transform = 'scale(1.3)';
         el.style.zIndex = '1000';
       });
       
       el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)';
+        dot.style.transform = 'scale(1)';
         el.style.zIndex = 'auto';
       });
 
+      // Prefer meaningful titles and avoid generic numbered labels
+      const computedTitle =
+        (title && !/^Solar Installation\b/i.test(title) ? title : '') ||
+        address ||
+        (programType ? `${programType}${capacity ? ` • ${capacity}` : ''}` : '') ||
+        (capacity ? `Installed Capacity: ${capacity}` : 'Installation');
+
       const popupContent = `
         <div style="padding: 12px; min-width: 250px; font-family: system-ui, -apple-system, sans-serif;">
-          <h3 style="font-weight: 700; margin: 0 0 8px 0; font-size: 16px; color: #1a1a1a;">${title}</h3>
+          <h3 style="font-weight: 700; margin: 0 0 8px 0; font-size: 16px; color: #1a1a1a;">${computedTitle}</h3>
           ${address ? `
             <div style="display: flex; align-items: start; margin-bottom: 6px; gap: 6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top: 2px; flex-shrink: 0; color: #666;">
@@ -128,6 +142,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], className 
           ` : ''}
           ${id && onMarkerClick ? `
             <button 
+              type="button"
               onclick="window.dispatchEvent(new CustomEvent('marker-click', { detail: '${id}' }))"
               style="
                 margin-top: 12px;
@@ -157,7 +172,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], className 
         maxWidth: '350px'
       }).setHTML(popupContent);
 
-      const marker = new mapboxgl.Marker(el)
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat(coordinates)
         .setPopup(popup)
         .addTo(map.current!);
