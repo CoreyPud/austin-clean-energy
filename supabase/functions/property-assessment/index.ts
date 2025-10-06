@@ -14,40 +14,34 @@ serve(async (req) => {
     const { address, propertyType } = await req.json();
     console.log('Assessing property:', address, 'Type:', propertyType);
 
-    // Fetch relevant Austin data - using Green Building dataset with real addresses
-    const [greenBuildingData, auditData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/ihu3-829r.json?$limit=200').then(r => r.json()),
+    // Fetch relevant Austin data - using Solar Permits dataset
+    const [solarPermitsData, auditData] = await Promise.all([
+      fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=200').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json())
     ]);
 
-    console.log('Fetched property data - Green Buildings:', greenBuildingData.length, 'Audits:', auditData.length);
+    console.log('Fetched property data - Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length);
 
-    // Create map markers from nearby green buildings with actual addresses
-    const nearbyBuildings = greenBuildingData
-      .filter((item: any) => item.geocodes?.coordinates)
+    // Create map markers from nearby solar installations with actual addresses
+    const nearbyInstallations = solarPermitsData
+      .filter((item: any) => item.location?.coordinates)
       .slice(0, 15)
       .map((item: any, idx: number) => {
-        const [lng, lat] = item.geocodes.coordinates;
-        const addressParts = [
-          item.address,
-          item.city || 'Austin',
-          item.st || 'TX',
-          item.zip
-        ].filter(Boolean);
-        const fullAddress = addressParts.join(', ');
-        const title = item.development_or_neighborhood || 
-                     item.organization_name || 
-                     (item.address ? item.address.split(',')[0] : `Green Building ${idx + 1}`);
+        const [lng, lat] = item.location.coordinates;
+        const fullAddress = item.original_address1 || item.street_name || 'Address not available';
+        const title = item.original_address1 ? 
+                     item.original_address1.split(',')[0] : 
+                     `Solar Installation ${idx + 1}`;
         
         return {
           coordinates: [lng, lat] as [number, number],
           title,
           address: fullAddress,
-          capacity: item.aegb_rating || 'Green Building',
-          programType: `${item.program || 'Green Building'} - ${item.aegb_rating || 'Rated'}`,
-          installDate: item.fiscal_year_reported ? `FY ${item.fiscal_year_reported}` : undefined,
-          id: item.project_id || `green-${idx}`,
-          color: '#22c55e'
+          capacity: item.project_name || 'Solar Installation',
+          programType: `${item.work_class || 'Solar'} - Permit #${item.permit_number || 'N/A'}`,
+          installDate: item.issue_date ? new Date(item.issue_date).toLocaleDateString() : undefined,
+          id: item.permit_number || `solar-${idx}`,
+          color: '#f59e0b'
         };
       });
 
@@ -61,7 +55,7 @@ serve(async (req) => {
         id: 'target-property',
         color: '#3b82f6'
       },
-      ...nearbyBuildings
+      ...nearbyInstallations
     ];
 
     // Use Lovable AI for detailed assessment
@@ -76,7 +70,7 @@ Address: ${address}
 Property Type: ${propertyType}
 
 Reference Data:
-- Green Building Examples: ${JSON.stringify(greenBuildingData.slice(0, 5))}
+- Nearby Solar Installations: ${JSON.stringify(solarPermitsData.slice(0, 5))}
 - Energy Audit Examples: ${JSON.stringify(auditData.slice(0, 5))}
 
 Provide a comprehensive property assessment including:
@@ -119,7 +113,7 @@ Be specific and actionable. Use realistic Austin data and current incentive prog
         assessment,
         locations,
         dataPoints: {
-          cityGreenBuildings: greenBuildingData.length,
+          citySolarPermits: solarPermitsData.length,
           cityEnergyAudits: auditData.length
         }
       }),

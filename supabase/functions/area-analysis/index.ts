@@ -14,45 +14,39 @@ serve(async (req) => {
     const { zipCode } = await req.json();
     console.log('Analyzing area for ZIP code:', zipCode);
 
-    // Fetch data from Austin's open data APIs - using Green Building dataset with real addresses
-    const [greenBuildingData, auditData, weatherizationData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/ihu3-829r.json?$limit=500').then(r => r.json()),
+    // Fetch data from Austin's open data APIs - using Permits dataset filtered for solar (Auxiliary Power)
+    const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
+      fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=500').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
 
-    console.log('Fetched data - Green Buildings:', greenBuildingData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
+    console.log('Fetched data - Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
 
-    // Create map markers from Green Building data with actual addresses and coordinates
-    const locations = greenBuildingData
-      .filter((item: any) => item.geocodes?.coordinates)
+    // Create map markers from Solar Permits data with actual addresses and coordinates
+    const locations = solarPermitsData
+      .filter((item: any) => item.location?.coordinates)
       .slice(0, 50)
       .map((item: any, idx: number) => {
-        const [lng, lat] = item.geocodes.coordinates;
+        const [lng, lat] = item.location.coordinates;
         
-        // Build full address from components
-        const addressParts = [
-          item.address,
-          item.city || 'Austin',
-          item.st || 'TX',
-          item.zip
-        ].filter(Boolean);
-        const fullAddress = addressParts.join(', ');
+        // Build full address
+        const fullAddress = item.original_address1 || item.street_name || 'Address not available';
         
-        // Create meaningful title
-        const title = item.development_or_neighborhood || 
-                     item.organization_name || 
-                     (item.address ? item.address.split(',')[0] : `Green Building ${idx + 1}`);
+        // Create meaningful title from address
+        const title = item.original_address1 ? 
+                     item.original_address1.split(',')[0] : 
+                     `Solar Installation ${idx + 1}`;
         
         return {
           coordinates: [lng, lat] as [number, number],
           title,
           address: fullAddress,
-          capacity: item.aegb_rating || 'Green Building',
-          programType: `${item.program || 'Green Building'} - ${item.aegb_rating || 'Rated'}`,
-          installDate: item.fiscal_year_reported ? `FY ${item.fiscal_year_reported}` : undefined,
-          id: item.project_id || `green-${idx}`,
-          color: '#22c55e',
+          capacity: item.project_name || 'Solar Installation',
+          programType: `${item.work_class || 'Solar'} - Permit #${item.permit_number || 'N/A'}`,
+          installDate: item.issue_date ? new Date(item.issue_date).toLocaleDateString() : undefined,
+          id: item.permit_number || `solar-${idx}`,
+          color: '#f59e0b',
           rawData: item
         };
       });
@@ -65,12 +59,12 @@ serve(async (req) => {
 
     const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
 
-Green Building Projects: ${greenBuildingData.length} rated buildings
+Solar Permits Issued: ${solarPermitsData.length} solar installations
 Energy Audits: ${auditData.length} completed
 Weatherization Projects: ${weatherizationData.length} in progress
 
 Provide a brief 3-4 paragraph analysis covering:
-- Solar adoption trends and potential
+- Solar adoption trends and potential based on permit activity
 - Energy efficiency opportunities  
 - Battery storage recommendations
 - Key actionable insights for activists and policymakers
@@ -107,7 +101,7 @@ Keep it concise and action-oriented. Use plain text paragraphs, no markdown form
         insights,
         locations,
         dataPoints: {
-          greenBuildings: greenBuildingData.length,
+          solarPermits: solarPermitsData.length,
           energyAudits: auditData.length,
           weatherizationProjects: weatherizationData.length
         }
