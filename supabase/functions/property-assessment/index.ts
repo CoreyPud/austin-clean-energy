@@ -14,16 +14,43 @@ serve(async (req) => {
     const { address, propertyType } = await req.json();
     console.log('Assessing property:', address, 'Type:', propertyType);
 
-    // Fetch relevant Austin data
-    const [solarData, auditData, greenBuildingData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/3kyh-ggqg.json?$limit=50').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/dpvb-c5fy.json?$limit=50').then(r => r.json())
+    // Fetch relevant Austin data - using Green Building dataset with real addresses
+    const [greenBuildingData, auditData] = await Promise.all([
+      fetch('https://data.austintexas.gov/resource/ihu3-829r.json?$limit=200').then(r => r.json()),
+      fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json())
     ]);
 
-    console.log('Fetched property data - Solar:', solarData.length, 'Audits:', auditData.length, 'Green Buildings:', greenBuildingData.length);
+    console.log('Fetched property data - Green Buildings:', greenBuildingData.length, 'Audits:', auditData.length);
 
-    // Create map markers from nearby installations with detailed info
+    // Create map markers from nearby green buildings with actual addresses
+    const nearbyBuildings = greenBuildingData
+      .filter((item: any) => item.geocodes?.coordinates)
+      .slice(0, 15)
+      .map((item: any, idx: number) => {
+        const [lng, lat] = item.geocodes.coordinates;
+        const addressParts = [
+          item.address,
+          item.city || 'Austin',
+          item.st || 'TX',
+          item.zip
+        ].filter(Boolean);
+        const fullAddress = addressParts.join(', ');
+        const title = item.development_or_neighborhood || 
+                     item.organization_name || 
+                     (item.address ? item.address.split(',')[0] : `Green Building ${idx + 1}`);
+        
+        return {
+          coordinates: [lng, lat] as [number, number],
+          title,
+          address: fullAddress,
+          capacity: item.aegb_rating || 'Green Building',
+          programType: `${item.program || 'Green Building'} - ${item.aegb_rating || 'Rated'}`,
+          installDate: item.fiscal_year_reported ? `FY ${item.fiscal_year_reported}` : undefined,
+          id: item.project_id || `green-${idx}`,
+          color: '#22c55e'
+        };
+      });
+
     const locations = [
       {
         coordinates: [-97.7431, 30.2672] as [number, number],
@@ -34,19 +61,7 @@ serve(async (req) => {
         id: 'target-property',
         color: '#3b82f6'
       },
-      ...solarData.slice(0, 10).map((item: any, idx: number) => ({
-        coordinates: [
-          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.1,
-          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.1
-        ] as [number, number],
-        title: item.project_name || `Nearby Solar ${idx + 1}`,
-        address: item.service_address || item.address || 'Address not available',
-        capacity: item.system_size_kw ? `${item.system_size_kw} kW` : 'Capacity data unavailable',
-        programType: item.program_type || 'Solar Installation',
-        installDate: item.installation_date || item.date_completed,
-        id: item.application_id || `solar-${idx}`,
-        color: '#22c55e'
-      }))
+      ...nearbyBuildings
     ];
 
     // Use Lovable AI for detailed assessment
@@ -61,9 +76,8 @@ Address: ${address}
 Property Type: ${propertyType}
 
 Reference Data:
-- City Solar Installations: ${JSON.stringify(solarData.slice(0, 5))}
+- Green Building Examples: ${JSON.stringify(greenBuildingData.slice(0, 5))}
 - Energy Audit Examples: ${JSON.stringify(auditData.slice(0, 5))}
-- Green Building Data: ${JSON.stringify(greenBuildingData.slice(0, 3))}
 
 Provide a comprehensive property assessment including:
 1. Solar viability score (0-10) and estimated system size
@@ -105,9 +119,8 @@ Be specific and actionable. Use realistic Austin data and current incentive prog
         assessment,
         locations,
         dataPoints: {
-          citySolarInstallations: solarData.length,
-          cityEnergyAudits: auditData.length,
-          cityGreenBuildings: greenBuildingData.length
+          cityGreenBuildings: greenBuildingData.length,
+          cityEnergyAudits: auditData.length
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

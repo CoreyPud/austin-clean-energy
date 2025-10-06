@@ -13,52 +13,40 @@ serve(async (req) => {
   try {
     console.log('Generating city-wide recommendations');
 
-    // Fetch comprehensive Austin energy data
-    const [solarData, auditData, weatherizationData, greenBuildingData, commercialData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/vxq2-zjmn.json?$limit=200').then(r => r.json()),
+    // Fetch comprehensive Austin energy data - using Green Building dataset with real addresses
+    const [greenBuildingData, auditData, weatherizationData] = await Promise.all([
+      fetch('https://data.austintexas.gov/resource/ihu3-829r.json?$limit=500').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=200').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=100').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/dpvb-c5fy.json?$limit=100').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/b49u-qucc.json?$limit=100').then(r => r.json())
+      fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=100').then(r => r.json())
     ]);
 
     console.log('Fetched comprehensive data:', {
-      solar: solarData.length,
+      greenBuildings: greenBuildingData.length,
       audits: auditData.length,
-      weatherization: weatherizationData.length,
-      greenBuilding: greenBuildingData.length,
-      commercial: commercialData.length
+      weatherization: weatherizationData.length
     });
 
-    // Create city-wide map markers with detailed information
-    const locations = [
-      ...solarData.slice(0, 30).map((item: any, idx: number) => ({
-        coordinates: [
-          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.3,
-          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.3
-        ] as [number, number],
-        title: item.project_name || `Solar Program ${idx + 1}`,
-        address: item.service_address || item.address || 'Address not available',
-        capacity: item.system_size_kw ? `${item.system_size_kw} kW` : 'Capacity data unavailable',
-        programType: item.program_type || 'Austin Energy Solar',
-        installDate: item.installation_date || item.date_completed,
-        id: item.application_id || `solar-${idx}`,
-        color: '#22c55e'
-      })),
-      ...greenBuildingData.slice(0, 15).map((item: any, idx: number) => ({
-        coordinates: [
-          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.3,
-          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.3
-        ] as [number, number],
-        title: item.building_name || `Green Building ${idx + 1}`,
-        address: item.address || 'Address not available',
-        capacity: item.certification_level || 'LEED Certified',
-        programType: item.certification_type || 'Green Building',
-        installDate: item.certification_date,
-        id: item.building_id || `green-${idx}`,
-        color: '#10b981'
-      }))
-    ];
+    // Create city-wide map markers with actual addresses from Green Building data
+    const locations = greenBuildingData
+      .filter((item: any) => item.geocodes?.coordinates)
+      .slice(0, 50)
+      .map((item: any, idx: number) => {
+        const [lng, lat] = item.geocodes.coordinates;
+        const addressParts = [item.address, item.city || 'Austin', item.st || 'TX', item.zip].filter(Boolean);
+        const fullAddress = addressParts.join(', ');
+        const title = item.development_or_neighborhood || item.organization_name || `Green Building ${idx + 1}`;
+        
+        return {
+          coordinates: [lng, lat] as [number, number],
+          title,
+          address: fullAddress,
+          capacity: item.aegb_rating || 'Green Building',
+          programType: `${item.program || 'Green Building'} - ${item.aegb_rating || 'Rated'}`,
+          installDate: item.fiscal_year_reported ? `FY ${item.fiscal_year_reported}` : undefined,
+          id: item.project_id || `green-${idx}`,
+          color: '#22c55e'
+        };
+      });
 
     // Use Lovable AI to generate strategic recommendations
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -68,11 +56,9 @@ serve(async (req) => {
 
     const aiPrompt = `You are a climate policy strategist and clean energy advisor for Austin, Texas. Analyze this comprehensive city data:
 
-Solar Programs: ${JSON.stringify(solarData.slice(0, 20))}
+Green Buildings: ${JSON.stringify(greenBuildingData.slice(0, 20))}
 Energy Audits: ${JSON.stringify(auditData.slice(0, 20))}
 Weatherization Projects: ${JSON.stringify(weatherizationData.slice(0, 10))}
-Green Buildings: ${JSON.stringify(greenBuildingData.slice(0, 10))}
-Commercial Buildings: ${JSON.stringify(commercialData.slice(0, 10))}
 
 Generate strategic recommendations for Austin's clean energy transition including:
 
@@ -119,11 +105,9 @@ Focus on actionable, data-driven strategies that balance solar adoption, energy 
         overview: content,
         locations,
         dataPoints: {
-          solarPrograms: solarData.length,
-          energyAudits: auditData.length,
-          weatherizationProjects: weatherizationData.length,
           greenBuildings: greenBuildingData.length,
-          commercialBuildings: commercialData.length
+          energyAudits: auditData.length,
+          weatherizationProjects: weatherizationData.length
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

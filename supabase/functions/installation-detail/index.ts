@@ -14,29 +14,13 @@ serve(async (req) => {
     const { id } = await req.json();
     console.log('Fetching installation details for ID:', id);
 
-    // Fetch data from Austin's open data APIs
-    const [solarData, auditData, weatherizationData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/vxq2-zjmn.json?$limit=1000').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=1000').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=500').then(r => r.json())
-    ]);
+    // Fetch Green Building data with actual addresses
+    const greenBuildingData = await fetch('https://data.austintexas.gov/resource/ihu3-829r.json?$limit=2000').then(r => r.json());
 
-    // Find the installation by ID in the datasets
-    let installation = solarData.find((item: any) => 
-      item.application_id === id || `solar-${solarData.indexOf(item)}` === id
+    // Find the installation by ID
+    const installation = greenBuildingData.find((item: any) => 
+      item.project_id === id || `green-${greenBuildingData.indexOf(item)}` === id
     );
-
-    if (!installation) {
-      installation = auditData.find((item: any) => 
-        item.application_id === id || `audit-${auditData.indexOf(item)}` === id
-      );
-    }
-
-    if (!installation) {
-      installation = weatherizationData.find((item: any) => 
-        item.application_id === id || `weatherization-${weatherizationData.indexOf(item)}` === id
-      );
-    }
 
     if (!installation) {
       return new Response(

@@ -14,42 +14,48 @@ serve(async (req) => {
     const { zipCode } = await req.json();
     console.log('Analyzing area for ZIP code:', zipCode);
 
-    // Fetch data from Austin's open data APIs
-    const [solarData, auditData, weatherizationData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/vxq2-zjmn.json?$limit=100').then(r => r.json()),
+    // Fetch data from Austin's open data APIs - using Green Building dataset with real addresses
+    const [greenBuildingData, auditData, weatherizationData] = await Promise.all([
+      fetch('https://data.austintexas.gov/resource/ihu3-829r.json?$limit=500').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
 
-    console.log('Fetched data - Solar:', solarData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
+    console.log('Fetched data - Green Buildings:', greenBuildingData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
 
-    // Create map markers from real data with detailed information
-    const locations = solarData.slice(0, 20).map((item: any, idx: number) => {
-      const address = item.service_address || item.address || 'Address not available';
-      const capacity = item.system_size_kw ? `${item.system_size_kw} kW` : item.capacity;
-      
-      // Create a meaningful title using address or capacity
-      let title = item.project_name;
-      if (!title || title === '') {
-        // Use address first line as title if no project name
-        title = address.split(',')[0] || `${capacity} Solar System` || 'Solar Installation';
-      }
-      
-      return {
-        coordinates: [
-          parseFloat(item.longitude) || -97.7431 + (Math.random() - 0.5) * 0.2,
-          parseFloat(item.latitude) || 30.2672 + (Math.random() - 0.5) * 0.2
-        ] as [number, number],
-        title,
-        address,
-        capacity: capacity || 'Capacity data unavailable',
-        programType: item.program_type || 'Austin Energy Solar Program',
-        installDate: item.installation_date || item.date_completed,
-        id: item.application_id || `solar-${idx}`,
-        color: '#22c55e',
-        rawData: item // Store full record for detail page
-      };
-    });
+    // Create map markers from Green Building data with actual addresses and coordinates
+    const locations = greenBuildingData
+      .filter((item: any) => item.geocodes?.coordinates)
+      .slice(0, 50)
+      .map((item: any, idx: number) => {
+        const [lng, lat] = item.geocodes.coordinates;
+        
+        // Build full address from components
+        const addressParts = [
+          item.address,
+          item.city || 'Austin',
+          item.st || 'TX',
+          item.zip
+        ].filter(Boolean);
+        const fullAddress = addressParts.join(', ');
+        
+        // Create meaningful title
+        const title = item.development_or_neighborhood || 
+                     item.organization_name || 
+                     (item.address ? item.address.split(',')[0] : `Green Building ${idx + 1}`);
+        
+        return {
+          coordinates: [lng, lat] as [number, number],
+          title,
+          address: fullAddress,
+          capacity: item.aegb_rating || 'Green Building',
+          programType: `${item.program || 'Green Building'} - ${item.aegb_rating || 'Rated'}`,
+          installDate: item.fiscal_year_reported ? `FY ${item.fiscal_year_reported}` : undefined,
+          id: item.project_id || `green-${idx}`,
+          color: '#22c55e',
+          rawData: item
+        };
+      });
 
     // Use Lovable AI to analyze the data
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -59,7 +65,7 @@ serve(async (req) => {
 
     const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
 
-Solar Programs: ${solarData.length} active programs
+Green Building Projects: ${greenBuildingData.length} rated buildings
 Energy Audits: ${auditData.length} completed
 Weatherization Projects: ${weatherizationData.length} in progress
 
@@ -101,7 +107,7 @@ Keep it concise and action-oriented. Use plain text paragraphs, no markdown form
         insights,
         locations,
         dataPoints: {
-          solarPrograms: solarData.length,
+          greenBuildings: greenBuildingData.length,
           energyAudits: auditData.length,
           weatherizationProjects: weatherizationData.length
         }
