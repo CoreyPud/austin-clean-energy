@@ -5,6 +5,7 @@ import { ArrowRight, BarChart3, Building2, Battery, Leaf } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -12,51 +13,55 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRealStats = async () => {
+    const loadStats = async () => {
       try {
-        // Fetch real data from Austin APIs
-        const [solarPermitsData, auditData] = await Promise.all([
-          fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=50000').then(r => r.json()),
-          fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=50000').then(r => r.json())
-        ]);
+        // First, try to get cached stats from database
+        const { data: cachedStats, error: cacheError } = await supabase
+          .from('cached_stats')
+          .select('*')
+          .order('stat_type');
 
-        // Calculate unique ZIP codes from solar permits (field is 'original_zip' not 'zip_code')
-        const uniqueZipCodes = new Set(
-          solarPermitsData
-            .filter((item: any) => item.original_zip)
-            .map((item: any) => item.original_zip)
-        );
+        if (!cacheError && cachedStats && cachedStats.length > 0) {
+          // Map cached stats to display format
+          const iconMap: Record<string, any> = {
+            'zip_codes': BarChart3,
+            'total_projects': Building2,
+            'solar_permits': Leaf,
+            'energy_audits': Battery,
+          };
 
-        // Count properties with solar permits
-        const solarProperties = solarPermitsData.length;
+          const displayStats = cachedStats.map(stat => ({
+            value: stat.value,
+            label: stat.label,
+            icon: iconMap[stat.stat_type] || BarChart3
+          }));
 
-        // Count energy audits
-        const energyAudits = auditData.length;
+          setStats(displayStats);
+          setIsLoading(false);
+        }
 
-        // Total installations/assessments
-        const totalAssessments = solarProperties + energyAudits;
+        // Trigger background refresh of stats
+        supabase.functions.invoke('fetch-stats').then(({ data, error }) => {
+          if (error) {
+            console.error('Error refreshing stats:', error);
+          } else {
+            console.log('Stats refreshed in background');
+          }
+        });
 
-        setStats([
-          { value: `${uniqueZipCodes.size}`, label: "ZIP Codes with Solar", icon: BarChart3 },
-          { value: `${totalAssessments.toLocaleString()}`, label: "Total Projects Tracked", icon: Building2 },
-          { value: `${solarProperties.toLocaleString()}`, label: "Solar Permits Issued", icon: Leaf },
-          { value: `${energyAudits.toLocaleString()}`, label: "Energy Audits Completed", icon: Battery },
-        ]);
       } catch (error) {
-        console.error('Error fetching stats:', error);
-        // Fallback to minimal real data indicators
+        console.error('Error loading stats:', error);
         setStats([
           { value: "Live", label: "Austin Open Data", icon: BarChart3 },
           { value: "Real-time", label: "Solar Permits", icon: Building2 },
           { value: "Verified", label: "Energy Audits", icon: Leaf },
           { value: "Active", label: "Data Sources", icon: Battery },
         ]);
-      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRealStats();
+    loadStats();
   }, []);
 
   const modules = [
