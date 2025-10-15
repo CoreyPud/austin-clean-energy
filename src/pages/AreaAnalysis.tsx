@@ -68,7 +68,7 @@ const AreaAnalysis = () => {
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl font-bold mb-3 text-foreground">Area Opportunity Analysis</h1>
             <p className="text-lg text-muted-foreground">
-              Discover solar, efficiency, and storage opportunities across Austin neighborhoods
+              Discover solar, efficiency, and storage opportunities by ZIP code
             </p>
           </div>
 
@@ -79,7 +79,7 @@ const AreaAnalysis = () => {
                 Enter Location
               </CardTitle>
               <CardDescription>
-                Analyze clean energy opportunities by ZIP code or neighborhood
+                Enter a 5-digit ZIP code to analyze clean energy opportunities
               </CardDescription>
             </CardHeader>
             <CardContent>
