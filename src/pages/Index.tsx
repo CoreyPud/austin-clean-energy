@@ -15,17 +15,16 @@ const Index = () => {
     const fetchRealStats = async () => {
       try {
         // Fetch real data from Austin APIs
-        const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
+        const [solarPermitsData, auditData] = await Promise.all([
           fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=50000').then(r => r.json()),
-          fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=50000').then(r => r.json()),
-          fetch('https://data.austintexas.gov/resource/63e6-kbkz.json?$limit=50000').then(r => r.json())
+          fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=50000').then(r => r.json())
         ]);
 
-        // Calculate unique ZIP codes from solar permits
+        // Calculate unique ZIP codes from solar permits (field is 'original_zip' not 'zip_code')
         const uniqueZipCodes = new Set(
           solarPermitsData
-            .filter((item: any) => item.zip_code)
-            .map((item: any) => item.zip_code)
+            .filter((item: any) => item.original_zip)
+            .map((item: any) => item.original_zip)
         );
 
         // Count properties with solar permits
