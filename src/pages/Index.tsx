@@ -213,7 +213,11 @@ const Index = () => {
             <p className="text-lg md:text-xl text-white/90 mb-8">
               Start exploring solar, efficiency, and storage opportunities in your neighborhood today
             </p>
-            <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold">
+            <Button 
+              size="lg" 
+              onClick={() => navigate("/property-assessment")}
+              className="bg-white text-primary hover:bg-white/90 font-semibold"
+            >
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -233,18 +237,72 @@ const Index = () => {
             </div>
             <div>
               <h3 className="font-bold text-lg mb-4">Resources</h3>
-              <ul className="space-y-2 text-sm text-white/70">
-                <li>Austin Energy Programs</li>
-                <li>Federal Tax Credits</li>
-                <li>Installation Partners</li>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a 
+                    href="https://austinenergy.com/green-power/solar-solutions" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    Austin Energy Programs
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://www.energy.gov/eere/solar/homeowners-guide-federal-tax-credit-solar-photovoltaics" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    Federal Tax Credits
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://austinenergy.com/green-power/solar-solutions/for-your-home/solar-installation" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    Installation Partners
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="font-bold text-lg mb-4">Data Sources</h3>
-              <ul className="space-y-2 text-sm text-white/70">
-                <li>City of Austin Open Data</li>
-                <li>Energy Audit Records</li>
-                <li>Solar Installation Data</li>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a 
+                    href="https://data.austintexas.gov" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    City of Austin Open Data
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://data.austintexas.gov/resource/tk9p-m8c7.json" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    Energy Audit Records
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://data.austintexas.gov/resource/3syk-w9eu.json" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    Solar Permit Data
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
