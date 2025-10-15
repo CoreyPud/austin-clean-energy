@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, BarChart3, Building2, Battery, Leaf } from "lucide-react";
-import heroImage from "@/assets/hero-solar.jpg";
+import heroImage from "@/assets/hero-austin-solar.jpg";
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
