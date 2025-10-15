@@ -316,9 +316,6 @@ const Index = () => {
               </ul>
             </div>
           </div>
-          <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm text-white/60">
-            © 2025 Austin Clean Energy Dashboard. Supporting climate action through data.
-          </div>
         </div>
       </footer>
     </div>
