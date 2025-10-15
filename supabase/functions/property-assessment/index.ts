@@ -14,6 +14,34 @@ serve(async (req) => {
     const { address, propertyType } = await req.json();
     console.log('Assessing property:', address, 'Type:', propertyType);
 
+    // Google Solar API integration
+    const GOOGLE_SOLAR_API_KEY = Deno.env.get('GOOGLE_SOLAR_API_KEY');
+    let solarInsights = null;
+    
+    if (GOOGLE_SOLAR_API_KEY) {
+      try {
+        // Get Building Insights from Google Solar API
+        const buildingInsightsUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=30.2672&location.longitude=-97.7431&key=${GOOGLE_SOLAR_API_KEY}`;
+        
+        const solarResponse = await fetch(buildingInsightsUrl);
+        
+        if (solarResponse.ok) {
+          solarInsights = await solarResponse.json();
+          console.log('Google Solar API data retrieved successfully');
+        } else {
+          const errorText = await solarResponse.text();
+          console.warn('Google Solar API error:', solarResponse.status, errorText);
+          
+          // Check if we've hit rate limits or quota
+          if (solarResponse.status === 429 || solarResponse.status === 403) {
+            console.warn('⚠️ Google Solar API quota reached - falling back to Austin data only');
+          }
+        }
+      } catch (solarError) {
+        console.warn('Failed to fetch Google Solar data:', solarError);
+      }
+    }
+
     // Fetch relevant Austin data - using Solar Permits dataset
     const [solarPermitsData, auditData] = await Promise.all([
       fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=200').then(r => r.json()),
@@ -64,22 +92,37 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
+    // Build enhanced prompt with Google Solar data if available
+    let googleSolarSection = '';
+    if (solarInsights) {
+      googleSolarSection = `
+Google Solar Analysis (Official Data):
+- Solar Panel Potential: ${solarInsights.solarPotential?.maxArrayPanelsCount || 'N/A'} panels maximum
+- Roof Area Available: ${solarInsights.solarPotential?.maxArrayAreaMeters2 || 'N/A'} m²
+- Annual Sunshine: ${solarInsights.solarPotential?.maxSunshineHoursPerYear || 'N/A'} hours/year
+- Carbon Offset Potential: ${solarInsights.solarPotential?.carbonOffsetFactorKgPerMwh || 'N/A'} kg CO₂/MWh
+`;
+    }
+
     const aiPrompt = `You are a certified energy auditor and solar consultant. Assess this property in Austin:
 
 Address: ${address}
 Property Type: ${propertyType}
+
+${googleSolarSection}
 
 Reference Data:
 - Nearby Solar Installations: ${JSON.stringify(solarPermitsData.slice(0, 5))}
 - Energy Audit Examples: ${JSON.stringify(auditData.slice(0, 5))}
 
 Provide a comprehensive property assessment including:
-1. Solar viability score (0-10) and estimated system size
+1. Solar viability score (0-10) and estimated system size ${solarInsights ? '(use Google Solar data for accuracy)' : ''}
 2. Energy efficiency grade (A-F) and specific upgrade recommendations
 3. Battery storage sizing and benefits
 4. Financial analysis (ROI, payback period, lifetime savings)
 5. Specific next steps for the property owner
 
+${solarInsights ? 'Emphasize the precision of Google Solar API data for this specific roof.' : 'Base estimates on nearby Austin solar installations.'}
 Be specific and actionable. Use realistic Austin data and current incentive programs.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -114,8 +157,15 @@ Be specific and actionable. Use realistic Austin data and current incentive prog
         locations,
         dataPoints: {
           citySolarPermits: solarPermitsData.length,
-          cityEnergyAudits: auditData.length
-        }
+          cityEnergyAudits: auditData.length,
+          googleSolarDataUsed: !!solarInsights
+        },
+        solarInsights: solarInsights ? {
+          maxPanels: solarInsights.solarPotential?.maxArrayPanelsCount,
+          roofArea: solarInsights.solarPotential?.maxArrayAreaMeters2,
+          sunshineHours: solarInsights.solarPotential?.maxSunshineHoursPerYear,
+          carbonOffset: solarInsights.solarPotential?.carbonOffsetFactorKgPerMwh
+        } : null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -149,11 +149,37 @@ const PropertyAssessment = () => {
                 </Card>
               </MapTokenLoader>
 
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Data Points</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">City Solar Permits</p>
+                    <p className="text-2xl font-bold text-primary">{results.dataPoints.citySolarPermits}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">City Energy Audits</p>
+                    <p className="text-2xl font-bold text-primary">{results.dataPoints.cityEnergyAudits}</p>
+                  </div>
+                  {results.dataPoints.googleSolarDataUsed && (
+                    <div className="col-span-full p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                      <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                        ✓ Enhanced with Google Solar API data
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Roof-specific solar analysis included
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle>Property Assessment</CardTitle>
                   <CardDescription>
-                    For {results.address} - Analysis based on {results.dataPoints?.citySolarInstallations || 0} city solar installations, {results.dataPoints?.cityEnergyAudits || 0} energy audits, and {results.dataPoints?.cityGreenBuildings || 0} green buildings
+                    For {results.address}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

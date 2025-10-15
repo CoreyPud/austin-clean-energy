@@ -193,6 +193,19 @@ const AreaAnalysis = () => {
                       {results.insights}
                     </ReactMarkdown>
                   </div>
+                  
+                  <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <p className="text-sm text-foreground/80 mb-3">
+                      <strong className="text-primary">Want detailed solar analysis for your specific property?</strong>
+                    </p>
+                    <Button 
+                      onClick={() => navigate('/property-assessment')}
+                      className="w-full sm:w-auto"
+                      variant="default"
+                    >
+                      Get Property Assessment
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
