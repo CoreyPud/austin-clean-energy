@@ -266,7 +266,18 @@ Keep it SHORT and ACTIONABLE. Reference the Austin Green Building trends data wh
           sunshineHours: solarInsights.solarPotential?.maxSunshineHoursPerYear,
           carbonOffset: solarInsights.solarPotential?.carbonOffsetFactorKgPerMwh,
           annualProduction: solarInsights.solarPotential?.maxArrayPanelsCount ? 
-            Math.round(solarInsights.solarPotential.maxArrayPanelsCount * 350 * (solarInsights.solarPotential.maxSunshineHoursPerYear || 2000) / 1000) : null
+            Math.round(solarInsights.solarPotential.maxArrayPanelsCount * 350 * (solarInsights.solarPotential.maxSunshineHoursPerYear || 2000) / 1000) : null,
+          // Additional personalization data
+          buildingStats: solarInsights.solarPotential?.buildingStats,
+          roofSegmentStats: solarInsights.solarPotential?.roofSegmentStats,
+          panelCapacityWatts: solarInsights.solarPotential?.panelCapacityWatts,
+          panelLifetimeYears: solarInsights.solarPotential?.panelLifetimeYears,
+          // Financial analysis
+          financialAnalyses: solarInsights.solarPotential?.financialAnalyses?.slice(0, 3), // Top 3 financial scenarios
+          // Location for Google Sunroof link
+          center: solarInsights.center,
+          imageryDate: solarInsights.imageryDate,
+          imageryQuality: solarInsights.imageryQuality
         } : null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

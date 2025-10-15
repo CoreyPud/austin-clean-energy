@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Home, Zap, DollarSign, Leaf, Loader2, CheckCircle2, Sun, Battery } from "lucide-react";
+import { ArrowLeft, Home, Zap, DollarSign, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
+import { Badge } from "@/components/ui/badge";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -135,20 +136,51 @@ const PropertyAssessment = () => {
               {results.dataPoints.googleSolarDataUsed && results.solarInsights && (
                 <Card className="border-2 border-primary shadow-lg bg-gradient-to-br from-primary/5 to-primary/10">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Sun className="h-5 w-5 text-primary" />
-                      Google Solar Analysis - Roof-Specific Data
-                    </CardTitle>
-                    <CardDescription>Precise measurements for {results.address}</CardDescription>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2 mb-2">
+                          <Sun className="h-5 w-5 text-primary" />
+                          Google Solar Analysis
+                          <Badge variant="secondary" className="ml-2">
+                            <Camera className="h-3 w-3 mr-1" />
+                            Personalized for Your Roof
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription>
+                          Precise measurements for {results.address}
+                          {results.solarInsights.imageryDate && (
+                            <span className="block text-xs mt-1">
+                              Based on satellite imagery from {new Date(results.solarInsights.imageryDate.year, results.solarInsights.imageryDate.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            </span>
+                          )}
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const lat = results.center[1];
+                          const lng = results.center[0];
+                          window.open(`https://sunroof.withgoogle.com/building/${lat}/${lng}`, '_blank');
+                        }}
+                        className="shrink-0"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Explore on Google Sunroof
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                       <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
                         <div className="flex items-center mb-2">
                           <CheckCircle2 className="h-4 w-4 text-primary mr-2" />
                           <span className="text-sm font-medium">Max Panels</span>
                         </div>
                         <p className="text-2xl font-bold text-primary">{results.solarInsights.maxPanels || 'N/A'}</p>
+                        {results.solarInsights.panelCapacityWatts && (
+                          <p className="text-xs text-muted-foreground mt-1">{results.solarInsights.panelCapacityWatts}W each</p>
+                        )}
                       </div>
                       <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
                         <div className="flex items-center mb-2">
@@ -156,6 +188,9 @@ const PropertyAssessment = () => {
                           <span className="text-sm font-medium">Roof Area</span>
                         </div>
                         <p className="text-2xl font-bold text-primary">{results.solarInsights.roofArea ? `${Math.round(results.solarInsights.roofArea)}m²` : 'N/A'}</p>
+                        {results.solarInsights.buildingStats?.areaMeters2 && (
+                          <p className="text-xs text-muted-foreground mt-1">Total: {Math.round(results.solarInsights.buildingStats.areaMeters2)}m²</p>
+                        )}
                       </div>
                       <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
                         <div className="flex items-center mb-2">
@@ -163,6 +198,9 @@ const PropertyAssessment = () => {
                           <span className="text-sm font-medium">Annual Sunshine</span>
                         </div>
                         <p className="text-2xl font-bold text-primary">{results.solarInsights.sunshineHours ? `${Math.round(results.solarInsights.sunshineHours)}hrs` : 'N/A'}</p>
+                        {results.solarInsights.annualProduction && (
+                          <p className="text-xs text-muted-foreground mt-1">~{results.solarInsights.annualProduction} kWh/yr</p>
+                        )}
                       </div>
                       <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
                         <div className="flex items-center mb-2">
@@ -170,8 +208,39 @@ const PropertyAssessment = () => {
                           <span className="text-sm font-medium">CO₂ Offset</span>
                         </div>
                         <p className="text-2xl font-bold text-primary">{results.solarInsights.carbonOffset ? `${Math.round(results.solarInsights.carbonOffset)}kg` : 'N/A'}</p>
+                        {results.solarInsights.panelLifetimeYears && (
+                          <p className="text-xs text-muted-foreground mt-1">{results.solarInsights.panelLifetimeYears}yr lifespan</p>
+                        )}
                       </div>
                     </div>
+
+                    {results.solarInsights.financialAnalyses && results.solarInsights.financialAnalyses.length > 0 && (
+                      <div className="border-t border-primary/20 pt-4">
+                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-primary" />
+                          Financial Scenarios for Your Roof
+                        </h4>
+                        <div className="grid md:grid-cols-3 gap-3">
+                          {results.solarInsights.financialAnalyses.map((analysis: any, idx: number) => (
+                            <div key={idx} className="p-3 bg-background/60 rounded-lg border border-primary/10">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                {analysis.panelConfigIndex ? `Config ${analysis.panelConfigIndex + 1}` : `Scenario ${idx + 1}`}
+                              </p>
+                              {analysis.monthlyBill?.amount && (
+                                <p className="text-sm">
+                                  Monthly Bill: <span className="font-semibold">${analysis.monthlyBill.amount}</span>
+                                </p>
+                              )}
+                              {analysis.financialDetails?.initialAcKwhPerYear && (
+                                <p className="text-xs text-muted-foreground">
+                                  {Math.round(analysis.financialDetails.initialAcKwhPerYear).toLocaleString()} kWh/yr
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
