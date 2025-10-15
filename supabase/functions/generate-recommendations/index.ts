@@ -106,23 +106,33 @@ serve(async (req) => {
 - Green Building Avg Rating: ${avgGreenBuildingRating} stars
 - Top Solar ZIP Codes: ${heatmapData.slice(0, 5).map(d => `${d.zip} (${d.count} permits)`).join(', ')}
 
+🎯 PRIORITY FRAMEWORK (based on climate impact research):
+Focus recommendations on these evidence-based priorities, in order of impact:
+1. **Transportation electrification** - EVs have the highest individual climate impact
+2. **Zero-carbon home power** - Solar + clean grid = essential foundation
+3. **Home energy efficiency** - Weatherization, insulation, efficient appliances
+4. **Appliance electrification** - Heat pumps, induction stoves, heat pump water heaters
+5. **Active transportation** - Bike infrastructure, walkability, transit
+6. **Community organizing** - Collective action multiplies individual impact
+
 Write a punchy, scannable strategic plan using this EXACT structure:
 
 **Executive Summary** (3-4 sentences)
-Brief snapshot of Austin's clean energy momentum and top opportunity.
+Brief snapshot of Austin's clean energy momentum and top opportunity aligned with impact priorities.
 
 **Priority Opportunities** (3 items max, 2-3 sentences each)
-1. **[Title]**: [What + Expected Impact]
-2. **[Title]**: [What + Expected Impact]  
-3. **[Title]**: [What + Expected Impact]
+Focus on the highest-impact areas from the framework above. Include specific actions.
+1. **[Title]**: [What + Expected Impact + Connection to top priorities]
+2. **[Title]**: [What + Expected Impact + Connection to top priorities]  
+3. **[Title]**: [What + Expected Impact + Connection to top priorities]
 
 **Quick Wins** (3-4 bullet points)
-Immediate actions the city can take in the next 90 days.
+Immediate actions the city can take in the next 90 days that align with impact priorities.
 
 **Next Steps** (3-4 bullet points)
-Specific actions with responsible parties (e.g., "Austin Energy should...", "City Council could...").
+Specific actions with responsible parties (e.g., "Austin Energy should expand EV charging...", "City Council could fast-track heat pump rebates...").
 
-Keep it SHORT, ACTIONABLE, and SPECIFIC. No fluff. Use markdown **bold** for emphasis.`;
+Keep it SHORT, ACTIONABLE, and SPECIFIC. Emphasize high-impact actions over lower-impact ones. Use markdown **bold** for emphasis.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
