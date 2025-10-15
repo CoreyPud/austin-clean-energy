@@ -15,8 +15,16 @@ serve(async (req) => {
     console.log('Analyzing area for ZIP code:', zipCode);
 
     // Fetch data from Austin's open data APIs - using Permits dataset filtered for solar (Auxiliary Power) and ZIP code
+    const solarResponse = await fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&original_zip=${zipCode}&$limit=5000`);
+    
+    if (!solarResponse.ok) {
+      const errorText = await solarResponse.text();
+      console.error('Solar API error:', solarResponse.status, errorText);
+      throw new Error(`Solar API returned ${solarResponse.status}: ${errorText}`);
+    }
+    
     const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
-      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?$where=work_class=%27Auxiliary%20Power%27%20AND%20original_zip%20like%20%27${zipCode}%25%27&$limit=5000`).then(r => r.json()),
+      solarResponse.json(),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
