@@ -65,12 +65,44 @@ serve(async (req) => {
     const zipMatch = standardizedAddress.match(/\b(\d{5})\b/);
     const zipCode = zipMatch ? zipMatch[1] : '78701';
     
-    const [solarPermitsData, auditData] = await Promise.all([
+    const [solarPermitsData, auditData, greenBuildingData] = await Promise.all([
       fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&original_zip=${zipCode}&$limit=5000`).then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json())
+      fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
+      fetch('https://data.austintexas.gov/resource/dpvb-c5fy.json?$limit=1000').then(r => r.json())
     ]);
 
-    console.log('Fetched property data - Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length);
+    console.log('Fetched property data - Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length, 'Green Building:', greenBuildingData.length);
+
+    // Analyze Green Building trends for this property type
+    const propertyTypeNormalized = propertyType.toLowerCase();
+    const relevantGreenBuildings = greenBuildingData.filter((item: any) => {
+      const buildingType = (item.building_type || '').toLowerCase();
+      if (propertyTypeNormalized.includes('single') || propertyTypeNormalized.includes('residential')) {
+        return buildingType.includes('single') || buildingType.includes('residential');
+      } else if (propertyTypeNormalized.includes('multi')) {
+        return buildingType.includes('multi');
+      } else if (propertyTypeNormalized.includes('commercial')) {
+        return buildingType.includes('commercial');
+      }
+      return false;
+    });
+
+    // Calculate average ratings and performance metrics for similar properties
+    const avgStarRating = relevantGreenBuildings.length > 0 
+      ? (relevantGreenBuildings.reduce((sum: number, b: any) => sum + (parseFloat(b.star_rating) || 0), 0) / relevantGreenBuildings.length).toFixed(1)
+      : 'N/A';
+    
+    const totalEnergySavings = relevantGreenBuildings.reduce((sum: number, b: any) => sum + (parseFloat(b.energy_savings_kwh) || 0), 0);
+    const totalWaterSavings = relevantGreenBuildings.reduce((sum: number, b: any) => sum + (parseFloat(b.water_savings_gallons) || 0), 0);
+    
+    const greenBuildingInsights = {
+      similarProperties: relevantGreenBuildings.length,
+      avgStarRating,
+      totalEnergySavings: Math.round(totalEnergySavings),
+      totalWaterSavings: Math.round(totalWaterSavings),
+      avgEnergySavings: relevantGreenBuildings.length > 0 ? Math.round(totalEnergySavings / relevantGreenBuildings.length) : 0,
+      avgWaterSavings: relevantGreenBuildings.length > 0 ? Math.round(totalWaterSavings / relevantGreenBuildings.length) : 0
+    };
 
     // Create map markers using same method as Area Analysis
     const nearbyInstallations = solarPermitsData
@@ -140,6 +172,18 @@ serve(async (req) => {
 `;
     }
 
+    let greenBuildingSection = '';
+    if (greenBuildingInsights.similarProperties > 0) {
+      greenBuildingSection = `
+📊 AUSTIN GREEN BUILDING TRENDS FOR ${propertyType.toUpperCase()}:
+- Similar certified properties in Austin: ${greenBuildingInsights.similarProperties}
+- Average star rating: ${greenBuildingInsights.avgStarRating} stars
+- Average energy savings: ${greenBuildingInsights.avgEnergySavings.toLocaleString()} kWh/year
+- Average water savings: ${greenBuildingInsights.avgWaterSavings.toLocaleString()} gallons/year
+- Total cumulative savings: ${greenBuildingInsights.totalEnergySavings.toLocaleString()} kWh energy, ${greenBuildingInsights.totalWaterSavings.toLocaleString()} gallons water
+`;
+    }
+
     const aiPrompt = `You are a certified energy auditor. Provide a CONCISE, actionable assessment for this Austin property.
 
 Address: ${standardizedAddress}
@@ -147,6 +191,7 @@ Property Type: ${propertyType}
 Nearby Solar Installations in ZIP: ${solarPermitsData.length}
 
 ${googleSolarSection}
+${greenBuildingSection}
 
 Write a punchy, scannable assessment using this structure:
 
@@ -154,10 +199,12 @@ Write a punchy, scannable assessment using this structure:
 - Viability score (X/10) ${solarInsights ? 'based on Google Solar roof analysis' : ''}
 - Recommended system size with specific kW
 - Expected annual production
+${greenBuildingInsights.similarProperties > 0 ? `- Compare to ${greenBuildingInsights.avgStarRating}-star average for ${propertyType}s` : ''}
 
 **Energy Efficiency** (2-3 sentences)
 - Grade (A-F)
 - Top 3 specific upgrades prioritized by ROI
+${greenBuildingInsights.avgEnergySavings > 0 ? `- Benchmark: Similar properties save avg ${greenBuildingInsights.avgEnergySavings.toLocaleString()} kWh/yr` : ''}
 
 **Battery Storage** (2-3 sentences)
 - Recommended size (kWh)
@@ -172,7 +219,7 @@ Write a punchy, scannable assessment using this structure:
 **Next Steps** (bullet points)
 - 3-4 specific actions with Austin Energy links
 
-Keep it SHORT and ACTIONABLE. No fluff. Use markdown **bold** for section headers.`;
+Keep it SHORT and ACTIONABLE. Reference the Austin Green Building trends data where relevant to make recommendations specific to this property type. Use markdown **bold** for section headers.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -209,8 +256,10 @@ Keep it SHORT and ACTIONABLE. No fluff. Use markdown **bold** for section header
         dataPoints: {
           citySolarPermits: solarPermitsData.length,
           cityEnergyAudits: auditData.length,
-          googleSolarDataUsed: !!solarInsights
+          googleSolarDataUsed: !!solarInsights,
+          greenBuildingComparables: greenBuildingInsights.similarProperties
         },
+        greenBuildingInsights,
         solarInsights: solarInsights ? {
           maxPanels: solarInsights.solarPotential?.maxArrayPanelsCount,
           roofArea: solarInsights.solarPotential?.maxArrayAreaMeters2,
