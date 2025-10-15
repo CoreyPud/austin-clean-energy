@@ -14,19 +14,19 @@ serve(async (req) => {
     const { zipCode } = await req.json();
     console.log('Analyzing area for ZIP code:', zipCode);
 
-    // Fetch data from Austin's open data APIs - using Permits dataset filtered for solar (Auxiliary Power)
+    // Fetch data from Austin's open data APIs - using Permits dataset filtered for solar (Auxiliary Power) and ZIP code
     const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=500').then(r => r.json()),
+      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&original_zip=${zipCode}&$limit=5000`).then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
 
-    console.log('Fetched data - Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
+    console.log('Fetched data for ZIP', zipCode, '- Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
 
     // Create map markers from Solar Permits data with actual addresses and coordinates
     const locations = solarPermitsData
       .filter((item: any) => item.location?.coordinates)
-      .slice(0, 50)
+      .slice(0, 100)
       .map((item: any, idx: number) => {
         const [lng, lat] = item.location.coordinates;
         
