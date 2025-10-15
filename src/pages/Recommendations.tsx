@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Lightbulb, Target, TrendingUp, Loader2 } from "lucide-react";
+import { ArrowLeft, Lightbulb, Target, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
+import ReactMarkdown from 'react-markdown';
 
 const Recommendations = () => {
   const navigate = useNavigate();
@@ -99,16 +100,15 @@ const Recommendations = () => {
               <MapTokenLoader>
                 <Card className="border-2 border-primary/20 overflow-hidden">
                   <CardHeader>
-                    <CardTitle>City-Wide Overview</CardTitle>
-                    <CardDescription>Austin clean energy installations and programs</CardDescription>
+                    <CardTitle>Austin Solar Activity Heatmap</CardTitle>
+                    <CardDescription>Permit density by ZIP code - darker areas show higher solar adoption</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
                     <Map 
                       center={[-97.7431, 30.2672]}
                       zoom={10}
-                      markers={results.locations || []}
+                      heatmapData={results.heatmapData}
                       className="h-[500px]"
-                      onMarkerClick={(id) => window.open(`/installation/${id}`, '_blank')}
                     />
                   </CardContent>
                 </Card>
@@ -118,14 +118,38 @@ const Recommendations = () => {
                 <CardHeader>
                   <CardTitle>Strategic Recommendations</CardTitle>
                   <CardDescription>
-                    Based on {results.dataPoints?.solarPrograms || 0} solar programs, {results.dataPoints?.energyAudits || 0} energy audits, {results.dataPoints?.weatherizationProjects || 0} weatherization projects, {results.dataPoints?.greenBuildings || 0} green buildings, and {results.dataPoints?.commercialBuildings || 0} commercial buildings
+                    Based on {results.dataPoints?.solarPermits || 0} solar permits, {results.dataPoints?.energyAudits || 0} energy audits, {results.dataPoints?.weatherizationProjects || 0} weatherization projects, and {results.dataPoints?.greenBuildings || 0} green buildings (avg {results.dataPoints?.avgGreenBuildingRating || 'N/A'} stars)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 text-foreground leading-relaxed">
-                    {results.overview.split('\n\n').map((paragraph: string, idx: number) => (
-                      <p key={idx} className="text-sm">{paragraph}</p>
-                    ))}
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown
+                      components={{
+                        a: ({node, ...props}) => (
+                          <a {...props} className="text-primary hover:text-primary/80 underline" target="_blank" rel="noopener noreferrer" />
+                        ),
+                        strong: ({node, ...props}) => (
+                          <strong {...props} className="font-bold text-foreground" />
+                        ),
+                        ul: ({node, ...props}) => (
+                          <ul {...props} className="list-disc list-inside space-y-1 my-3" />
+                        ),
+                        ol: ({node, ...props}) => (
+                          <ol {...props} className="list-decimal list-inside space-y-1 my-3" />
+                        ),
+                        p: ({node, ...props}) => (
+                          <p {...props} className="mb-3 leading-relaxed" />
+                        ),
+                        h2: ({node, ...props}) => (
+                          <h2 {...props} className="text-xl font-bold mt-6 mb-3" />
+                        ),
+                        h3: ({node, ...props}) => (
+                          <h3 {...props} className="text-lg font-semibold mt-4 mb-2" />
+                        ),
+                      }}
+                    >
+                      {results.overview}
+                    </ReactMarkdown>
                   </div>
                 </CardContent>
               </Card>

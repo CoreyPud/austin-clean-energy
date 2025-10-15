@@ -13,41 +13,50 @@ serve(async (req) => {
   try {
     console.log('Generating city-wide recommendations');
 
-    // Fetch comprehensive Austin energy data - using Solar Permits dataset
-    const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=500').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=200').then(r => r.json()),
-      fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=100').then(r => r.json())
+    // Fetch comprehensive Austin energy data
+    const [solarPermitsData, auditData, weatherizationData, greenBuildingData] = await Promise.all([
+      fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=5000').then(r => r.json()),
+      fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=500').then(r => r.json()),
+      fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=500').then(r => r.json()),
+      fetch('https://data.austintexas.gov/resource/dpvb-c5fy.json?$limit=1000').then(r => r.json())
     ]);
 
     console.log('Fetched comprehensive data:', {
       solarPermits: solarPermitsData.length,
       audits: auditData.length,
-      weatherization: weatherizationData.length
+      weatherization: weatherizationData.length,
+      greenBuildings: greenBuildingData.length
     });
 
-    // Create city-wide map markers with actual addresses from Solar Permits data
-    const locations = solarPermitsData
-      .filter((item: any) => item.location?.coordinates)
-      .slice(0, 50)
-      .map((item: any, idx: number) => {
+    // Aggregate data for heatmap instead of individual pins
+    const permitsByZip: { [key: string]: number } = {};
+    const coordinatesByZip: { [key: string]: [number, number] } = {};
+    
+    solarPermitsData.forEach((item: any) => {
+      const zip = item.original_zip;
+      if (!zip) return;
+      
+      permitsByZip[zip] = (permitsByZip[zip] || 0) + 1;
+      
+      // Store coordinates for the zip code (we'll use the first valid one we find)
+      if (!coordinatesByZip[zip] && item.location?.coordinates) {
         const [lng, lat] = item.location.coordinates;
-        const fullAddress = item.original_address1 || item.street_name || 'Address not available';
-        const title = item.original_address1 ? 
-                     item.original_address1.split(',')[0] : 
-                     `Solar Installation ${idx + 1}`;
-        
-        return {
-          coordinates: [lng, lat] as [number, number],
-          title,
-          address: fullAddress,
-          capacity: item.project_name || 'Solar Installation',
-          programType: `${item.work_class || 'Solar'} - Permit #${item.permit_number || 'N/A'}`,
-          installDate: item.issue_date ? new Date(item.issue_date).toLocaleDateString() : undefined,
-          id: item.permit_number || `solar-${idx}`,
-          color: '#f59e0b'
-        };
-      });
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          coordinatesByZip[zip] = [lng, lat];
+        }
+      }
+    });
+
+    // Create heatmap-friendly data
+    const heatmapData = Object.entries(permitsByZip)
+      .filter(([zip]) => coordinatesByZip[zip])
+      .map(([zip, count]) => ({
+        zip,
+        count,
+        coordinates: coordinatesByZip[zip],
+        intensity: Math.min(count / 10, 1) // Normalize intensity (0-1 scale)
+      }))
+      .sort((a, b) => b.count - a.count);
 
     // Use Lovable AI to generate strategic recommendations
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -55,27 +64,40 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const aiPrompt = `You are a climate policy strategist and clean energy advisor for Austin, Texas. Analyze this comprehensive city data:
+    // Aggregate statistics for AI prompt
+    const totalSolarPermits = solarPermitsData.length;
+    const totalAudits = auditData.reduce((sum: number, a: any) => sum + (parseInt(a.all_homes_audited) || 0), 0);
+    const totalWeatherization = weatherizationData.length;
+    const avgGreenBuildingRating = greenBuildingData.length > 0
+      ? (greenBuildingData.reduce((sum: number, b: any) => sum + (parseFloat(b.star_rating) || 0), 0) / greenBuildingData.length).toFixed(1)
+      : 'N/A';
 
-Solar Permits: ${JSON.stringify(solarPermitsData.slice(0, 20))}
-Energy Audits: ${JSON.stringify(auditData.slice(0, 20))}
-Weatherization Projects: ${JSON.stringify(weatherizationData.slice(0, 10))}
+    const aiPrompt = `You are a clean energy strategist for Austin, Texas. Write a CONCISE strategic overview based on this data:
 
-Generate strategic recommendations for Austin's clean energy transition including:
+📊 AUSTIN CLEAN ENERGY SNAPSHOT:
+- Total Solar Permits: ${totalSolarPermits}
+- Total Energy Audits: ${totalAudits}
+- Weatherization Projects: ${totalWeatherization}
+- Green Building Avg Rating: ${avgGreenBuildingRating} stars
+- Top Solar ZIP Codes: ${heatmapData.slice(0, 5).map(d => `${d.zip} (${d.count} permits)`).join(', ')}
 
-1. **Strategic Overview**: High-level assessment of current state and biggest opportunities
+Write a punchy, scannable strategic plan using this EXACT structure:
 
-2. **Priority Opportunities** (3-5 items): Specific initiatives with highest ROI and climate impact. For each include:
-   - Title
-   - Description
-   - Expected impact
+**Executive Summary** (3-4 sentences)
+Brief snapshot of Austin's clean energy momentum and top opportunity.
 
-3. **Action Plan**:
-   - Immediate Actions (0-3 months): Data collection, stakeholder engagement, quick wins
-   - Medium-Term Goals (3-12 months): Program launches, partnerships, infrastructure
-   - Advocacy Strategies: Policy recommendations, community organizing, communications
+**Priority Opportunities** (3 items max, 2-3 sentences each)
+1. **[Title]**: [What + Expected Impact]
+2. **[Title]**: [What + Expected Impact]  
+3. **[Title]**: [What + Expected Impact]
 
-Focus on actionable, data-driven strategies that balance solar adoption, energy efficiency, and battery storage for maximum community benefit.`;
+**Quick Wins** (3-4 bullet points)
+Immediate actions the city can take in the next 90 days.
+
+**Next Steps** (3-4 bullet points)
+Specific actions with responsible parties (e.g., "Austin Energy should...", "City Council could...").
+
+Keep it SHORT, ACTIONABLE, and SPECIFIC. No fluff. Use markdown **bold** for emphasis.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -104,11 +126,13 @@ Focus on actionable, data-driven strategies that balance solar adoption, energy 
     return new Response(
       JSON.stringify({
         overview: content,
-        locations,
+        heatmapData,
         dataPoints: {
           solarPermits: solarPermitsData.length,
-          energyAudits: auditData.length,
-          weatherizationProjects: weatherizationData.length
+          energyAudits: totalAudits,
+          weatherizationProjects: weatherizationData.length,
+          greenBuildings: greenBuildingData.length,
+          avgGreenBuildingRating
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
