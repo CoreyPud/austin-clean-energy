@@ -33,16 +33,34 @@ serve(async (req) => {
     const coordinatesByZip: { [key: string]: [number, number] } = {};
     
     solarPermitsData.forEach((item: any) => {
-      const zip = item.original_zip;
+      // Try multiple possible zip field names from the dataset
+      const zip = item.original_zip || item.zip || item.zip_code || item.zipcode || item.customer_zip || item.customer_zip_code;
       if (!zip) return;
-      
+
+      // Increment permit count per ZIP
       permitsByZip[zip] = (permitsByZip[zip] || 0) + 1;
-      
-      // Store coordinates for the zip code (we'll use the first valid one we find)
-      if (!coordinatesByZip[zip] && item.location?.coordinates) {
-        const [lng, lat] = item.location.coordinates;
+
+      // Extract coordinates from common Socrata shapes
+      if (!coordinatesByZip[zip]) {
+        let lng: number | undefined;
+        let lat: number | undefined;
+
+        if (item.location?.coordinates && Array.isArray(item.location.coordinates) && item.location.coordinates.length === 2) {
+          // Some geojson-like shapes expose [lng, lat]
+          lng = Number(item.location.coordinates[0]);
+          lat = Number(item.location.coordinates[1]);
+        } else if (item.location?.longitude && item.location?.latitude) {
+          // Typical Socrata geo_point_2d shape with string fields
+          lng = Number(item.location.longitude);
+          lat = Number(item.location.latitude);
+        } else if (item.longitude && item.latitude) {
+          // Flat fields on the record
+          lng = Number(item.longitude);
+          lat = Number(item.latitude);
+        }
+
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          coordinatesByZip[zip] = [lng, lat];
+          coordinatesByZip[zip] = [lng as number, lat as number];
         }
       }
     });
@@ -54,9 +72,16 @@ serve(async (req) => {
         zip,
         count,
         coordinates: coordinatesByZip[zip],
-        intensity: Math.min(count / 10, 1) // Normalize intensity (0-1 scale)
+        intensity: Math.min((count as number) / 10, 1) // Normalize intensity (0-1 scale)
       }))
       .sort((a, b) => b.count - a.count);
+
+    console.log('Heatmap aggregation:', {
+      zipsWithPermits: Object.keys(permitsByZip).length,
+      zipsWithCoordinates: Object.keys(coordinatesByZip).length,
+      heatmapPoints: heatmapData.length,
+      sample: heatmapData.slice(0, 3)
+    });
 
     // Use Lovable AI to generate strategic recommendations
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
