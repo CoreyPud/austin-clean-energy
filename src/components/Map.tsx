@@ -67,8 +67,14 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
   useEffect(() => {
     if (!map.current || !heatmapData || heatmapData.length === 0) return;
 
-    map.current.on('load', () => {
+    const addHeatmapLayers = () => {
       if (!map.current) return;
+
+      // Remove existing layers if they exist
+      if (map.current.getLayer('solar-labels')) map.current.removeLayer('solar-labels');
+      if (map.current.getLayer('solar-circles')) map.current.removeLayer('solar-circles');
+      if (map.current.getLayer('solar-heatmap')) map.current.removeLayer('solar-heatmap');
+      if (map.current.getSource('solar-permits')) map.current.removeSource('solar-permits');
 
       // Create GeoJSON for heatmap
       const geojson: any = {
@@ -87,143 +93,132 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
         }))
       };
 
+      console.log('Adding heatmap with', heatmapData.length, 'points');
+
       // Add source
-      if (!map.current.getSource('solar-permits')) {
-        map.current.addSource('solar-permits', {
-          type: 'geojson',
-          data: geojson
-        });
-      }
+      map.current.addSource('solar-permits', {
+        type: 'geojson',
+        data: geojson
+      });
 
       // Add heatmap layer
-      if (!map.current.getLayer('solar-heatmap')) {
-        map.current.addLayer({
-          id: 'solar-heatmap',
-          type: 'heatmap',
-          source: 'solar-permits',
-          paint: {
-            // Increase weight as count increases
-            'heatmap-weight': [
-              'interpolate',
-              ['linear'],
-              ['get', 'count'],
-              0, 0,
-              100, 1
-            ],
-            // Increase intensity as zoom level increases
-            'heatmap-intensity': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              0, 1,
-              15, 3
-            ],
-            // Color ramp for heatmap - blue to yellow to red
-            'heatmap-color': [
-              'interpolate',
-              ['linear'],
-              ['heatmap-density'],
-              0, 'rgba(33,102,172,0)',
-              0.2, 'rgb(103,169,207)',
-              0.4, 'rgb(209,229,240)',
-              0.6, 'rgb(253,219,199)',
-              0.8, 'rgb(239,138,98)',
-              1, 'rgb(178,24,43)'
-            ],
-            // Adjust radius by zoom level
-            'heatmap-radius': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              0, 2,
-              15, 20
-            ],
-            // Transition from heatmap to circle layer at higher zooms
-            'heatmap-opacity': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              7, 1,
-              14, 0
-            ]
-          }
-        });
-      }
+      map.current.addLayer({
+        id: 'solar-heatmap',
+        type: 'heatmap',
+        source: 'solar-permits',
+        paint: {
+          'heatmap-weight': [
+            'interpolate',
+            ['linear'],
+            ['get', 'count'],
+            0, 0,
+            100, 1
+          ],
+          'heatmap-intensity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 1,
+            15, 3
+          ],
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(33,102,172,0)',
+            0.2, 'rgb(103,169,207)',
+            0.4, 'rgb(209,229,240)',
+            0.6, 'rgb(253,219,199)',
+            0.8, 'rgb(239,138,98)',
+            1, 'rgb(178,24,43)'
+          ],
+          'heatmap-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 2,
+            15, 20
+          ],
+          'heatmap-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            7, 1,
+            14, 0
+          ]
+        }
+      });
 
       // Add circle layer for higher zoom levels
-      if (!map.current.getLayer('solar-circles')) {
-        map.current.addLayer({
-          id: 'solar-circles',
-          type: 'circle',
-          source: 'solar-permits',
-          paint: {
-            'circle-radius': [
-              'interpolate',
-              ['linear'],
-              ['get', 'count'],
-              1, 4,
-              100, 20
-            ],
-            'circle-color': [
-              'interpolate',
-              ['linear'],
-              ['get', 'count'],
-              1, 'rgb(103,169,207)',
-              50, 'rgb(239,138,98)',
-              100, 'rgb(178,24,43)'
-            ],
-            'circle-stroke-color': 'white',
-            'circle-stroke-width': 2,
-            'circle-opacity': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              7, 0,
-              14, 0.8
-            ]
-          }
-        });
-      }
+      map.current.addLayer({
+        id: 'solar-circles',
+        type: 'circle',
+        source: 'solar-permits',
+        paint: {
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['get', 'count'],
+            1, 4,
+            100, 20
+          ],
+          'circle-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'count'],
+            1, 'rgb(103,169,207)',
+            50, 'rgb(239,138,98)',
+            100, 'rgb(178,24,43)'
+          ],
+          'circle-stroke-color': 'white',
+          'circle-stroke-width': 2,
+          'circle-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            7, 0,
+            14, 0.8
+          ]
+        }
+      });
 
       // Add labels for ZIP codes
-      if (!map.current.getLayer('solar-labels')) {
-        map.current.addLayer({
-          id: 'solar-labels',
-          type: 'symbol',
-          source: 'solar-permits',
-          layout: {
-            'text-field': ['concat', ['get', 'zip'], '\n', ['to-string', ['get', 'count']], ' permits'],
-            'text-size': 11,
-            'text-offset': [0, 0.5]
-          },
-          paint: {
-            'text-color': '#000',
-            'text-halo-color': '#fff',
-            'text-halo-width': 2,
-            'text-opacity': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              10, 0,
-              12, 1
-            ]
-          }
-        });
-      }
+      map.current.addLayer({
+        id: 'solar-labels',
+        type: 'symbol',
+        source: 'solar-permits',
+        layout: {
+          'text-field': ['concat', ['get', 'zip'], '\n', ['to-string', ['get', 'count']], ' permits'],
+          'text-size': 11,
+          'text-offset': [0, 0.5]
+        },
+        paint: {
+          'text-color': '#000',
+          'text-halo-color': '#fff',
+          'text-halo-width': 2,
+          'text-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 0,
+            12, 1
+          ]
+        }
+      });
 
       // Add click event for info
       map.current.on('click', 'solar-circles', (e) => {
-        if (!e.features || !e.features[0]) return;
+        if (!e.features || !e.features[0] || !map.current) return;
         const props = e.features[0].properties;
         new mapboxgl.Popup()
           .setLngLat(e.lngLat)
           .setHTML(`
             <div style="padding: 12px;">
-              <strong style="font-size: 14px;">ZIP ${props.zip}</strong><br/>
-              <span style="font-size: 13px; color: #666;">${props.count} solar permits</span>
+              <strong style="font-size: 14px;">ZIP ${props?.zip}</strong><br/>
+              <span style="font-size: 13px; color: #666;">${props?.count} solar permits</span>
             </div>
           `)
-          .addTo(map.current!);
+          .addTo(map.current);
       });
 
       map.current.on('mouseenter', 'solar-circles', () => {
@@ -233,7 +228,14 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
       map.current.on('mouseleave', 'solar-circles', () => {
         if (map.current) map.current.getCanvas().style.cursor = '';
       });
-    });
+    };
+
+    // Check if map is already loaded
+    if (map.current.loaded()) {
+      addHeatmapLayers();
+    } else {
+      map.current.on('load', addHeatmapLayers);
+    }
   }, [heatmapData]);
 
   // Handle marker rendering
