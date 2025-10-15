@@ -11,7 +11,8 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Generating city-wide recommendations');
+    const { lifestyleData } = await req.json();
+    console.log('Generating personalized recommendations with lifestyle data:', lifestyleData);
 
     // Fetch comprehensive Austin energy data
     const [solarPermitsData, auditData, weatherizationData, greenBuildingData] = await Promise.all([
@@ -97,7 +98,26 @@ serve(async (req) => {
       ? (greenBuildingData.reduce((sum: number, b: any) => sum + (parseFloat(b.star_rating) || 0), 0) / greenBuildingData.length).toFixed(1)
       : 'N/A';
 
-    const aiPrompt = `You are a clean energy strategist for Austin, Texas. Write a CONCISE strategic overview based on this data:
+    // Build personalized context from lifestyle data
+    let personalContext = '';
+    if (lifestyleData) {
+      personalContext = `
+
+👤 USER PROFILE:
+- Housing: ${lifestyleData.housingStatus === 'own' ? 'Homeowner' : 'Renter'} in ${lifestyleData.homeType}
+- Current Energy: ${lifestyleData.currentEnergy}
+- Transportation: ${lifestyleData.transportation}
+- Commute: ${lifestyleData.commuteType}
+- Interests: ${lifestyleData.interests.join(', ')}
+
+PERSONALIZATION REQUIREMENTS:
+- Tailor recommendations to their housing situation (renters have different options than owners)
+- Acknowledge their current setup and suggest next logical steps
+- Prioritize their stated interests while still following the impact framework
+- Provide specific, actionable advice they can take based on their circumstances`;
+    }
+
+    const aiPrompt = `You are a clean energy strategist for Austin, Texas. Write a CONCISE ${lifestyleData ? 'PERSONALIZED' : ''} strategic overview based on this data:
 
 📊 AUSTIN CLEAN ENERGY SNAPSHOT:
 - Total Solar Permits: ${totalSolarPermits}
@@ -105,6 +125,7 @@ serve(async (req) => {
 - Weatherization Projects: ${totalWeatherization}
 - Green Building Avg Rating: ${avgGreenBuildingRating} stars
 - Top Solar ZIP Codes: ${heatmapData.slice(0, 5).map(d => `${d.zip} (${d.count} permits)`).join(', ')}
+${personalContext}
 
 🎯 PRIORITY FRAMEWORK (based on climate impact research):
 Focus recommendations on these evidence-based priorities, in order of impact:
@@ -115,24 +136,24 @@ Focus recommendations on these evidence-based priorities, in order of impact:
 5. **Active transportation** - Bike infrastructure, walkability, transit
 6. **Community organizing** - Collective action multiplies individual impact
 
-Write a punchy, scannable strategic plan using this EXACT structure:
+Write a punchy, scannable ${lifestyleData ? 'personalized ' : ''}strategic plan using this EXACT structure:
 
-**Executive Summary** (3-4 sentences)
-Brief snapshot of Austin's clean energy momentum and top opportunity aligned with impact priorities.
+**${lifestyleData ? 'Your Personalized Overview' : 'Executive Summary'}** (3-4 sentences)
+${lifestyleData ? 'Address their specific situation and acknowledge what they\'re already doing right. Then highlight their top opportunity aligned with impact priorities.' : 'Brief snapshot of Austin\'s clean energy momentum and top opportunity aligned with impact priorities.'}
 
-**Priority Opportunities** (3 items max, 2-3 sentences each)
-Focus on the highest-impact areas from the framework above. Include specific actions.
-1. **[Title]**: [What + Expected Impact + Connection to top priorities]
-2. **[Title]**: [What + Expected Impact + Connection to top priorities]  
-3. **[Title]**: [What + Expected Impact + Connection to top priorities]
+**Priority Actions${lifestyleData ? ' For You' : ''}** (3 items max, 2-3 sentences each)
+${lifestyleData ? 'Customized to their housing, transportation, and interests. Focus on highest-impact areas they can actually act on.' : 'Focus on the highest-impact areas from the framework above. Include specific actions.'}
+1. **[Title]**: [What + Expected Impact${lifestyleData ? ' + Why it fits their situation' : ' + Connection to top priorities'}]
+2. **[Title]**: [What + Expected Impact${lifestyleData ? ' + Why it fits their situation' : ' + Connection to top priorities'}]  
+3. **[Title]**: [What + Expected Impact${lifestyleData ? ' + Why it fits their situation' : ' + Connection to top priorities'}]
 
 **Quick Wins** (3-4 bullet points)
-Immediate actions the city can take in the next 90 days that align with impact priorities.
+${lifestyleData ? 'Immediate actions THEY can take in the next 30-90 days based on their situation.' : 'Immediate actions the city can take in the next 90 days that align with impact priorities.'}
 
 **Next Steps** (3-4 bullet points)
-Specific actions with responsible parties (e.g., "Austin Energy should expand EV charging...", "City Council could fast-track heat pump rebates...").
+${lifestyleData ? 'Specific resources, programs, and actions for their situation (e.g., "Check Austin Energy rebates for...", "Join a local climate action group...", "Schedule a free energy audit...").' : 'Specific actions with responsible parties (e.g., "Austin Energy should expand EV charging...", "City Council could fast-track heat pump rebates...").'}
 
-Keep it SHORT, ACTIONABLE, and SPECIFIC. Emphasize high-impact actions over lower-impact ones. Use markdown **bold** for emphasis.`;
+Keep it SHORT, ACTIONABLE, and SPECIFIC. ${lifestyleData ? 'Make it feel personally relevant without being preachy.' : 'Emphasize high-impact actions over lower-impact ones.'} Use markdown **bold** for emphasis.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',

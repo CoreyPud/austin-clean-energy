@@ -1,33 +1,36 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Lightbulb, Target, Loader2 } from "lucide-react";
+import { ArrowLeft, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import ReactMarkdown from 'react-markdown';
+import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 
 const Recommendations = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [showForm, setShowForm] = useState(true);
 
-  const handleGenerateRecommendations = async () => {
+  const handleGenerateRecommendations = async (lifestyleData: LifestyleData) => {
     setLoading(true);
+    setShowForm(false);
     try {
       const { data, error } = await supabase.functions.invoke('generate-recommendations', {
-        body: {}
+        body: { lifestyleData }
       });
 
       if (error) throw error;
 
       setResults(data);
       toast({
-        title: "Recommendations Generated",
-        description: "Strategic action plan created successfully",
+        title: "Personalized Recommendations Generated",
+        description: "Your customized action plan is ready",
       });
     } catch (error: any) {
       console.error("Recommendations error:", error);
@@ -36,6 +39,7 @@ const Recommendations = () => {
         description: error.message || "Failed to generate recommendations",
         variant: "destructive",
       });
+      setShowForm(true);
     } finally {
       setLoading(false);
     }
@@ -61,38 +65,11 @@ const Recommendations = () => {
             </p>
           </div>
 
-          {!results && (
-            <Card className="mb-8 shadow-lg border-2">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Lightbulb className="mr-2 h-5 w-5 text-accent" />
-                  Generate Austin-Wide Recommendations
-                </CardTitle>
-                <CardDescription>
-                  Analyze current data to identify high-impact opportunities across the city
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={handleGenerateRecommendations} 
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-accent to-primary hover:opacity-90"
-                  size="lg"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Analyzing City Data...
-                    </>
-                  ) : (
-                    <>
-                      <Target className="mr-2 h-5 w-5" />
-                      Generate Recommendations
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+          {showForm && !results && (
+            <LifestyleAssessmentForm 
+              onSubmit={handleGenerateRecommendations}
+              loading={loading}
+            />
           )}
 
           {results && (
@@ -156,11 +133,13 @@ const Recommendations = () => {
 
               <div className="flex justify-center">
                 <Button 
-                  onClick={handleGenerateRecommendations}
+                  onClick={() => {
+                    setResults(null);
+                    setShowForm(true);
+                  }}
                   variant="outline"
-                  disabled={loading}
                 >
-                  Regenerate Recommendations
+                  Start Over
                 </Button>
               </div>
             </div>
