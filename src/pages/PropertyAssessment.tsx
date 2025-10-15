@@ -257,7 +257,12 @@ const PropertyAssessment = () => {
                       zoom={14}
                       markers={results.locations || []}
                       className="h-[400px]"
-                      onMarkerClick={(id) => window.open(`/installation/${id}`, '_blank')}
+                      onMarkerClick={(id) => {
+                        // Don't try to open detail page for the user's own property
+                        if (id !== 'target-property') {
+                          window.open(`/installation/${id}`, '_blank');
+                        }
+                      }}
                     />
                   </CardContent>
                 </Card>
