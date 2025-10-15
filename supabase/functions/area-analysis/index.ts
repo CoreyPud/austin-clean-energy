@@ -84,13 +84,28 @@ Solar Permits Issued: ${solarPermitsData.length} solar installations
 Energy Audits: ${auditData.length} completed
 Weatherization Projects: ${weatherizationData.length} in progress
 
-Provide a brief 3-4 paragraph analysis covering:
-- Solar adoption trends and potential based on permit activity
-- Energy efficiency opportunities  
-- Battery storage recommendations
-- Key actionable insights for activists and policymakers
+Provide a punchy, scannable analysis using this structure:
 
-Keep it concise and action-oriented. Use plain text paragraphs, no markdown formatting.`;
+**Quick Take**
+One sentence summarizing the area's clean energy status.
+
+**Solar Adoption**
+2-3 short sentences on solar trends and growth potential.
+
+**Efficiency Gap**
+2-3 short sentences on energy audit and weatherization opportunities.
+
+**Battery Storage**
+2-3 short sentences on storage recommendations and grid resilience.
+
+**Take Action**
+Include 3-4 specific Austin resources with actual links:
+- Austin Energy Solar Solutions: https://austinenergy.com/solar
+- Austin Energy Rebates: https://austinenergy.com/rebates
+- Weatherization Assistance: https://www.austintexas.gov/department/weatherization
+- Free Home Energy Audits: https://austinenergy.com/energy-efficiency/home-energy-audit
+
+Format with markdown: Use **bold** for section headers, keep sentences short and punchy. Use bullet points for resources.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -101,7 +116,7 @@ Keep it concise and action-oriented. Use plain text paragraphs, no markdown form
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'You are a clean energy expert analyzing urban sustainability data.' },
+          { role: 'system', content: 'You are a clean energy expert. Write in a punchy, scannable style with short sentences. Use markdown formatting for readability.' },
           { role: 'user', content: aiPrompt }
         ],
       }),

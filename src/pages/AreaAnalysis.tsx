@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -172,10 +173,25 @@ const AreaAnalysis = () => {
                   <CardDescription>Recommendations for ZIP code {results.zipCode}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 text-foreground leading-relaxed">
-                    {results.insights.split('\n\n').map((paragraph: string, idx: number) => (
-                      <p key={idx} className="text-sm">{paragraph}</p>
-                    ))}
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" />
+                        ),
+                        strong: ({ node, ...props }) => (
+                          <strong {...props} className="text-foreground font-semibold" />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul {...props} className="list-disc pl-5 space-y-1" />
+                        ),
+                        p: ({ node, ...props }) => (
+                          <p {...props} className="mb-3 text-foreground/90" />
+                        ),
+                      }}
+                    >
+                      {results.insights}
+                    </ReactMarkdown>
                   </div>
                 </CardContent>
               </Card>
