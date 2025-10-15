@@ -1,10 +1,11 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Home, Zap, DollarSign, Leaf, Loader2 } from "lucide-react";
+import { ArrowLeft, Home, Zap, DollarSign, Leaf, Loader2, CheckCircle2, Sun, Battery } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -131,16 +132,60 @@ const PropertyAssessment = () => {
 
           {results && (
             <div className="space-y-6 animate-slide-up">
+              {results.dataPoints.googleSolarDataUsed && results.solarInsights && (
+                <Card className="border-2 border-primary shadow-lg bg-gradient-to-br from-primary/5 to-primary/10">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sun className="h-5 w-5 text-primary" />
+                      Google Solar Analysis - Roof-Specific Data
+                    </CardTitle>
+                    <CardDescription>Precise measurements for {results.address}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
+                        <div className="flex items-center mb-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary mr-2" />
+                          <span className="text-sm font-medium">Max Panels</span>
+                        </div>
+                        <p className="text-2xl font-bold text-primary">{results.solarInsights.maxPanels || 'N/A'}</p>
+                      </div>
+                      <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
+                        <div className="flex items-center mb-2">
+                          <Home className="h-4 w-4 text-primary mr-2" />
+                          <span className="text-sm font-medium">Roof Area</span>
+                        </div>
+                        <p className="text-2xl font-bold text-primary">{results.solarInsights.roofArea ? `${Math.round(results.solarInsights.roofArea)}m²` : 'N/A'}</p>
+                      </div>
+                      <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
+                        <div className="flex items-center mb-2">
+                          <Sun className="h-4 w-4 text-primary mr-2" />
+                          <span className="text-sm font-medium">Annual Sunshine</span>
+                        </div>
+                        <p className="text-2xl font-bold text-primary">{results.solarInsights.sunshineHours ? `${Math.round(results.solarInsights.sunshineHours)}hrs` : 'N/A'}</p>
+                      </div>
+                      <div className="p-4 bg-background/80 rounded-lg border border-primary/20">
+                        <div className="flex items-center mb-2">
+                          <Leaf className="h-4 w-4 text-primary mr-2" />
+                          <span className="text-sm font-medium">CO₂ Offset</span>
+                        </div>
+                        <p className="text-2xl font-bold text-primary">{results.solarInsights.carbonOffset ? `${Math.round(results.solarInsights.carbonOffset)}kg` : 'N/A'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <MapTokenLoader>
                 <Card className="border-2 border-primary/20 overflow-hidden">
                   <CardHeader>
                     <CardTitle>Property Location</CardTitle>
-                    <CardDescription>Nearby solar installations and energy programs</CardDescription>
+                    <CardDescription>Your property and {results.dataPoints.citySolarPermits} nearby solar installations</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
                     <Map 
-                      center={[-97.7431, 30.2672]}
-                      zoom={13}
+                      center={results.center || [-97.7431, 30.2672]}
+                      zoom={14}
                       markers={results.locations || []}
                       className="h-[400px]"
                       onMarkerClick={(id) => window.open(`/installation/${id}`, '_blank')}
@@ -148,32 +193,6 @@ const PropertyAssessment = () => {
                   </CardContent>
                 </Card>
               </MapTokenLoader>
-
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>Data Points</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">City Solar Permits</p>
-                    <p className="text-2xl font-bold text-primary">{results.dataPoints.citySolarPermits}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">City Energy Audits</p>
-                    <p className="text-2xl font-bold text-primary">{results.dataPoints.cityEnergyAudits}</p>
-                  </div>
-                  {results.dataPoints.googleSolarDataUsed && (
-                    <div className="col-span-full p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                      <p className="text-sm font-semibold text-primary flex items-center gap-2">
-                        ✓ Enhanced with Google Solar API data
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Roof-specific solar analysis included
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
 
               <Card className="border-2">
                 <CardHeader>
@@ -183,10 +202,25 @@ const PropertyAssessment = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 text-foreground leading-relaxed">
-                    {results.assessment.split('\n\n').map((paragraph: string, idx: number) => (
-                      <p key={idx} className="text-sm">{paragraph}</p>
-                    ))}
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" />
+                        ),
+                        strong: ({ node, ...props }) => (
+                          <strong {...props} className="text-foreground font-semibold" />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul {...props} className="list-disc pl-5 space-y-1" />
+                        ),
+                        p: ({ node, ...props }) => (
+                          <p {...props} className="mb-3 text-foreground/90" />
+                        ),
+                      }}
+                    >
+                      {results.assessment}
+                    </ReactMarkdown>
                   </div>
                 </CardContent>
               </Card>

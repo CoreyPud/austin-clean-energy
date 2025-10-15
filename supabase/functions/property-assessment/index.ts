@@ -14,14 +14,34 @@ serve(async (req) => {
     const { address, propertyType } = await req.json();
     console.log('Assessing property:', address, 'Type:', propertyType);
 
-    // Google Solar API integration
+    // Step 1: Geocode the address to get coordinates and standardized address
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${Deno.env.get('GOOGLE_SOLAR_API_KEY')}`;
+    const geocodeResponse = await fetch(geocodeUrl);
+    
+    if (!geocodeResponse.ok) {
+      throw new Error('Failed to validate address');
+    }
+    
+    const geocodeData = await geocodeResponse.json();
+    
+    if (geocodeData.status !== 'OK' || !geocodeData.results?.[0]) {
+      throw new Error('Address not found. Please enter a valid address in Austin, TX.');
+    }
+    
+    const location = geocodeData.results[0].geometry.location;
+    const standardizedAddress = geocodeData.results[0].formatted_address;
+    const lat = location.lat;
+    const lng = location.lng;
+    
+    console.log('Geocoded address:', standardizedAddress, 'Coords:', lat, lng);
+
+    // Step 2: Google Solar API integration with actual coordinates
     const GOOGLE_SOLAR_API_KEY = Deno.env.get('GOOGLE_SOLAR_API_KEY');
     let solarInsights = null;
     
     if (GOOGLE_SOLAR_API_KEY) {
       try {
-        // Get Building Insights from Google Solar API
-        const buildingInsightsUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=30.2672&location.longitude=-97.7431&key=${GOOGLE_SOLAR_API_KEY}`;
+        const buildingInsightsUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${GOOGLE_SOLAR_API_KEY}`;
         
         const solarResponse = await fetch(buildingInsightsUrl);
         
@@ -32,7 +52,6 @@ serve(async (req) => {
           const errorText = await solarResponse.text();
           console.warn('Google Solar API error:', solarResponse.status, errorText);
           
-          // Check if we've hit rate limits or quota
           if (solarResponse.status === 429 || solarResponse.status === 403) {
             console.warn('⚠️ Google Solar API quota reached - falling back to Austin data only');
           }
@@ -42,42 +61,59 @@ serve(async (req) => {
       }
     }
 
-    // Fetch relevant Austin data - using Solar Permits dataset
+    // Step 3: Fetch nearby solar installations from Austin data (same method as Area Analysis)
+    const zipMatch = standardizedAddress.match(/\b(\d{5})\b/);
+    const zipCode = zipMatch ? zipMatch[1] : '78701';
+    
     const [solarPermitsData, auditData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=200').then(r => r.json()),
+      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&original_zip=${zipCode}&$limit=5000`).then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json())
     ]);
 
     console.log('Fetched property data - Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length);
 
-    // Create map markers from nearby solar installations with actual addresses
+    // Create map markers using same method as Area Analysis
     const nearbyInstallations = solarPermitsData
-      .filter((item: any) => item.location?.coordinates)
-      .slice(0, 15)
       .map((item: any, idx: number) => {
-        const [lng, lat] = item.location.coordinates;
-        const fullAddress = item.original_address1 || item.street_name || 'Address not available';
-        const title = item.original_address1 ? 
-                     item.original_address1.split(',')[0] : 
-                     `Solar Installation ${idx + 1}`;
-        
+        let itemLat: number | undefined;
+        let itemLng: number | undefined;
+
+        if (item.latitude && item.longitude) {
+          itemLat = parseFloat(item.latitude);
+          itemLng = parseFloat(item.longitude);
+        } else if (item.location?.latitude && item.location?.longitude) {
+          itemLat = parseFloat(item.location.latitude);
+          itemLng = parseFloat(item.location.longitude);
+        } else if (Array.isArray(item.location?.coordinates) && item.location.coordinates.length === 2) {
+          const [lngC, latC] = item.location.coordinates;
+          itemLat = Number(latC);
+          itemLng = Number(lngC);
+        }
+
+        if (!Number.isFinite(itemLat as number) || !Number.isFinite(itemLng as number)) return null;
+
+        const fullAddress = item.original_address1 || item.permit_location || item.street_name || 'Address not available';
+        const title = item.original_address1 ? (item.original_address1.split(',')[0]) : `Solar Installation ${idx + 1}`;
+
         return {
-          coordinates: [lng, lat] as [number, number],
+          coordinates: [itemLng as number, itemLat as number] as [number, number],
           title,
           address: fullAddress,
-          capacity: item.project_name || 'Solar Installation',
+          capacity: item.description || item.project_name || 'Solar Installation',
           programType: `${item.work_class || 'Solar'} - Permit #${item.permit_number || 'N/A'}`,
           installDate: item.issue_date ? new Date(item.issue_date).toLocaleDateString() : undefined,
           id: item.permit_number || `solar-${idx}`,
           color: '#f59e0b'
         };
-      });
+      })
+      .filter(Boolean)
+      .slice(0, 50);
 
     const locations = [
       {
-        coordinates: [-97.7431, 30.2672] as [number, number],
+        coordinates: [lng, lat] as [number, number],
         title: 'Your Property',
-        address: address,
+        address: standardizedAddress,
         capacity: 'Assessment Pending',
         programType: propertyType,
         id: 'target-property',
@@ -96,34 +132,47 @@ serve(async (req) => {
     let googleSolarSection = '';
     if (solarInsights) {
       googleSolarSection = `
-Google Solar Analysis (Official Data):
-- Solar Panel Potential: ${solarInsights.solarPotential?.maxArrayPanelsCount || 'N/A'} panels maximum
-- Roof Area Available: ${solarInsights.solarPotential?.maxArrayAreaMeters2 || 'N/A'} m²
-- Annual Sunshine: ${solarInsights.solarPotential?.maxSunshineHoursPerYear || 'N/A'} hours/year
-- Carbon Offset Potential: ${solarInsights.solarPotential?.carbonOffsetFactorKgPerMwh || 'N/A'} kg CO₂/MWh
+🎯 GOOGLE SOLAR API DATA (Precise roof-specific analysis):
+- Maximum Solar Panels: ${solarInsights.solarPotential?.maxArrayPanelsCount || 'N/A'} panels
+- Available Roof Area: ${solarInsights.solarPotential?.maxArrayAreaMeters2 || 'N/A'} m²
+- Annual Sunshine Hours: ${solarInsights.solarPotential?.maxSunshineHoursPerYear || 'N/A'} hours
+- Carbon Offset: ${solarInsights.solarPotential?.carbonOffsetFactorKgPerMwh || 'N/A'} kg CO₂/MWh
 `;
     }
 
-    const aiPrompt = `You are a certified energy auditor and solar consultant. Assess this property in Austin:
+    const aiPrompt = `You are a certified energy auditor. Provide a CONCISE, actionable assessment for this Austin property.
 
-Address: ${address}
+Address: ${standardizedAddress}
 Property Type: ${propertyType}
+Nearby Solar Installations in ZIP: ${solarPermitsData.length}
 
 ${googleSolarSection}
 
-Reference Data:
-- Nearby Solar Installations: ${JSON.stringify(solarPermitsData.slice(0, 5))}
-- Energy Audit Examples: ${JSON.stringify(auditData.slice(0, 5))}
+Write a punchy, scannable assessment using this structure:
 
-Provide a comprehensive property assessment including:
-1. Solar viability score (0-10) and estimated system size ${solarInsights ? '(use Google Solar data for accuracy)' : ''}
-2. Energy efficiency grade (A-F) and specific upgrade recommendations
-3. Battery storage sizing and benefits
-4. Financial analysis (ROI, payback period, lifetime savings)
-5. Specific next steps for the property owner
+**Solar Potential** (2-3 sentences)
+- Viability score (X/10) ${solarInsights ? 'based on Google Solar roof analysis' : ''}
+- Recommended system size with specific kW
+- Expected annual production
 
-${solarInsights ? 'Emphasize the precision of Google Solar API data for this specific roof.' : 'Base estimates on nearby Austin solar installations.'}
-Be specific and actionable. Use realistic Austin data and current incentive programs.`;
+**Energy Efficiency** (2-3 sentences)
+- Grade (A-F)
+- Top 3 specific upgrades prioritized by ROI
+
+**Battery Storage** (2-3 sentences)
+- Recommended size (kWh)
+- Primary benefits for this property
+
+**Financial Summary** (3-4 sentences)
+- Total system cost estimate
+- Federal + Austin Energy incentives
+- Payback period
+- 25-year savings projection
+
+**Next Steps** (bullet points)
+- 3-4 specific actions with Austin Energy links
+
+Keep it SHORT and ACTIONABLE. No fluff. Use markdown **bold** for section headers.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -151,10 +200,12 @@ Be specific and actionable. Use realistic Austin data and current incentive prog
     
     return new Response(
       JSON.stringify({
-        address,
+        address: standardizedAddress,
+        originalAddress: address,
         propertyType,
         assessment,
         locations,
+        center: [lng, lat],
         dataPoints: {
           citySolarPermits: solarPermitsData.length,
           cityEnergyAudits: auditData.length,
@@ -164,7 +215,9 @@ Be specific and actionable. Use realistic Austin data and current incentive prog
           maxPanels: solarInsights.solarPotential?.maxArrayPanelsCount,
           roofArea: solarInsights.solarPotential?.maxArrayAreaMeters2,
           sunshineHours: solarInsights.solarPotential?.maxSunshineHoursPerYear,
-          carbonOffset: solarInsights.solarPotential?.carbonOffsetFactorKgPerMwh
+          carbonOffset: solarInsights.solarPotential?.carbonOffsetFactorKgPerMwh,
+          annualProduction: solarInsights.solarPotential?.maxArrayPanelsCount ? 
+            Math.round(solarInsights.solarPotential.maxArrayPanelsCount * 350 * (solarInsights.solarPotential.maxSunshineHoursPerYear || 2000) / 1000) : null
         } : null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
