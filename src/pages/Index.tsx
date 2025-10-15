@@ -303,6 +303,16 @@ const Index = () => {
                     Solar Permit Data
                   </a>
                 </li>
+                <li>
+                  <a 
+                    href="https://sunroof.withgoogle.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    Google Project Sunroof
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
