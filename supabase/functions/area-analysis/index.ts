@@ -16,7 +16,7 @@ serve(async (req) => {
 
     // Fetch data from Austin's open data APIs - using Permits dataset filtered for solar (Auxiliary Power) and ZIP code
     const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
-      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&original_zip=${zipCode}&$limit=5000`).then(r => r.json()),
+      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?$where=work_class=%27Auxiliary%20Power%27%20AND%20original_zip%20like%20%27${zipCode}%25%27&$limit=5000`).then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
@@ -25,31 +25,44 @@ serve(async (req) => {
 
     // Create map markers from Solar Permits data with actual addresses and coordinates
     const locations = solarPermitsData
-      .filter((item: any) => item.location?.coordinates)
-      .slice(0, 100)
       .map((item: any, idx: number) => {
-        const [lng, lat] = item.location.coordinates;
-        
-        // Build full address
-        const fullAddress = item.original_address1 || item.street_name || 'Address not available';
-        
-        // Create meaningful title from address
-        const title = item.original_address1 ? 
-                     item.original_address1.split(',')[0] : 
-                     `Solar Installation ${idx + 1}`;
-        
+        // Prefer top-level lat/lon, then nested location fields, then coordinates array
+        let lat: number | undefined;
+        let lng: number | undefined;
+
+        if (item.latitude && item.longitude) {
+          lat = parseFloat(item.latitude);
+          lng = parseFloat(item.longitude);
+        } else if (item.location?.latitude && item.location?.longitude) {
+          lat = parseFloat(item.location.latitude);
+          lng = parseFloat(item.location.longitude);
+        } else if (Array.isArray(item.location?.coordinates) && item.location.coordinates.length === 2) {
+          const [lngC, latC] = item.location.coordinates;
+          lat = Number(latC);
+          lng = Number(lngC);
+        }
+
+        if (!Number.isFinite(lat as number) || !Number.isFinite(lng as number)) return null;
+
+        const fullAddress = item.original_address1 || item.permit_location || item.street_name || 'Address not available';
+        const title = item.original_address1 ? (item.original_address1.split(',')[0]) : `Solar Installation ${idx + 1}`;
+
         return {
-          coordinates: [lng, lat] as [number, number],
+          coordinates: [lng as number, lat as number] as [number, number],
           title,
           address: fullAddress,
-          capacity: item.project_name || 'Solar Installation',
+          capacity: item.description || item.project_name || 'Solar Installation',
           programType: `${item.work_class || 'Solar'} - Permit #${item.permit_number || 'N/A'}`,
           installDate: item.issue_date ? new Date(item.issue_date).toLocaleDateString() : undefined,
           id: item.permit_number || `solar-${idx}`,
           color: '#f59e0b',
-          rawData: item
+          rawData: item,
         };
-      });
+      })
+      .filter(Boolean)
+      .slice(0, 100) as Array<{ coordinates: [number, number]; title: string; address: string; capacity?: string; programType: string; installDate?: string; id: string; color: string; rawData: any }>; 
+
+    console.log('Created markers for ZIP', zipCode, ':', locations.length);
 
     // Use Lovable AI to analyze the data
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -101,6 +114,7 @@ Keep it concise and action-oriented. Use plain text paragraphs, no markdown form
         insights,
         locations,
         dataPoints: {
+          solarPrograms: solarPermitsData.length,
           solarPermits: solarPermitsData.length,
           energyAudits: auditData.length,
           weatherizationProjects: weatherizationData.length
