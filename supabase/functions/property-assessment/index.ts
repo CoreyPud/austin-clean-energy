@@ -112,12 +112,12 @@ serve(async (req) => {
     const locations = [
       {
         coordinates: [lng, lat] as [number, number],
-        title: 'Your Property',
+        title: '📍 Your Property',
         address: standardizedAddress,
-        capacity: 'Assessment Pending',
-        programType: propertyType,
+        capacity: propertyType,
+        programType: 'Target Assessment Property',
         id: 'target-property',
-        color: '#3b82f6'
+        color: '#ef4444' // Bright red to stand out from amber installations
       },
       ...nearbyInstallations
     ];

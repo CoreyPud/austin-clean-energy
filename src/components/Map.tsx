@@ -74,11 +74,14 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], className 
       const dot = document.createElement('div');
       dot.className = 'marker';
       dot.style.backgroundColor = color;
-      dot.style.width = '14px';
-      dot.style.height = '14px';
+      // Make target property marker larger
+      const isTargetProperty = id === 'target-property';
+      const markerSize = isTargetProperty ? '18px' : '14px';
+      dot.style.width = markerSize;
+      dot.style.height = markerSize;
       dot.style.borderRadius = '50%';
-      dot.style.border = '2px solid white';
-      dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      dot.style.border = isTargetProperty ? '3px solid white' : '2px solid white';
+      dot.style.boxShadow = isTargetProperty ? '0 3px 8px rgba(239,68,68,0.5)' : '0 2px 4px rgba(0,0,0,0.3)';
       dot.style.transition = 'transform 0.2s';
       el.appendChild(dot);
       
