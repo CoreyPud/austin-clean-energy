@@ -28,6 +28,11 @@ Last Updated: 2025-10-22
 
 ## Energy Efficiency
 
+### Rewiring America FAQs
+**URL:** https://homes.rewiringamerica.org/federal-incentives/faqs
+**Description:** Common questions about the Federal Tax Incentives
+**Use Case:** Answer questions that people have about how to take advantage of the tax incentives before Jan 1, 2025
+
 ### Free Home Energy Audit
 **URL:** https://austinenergy.com/energy-efficiency/home-energy-audit  
 **Service:** Professional assessment of home energy use with personalized recommendations  
