@@ -114,7 +114,7 @@ const Index = () => {
                 onClick={() => navigate("/area-analysis")}
                 className="bg-accent hover:bg-accent/90 text-foreground font-semibold group"
               >
-                Explore Opportunities
+                Analyze Your Neighborhood
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button 
@@ -123,7 +123,7 @@ const Index = () => {
                 onClick={() => navigate("/recommendations")}
                 className="bg-white/10 hover:bg-white/20 text-white border-white/30"
               >
-                View Sample Analysis
+                Get Personalized Plan
               </Button>
             </div>
           </div>
