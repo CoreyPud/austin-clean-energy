@@ -456,14 +456,14 @@ To add a new external resource:
 4. Set **Refresh** frequency (Hourly, Daily, Weekly, Monthly)
 5. Describe **Sections to extract** (what specific content to focus on)
 
-Example:
-```markdown
+Example (markdown snippet):
+~~~markdown
 ### Austin Transportation Electrification Plan
 **URL:** https://www.austintexas.gov/department/electric-vehicle-plan  
 **Purpose:** City's EV infrastructure and policy roadmap  
 **Refresh:** Monthly  
 **Sections to extract:** Charging station expansion, fleet electrification timeline
-```
+~~~
 
 ### Notes for Administrators
 

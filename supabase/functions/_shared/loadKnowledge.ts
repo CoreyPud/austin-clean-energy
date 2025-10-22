@@ -5,8 +5,9 @@
  * These files contain the climate priorities, resources, expert knowledge, and
  * data source configurations that drive AI recommendations.
  * 
- * Files are loaded from supabase/functions/_shared/knowledge/ directory.
+ * Content is embedded at build time to avoid filesystem reads in Edge Functions.
  */
+import { prioritiesContent, resourcesContent, expertContextContent, dataSourcesContent } from "./knowledgeContent.ts";
 
 interface ExternalResource {
   name: string;
@@ -40,13 +41,11 @@ export async function loadKnowledge(): Promise<KnowledgeBase> {
   }
 
   try {
-    // Read all markdown files
-    const [priorities, resources, expertContext, dataSources] = await Promise.all([
-      Deno.readTextFile(new URL('./knowledge/priorities.md', import.meta.url)),
-      Deno.readTextFile(new URL('./knowledge/resources.md', import.meta.url)),
-      Deno.readTextFile(new URL('./knowledge/expert-context.md', import.meta.url)),
-      Deno.readTextFile(new URL('./knowledge/data-sources.md', import.meta.url)),
-    ]);
+    // Load embedded markdown content (avoids filesystem reads in Edge Functions)
+    const priorities = prioritiesContent;
+    const resources = resourcesContent;
+    const expertContext = expertContextContent;
+    const dataSources = dataSourcesContent;
 
     // Parse external resources from expert context
     const externalResources = parseExternalResources(expertContext);
