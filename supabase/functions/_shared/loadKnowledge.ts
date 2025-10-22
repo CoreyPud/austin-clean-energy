@@ -126,7 +126,7 @@ export function parseResourceLinks(resourcesMarkdown: string): Array<{category: 
   const lines = resourcesMarkdown.split('\n');
   
   let currentCategory = '';
-  let currentResource: any = null;
+  let currentResource: {category: string, name: string, url: string, description: string} | null = null;
   
   for (const line of lines) {
     // Category heading (## Solar Programs)
