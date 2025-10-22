@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { loadKnowledge } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,10 @@ serve(async (req) => {
   try {
     const { zipCode } = await req.json();
     console.log('Analyzing area for ZIP code:', zipCode);
+
+    // Load knowledge base configuration
+    const knowledge = await loadKnowledge();
+    console.log('Knowledge base loaded for area analysis');
 
     // Fetch data from Austin's open data APIs - using Permits dataset filtered for solar (Auxiliary Power) and ZIP code
     const solarResponse = await fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&original_zip=${zipCode}&$limit=5000`);
@@ -80,9 +85,19 @@ serve(async (req) => {
 
     const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
 
+📊 DATA SUMMARY:
 Solar Permits Issued: ${solarPermitsData.length} solar installations
 Energy Audits: ${auditData.length} completed
 Weatherization Projects: ${weatherizationData.length} in progress
+
+📋 PRIORITY FRAMEWORK & CONTEXT:
+${knowledge.priorities}
+
+💡 EXPERT KNOWLEDGE & BEST PRACTICES:
+${knowledge.expertContext}
+
+🔗 AVAILABLE RESOURCES (use specific links in your Take Action section):
+${knowledge.resources}
 
 Provide a punchy, scannable analysis using this structure:
 
@@ -99,11 +114,7 @@ One sentence summarizing the area's clean energy status.
 2-3 short sentences on storage recommendations and grid resilience.
 
 **Take Action**
-Include 3-4 specific Austin resources with actual links:
-- Austin Energy Solar Solutions: https://austinenergy.com/solar
-- Austin Energy Rebates: https://austinenergy.com/rebates
-- Weatherization Assistance: https://www.austintexas.gov/department/weatherization
-- Free Home Energy Audits: https://austinenergy.com/energy-efficiency/home-energy-audit
+Include 3-4 specific Austin resources with actual links from the AVAILABLE RESOURCES section above.
 
 Format with markdown: Use **bold** for section headers, keep sentences short and punchy. Use bullet points for resources.`;
 

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { loadKnowledge } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,10 @@ serve(async (req) => {
   try {
     const { address, propertyType } = await req.json();
     console.log('Assessing property:', address, 'Type:', propertyType);
+
+    // Load knowledge base configuration
+    const knowledge = await loadKnowledge();
+    console.log('Knowledge base loaded for property assessment');
 
     // Step 1: Geocode the address to get coordinates and standardized address
     const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${Deno.env.get('GOOGLE_SOLAR_API_KEY')}`;
@@ -186,12 +191,22 @@ serve(async (req) => {
 
     const aiPrompt = `You are a certified energy auditor. Provide a CONCISE, actionable assessment for this Austin property.
 
+📍 PROPERTY DETAILS:
 Address: ${standardizedAddress}
 Property Type: ${propertyType}
 Nearby Solar Installations in ZIP: ${solarPermitsData.length}
 
 ${googleSolarSection}
 ${greenBuildingSection}
+
+📋 PRIORITY FRAMEWORK & CONTEXT:
+${knowledge.priorities}
+
+💡 EXPERT KNOWLEDGE & BEST PRACTICES:
+${knowledge.expertContext}
+
+🔗 AVAILABLE RESOURCES (use specific links in Next Steps):
+${knowledge.resources}
 
 Write a punchy, scannable assessment using this structure:
 

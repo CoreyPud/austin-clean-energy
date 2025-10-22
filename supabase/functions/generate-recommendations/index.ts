@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { loadKnowledge } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,10 @@ serve(async (req) => {
   try {
     const { lifestyleData } = await req.json();
     console.log('Generating personalized recommendations with lifestyle data:', lifestyleData);
+
+    // Load knowledge base configuration
+    const knowledge = await loadKnowledge();
+    console.log('Knowledge base loaded for recommendations');
 
     // Fetch comprehensive Austin energy data
     const [solarPermitsData, auditData, weatherizationData, greenBuildingData] = await Promise.all([
@@ -127,14 +132,14 @@ PERSONALIZATION REQUIREMENTS:
 - Top Solar ZIP Codes: ${heatmapData.slice(0, 5).map(d => `${d.zip} (${d.count} permits)`).join(', ')}
 ${personalContext}
 
-🎯 PRIORITY FRAMEWORK (based on climate impact research):
-Focus recommendations on these evidence-based priorities, in order of impact:
-1. **Transportation electrification** - EVs have the highest individual climate impact
-2. **Zero-carbon home power** - Solar + clean grid = essential foundation
-3. **Home energy efficiency** - Weatherization, insulation, efficient appliances
-4. **Appliance electrification** - Heat pumps, induction stoves, heat pump water heaters
-5. **Active transportation** - Bike infrastructure, walkability, transit
-6. **Community organizing** - Collective action multiplies individual impact
+📋 PRIORITY FRAMEWORK & EXPERT CONTEXT:
+${knowledge.priorities}
+
+💡 EXPERT KNOWLEDGE & BEST PRACTICES:
+${knowledge.expertContext}
+
+🔗 AVAILABLE RESOURCES (use specific links in recommendations):
+${knowledge.resources}
 
 Write a punchy, scannable ${lifestyleData ? 'personalized ' : ''}strategic plan using this EXACT structure:
 
