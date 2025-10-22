@@ -265,7 +265,7 @@ const Index = () => {
                 </li>
                 <li>
                   <a 
-                    href="https://austinenergy.com/green-power/solar-solutions/for-your-home/solar-installation" 
+                    href="https://austinenergy.com/green-power/solar-solutions/participating-solar-contractors" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-white/70 hover:text-white transition-colors"
