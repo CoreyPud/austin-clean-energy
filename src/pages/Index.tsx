@@ -164,7 +164,7 @@ const Index = () => {
       <section className="py-20 container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 text-foreground">
-            Three Powerful Modules
+            Three Ways to Get Started
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             From broad community insights to property-specific assessments and actionable recommendations
