@@ -7,6 +7,7 @@ import { ExternalLink, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EmbedAreaAnalysis = () => {
   const [searchParams] = useSearchParams();
@@ -74,6 +75,7 @@ const EmbedAreaAnalysis = () => {
         <CardContent className="space-y-4">
           {loading ? (
             <div className="space-y-3">
+              <Skeleton className="w-full h-[250px] sm:h-[300px] mb-4 rounded-lg" />
               <div className="h-4 bg-muted animate-pulse rounded" />
               <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
               <div className="h-4 bg-muted animate-pulse rounded w-5/6" />
