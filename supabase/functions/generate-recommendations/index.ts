@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { loadKnowledge } from "../_shared/loadKnowledge.ts";
+import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -140,6 +140,7 @@ ${knowledge.expertContext}
 
 🔗 AVAILABLE RESOURCES (use specific links in recommendations):
 ${knowledge.resources}
+${getExternalContext(knowledge)}
 
 Write a punchy, scannable ${lifestyleData ? 'personalized ' : ''}strategic plan using this EXACT structure:
 

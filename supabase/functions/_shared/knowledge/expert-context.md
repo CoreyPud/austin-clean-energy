@@ -144,6 +144,68 @@ Last Updated: 2025-10-22
 - **Circular economy:** Right-to-repair laws, product longevity requirements gaining traction
 - **Climate attribution:** Personalized carbon footprint tools improving in accuracy
 
+## External Resources for Real-Time Context
+
+The recommendation engine can fetch and cache external resources to supplement the static knowledge in this file. Add URLs below that should be checked for up-to-date information.
+
+### Austin Energy Current Programs
+**URL:** https://austinenergy.com/green-power  
+**Purpose:** Latest renewable energy programs, rates, and incentives  
+**Refresh:** Daily  
+**Sections to extract:** Program updates, current rebate amounts, new initiatives
+
+### Federal IRS Tax Credits
+**URL:** https://www.irs.gov/credits-deductions/residential-clean-energy-credit  
+**Purpose:** Current federal tax credit rates and eligibility requirements  
+**Refresh:** Monthly  
+**Sections to extract:** Credit percentages, income limits, qualifying technologies
+
+### DSIRE Texas Incentives Database
+**URL:** https://programs.dsireusa.org/system/program?state=TX  
+**Purpose:** Comprehensive state and local incentive tracking  
+**Refresh:** Weekly  
+**Sections to extract:** Active programs, rebate amounts, policy changes
+
+### Project Drawdown Research Updates
+**URL:** https://drawdown.org/solutions  
+**Purpose:** Latest climate solution rankings and research  
+**Refresh:** Monthly  
+**Sections to extract:** Solution rankings, updated impact data, new technologies
+
+### How External Resources Work
+
+1. **Static knowledge first:** The AI uses the content in this file as the primary knowledge base
+2. **Supplemental fetching:** External URLs are fetched, cached, and used to check for updates
+3. **Cache duration:** Content is cached based on the "Refresh" frequency to avoid excessive requests
+4. **Fallback:** If external resources fail to fetch, the static knowledge is still used
+5. **Context augmentation:** External content is added to AI prompts as supplemental, current information
+
+### Adding New External Resources
+
+To add a new external resource:
+1. Add a new heading with the resource name
+2. Specify the **URL** to fetch
+3. Define the **Purpose** (what information it provides)
+4. Set **Refresh** frequency (Hourly, Daily, Weekly, Monthly)
+5. Describe **Sections to extract** (what specific content to focus on)
+
+Example:
+```markdown
+### Austin Transportation Electrification Plan
+**URL:** https://www.austintexas.gov/department/electric-vehicle-plan  
+**Purpose:** City's EV infrastructure and policy roadmap  
+**Refresh:** Monthly  
+**Sections to extract:** Charging station expansion, fleet electrification timeline
+```
+
+### Notes for Administrators
+
+- External resources are fetched asynchronously and won't block recommendations
+- If a URL becomes unavailable, the system falls back to static knowledge
+- Monitor edge function logs to see which external resources are being used
+- Keep the "Refresh" frequency realistic (too frequent = unnecessary bandwidth)
+- Consider adding RSS feeds or API endpoints for structured data sources
+
 ## Update Guidelines
 
 This document should be updated:
@@ -157,3 +219,4 @@ When updating:
 3. Add new misconceptions as they emerge in public discourse
 4. Update cost figures at least annually
 5. Note update date at top of file
+6. Review external resource URLs quarterly to ensure they're still valid

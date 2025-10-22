@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { loadKnowledge } from "../_shared/loadKnowledge.ts";
+import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -98,6 +98,7 @@ ${knowledge.expertContext}
 
 🔗 AVAILABLE RESOURCES (use specific links in your Take Action section):
 ${knowledge.resources}
+${getExternalContext(knowledge)}
 
 Provide a punchy, scannable analysis using this structure:
 

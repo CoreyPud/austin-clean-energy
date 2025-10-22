@@ -52,15 +52,40 @@ All configuration files are located in: `supabase/functions/_shared/knowledge/`
 ```
 
 ### 💡 expert-context.md
-**What it controls:** Best practices, current research, policy context, common misconceptions
+**What it controls:** Best practices, current research, policy context, common misconceptions, AND external resources to fetch
 
-**Update frequency:** Quarterly
+**Update frequency:** Quarterly for static content, add external sources as needed
 
 **What to update:**
 - Federal/state/local policy changes
 - Technology cost updates (solar, batteries, EVs)
 - New research findings
 - Current Austin Energy initiatives
+- **External resource URLs** (new!) - websites to fetch for real-time information
+
+**External Resources Feature:**
+The `expert-context.md` file now includes an "External Resources for Real-Time Context" section where you can configure websites that will be automatically fetched and cached to supplement the static knowledge base.
+
+**Example external resource:**
+```markdown
+### Austin Energy Current Programs
+**URL:** https://austinenergy.com/green-power
+**Purpose:** Latest renewable energy programs, rates, and incentives
+**Refresh:** Daily
+**Sections to extract:** Program updates, current rebate amounts
+```
+
+**How it works:**
+1. The recommendation engine reads the external resources list
+2. Fetches content from each URL with caching (based on refresh frequency)
+3. Uses static markdown knowledge first, then supplements with fresh external data
+4. Falls back to static knowledge if any external source is unavailable
+
+**Best practices for external resources:**
+- Use official sources only (government, utilities, research institutions)
+- Set realistic refresh frequencies: Daily for programs/rates, Monthly for research
+- Monitor edge function logs to verify sources fetch successfully
+- Add 3-5 key sources; too many will slow down recommendations
 
 ### 🗄️ data-sources.md
 **What it controls:** External API configurations and data interpretation rules
@@ -171,6 +196,7 @@ After updating:
 | Austin Energy grid mix changes | priorities.md, expert-context.md |
 | API endpoint changes | data-sources.md (+ code changes) |
 | Policy change (federal/state/local) | expert-context.md |
+| Want real-time data from website | expert-context.md (add to External Resources) |
 
 ---
 
