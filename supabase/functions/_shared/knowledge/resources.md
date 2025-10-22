@@ -30,7 +30,9 @@ Last Updated: 2025-10-22
 
 ### Rewiring America FAQs
 **URL:** https://homes.rewiringamerica.org/federal-incentives/faqs
+
 **Description:** Common questions about the Federal Tax Incentives
+
 **Use Case:** Answer questions that people have about how to take advantage of the tax incentives before Jan 1, 2025
 
 ### Free Home Energy Audit
