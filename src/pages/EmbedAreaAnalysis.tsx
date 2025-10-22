@@ -5,12 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import Map from "@/components/Map";
+import MapTokenLoader from "@/components/MapTokenLoader";
 
 const EmbedAreaAnalysis = () => {
   const [searchParams] = useSearchParams();
   const zipCode = searchParams.get("zip") || "";
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState("");
+  const [locations, setLocations] = useState<any[]>([]);
   const [dataPoints, setDataPoints] = useState<{
     solarPermits: number;
     energyAudits: number;
@@ -33,6 +36,7 @@ const EmbedAreaAnalysis = () => {
       if (error) throw error;
 
       setInsights(data.insights);
+      setLocations(data.locations || []);
       setDataPoints(data.dataPoints);
     } catch (error) {
       console.error("Error analyzing area:", error);
@@ -76,6 +80,19 @@ const EmbedAreaAnalysis = () => {
             </div>
           ) : (
             <>
+              {locations.length > 0 && (
+                <MapTokenLoader>
+                  <div className="mb-4 rounded-lg overflow-hidden">
+                    <Map 
+                      center={[-97.7431, 30.2672]}
+                      zoom={11}
+                      markers={locations}
+                      className="h-[250px] sm:h-[300px]"
+                    />
+                  </div>
+                </MapTokenLoader>
+              )}
+
               {dataPoints && (
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
                   <div className="text-center p-2 sm:p-3 bg-primary/5 rounded-lg">
