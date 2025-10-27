@@ -47,12 +47,17 @@ serve(async (req) => {
       fetch('https://data.austintexas.gov/resource/dpvb-c5fy.json?$limit=1000').then(r => r.json())
     ]);
 
+    const solarPermitsArr = Array.isArray(solarPermitsData) ? solarPermitsData : [];
+    const auditArr = Array.isArray(auditData) ? auditData : [];
+    const weatherizationArr = Array.isArray(weatherizationData) ? weatherizationData : [];
+    const greenBuildingArr = Array.isArray(greenBuildingData) ? greenBuildingData : [];
+
     console.log('Fetched comprehensive data:', {
       dbInstallations: dbInstallations?.length || 0,
-      recentPermits: solarPermitsData.length,
-      audits: auditData.length,
-      weatherization: weatherizationData.length,
-      greenBuildings: greenBuildingData.length
+      recentPermits: solarPermitsArr.length,
+      audits: auditArr.length,
+      weatherization: weatherizationArr.length,
+      greenBuildings: greenBuildingArr.length
     });
 
     // Aggregate data for heatmap from database installations
@@ -73,7 +78,7 @@ serve(async (req) => {
     // Add recent API permits (avoiding duplicates)
     const dbProjectIds = new Set((dbInstallations || []).map((i: any) => i.project_id).filter(Boolean));
     
-    solarPermitsData.forEach((item: any) => {
+    solarPermitsArr.forEach((item: any) => {
       // Skip if already in database
       if (dbProjectIds.has(item.permit_number)) return;
       
@@ -128,12 +133,12 @@ serve(async (req) => {
     }
 
     // Aggregate statistics for AI prompt (database + API, avoiding duplicates)
-    const uniqueRecentPermits = solarPermitsData.filter((p: any) => !dbProjectIds.has(p.permit_number)).length;
+    const uniqueRecentPermits = solarPermitsArr.filter((p: any) => !dbProjectIds.has(p.permit_number)).length;
     const totalSolarPermits = (dbInstallations?.length || 0) + uniqueRecentPermits;
-    const totalAudits = auditData.reduce((sum: number, a: any) => sum + (parseInt(a.all_homes_audited) || 0), 0);
-    const totalWeatherization = weatherizationData.length;
-    const avgGreenBuildingRating = greenBuildingData.length > 0
-      ? (greenBuildingData.reduce((sum: number, b: any) => sum + (parseFloat(b.star_rating) || 0), 0) / greenBuildingData.length).toFixed(1)
+    const totalAudits = auditArr.reduce((sum: number, a: any) => sum + (parseInt(a.all_homes_audited) || 0), 0);
+    const totalWeatherization = weatherizationArr.length;
+    const avgGreenBuildingRating = greenBuildingArr.length > 0
+      ? (greenBuildingArr.reduce((sum: number, b: any) => sum + (parseFloat(b.star_rating) || 0), 0) / greenBuildingArr.length).toFixed(1)
       : 'N/A';
 
     // Build personalized context from lifestyle data
@@ -223,10 +228,10 @@ Keep it SHORT, ACTIONABLE, and SPECIFIC. ${lifestyleData ? 'Make it feel persona
         overview: content,
         heatmapData,
         dataPoints: {
-          solarPermits: solarPermitsData.length,
+          solarPermits: solarPermitsArr.length,
           energyAudits: totalAudits,
-          weatherizationProjects: weatherizationData.length,
-          greenBuildings: greenBuildingData.length,
+          weatherizationProjects: weatherizationArr.length,
+          greenBuildings: greenBuildingArr.length,
           avgGreenBuildingRating
         }
       }),
