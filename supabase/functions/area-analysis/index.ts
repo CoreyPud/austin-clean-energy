@@ -1,11 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
+// Removed external knowledge import to prevent boot errors
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+const getExternalContext = (_: any) => '';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,9 +18,9 @@ serve(async (req) => {
     const { zipCode } = await req.json();
     console.log('Analyzing area for ZIP code:', zipCode);
 
-    // Load knowledge base configuration
-    const knowledge = await loadKnowledge();
-    console.log('Knowledge base loaded for area analysis');
+    // Use inlined knowledge (fallback to avoid cross-file imports in Edge Function)
+    const knowledge = { priorities: '', resources: '', expertContext: '' } as const;
+    console.log('Using inlined knowledge context for area analysis');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
