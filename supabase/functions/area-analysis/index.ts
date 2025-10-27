@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
@@ -19,27 +20,62 @@ serve(async (req) => {
     const knowledge = await loadKnowledge();
     console.log('Knowledge base loaded for area analysis');
 
-    // Fetch data from Austin's open data APIs - using Permits dataset filtered for solar (Auxiliary Power) and ZIP code
-    const solarResponse = await fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&original_zip=${zipCode}&$limit=5000`);
-    
-    if (!solarResponse.ok) {
-      const errorText = await solarResponse.text();
-      console.error('Solar API error:', solarResponse.status, errorText);
-      throw new Error(`Solar API returned ${solarResponse.status}: ${errorText}`);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Query database for existing installations in this ZIP
+    const { data: dbInstallations, error: dbError } = await supabase
+      .from('solar_installations')
+      .select('*')
+      .eq('original_zip', zipCode)
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null);
+
+    if (dbError) {
+      console.error('Database query error:', dbError);
     }
+
+    console.log(`Found ${dbInstallations?.length || 0} installations in database for ZIP ${zipCode}`);
+
+    // Fetch recent permits from Austin API (last 90 days for supplemental data)
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const recentDate = ninetyDaysAgo.toISOString().split('T')[0];
     
     const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
-      solarResponse.json(),
+      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$where=issued_date>='${recentDate}'&$limit=2000`).then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
 
-    console.log('Fetched data for ZIP', zipCode, '- Solar Permits:', solarPermitsData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
+    console.log('Fetched recent permits:', solarPermitsData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
 
-    // Create map markers from Solar Permits data with actual addresses and coordinates
-    const locations = solarPermitsData
+    // Process database installations (existing installations)
+    const dbLocations = (dbInstallations || [])
+      .filter((item: any) => item.latitude && item.longitude)
+      .slice(0, 80)
+      .map((item: any) => ({
+        coordinates: [parseFloat(item.longitude), parseFloat(item.latitude)] as [number, number],
+        title: item.address.split(',')[0] || 'Solar Installation',
+        address: item.address || 'Address not available',
+        capacity: item.installed_kw ? `${item.installed_kw.toFixed(2)} kW` : 'Capacity not specified',
+        programType: item.permit_class || 'Solar Installation',
+        installDate: item.completed_date || item.issued_date,
+        id: item.project_id || item.id,
+        source: 'existing',
+        color: '#22c55e'
+      }));
+
+    // Process recent API permits (filter for ZIP and avoid duplicates)
+    const dbProjectIds = new Set((dbInstallations || []).map((i: any) => i.project_id).filter(Boolean));
+    
+    const apiLocations = solarPermitsData
+      .filter((item: any) => {
+        const itemZip = item.original_zip_code?.toString().substring(0, 5);
+        return itemZip === zipCode && !dbProjectIds.has(item.permit_number);
+      })
       .map((item: any, idx: number) => {
-        // Prefer top-level lat/lon, then nested location fields, then coordinates array
         let lat: number | undefined;
         let lng: number | undefined;
 
@@ -58,24 +94,26 @@ serve(async (req) => {
         if (!Number.isFinite(lat as number) || !Number.isFinite(lng as number)) return null;
 
         const fullAddress = item.original_address1 || item.permit_location || item.street_name || 'Address not available';
-        const title = item.original_address1 ? (item.original_address1.split(',')[0]) : `Solar Installation ${idx + 1}`;
+        const title = item.original_address1 ? (item.original_address1.split(',')[0]) : `Recent Permit ${idx + 1}`;
 
         return {
           coordinates: [lng as number, lat as number] as [number, number],
           title,
           address: fullAddress,
           capacity: item.description || item.project_name || 'Solar Installation',
-          programType: `${item.work_class || 'Solar'} - Permit #${item.permit_number || 'N/A'}`,
+          programType: 'Recent Permit',
           installDate: item.issue_date ? new Date(item.issue_date).toLocaleDateString() : undefined,
           id: item.permit_number || `solar-${idx}`,
-          color: '#f59e0b',
-          rawData: item,
+          source: 'api',
+          color: '#f59e0b'
         };
       })
       .filter(Boolean)
-      .slice(0, 100) as Array<{ coordinates: [number, number]; title: string; address: string; capacity?: string; programType: string; installDate?: string; id: string; color: string; rawData: any }>; 
+      .slice(0, 20);
 
-    console.log('Created markers for ZIP', zipCode, ':', locations.length);
+    // Combine both sources
+    const locations = [...dbLocations, ...apiLocations];
+    console.log(`Created ${locations.length} markers: ${dbLocations.length} existing, ${apiLocations.length} recent`);
 
     // Use Lovable AI to analyze the data
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -86,7 +124,9 @@ serve(async (req) => {
     const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
 
 📊 DATA SUMMARY:
-Solar Permits Issued: ${solarPermitsData.length} solar installations
+Total Solar Installations: ${(dbInstallations?.length || 0) + solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
+- Existing Installations: ${dbInstallations?.length || 0}
+- Recent Permits (90 days): ${solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
 Energy Audits: ${auditData.length} completed
 Weatherization Projects: ${weatherizationData.length} in progress
 
@@ -149,8 +189,8 @@ Format with markdown: Use **bold** for section headers, keep sentences short and
         insights,
         locations,
         dataPoints: {
-          solarPrograms: solarPermitsData.length,
-          solarPermits: solarPermitsData.length,
+          solarPrograms: (dbInstallations?.length || 0) + solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
+          solarPermits: (dbInstallations?.length || 0) + solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
           energyAudits: auditData.length,
           weatherizationProjects: weatherizationData.length
         }

@@ -38,6 +38,78 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_installations: {
+        Row: {
+          address: string
+          applied_date: string | null
+          calendar_year_issued: number | null
+          completed_date: string | null
+          contractor_city: string | null
+          contractor_company: string | null
+          council_district: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          installed_kw: number | null
+          issued_date: string | null
+          jurisdiction: string | null
+          latitude: number | null
+          link: string | null
+          longitude: number | null
+          original_zip: string | null
+          permit_class: string | null
+          project_id: string | null
+          status_current: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          applied_date?: string | null
+          calendar_year_issued?: number | null
+          completed_date?: string | null
+          contractor_city?: string | null
+          contractor_company?: string | null
+          council_district?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          installed_kw?: number | null
+          issued_date?: string | null
+          jurisdiction?: string | null
+          latitude?: number | null
+          link?: string | null
+          longitude?: number | null
+          original_zip?: string | null
+          permit_class?: string | null
+          project_id?: string | null
+          status_current?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          applied_date?: string | null
+          calendar_year_issued?: number | null
+          completed_date?: string | null
+          contractor_city?: string | null
+          contractor_company?: string | null
+          council_district?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          installed_kw?: number | null
+          issued_date?: string | null
+          jurisdiction?: string | null
+          latitude?: number | null
+          link?: string | null
+          longitude?: number | null
+          original_zip?: string | null
+          permit_class?: string | null
+          project_id?: string | null
+          status_current?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

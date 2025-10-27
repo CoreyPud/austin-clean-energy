@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
@@ -19,48 +20,79 @@ serve(async (req) => {
     const knowledge = await loadKnowledge();
     console.log('Knowledge base loaded for recommendations');
 
-    // Fetch comprehensive Austin energy data
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get all installations from database
+    const { data: dbInstallations, error: dbError } = await supabase
+      .from('solar_installations')
+      .select('*');
+
+    if (dbError) {
+      console.error('Database query error:', dbError);
+    }
+
+    console.log(`Found ${dbInstallations?.length || 0} installations in database`);
+
+    // Fetch recent API data (last 90 days) and other sources in parallel
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const recentDate = ninetyDaysAgo.toISOString().split('T')[0];
+
     const [solarPermitsData, auditData, weatherizationData, greenBuildingData] = await Promise.all([
-      fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=5000').then(r => r.json()),
+      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$where=issued_date>='${recentDate}'&$limit=2000`).then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=500').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=500').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/dpvb-c5fy.json?$limit=1000').then(r => r.json())
     ]);
 
     console.log('Fetched comprehensive data:', {
-      solarPermits: solarPermitsData.length,
+      dbInstallations: dbInstallations?.length || 0,
+      recentPermits: solarPermitsData.length,
       audits: auditData.length,
       weatherization: weatherizationData.length,
       greenBuildings: greenBuildingData.length
     });
 
-    // Aggregate data for heatmap instead of individual pins
+    // Aggregate data for heatmap from database installations
     const permitsByZip: { [key: string]: number } = {};
     const coordinatesByZip: { [key: string]: [number, number] } = {};
+
+    // Process database installations
+    (dbInstallations || []).forEach((installation: any) => {
+      const zip = installation.original_zip?.substring(0, 5);
+      if (zip && installation.latitude && installation.longitude) {
+        permitsByZip[zip] = (permitsByZip[zip] || 0) + 1;
+        if (!coordinatesByZip[zip]) {
+          coordinatesByZip[zip] = [parseFloat(installation.longitude), parseFloat(installation.latitude)];
+        }
+      }
+    });
+
+    // Add recent API permits (avoiding duplicates)
+    const dbProjectIds = new Set((dbInstallations || []).map((i: any) => i.project_id).filter(Boolean));
     
     solarPermitsData.forEach((item: any) => {
-      // Try multiple possible zip field names from the dataset
+      // Skip if already in database
+      if (dbProjectIds.has(item.permit_number)) return;
+      
       const zip = item.original_zip || item.zip || item.zip_code || item.zipcode || item.customer_zip || item.customer_zip_code;
       if (!zip) return;
 
-      // Increment permit count per ZIP
       permitsByZip[zip] = (permitsByZip[zip] || 0) + 1;
 
-      // Extract coordinates from common Socrata shapes
       if (!coordinatesByZip[zip]) {
         let lng: number | undefined;
         let lat: number | undefined;
 
         if (item.location?.coordinates && Array.isArray(item.location.coordinates) && item.location.coordinates.length === 2) {
-          // Some geojson-like shapes expose [lng, lat]
           lng = Number(item.location.coordinates[0]);
           lat = Number(item.location.coordinates[1]);
         } else if (item.location?.longitude && item.location?.latitude) {
-          // Typical Socrata geo_point_2d shape with string fields
           lng = Number(item.location.longitude);
           lat = Number(item.location.latitude);
         } else if (item.longitude && item.latitude) {
-          // Flat fields on the record
           lng = Number(item.longitude);
           lat = Number(item.latitude);
         }
@@ -95,8 +127,9 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Aggregate statistics for AI prompt
-    const totalSolarPermits = solarPermitsData.length;
+    // Aggregate statistics for AI prompt (database + API, avoiding duplicates)
+    const uniqueRecentPermits = solarPermitsData.filter((p: any) => !dbProjectIds.has(p.permit_number)).length;
+    const totalSolarPermits = (dbInstallations?.length || 0) + uniqueRecentPermits;
     const totalAudits = auditData.reduce((sum: number, a: any) => sum + (parseInt(a.all_homes_audited) || 0), 0);
     const totalWeatherization = weatherizationData.length;
     const avgGreenBuildingRating = greenBuildingData.length > 0

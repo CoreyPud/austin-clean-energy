@@ -9,6 +9,7 @@ import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
 import Recommendations from "./pages/Recommendations";
 import InstallationDetail from "./pages/InstallationDetail";
+import ImportSolarData from "./pages/ImportSolarData";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/property-assessment" element={<PropertyAssessment />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/installation/:id" element={<InstallationDetail />} />
+          <Route path="/import-solar-data" element={<ImportSolarData />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

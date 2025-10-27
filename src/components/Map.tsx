@@ -21,13 +21,15 @@ interface MapProps {
     installDate?: string;
     id?: string;
     color?: string;
+    source?: 'existing' | 'api' | 'target';
   }>;
   heatmapData?: HeatmapPoint[];
+  showLegend?: boolean;
   className?: string;
   onMarkerClick?: (id: string) => void;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", onMarkerClick }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -398,6 +400,31 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
   return (
     <div className={`relative ${className}`}>
       <div ref={mapContainer} className="absolute inset-0 rounded-lg shadow-lg" />
+      {showLegend && markers.length > 0 && (
+        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
+          <h3 className="text-sm font-semibold mb-3 text-foreground">Map Legend</h3>
+          <div className="space-y-2">
+            {markers.some(m => m.source === 'existing' || m.color === '#22c55e') && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#22c55e] border-2 border-white shadow-sm"></div>
+                <span className="text-xs text-muted-foreground">Existing Installations</span>
+              </div>
+            )}
+            {markers.some(m => m.source === 'api' || m.color === '#f59e0b') && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-white shadow-sm"></div>
+                <span className="text-xs text-muted-foreground">Recent Permits (90 days)</span>
+              </div>
+            )}
+            {markers.some(m => m.source === 'target' || m.id === 'target-property') && (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-[#ef4444] border-2 border-white shadow-sm"></div>
+                <span className="text-xs text-muted-foreground">Your Property</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
