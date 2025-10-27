@@ -49,7 +49,13 @@ serve(async (req) => {
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
 
-    console.log('Fetched recent permits:', solarPermitsData.length, 'Audits:', auditData.length, 'Weatherization:', weatherizationData.length);
+    // Normalize to arrays to avoid runtime errors when the API returns an object
+    const toArray = (v: any) => Array.isArray(v) ? v : (Array.isArray(v?.data) ? v.data : (Array.isArray(v?.results) ? v.results : []));
+    const permits = toArray(solarPermitsData);
+    const audits = toArray(auditData);
+    const weather = toArray(weatherizationData);
+
+    console.log('Fetched recent permits:', permits.length, 'Audits:', audits.length, 'Weatherization:', weather.length);
 
     // Process database installations (existing installations)
     const dbLocations = (dbInstallations || [])
@@ -70,7 +76,7 @@ serve(async (req) => {
     // Process recent API permits (filter for ZIP and avoid duplicates)
     const dbProjectIds = new Set((dbInstallations || []).map((i: any) => i.project_id).filter(Boolean));
     
-    const apiLocations = solarPermitsData
+    const apiLocations = permits
       .filter((item: any) => {
         const itemZip = item.original_zip_code?.toString().substring(0, 5);
         return itemZip === zipCode && !dbProjectIds.has(item.permit_number);
@@ -124,11 +130,11 @@ serve(async (req) => {
     const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
 
 📊 DATA SUMMARY:
-Total Solar Installations: ${(dbInstallations?.length || 0) + solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
+Total Solar Installations: ${(dbInstallations?.length || 0) + permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
 - Existing Installations: ${dbInstallations?.length || 0}
-- Recent Permits (90 days): ${solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
-Energy Audits: ${auditData.length} completed
-Weatherization Projects: ${weatherizationData.length} in progress
+- Recent Permits (90 days): ${permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
+Energy Audits: ${audits.length} completed
+Weatherization Projects: ${weather.length} in progress
 
 📋 PRIORITY FRAMEWORK & CONTEXT:
 ${knowledge.priorities}
@@ -189,10 +195,10 @@ Format with markdown: Use **bold** for section headers, keep sentences short and
         insights,
         locations,
         dataPoints: {
-          solarPrograms: (dbInstallations?.length || 0) + solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
-          solarPermits: (dbInstallations?.length || 0) + solarPermitsData.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
-          energyAudits: auditData.length,
-          weatherizationProjects: weatherizationData.length
+          solarPrograms: (dbInstallations?.length || 0) + permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
+          solarPermits: (dbInstallations?.length || 0) + permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
+          energyAudits: audits.length,
+          weatherizationProjects: weather.length
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
