@@ -59,15 +59,46 @@ serve(async (req) => {
 
     // Fallback to API if not in database
     console.log('Installation not in database, checking API...');
-    const response = await fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=2000');
-    const rawData = await response.json();
-    const permits = toArray(rawData);
-    
-    console.log('Fetched permits from API:', permits.length);
 
-    const installation = permits.find((item: any) => 
-      item.permit_number === id || `solar-${permits.indexOf(item)}` === id
-    );
+    let installation: any = null;
+
+    // If the provided id looks like a numeric permit number or application id,
+    // query the Austin API directly to avoid pagination/limit mismatches
+    const isNumericId = typeof id === 'string' && /^[0-9]+$/.test(id);
+    if (isNumericId) {
+      try {
+        console.log('Querying Austin API by permit_number:', id);
+        const res1 = await fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?permit_number=${id}`);
+        const data1 = toArray(await res1.json());
+        if (data1.length > 0) {
+          installation = data1[0];
+        }
+
+        if (!installation) {
+          console.log('Not found by permit_number, trying application_id:', id);
+          const res2 = await fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?application_id=${id}`);
+          const data2 = toArray(await res2.json());
+          if (data2.length > 0) {
+            installation = data2[0];
+          }
+        }
+      } catch (e) {
+        console.warn('Error querying Austin API by ID:', e);
+      }
+    }
+
+    // Fallback: fetch a batch and try to match by id or synthetic key
+    if (!installation) {
+      const response = await fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=2000');
+      const rawData = await response.json();
+      const permits = toArray(rawData);
+      
+      console.log('Fetched permits from API:', permits.length);
+
+      installation = permits.find((item: any, idx: number) => 
+        item.permit_number === id || item.application_id === id || `solar-${idx}` === id
+      );
+    }
 
     if (!installation) {
       console.log('Installation not found with ID:', id);
