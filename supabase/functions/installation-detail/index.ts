@@ -6,6 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper to ensure response is an array
+const toArray = (data: any): any[] => {
+  if (!data) return [];
+  return Array.isArray(data) ? data : [data];
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -53,13 +59,18 @@ serve(async (req) => {
 
     // Fallback to API if not in database
     console.log('Installation not in database, checking API...');
-    const solarPermitsData = await fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=2000').then(r => r.json());
+    const response = await fetch('https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$limit=2000');
+    const rawData = await response.json();
+    const permits = toArray(rawData);
+    
+    console.log('Fetched permits from API:', permits.length);
 
-    const installation = solarPermitsData.find((item: any) => 
-      item.permit_number === id || `solar-${solarPermitsData.indexOf(item)}` === id
+    const installation = permits.find((item: any) => 
+      item.permit_number === id || `solar-${permits.indexOf(item)}` === id
     );
 
     if (!installation) {
+      console.log('Installation not found with ID:', id);
       return new Response(
         JSON.stringify({ error: 'Installation not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
