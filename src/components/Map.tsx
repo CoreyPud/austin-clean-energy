@@ -330,29 +330,6 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
               <p style="margin: 0; font-size: 13px; color: #666;"><strong>Date:</strong> ${new Date(installDate).toLocaleDateString()}</p>
             </div>
           ` : ''}
-          ${id && onMarkerClick ? `
-            <button 
-              type="button"
-              onclick="window.dispatchEvent(new CustomEvent('marker-click', { detail: '${id}' }))"
-              style="
-                margin-top: 12px;
-                width: 100%;
-                padding: 8px 12px;
-                background: linear-gradient(135deg, #22c55e, #16a34a);
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 13px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: opacity 0.2s;
-              "
-              onmouseover="this.style.opacity='0.9'"
-              onmouseout="this.style.opacity='1'"
-            >
-              View Full Details →
-            </button>
-          ` : ''}
         </div>
       `;
 
