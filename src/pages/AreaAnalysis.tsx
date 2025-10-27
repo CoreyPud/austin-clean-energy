@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
+import { InstallationDetailModal } from "@/components/InstallationDetailModal";
 
 const AreaAnalysis = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const AreaAnalysis = () => {
   const [zipCode, setZipCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [selectedInstallationId, setSelectedInstallationId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleAnalyze = async () => {
     if (!zipCode || zipCode.length !== 5) {
@@ -130,7 +133,10 @@ const AreaAnalysis = () => {
                       markers={results.locations || []}
                       className="h-[400px]"
                       showLegend={true}
-                      onMarkerClick={(id) => window.open(`/installation/${id}`, '_blank')}
+                      onMarkerClick={(id) => {
+                        setSelectedInstallationId(id);
+                        setModalOpen(true);
+                      }}
                     />
                   </CardContent>
                 </Card>
@@ -213,6 +219,12 @@ const AreaAnalysis = () => {
           )}
         </div>
       </div>
+
+      <InstallationDetailModal 
+        installationId={selectedInstallationId}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 };
