@@ -42,11 +42,16 @@ function validateLifestyleData(lifestyleData: any): { valid: boolean; error?: st
   };
   
   // Basic validation of expected fields
-  const requiredFields = ['propertyType', 'homeSize', 'occupants'];
+  const requiredFields = ['housingStatus', 'homeType', 'currentEnergy', 'transportation', 'commuteType'];
   for (const field of requiredFields) {
     if (!lifestyleData[field]) {
       return { valid: false, error: `Missing required field: ${field}` };
     }
+  }
+  
+  // Validate interests array
+  if (!Array.isArray(lifestyleData.interests) || lifestyleData.interests.length === 0) {
+    return { valid: false, error: 'At least one interest must be selected' };
   }
   
   return { valid: true };
