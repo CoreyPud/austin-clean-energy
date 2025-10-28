@@ -225,9 +225,9 @@ const CityOverview = () => {
         <div className="container mx-auto px-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
+              <CardTitle className="text-2xl">Solar Installations Across Austin (Sample)</CardTitle>
               <CardDescription>
-                Interactive map showing all solar installations in our community
+                Interactive map showing a sample of 100 recent solar installations in our community
               </CardDescription>
             </CardHeader>
             <CardContent>
