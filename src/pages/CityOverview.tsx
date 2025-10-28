@@ -223,15 +223,15 @@ const CityOverview = () => {
       {/* Map Section */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <MapTokenLoader>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
-                <CardDescription>
-                  Interactive map showing all solar installations in our community
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
+              <CardDescription>
+                Interactive map showing all solar installations in our community
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MapTokenLoader>
                 <div className="h-[500px] rounded-lg overflow-hidden">
                   <Map 
                     center={[-97.7431, 30.2672]}
@@ -247,9 +247,9 @@ const CityOverview = () => {
                     }))}
                   />
                 </div>
-              </CardContent>
-            </Card>
-          </MapTokenLoader>
+              </MapTokenLoader>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
