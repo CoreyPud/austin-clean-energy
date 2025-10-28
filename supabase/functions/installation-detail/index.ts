@@ -1,10 +1,51 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limiting: 30 requests per hour per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 30;
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    return { allowed: true, remaining: RATE_LIMIT - 1 };
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  record.count++;
+  return { allowed: true, remaining: RATE_LIMIT - record.count };
+}
+
+// Input validation
+function validateInstallationId(id: string): { valid: boolean; error?: string } {
+  if (!id || typeof id !== 'string') {
+    return { valid: false, error: 'Installation ID is required' };
+  }
+  
+  const trimmed = id.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Installation ID cannot be empty' };
+  }
+  
+  if (trimmed.length > 100) {
+    return { valid: false, error: 'Installation ID is invalid' };
+  }
+  
+  return { valid: true };
+}
 
 // Helper to ensure response is an array
 const toArray = (data: any): any[] => {
@@ -18,7 +59,41 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limiting check
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const rateCheck = checkRateLimit(ip);
+    
+    if (!rateCheck.allowed) {
+      console.warn(`Rate limit exceeded for IP: ${ip}`);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
+    
+    console.log(`Rate limit check passed. Remaining: ${rateCheck.remaining}`);
+
     const { id } = await req.json();
+    
+    // Input validation
+    const idValidation = validateInstallationId(id);
+    if (!idValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: idValidation.error }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     console.log('Fetching installation details for ID:', id);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

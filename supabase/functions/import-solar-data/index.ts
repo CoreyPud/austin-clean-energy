@@ -6,13 +6,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// CSV size limit: 10MB
+const MAX_CSV_SIZE = 10 * 1024 * 1024;
+const MAX_ROWS = 10000;
+
+// Input validation
+function validateCsvData(csvData: string): { valid: boolean; error?: string } {
+  if (!csvData || typeof csvData !== 'string') {
+    return { valid: false, error: 'CSV data is required' };
+  }
+  
+  // Check size
+  const sizeInBytes = new TextEncoder().encode(csvData).length;
+  if (sizeInBytes > MAX_CSV_SIZE) {
+    return { valid: false, error: `CSV file too large. Maximum size is ${MAX_CSV_SIZE / 1024 / 1024}MB` };
+  }
+  
+  // Count rows
+  const rows = csvData.trim().split('\n');
+  if (rows.length > MAX_ROWS) {
+    return { valid: false, error: `Too many rows. Maximum is ${MAX_ROWS} rows` };
+  }
+  
+  // Basic format check - should have a header row
+  if (rows.length < 2) {
+    return { valid: false, error: 'CSV must contain at least a header row and one data row' };
+  }
+  
+  return { valid: true };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Check authentication (JWT should be verified by config)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.warn('Unauthorized import attempt - no auth header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required for this operation' }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     const { csvData } = await req.json();
+    
+    // Input validation
+    const csvValidation = validateCsvData(csvData);
+    if (!csvValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: csvValidation.error }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
     console.log('Importing solar installation data...');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
 
 const corsHeaders = {
@@ -7,14 +7,95 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting: 20 requests per hour per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 20;
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    return { allowed: true, remaining: RATE_LIMIT - 1 };
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  record.count++;
+  return { allowed: true, remaining: RATE_LIMIT - record.count };
+}
+
+// Input validation
+function validateLifestyleData(lifestyleData: any): { valid: boolean; error?: string } {
+  if (!lifestyleData || typeof lifestyleData !== 'object') {
+    return { valid: false, error: 'Lifestyle data is required' };
+  }
+  
+  // Sanitize string values to prevent prompt injection
+  const sanitizeString = (str: any): string => {
+    if (typeof str !== 'string') return '';
+    return str.trim().substring(0, 500); // Limit length
+  };
+  
+  // Basic validation of expected fields
+  const requiredFields = ['propertyType', 'homeSize', 'occupants'];
+  for (const field of requiredFields) {
+    if (!lifestyleData[field]) {
+      return { valid: false, error: `Missing required field: ${field}` };
+    }
+  }
+  
+  return { valid: true };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Rate limiting check
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const rateCheck = checkRateLimit(ip);
+    
+    if (!rateCheck.allowed) {
+      console.warn(`Rate limit exceeded for IP: ${ip}`);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
+    
+    console.log(`Rate limit check passed. Remaining: ${rateCheck.remaining}`);
+
     const { lifestyleData } = await req.json();
-    console.log('Generating personalized recommendations with lifestyle data:', lifestyleData);
+    
+    // Input validation
+    if (lifestyleData) {
+      const lifestyleValidation = validateLifestyleData(lifestyleData);
+      if (!lifestyleValidation.valid) {
+        return new Response(
+          JSON.stringify({ error: lifestyleValidation.error }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+    }
+    
+    console.log('Generating personalized recommendations');
 
     // Load knowledge base configuration
     const knowledge = await loadKnowledge();

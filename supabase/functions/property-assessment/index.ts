@@ -6,13 +6,121 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting: 10 requests per hour per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 10;
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    return { allowed: true, remaining: RATE_LIMIT - 1 };
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  record.count++;
+  return { allowed: true, remaining: RATE_LIMIT - record.count };
+}
+
+// Input validation schemas
+function validateAddress(address: string): { valid: boolean; error?: string } {
+  if (!address || typeof address !== 'string') {
+    return { valid: false, error: 'Address is required' };
+  }
+  
+  const trimmed = address.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Address cannot be empty' };
+  }
+  
+  if (trimmed.length > 200) {
+    return { valid: false, error: 'Address must be less than 200 characters' };
+  }
+  
+  // Basic sanitization - remove any suspicious characters
+  const dangerousChars = /[<>{}]/g;
+  if (dangerousChars.test(trimmed)) {
+    return { valid: false, error: 'Address contains invalid characters' };
+  }
+  
+  return { valid: true };
+}
+
+function validatePropertyType(propertyType: string): { valid: boolean; error?: string } {
+  if (!propertyType || typeof propertyType !== 'string') {
+    return { valid: false, error: 'Property type is required' };
+  }
+  
+  const trimmed = propertyType.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Property type cannot be empty' };
+  }
+  
+  if (trimmed.length > 100) {
+    return { valid: false, error: 'Property type must be less than 100 characters' };
+  }
+  
+  return { valid: true };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Rate limiting check
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const rateCheck = checkRateLimit(ip);
+    
+    if (!rateCheck.allowed) {
+      console.warn(`Rate limit exceeded for IP: ${ip}`);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
+    
+    console.log(`Rate limit check passed. Remaining: ${rateCheck.remaining}`);
+
     const { address, propertyType } = await req.json();
+    
+    // Input validation
+    const addressValidation = validateAddress(address);
+    if (!addressValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: addressValidation.error }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    const propertyTypeValidation = validatePropertyType(propertyType);
+    if (!propertyTypeValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: propertyTypeValidation.error }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     console.log('Assessing property:', address, 'Type:', propertyType);
 
     // Load knowledge base configuration

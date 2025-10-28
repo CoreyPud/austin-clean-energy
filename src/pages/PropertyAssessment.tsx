@@ -22,10 +22,41 @@ const PropertyAssessment = () => {
   const [results, setResults] = useState<any>(null);
 
   const handleAssess = async () => {
-    if (!address || !propertyType) {
+    // Client-side validation
+    const trimmedAddress = address.trim();
+    
+    if (!trimmedAddress) {
       toast({
         title: "Missing Information",
-        description: "Please enter address and select property type",
+        description: "Please enter your property address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (trimmedAddress.length > 200) {
+      toast({
+        title: "Invalid Address",
+        description: "Address must be less than 200 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check for suspicious characters
+    if (/[<>{}]/.test(trimmedAddress)) {
+      toast({
+        title: "Invalid Address",
+        description: "Address contains invalid characters",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!propertyType) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a property type",
         variant: "destructive",
       });
       return;
@@ -34,7 +65,7 @@ const PropertyAssessment = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('property-assessment', {
-        body: { address, propertyType }
+        body: { address: trimmedAddress, propertyType }
       });
 
       if (error) throw error;

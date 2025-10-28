@@ -22,10 +22,13 @@ const AreaAnalysis = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   const handleAnalyze = async () => {
-    if (!zipCode || zipCode.length !== 5) {
+    // Client-side validation
+    const trimmedZip = zipCode.trim();
+    
+    if (!trimmedZip || !/^\d{5}$/.test(trimmedZip)) {
       toast({
         title: "Invalid ZIP Code",
-        description: "Please enter a valid 5-digit ZIP code",
+        description: "Please enter a valid 5-digit ZIP code (numbers only)",
         variant: "destructive",
       });
       return;
@@ -34,7 +37,7 @@ const AreaAnalysis = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('area-analysis', {
-        body: { zipCode }
+        body: { zipCode: trimmedZip }
       });
 
       if (error) throw error;

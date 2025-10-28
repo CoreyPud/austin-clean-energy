@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 // Removed external knowledge import to prevent boot errors
 
 const corsHeaders = {
@@ -7,6 +7,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+// Rate limiting: 15 requests per hour per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 15;
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    return { allowed: true, remaining: RATE_LIMIT - 1 };
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  record.count++;
+  return { allowed: true, remaining: RATE_LIMIT - record.count };
+}
+
+// Input validation
+function validateZipCode(zipCode: string): { valid: boolean; error?: string } {
+  if (!zipCode || typeof zipCode !== 'string') {
+    return { valid: false, error: 'ZIP code is required' };
+  }
+  
+  const trimmed = zipCode.trim();
+  
+  // Must be exactly 5 digits
+  if (!/^\d{5}$/.test(trimmed)) {
+    return { valid: false, error: 'ZIP code must be exactly 5 digits' };
+  }
+  
+  return { valid: true };
+}
+
 const getExternalContext = (_: any) => '';
 
 serve(async (req) => {
@@ -15,7 +54,41 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limiting check
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const rateCheck = checkRateLimit(ip);
+    
+    if (!rateCheck.allowed) {
+      console.warn(`Rate limit exceeded for IP: ${ip}`);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      );
+    }
+    
+    console.log(`Rate limit check passed. Remaining: ${rateCheck.remaining}`);
+
     const { zipCode } = await req.json();
+    
+    // Input validation
+    const zipValidation = validateZipCode(zipCode);
+    if (!zipValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: zipValidation.error }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     console.log('Analyzing area for ZIP code:', zipCode);
 
     // Use inlined knowledge (fallback to avoid cross-file imports in Edge Function)
