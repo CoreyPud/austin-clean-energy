@@ -152,6 +152,14 @@ const CityOverview = () => {
       <section className="bg-gradient-to-br from-primary via-secondary to-accent py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center text-white">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="mb-6 text-white hover:bg-white/10"
+            >
+              <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+              Back to Home
+            </Button>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Austin's Clean Energy Progress
             </h1>
