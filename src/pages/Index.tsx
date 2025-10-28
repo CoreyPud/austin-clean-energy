@@ -67,7 +67,7 @@ const Index = () => {
   const modules = [
     {
       icon: BarChart3,
-      title: "Area Opportunity Analysis",
+      title: "Analyze Your Neighborhood",
       description: "Analyze neighborhoods and zip codes for solar, efficiency, and storage potential across Austin.",
       features: ["Community-level insights", "Adoption momentum tracking", "Incentive opportunities"],
       gradient: "from-primary to-secondary",
@@ -111,10 +111,10 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 size="lg" 
-                onClick={() => navigate("/area-analysis")}
+                onClick={() => navigate("/city-overview")}
                 className="bg-accent hover:bg-accent/90 text-foreground font-semibold group"
               >
-                Analyze Your Neighborhood
+                View City-Wide Progress
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button 
