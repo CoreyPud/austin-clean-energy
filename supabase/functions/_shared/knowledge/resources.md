@@ -137,6 +137,11 @@ Last Updated: 2025-10-22
 **Resource:** City's roadmap to net-zero emissions  
 **Use Case:** Understand city priorities and how individual actions align
 
+### Austin Climate Action Plan
+**URL:** https://austin-climate-equity-plan-implementation-dashboard-austin.hub.arcgis.com/pages/database  
+**Resource:** Progress tracker on Austin's progrees towards climate equity goals  
+**Use Case:** See the progress we are making at a city level and where more work needs to be done. 
+
 ### Environment Texas
 **URL:** https://environmenttexas.org/austin  
 **Organization:** Local environmental advocacy group  
