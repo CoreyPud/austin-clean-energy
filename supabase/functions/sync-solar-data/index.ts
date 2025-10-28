@@ -122,27 +122,25 @@ Deno.serve(async (req) => {
   try {
     console.log('Solar data sync initiated');
 
-    // Start the sync in the background using waitUntil
-    // This allows the function to return immediately while the sync continues
-    const syncPromise = syncDataInBackground();
-    
-    // Use EdgeRuntime.waitUntil to ensure the background task completes
-    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
-      EdgeRuntime.waitUntil(syncPromise);
-    }
+    // Run the sync - it processes in batches so it should complete within timeout limits
+    const result = await syncDataInBackground();
 
-    // Return immediately to avoid timeout
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        message: 'Solar data sync started in background. Check logs for progress.',
+        success: result.success,
+        message: result.success 
+          ? `Sync completed. Processed: ${result.processed}, Errors: ${result.errors}, Total: ${result.total}`
+          : `Sync failed: ${result.error}`,
+        processed: result.processed,
+        errors: result.errors,
+        total: result.total,
         timestamp: new Date().toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error starting sync:', error);
+    console.error('Error in sync:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),
