@@ -46,7 +46,7 @@ serve(async (req) => {
     const recentDate = oneEightyDaysAgo.toISOString().split('T')[0];
     
     const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
-      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$where=issued_date>='${recentDate}'&$limit=2000`).then(r => r.json()),
+      fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$where=issue_date>='${recentDate}T00:00:00.000'&$limit=2000`).then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/tk9p-m8c7.json?$limit=100').then(r => r.json()),
       fetch('https://data.austintexas.gov/resource/fnns-rqqh.json?$limit=50').then(r => r.json())
     ]);
@@ -120,7 +120,7 @@ serve(async (req) => {
     const apiLocations = permits
       .filter((item: any) => {
         totalPermitsFetched++;
-        const itemZip = item.original_zip_code?.toString().substring(0, 5);
+        const itemZip = item.original_zip?.toString().substring(0, 5);
         
         // First filter: must be in target ZIP
         if (itemZip !== zipCode) return false;

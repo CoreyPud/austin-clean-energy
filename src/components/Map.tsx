@@ -390,7 +390,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
             {markers.some(m => m.source === 'api' || m.color === '#f59e0b') && (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-white shadow-sm"></div>
-                <span className="text-xs text-muted-foreground">Recent Permits (90 days)</span>
+                <span className="text-xs text-muted-foreground">Pending Permits (last 180 days)</span>
               </div>
             )}
             {markers.some(m => m.source === 'target' || m.id === 'target-property') && (
