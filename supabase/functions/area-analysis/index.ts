@@ -40,10 +40,10 @@ serve(async (req) => {
 
     console.log(`Found ${dbInstallations?.length || 0} installations in database for ZIP ${zipCode}`);
 
-    // Fetch recent permits from Austin API (last 90 days for supplemental data)
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const recentDate = ninetyDaysAgo.toISOString().split('T')[0];
+    // Fetch recent permits from Austin API (last 180 days for better coverage)
+    const oneEightyDaysAgo = new Date();
+    oneEightyDaysAgo.setDate(oneEightyDaysAgo.getDate() - 180);
+    const recentDate = oneEightyDaysAgo.toISOString().split('T')[0];
     
     const [solarPermitsData, auditData, weatherizationData] = await Promise.all([
       fetch(`https://data.austintexas.gov/resource/3syk-w9eu.json?work_class=Auxiliary%20Power&$where=issued_date>='${recentDate}'&$limit=2000`).then(r => r.json()),
@@ -58,6 +58,28 @@ serve(async (req) => {
     const weather = toArray(weatherizationData);
 
     console.log('Fetched recent permits:', permits.length, 'Audits:', audits.length, 'Weatherization:', weather.length);
+    
+    // Helper function to normalize addresses for comparison
+    const normalizeAddress = (addr: string) => {
+      return addr.toLowerCase()
+        .replace(/\b(st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane)\b/g, '')
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+    };
+    
+    // Helper function to calculate distance between coordinates (in meters)
+    const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const R = 6371e3; // Earth's radius in meters
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
 
     // Process database installations (existing installations)
     const dbLocations = (dbInstallations || [])
@@ -78,15 +100,88 @@ serve(async (req) => {
     // Process recent API permits (filter for ZIP and avoid duplicates)
     const dbProjectIds = new Set((dbInstallations || []).map((i: any) => i.project_id).filter(Boolean));
     
+    // Build index of existing installations for duplicate detection
+    const dbAddressMap = new Map();
+    (dbInstallations || []).forEach((item: any) => {
+      if (item.address) {
+        const normalized = normalizeAddress(item.address);
+        dbAddressMap.set(normalized, { lat: item.latitude, lng: item.longitude });
+      }
+    });
+    
+    let totalPermitsFetched = 0;
+    let permitsInZip = 0;
+    let duplicatesByProjectId = 0;
+    let duplicatesByAddress = 0;
+    let duplicatesByCoordinates = 0;
+    let missingCoordinates = 0;
+    let validPendingPermits = 0;
+    
     const apiLocations = permits
       .filter((item: any) => {
+        totalPermitsFetched++;
         const itemZip = item.original_zip_code?.toString().substring(0, 5);
-        return itemZip === zipCode && !dbProjectIds.has(item.permit_number);
+        
+        // First filter: must be in target ZIP
+        if (itemZip !== zipCode) return false;
+        permitsInZip++;
+        
+        // Check duplicate by project ID
+        if (dbProjectIds.has(item.permit_number)) {
+          duplicatesByProjectId++;
+          return false;
+        }
+        
+        // Check duplicate by address
+        const itemAddress = item.original_address1 || item.permit_location || '';
+        if (itemAddress) {
+          const normalizedItemAddr = normalizeAddress(itemAddress);
+          if (dbAddressMap.has(normalizedItemAddr)) {
+            duplicatesByAddress++;
+            return false;
+          }
+        }
+        
+        // Check duplicate by coordinate proximity (within 50 meters)
+        let itemLat: number | undefined;
+        let itemLng: number | undefined;
+        
+        if (item.latitude && item.longitude) {
+          itemLat = parseFloat(item.latitude);
+          itemLng = parseFloat(item.longitude);
+        } else if (item.location?.latitude && item.location?.longitude) {
+          itemLat = parseFloat(item.location.latitude);
+          itemLng = parseFloat(item.location.longitude);
+        } else if (Array.isArray(item.location?.coordinates) && item.location.coordinates.length === 2) {
+          const [lngC, latC] = item.location.coordinates;
+          itemLat = Number(latC);
+          itemLng = Number(lngC);
+        }
+        
+        if (!Number.isFinite(itemLat as number) || !Number.isFinite(itemLng as number)) {
+          missingCoordinates++;
+          return false;
+        }
+        
+        // Check if coordinates are close to any existing installation
+        for (const [_, coords] of dbAddressMap) {
+          if (coords.lat && coords.lng) {
+            const distance = getDistance(itemLat!, itemLng!, parseFloat(coords.lat), parseFloat(coords.lng));
+            if (distance < 50) { // Within 50 meters
+              duplicatesByCoordinates++;
+              return false;
+            }
+          }
+        }
+        
+        validPendingPermits++;
+        return true;
       })
       .map((item: any, idx: number) => {
         let lat: number | undefined;
         let lng: number | undefined;
 
+        // Try multiple coordinate extraction methods
         if (item.latitude && item.longitude) {
           lat = parseFloat(item.latitude);
           lng = parseFloat(item.longitude);
@@ -97,27 +192,44 @@ serve(async (req) => {
           const [lngC, latC] = item.location.coordinates;
           lat = Number(latC);
           lng = Number(lngC);
+        } else if (item.geocoded_location?.coordinates) {
+          const coords = item.geocoded_location.coordinates;
+          if (Array.isArray(coords) && coords.length === 2) {
+            lng = Number(coords[0]);
+            lat = Number(coords[1]);
+          }
         }
 
-        if (!Number.isFinite(lat as number) || !Number.isFinite(lng as number)) return null;
-
         const fullAddress = item.original_address1 || item.permit_location || item.street_name || 'Address not available';
-        const title = item.original_address1 ? (item.original_address1.split(',')[0]) : `Recent Permit ${idx + 1}`;
+        const title = item.original_address1 ? (item.original_address1.split(',')[0]) : `Pending Permit ${idx + 1}`;
 
         return {
           coordinates: [lng as number, lat as number] as [number, number],
           title,
           address: fullAddress,
           capacity: item.description || item.project_name || 'Solar Installation',
-          programType: 'Recent Permit',
+          programType: 'Pending Permit',
           installDate: item.issue_date ? new Date(item.issue_date).toLocaleDateString() : undefined,
-          id: item.permit_number || `solar-${idx}`,
+          id: item.permit_number || `solar-pending-${idx}`,
           source: 'api',
           color: '#f59e0b'
         };
       })
-      .filter(Boolean)
       .slice(0, 20);
+    
+    // Log filtering statistics
+    console.log('Permit filtering stats:', {
+      totalFetched: totalPermitsFetched,
+      inTargetZip: permitsInZip,
+      filteredOut: {
+        byProjectId: duplicatesByProjectId,
+        byAddress: duplicatesByAddress,
+        byCoordinates: duplicatesByCoordinates,
+        missingCoords: missingCoordinates
+      },
+      validPending: validPendingPermits,
+      finalShown: apiLocations.length
+    });
 
     // Combine both sources
     const locations = [...dbLocations, ...apiLocations];
@@ -132,9 +244,9 @@ serve(async (req) => {
     const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
 
 📊 DATA SUMMARY:
-Total Solar Installations: ${(dbInstallations?.length || 0) + permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
+Total Solar Installations: ${(dbInstallations?.length || 0) + apiLocations.length}
 - Existing Installations: ${dbInstallations?.length || 0}
-- Recent Permits (90 days): ${permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length}
+- Pending Permits (180 days): ${apiLocations.length}
 Energy Audits: ${audits.length} completed
 Weatherization Projects: ${weather.length} in progress
 
@@ -197,8 +309,8 @@ Format with markdown: Use **bold** for section headers, keep sentences short and
         insights,
         locations,
         dataPoints: {
-          solarPrograms: (dbInstallations?.length || 0) + permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
-          solarPermits: (dbInstallations?.length || 0) + permits.filter((p: any) => p.original_zip_code?.toString().substring(0, 5) === zipCode).length,
+          solarPrograms: (dbInstallations?.length || 0) + apiLocations.length,
+          solarPermits: (dbInstallations?.length || 0) + apiLocations.length,
           energyAudits: audits.length,
           weatherizationProjects: weather.length
         }
