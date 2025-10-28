@@ -232,21 +232,20 @@ const CityOverview = () => {
             </CardHeader>
             <CardContent>
               <MapTokenLoader>
-                <div className="h-[500px] rounded-lg overflow-hidden">
-                  <Map 
-                    center={[-97.7431, 30.2672]}
-                    zoom={10}
-                    markers={recentInstallations.slice(0, 100).map(install => ({
-                      coordinates: [install.longitude, install.latitude] as [number, number],
-                      title: install.address,
-                      address: install.address,
-                      capacity: `${install.installed_kw} kW`,
-                      installDate: install.completed_date || install.issued_date,
-                      id: install.id,
-                      color: '#22c55e'
-                    }))}
-                  />
-                </div>
+                <Map 
+                  className="h-[500px] rounded-lg overflow-hidden"
+                  center={[-97.7431, 30.2672]}
+                  zoom={10}
+                  markers={recentInstallations.slice(0, 100).map(install => ({
+                    coordinates: [install.longitude, install.latitude] as [number, number],
+                    title: install.address,
+                    address: install.address,
+                    capacity: `${install.installed_kw} kW`,
+                    installDate: install.completed_date || install.issued_date,
+                    id: install.id,
+                    color: '#22c55e'
+                  }))}
+                />
               </MapTokenLoader>
             </CardContent>
           </Card>
