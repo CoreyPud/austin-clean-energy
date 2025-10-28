@@ -278,44 +278,6 @@ const CityOverview = () => {
         </div>
       </section>
 
-      {/* Recent Activity */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8">Recent Solar Installations</h2>
-            {isLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentInstallations.slice(0, 5).map((install) => (
-                  <Card 
-                    key={install.id}
-                    className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => navigate(`/installation/${install.id}`)}
-                  >
-                    <CardContent className="flex items-center justify-between py-4">
-                      <div className="flex-1">
-                        <div className="font-semibold">{install.address}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {install.installed_kw} kW • Completed {new Date(install.completed_date).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <Badge variant="secondary">
-                        {install.status_current || 'Completed'}
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* Resources Section */}
       <section className="py-12 bg-muted/30">
         <div className="container mx-auto px-4">
