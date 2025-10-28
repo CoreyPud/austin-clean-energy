@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
+import MapTokenLoader from "@/components/MapTokenLoader";
 import { 
   TrendingUp, 
   Building2, 
@@ -34,12 +35,14 @@ const CityOverview = () => {
           .from('cached_stats')
           .select('*');
 
-        // Load recent installations
+        // Load installations for map (more than just recent)
         const { data: installations } = await supabase
           .from('solar_installations')
           .select('*')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null)
           .order('completed_date', { ascending: false })
-          .limit(5);
+          .limit(200);
 
         // Calculate total capacity
         const { data: allInstallations } = await supabase
@@ -220,19 +223,33 @@ const CityOverview = () => {
       {/* Map Section */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
-              <CardDescription>
-                Interactive map showing all solar installations in our community
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[500px] rounded-lg overflow-hidden">
-                <Map />
-              </div>
-            </CardContent>
-          </Card>
+          <MapTokenLoader>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
+                <CardDescription>
+                  Interactive map showing all solar installations in our community
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[500px] rounded-lg overflow-hidden">
+                  <Map 
+                    center={[-97.7431, 30.2672]}
+                    zoom={10}
+                    markers={recentInstallations.slice(0, 100).map(install => ({
+                      coordinates: [install.longitude, install.latitude] as [number, number],
+                      title: install.address,
+                      address: install.address,
+                      capacity: `${install.installed_kw} kW`,
+                      installDate: install.completed_date || install.issued_date,
+                      id: install.id,
+                      color: '#22c55e'
+                    }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </MapTokenLoader>
         </div>
       </section>
 
