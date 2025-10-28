@@ -80,6 +80,14 @@ const CityOverview = () => {
 
         setRecentInstallations(installations || []);
         setIsLoading(false);
+
+        // Background refresh from data sources, then update cached stats
+        supabase.functions.invoke('fetch-stats').then(async () => {
+          const { data: refreshed } = await supabase
+            .from('cached_stats')
+            .select('*');
+          setStats((prev: any) => ({ ...prev, cached: refreshed || prev?.cached }));
+        }).catch((e) => console.error('Failed to refresh stats', e));
       } catch (error) {
         console.error('Error loading city data:', error);
         setIsLoading(false);
@@ -192,7 +200,7 @@ const CityOverview = () => {
                   <CardContent className="pt-6">
                     <Building2 className="h-8 w-8 text-primary mb-3" />
                     <div className="text-3xl font-bold text-primary mb-1">
-                      {stats?.totalInstalls.toLocaleString()}
+                      {(stats?.cached?.find((s: any) => s.stat_type === 'solar_permits')?.value || stats?.totalInstalls)?.toString()}
                     </div>
                     <div className="text-sm text-muted-foreground">Total Solar Installations</div>
                   </CardContent>
