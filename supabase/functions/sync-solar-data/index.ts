@@ -15,44 +15,53 @@ interface AustinSolarRecord {
   permit_class_mapped?: string;
   original_address1?: string;
   description?: string;
-  installed_kw?: string;
-  applicationdate?: string;
-  statusdate?: string;
+  applieddate?: string;
+  issue_date?: string;
   calendar_year_issued?: string;
-  statuscurrent?: string;
-  completed_date?: string;
+  status_current?: string;
+  statusdate?: string;
   original_zip?: string;
   council_district?: string;
   jurisdiction?: string;
   latitude?: string;
   longitude?: string;
-  contractor_companyname?: string;
+  contractor_company_name?: string;
   contractor_city?: string;
-  link?: string;
+  link?: string | { url: string };
   project_id?: string;
 }
 
 // Transform Austin API record to database schema
 function transformRecord(record: AustinSolarRecord) {
+  // Extract kW from description field (e.g., "_7.11__kW" or "7.11 kW")
+  let installed_kw = null;
+  if (record.description) {
+    const kwMatch = record.description.match(/[\d.]+\s*kW/i);
+    if (kwMatch) {
+      const kwValue = kwMatch[0].replace(/[^\d.]/g, '');
+      installed_kw = parseFloat(kwValue);
+    }
+  }
+  
   return {
     project_id: record.project_id || null,
     permit_class: record.permit_class_mapped || null,
     address: record.original_address1 || 'Unknown',
     description: record.description || null,
-    installed_kw: record.installed_kw ? parseFloat(record.installed_kw) : null,
-    applied_date: record.applicationdate ? new Date(record.applicationdate).toISOString().split('T')[0] : null,
-    issued_date: record.statusdate ? new Date(record.statusdate).toISOString().split('T')[0] : null,
+    installed_kw,
+    applied_date: record.applieddate ? new Date(record.applieddate).toISOString().split('T')[0] : null,
+    issued_date: record.issue_date ? new Date(record.issue_date).toISOString().split('T')[0] : null,
     calendar_year_issued: record.calendar_year_issued ? parseInt(record.calendar_year_issued) : null,
-    status_current: record.statuscurrent || null,
-    completed_date: record.completed_date ? new Date(record.completed_date).toISOString().split('T')[0] : null,
+    status_current: record.status_current || null,
+    completed_date: record.statusdate ? new Date(record.statusdate).toISOString().split('T')[0] : null,
     original_zip: record.original_zip || null,
     council_district: record.council_district || null,
     jurisdiction: record.jurisdiction || null,
     latitude: record.latitude ? parseFloat(record.latitude) : null,
     longitude: record.longitude ? parseFloat(record.longitude) : null,
-    contractor_company: record.contractor_companyname || null,
+    contractor_company: record.contractor_company_name || null,
     contractor_city: record.contractor_city || null,
-    link: record.link || null,
+    link: record.link ? (typeof record.link === 'string' ? record.link : record.link.url) : null,
   };
 }
 
@@ -72,6 +81,21 @@ async function syncDataInBackground() {
     
     const apiData: AustinSolarRecord[] = await response.json();
     console.log(`Fetched ${apiData.length} records from Austin API`);
+    
+    // Log first record's keys to see what fields are available
+    if (apiData.length > 0) {
+      console.log('Available API fields:', Object.keys(apiData[0]).join(', '));
+      // Log a few key fields from first record
+      const sample = apiData[0];
+      console.log('Sample values - address:', sample.original_address1);
+      console.log('Sample values - project_id:', sample.project_id);
+      // Try to find the kW field
+      for (const key of Object.keys(sample)) {
+        if (key.toLowerCase().includes('unit') || key.toLowerCase().includes('kw') || key.toLowerCase().includes('watt')) {
+          console.log(`Found potential kW field: ${key} =`, sample[key as keyof AustinSolarRecord]);
+        }
+      }
+    }
 
     // Transform all records
     const installations = apiData
