@@ -44,15 +44,17 @@ const CityOverview = () => {
           .order('completed_date', { ascending: false })
           .limit(200);
 
-        // Calculate total capacity
+        // Calculate total capacity (convert kW to MW)
         const { data: allInstallations } = await supabase
           .from('solar_installations')
           .select('installed_kw, completed_date, issued_date, calendar_year_issued');
 
-        const totalCapacity = allInstallations?.reduce(
-          (sum, inst) => sum + (Number(inst.installed_kw) || 0), 
+        const totalCapacityKW = allInstallations?.reduce(
+          (sum, inst) => sum + (Number(inst.installed_kw) || 0),
           0
         ) || 0;
+
+        const totalCapacityMW = totalCapacityKW / 1000;
 
         // Calculate this year's installations (permitted or completed)
         const currentYear = new Date().getFullYear();
@@ -73,7 +75,7 @@ const CityOverview = () => {
 
         setStats({
           cached: cachedStats,
-          totalCapacity: totalCapacity.toFixed(1),
+          totalCapacity: totalCapacityMW.toFixed(1),
           thisYearInstalls,
           totalInstalls: allInstallations?.length || 0
         });
