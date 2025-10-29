@@ -219,9 +219,9 @@ const CityOverview = () => {
                   <CardContent className="pt-6">
                     <Zap className="h-8 w-8 text-primary mb-3" />
                     <div className="text-3xl font-bold text-primary mb-1">
-                      {stats?.totalCapacity} MW
+                      {stats?.totalInstalls?.toLocaleString()}
                     </div>
-                    <div className="text-sm text-muted-foreground">Total Solar Capacity</div>
+                    <div className="text-sm text-muted-foreground">Solar Projects Tracked</div>
                   </CardContent>
                 </Card>
                 <Card>
