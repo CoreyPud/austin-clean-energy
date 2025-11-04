@@ -62,31 +62,41 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
       'top-right'
     );
 
-    // Add bounds change listener for dynamic loading
-    if (enableDynamicLoading && onBoundsChange) {
-      const handleBoundsChange = () => {
-        if (!map.current) return;
-        const bounds = map.current.getBounds();
-        const currentZoom = map.current.getZoom();
-        
-        // Only trigger if zoomed in enough (zoom > 11)
-        if (currentZoom > 11) {
-          onBoundsChange({
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
-            zoom: currentZoom
-          });
-        }
-      };
+    return () => {
+      map.current?.remove();
+      map.current = null;
+    };
+  }, []);
 
+  // Attach/detach bounds change listener without recreating the map
+  useEffect(() => {
+    if (!map.current) return;
+
+    const handleBoundsChange = () => {
+      if (!map.current) return;
+      const bounds = map.current.getBounds();
+      const currentZoom = map.current.getZoom();
+      
+      // Only trigger if zoomed in enough (zoom > 11)
+      if (currentZoom > 11 && enableDynamicLoading && onBoundsChange) {
+        onBoundsChange({
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+          zoom: currentZoom
+        });
+      }
+    };
+
+    if (enableDynamicLoading && onBoundsChange) {
       map.current.on('moveend', handleBoundsChange);
     }
 
     return () => {
-      map.current?.remove();
-      map.current = null;
+      if (map.current) {
+        map.current.off('moveend', handleBoundsChange);
+      }
     };
   }, [enableDynamicLoading, onBoundsChange]);
 
