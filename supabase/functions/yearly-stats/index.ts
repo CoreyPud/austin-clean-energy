@@ -11,13 +11,16 @@ Deno.serve(async (req) => {
   try {
     console.log('Fetching yearly installation statistics from Austin Open Data API');
 
-    // Fetch yearly data from Austin Open Data API
-    const apiUrl = "https://data.austintexas.gov/resource/3syk-w9eu.json?" +
-      "$select=date_extract_y(issued_date) as year, count(*) as count&" +
-      "$where=work_class='Auxiliary Power' AND upper(description) like '%KW%' AND issued_date is not null&" +
-      "$group=year&" +
-      "$order=year";
-
+    // Fetch yearly data from Austin Open Data API with proper URL encoding
+    const baseUrl = "https://data.austintexas.gov/resource/3syk-w9eu.json";
+    const params = new URLSearchParams({
+      '$select': 'date_extract_y(issued_date) as year, count(*)',
+      '$where': "work_class='Auxiliary Power' AND upper(description) like '%KW%' AND issued_date is not null",
+      '$group': 'year',
+      '$order': 'year'
+    });
+    
+    const apiUrl = `${baseUrl}?${params.toString()}`;
     console.log('API URL:', apiUrl);
 
     const response = await fetch(apiUrl);
