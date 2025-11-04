@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { 
   TrendingUp, 
   Building2, 
@@ -19,8 +19,10 @@ import {
   Leaf,
   Home,
   Car,
-  TreePine
+  TreePine,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const CityOverview = () => {
   const navigate = useNavigate();
@@ -122,18 +124,21 @@ const CityOverview = () => {
       progress: 35,
       description: "Community-wide carbon neutrality target",
       icon: Target,
+      source: "Based on Austin's Climate Equity Plan tracking progress toward net-zero community-wide emissions by 2040"
     },
     {
       title: "100% Renewable",
       progress: 42,
       description: "Austin Energy's renewable energy mix",
       icon: Leaf,
+      source: "Data from Austin Energy's renewable energy portfolio, tracking progress toward 100% carbon-free energy"
     },
     {
       title: "EV Transition",
       progress: 28,
       description: "Progress toward transportation electrification",
       icon: Car,
+      source: "Estimated based on EV registrations and charging infrastructure deployment in Austin metro area"
     },
   ];
 
@@ -325,7 +330,7 @@ const CityOverview = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Bar dataKey="count" fill="hsl(var(--primary))" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -338,32 +343,44 @@ const CityOverview = () => {
           </Card>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {goals.map((goal, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <goal.icon className="h-6 w-6 text-primary" />
+            <TooltipProvider>
+              {goals.map((goal, index) => (
+                <Card key={index}>
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <goal.icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-xl">{goal.title}</CardTitle>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-sm">{goal.source}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Badge variant="secondary" className="mt-1">
+                          {goal.progress}% Complete
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">{goal.title}</CardTitle>
-                      <Badge variant="secondary" className="mt-1">
-                        {goal.progress}% Complete
-                      </Badge>
+                    <CardDescription>{goal.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="w-full bg-muted rounded-full h-3">
+                      <div
+                        className="bg-primary h-3 rounded-full transition-all duration-500"
+                        style={{ width: `${goal.progress}%` }}
+                      />
                     </div>
-                  </div>
-                  <CardDescription>{goal.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="w-full bg-muted rounded-full h-3">
-                    <div
-                      className="bg-primary h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${goal.progress}%` }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </TooltipProvider>
           </div>
         </div>
       </section>
