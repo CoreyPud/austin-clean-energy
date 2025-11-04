@@ -12,17 +12,13 @@ import {
   TrendingUp, 
   Building2, 
   Zap, 
-  Target, 
   Calendar,
   ArrowRight,
   ExternalLink,
-  Leaf,
   Home,
   Car,
-  TreePine,
-  Info
+  TreePine
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const CityOverview = () => {
   const navigate = useNavigate();
@@ -117,30 +113,6 @@ const CityOverview = () => {
     loadYearlyData();
   }, []);
 
-  // Austin's climate goals (from Climate Action Plan)
-  const goals = [
-    {
-      title: "Net-Zero by 2040",
-      progress: 35,
-      description: "Community-wide carbon neutrality target",
-      icon: Target,
-      source: "Based on Austin's Climate Equity Plan tracking progress toward net-zero community-wide emissions by 2040"
-    },
-    {
-      title: "100% Renewable",
-      progress: 42,
-      description: "Austin Energy's renewable energy mix",
-      icon: Leaf,
-      source: "Data from Austin Energy's renewable energy portfolio, tracking progress toward 100% carbon-free energy"
-    },
-    {
-      title: "EV Transition",
-      progress: 28,
-      description: "Progress toward transportation electrification",
-      icon: Car,
-      source: "Estimated based on EV registrations and charging infrastructure deployment in Austin metro area"
-    },
-  ];
 
   const resources = [
     {
@@ -301,24 +273,24 @@ const CityOverview = () => {
         </div>
       </section>
 
-      {/* Progress Toward Goals */}
+      {/* Solar Growth Trends */}
       <section className="py-12 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Progress Toward Climate Goals
+              Solar Installation Growth
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Tracking Austin's journey to net-zero emissions and 100% renewable energy
+              Tracking verified solar adoption trends in Austin based on city permit data
             </p>
           </div>
 
           {/* Yearly Installations Chart */}
-          <Card className="mb-8">
+          <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Solar Installations by Year</CardTitle>
               <CardDescription>
-                Annual growth of solar projects in Austin
+                Annual growth of solar projects in Austin (2014-present)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -341,47 +313,6 @@ const CityOverview = () => {
               )}
             </CardContent>
           </Card>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <TooltipProvider>
-              {goals.map((goal, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <goal.icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-xl">{goal.title}</CardTitle>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p className="text-sm">{goal.source}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Badge variant="secondary" className="mt-1">
-                          {goal.progress}% Complete
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardDescription>{goal.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="w-full bg-muted rounded-full h-3">
-                      <div
-                        className="bg-primary h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${goal.progress}%` }}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </TooltipProvider>
-          </div>
         </div>
       </section>
 
