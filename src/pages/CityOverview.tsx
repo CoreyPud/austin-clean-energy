@@ -27,6 +27,9 @@ const CityOverview = () => {
   const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
+  const [mapMarkers, setMapMarkers] = useState<any[]>([]);
+  const [isLoadingMapData, setIsLoadingMapData] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(10);
 
   useEffect(() => {
     const loadData = async () => {
@@ -82,6 +85,16 @@ const CityOverview = () => {
         });
 
         setRecentInstallations(installations || []);
+        // Set initial map markers
+        setMapMarkers((installations || []).slice(0, 100).map(install => ({
+          coordinates: [install.longitude, install.latitude] as [number, number],
+          title: install.address,
+          address: install.address,
+          capacity: `${install.installed_kw} kW`,
+          installDate: install.completed_date || install.issued_date,
+          id: install.id,
+          color: '#22c55e'
+        })));
         setIsLoading(false);
 
         // Background refresh from data sources, then update cached stats
@@ -112,6 +125,42 @@ const CityOverview = () => {
     loadData();
     loadYearlyData();
   }, []);
+
+  const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
+    setCurrentZoom(bounds.zoom);
+    setIsLoadingMapData(true);
+
+    try {
+      // Query installations within the visible bounds
+      const { data: boundedInstallations } = await supabase
+        .from('solar_installations')
+        .select('*')
+        .gte('latitude', bounds.south)
+        .lte('latitude', bounds.north)
+        .gte('longitude', bounds.west)
+        .lte('longitude', bounds.east)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .order('completed_date', { ascending: false })
+        .limit(200); // Load up to 200 installations in the zoomed area
+
+      if (boundedInstallations && boundedInstallations.length > 0) {
+        setMapMarkers(boundedInstallations.map(install => ({
+          coordinates: [install.longitude, install.latitude] as [number, number],
+          title: install.address,
+          address: install.address,
+          capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
+          installDate: install.completed_date || install.issued_date,
+          id: install.id,
+          color: '#22c55e'
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading installations for bounds:', error);
+    } finally {
+      setIsLoadingMapData(false);
+    }
+  };
 
 
   const resources = [
@@ -246,9 +295,12 @@ const CityOverview = () => {
         <div className="container mx-auto px-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Solar Installations Across Austin (Sample)</CardTitle>
+              <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
               <CardDescription>
-                Interactive map showing a sample of 100 recent solar installations in our community
+                {currentZoom <= 11 
+                  ? "Interactive map showing 100 recent solar installations. Zoom in to see more installations in specific areas."
+                  : `Showing ${mapMarkers.length} installations in the zoomed area${isLoadingMapData ? ' (loading...)' : ''}`
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -257,15 +309,9 @@ const CityOverview = () => {
                   className="h-[500px] rounded-lg overflow-hidden"
                   center={[-97.7431, 30.2672]}
                   zoom={10}
-                  markers={recentInstallations.slice(0, 100).map(install => ({
-                    coordinates: [install.longitude, install.latitude] as [number, number],
-                    title: install.address,
-                    address: install.address,
-                    capacity: `${install.installed_kw} kW`,
-                    installDate: install.completed_date || install.issued_date,
-                    id: install.id,
-                    color: '#22c55e'
-                  }))}
+                  markers={mapMarkers}
+                  enableDynamicLoading={true}
+                  onBoundsChange={handleMapBoundsChange}
                 />
               </MapTokenLoader>
             </CardContent>

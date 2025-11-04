@@ -27,9 +27,11 @@ interface MapProps {
   showLegend?: boolean;
   className?: string;
   onMarkerClick?: (id: string) => void;
+  onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => void;
+  enableDynamicLoading?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -59,11 +61,33 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
       'top-right'
     );
 
+    // Add bounds change listener for dynamic loading
+    if (enableDynamicLoading && onBoundsChange) {
+      const handleBoundsChange = () => {
+        if (!map.current) return;
+        const bounds = map.current.getBounds();
+        const currentZoom = map.current.getZoom();
+        
+        // Only trigger if zoomed in enough (zoom > 11)
+        if (currentZoom > 11) {
+          onBoundsChange({
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest(),
+            zoom: currentZoom
+          });
+        }
+      };
+
+      map.current.on('moveend', handleBoundsChange);
+    }
+
     return () => {
       map.current?.remove();
       map.current = null;
     };
-  }, []);
+  }, [enableDynamicLoading, onBoundsChange]);
 
   // Handle heatmap rendering
   useEffect(() => {
