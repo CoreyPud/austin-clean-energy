@@ -269,6 +269,8 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
   useEffect(() => {
     if (!map.current || !markers || markers.length === 0) return;
 
+    console.log('Rendering markers on map:', markers.length);
+
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];

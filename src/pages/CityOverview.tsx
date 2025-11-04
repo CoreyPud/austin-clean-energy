@@ -141,10 +141,11 @@ const CityOverview = () => {
 
     loadingTimeoutRef.current = setTimeout(async () => {
       setIsLoadingMapData(true);
+      console.log('Fetching installations for bounds:', bounds);
 
       try {
         // Query installations within the visible bounds
-        const { data: boundedInstallations } = await supabase
+        const { data: boundedInstallations, error } = await supabase
           .from('solar_installations')
           .select('*')
           .gte('latitude', bounds.south)
@@ -156,8 +157,16 @@ const CityOverview = () => {
           .order('completed_date', { ascending: false })
           .limit(200); // Load up to 200 installations in the zoomed area
 
+        if (error) {
+          console.error('Error querying installations:', error);
+          return;
+        }
+
+        console.log('Bounded installations found:', boundedInstallations?.length || 0);
+
+        // Only update markers if we have results
         if (boundedInstallations && boundedInstallations.length > 0) {
-          setMapMarkers(boundedInstallations.map(install => ({
+          const newMarkers = boundedInstallations.map(install => ({
             coordinates: [install.longitude, install.latitude] as [number, number],
             title: install.address,
             address: install.address,
@@ -165,7 +174,11 @@ const CityOverview = () => {
             installDate: install.completed_date || install.issued_date,
             id: install.id,
             color: '#22c55e'
-          })));
+          }));
+          console.log('Updating map with new markers:', newMarkers.length);
+          setMapMarkers(newMarkers);
+        } else {
+          console.log('No installations found in bounds, keeping existing markers');
         }
       } catch (error) {
         console.error('Error loading installations for bounds:', error);
