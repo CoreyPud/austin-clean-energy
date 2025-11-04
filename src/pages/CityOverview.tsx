@@ -49,6 +49,8 @@ const CityOverview = () => {
           .order('completed_date', { ascending: false })
           .limit(200);
 
+        console.log('Loaded installations for map:', installations?.length || 0);
+
         // Calculate total capacity (convert kW to MW)
         const { data: allInstallations } = await supabase
           .from('solar_installations')
@@ -87,15 +89,17 @@ const CityOverview = () => {
 
         setRecentInstallations(installations || []);
         // Set initial map markers
-        setMapMarkers((installations || []).slice(0, 100).map(install => ({
+        const initialMarkers = (installations || []).slice(0, 100).map(install => ({
           coordinates: [install.longitude, install.latitude] as [number, number],
           title: install.address,
           address: install.address,
-          capacity: `${install.installed_kw} kW`,
+          capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
           installDate: install.completed_date || install.issued_date,
           id: install.id,
           color: '#22c55e'
-        })));
+        }));
+        console.log('Setting initial map markers:', initialMarkers.length);
+        setMapMarkers(initialMarkers);
         setIsLoading(false);
 
         // Background refresh from data sources, then update cached stats
@@ -313,16 +317,26 @@ const CityOverview = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MapTokenLoader>
-                <Map 
-                  className="h-[500px] rounded-lg overflow-hidden"
-                  center={[-97.7431, 30.2672]}
-                  zoom={10}
-                  markers={mapMarkers}
-                  enableDynamicLoading={true}
-                  onBoundsChange={handleMapBoundsChange}
-                />
-              </MapTokenLoader>
+              {isLoading ? (
+                <div className="h-[500px] flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+                    <span className="text-sm text-muted-foreground">Loading map data...</span>
+                  </div>
+                </div>
+              ) : (
+                <MapTokenLoader>
+                  <Map 
+                    className="h-[500px] rounded-lg overflow-hidden"
+                    center={[-97.7431, 30.2672]}
+                    zoom={10}
+                    markers={mapMarkers}
+                    enableDynamicLoading={true}
+                    onBoundsChange={handleMapBoundsChange}
+                    isLoadingMapData={isLoadingMapData}
+                  />
+                </MapTokenLoader>
+              )}
             </CardContent>
           </Card>
         </div>

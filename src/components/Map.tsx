@@ -29,9 +29,10 @@ interface MapProps {
   onMarkerClick?: (id: string) => void;
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => void;
   enableDynamicLoading?: boolean;
+  isLoadingMapData?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -401,6 +402,14 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
   return (
     <div className={`relative ${className}`}>
       <div ref={mapContainer} className="absolute inset-0 rounded-lg shadow-lg" />
+      {isLoadingMapData && (
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-sm rounded-lg flex items-center justify-center z-20">
+          <div className="bg-white rounded-lg shadow-lg p-4 flex items-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+            <span className="text-sm font-medium">Loading installations...</span>
+          </div>
+        </div>
+      )}
       {showLegend && markers.length > 0 && (
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
           <h3 className="text-sm font-semibold mb-3 text-foreground">Map Legend</h3>
