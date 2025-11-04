@@ -267,112 +267,124 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
 
   // Handle marker rendering
   useEffect(() => {
-    if (!map.current || !markers || markers.length === 0) return;
+    if (!markers || markers.length === 0) return;
+    if (!map.current) return;
 
-    console.log('Rendering markers on map:', markers.length);
+    const renderMarkers = () => {
+      if (!map.current) return;
+      console.log('Rendering markers on map:', markers.length);
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
+      // Clear existing markers
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current = [];
 
-    // Add new markers
-    markers.forEach(({ coordinates, title, address, capacity, programType, installDate, id, color = '#22c55e' }) => {
-      // Container element (Mapbox positions this element via CSS transform)
-      const el = document.createElement('div');
-      el.className = 'marker-container';
-      el.style.width = '14px';
-      el.style.height = '14px';
-      el.style.cursor = 'pointer';
+      // Add new markers
+      markers.forEach(({ coordinates, title, address, capacity, programType, installDate, id, color = '#22c55e' }) => {
+        // Container element (Mapbox positions this element via CSS transform)
+        const el = document.createElement('div');
+        el.className = 'marker-container';
+        el.style.width = '14px';
+        el.style.height = '14px';
+        el.style.cursor = 'pointer';
 
-      // Inner dot (we scale this so we don't override Mapbox's translate transform)
-      const dot = document.createElement('div');
-      dot.className = 'marker';
-      dot.style.backgroundColor = color;
-      // Make target property marker larger
-      const isTargetProperty = id === 'target-property';
-      const markerSize = isTargetProperty ? '18px' : '14px';
-      dot.style.width = markerSize;
-      dot.style.height = markerSize;
-      dot.style.borderRadius = '50%';
-      dot.style.border = isTargetProperty ? '3px solid white' : '2px solid white';
-      dot.style.boxShadow = isTargetProperty ? '0 3px 8px rgba(239,68,68,0.5)' : '0 2px 4px rgba(0,0,0,0.3)';
-      dot.style.transition = 'transform 0.2s';
-      el.appendChild(dot);
-      
-      el.addEventListener('mouseenter', () => {
-        dot.style.transform = 'scale(1.3)';
-        el.style.zIndex = '1000';
+        // Inner dot (we scale this so we don't override Mapbox's translate transform)
+        const dot = document.createElement('div');
+        dot.className = 'marker';
+        dot.style.backgroundColor = color;
+        // Make target property marker larger
+        const isTargetProperty = id === 'target-property';
+        const markerSize = isTargetProperty ? '18px' : '14px';
+        dot.style.width = markerSize;
+        dot.style.height = markerSize;
+        dot.style.borderRadius = '50%';
+        dot.style.border = isTargetProperty ? '3px solid white' : '2px solid white';
+        dot.style.boxShadow = isTargetProperty ? '0 3px 8px rgba(239,68,68,0.5)' : '0 2px 4px rgba(0,0,0,0.3)';
+        dot.style.transition = 'transform 0.2s';
+        el.appendChild(dot);
+        
+        el.addEventListener('mouseenter', () => {
+          dot.style.transform = 'scale(1.3)';
+          el.style.zIndex = '1000';
+        });
+        
+        el.addEventListener('mouseleave', () => {
+          dot.style.transform = 'scale(1)';
+          el.style.zIndex = 'auto';
+        });
+
+        // Prefer meaningful titles and avoid generic numbered labels
+        const computedTitle =
+          (title && !/^Solar Installation\b/i.test(title) ? title : '') ||
+          address ||
+          (programType ? `${programType}${capacity ? ` • ${capacity}` : ''}` : '') ||
+          (capacity ? `Installed Capacity: ${capacity}` : 'Installation');
+
+        const popupContent = `
+          <div style="padding: 12px; min-width: 250px; font-family: system-ui, -apple-system, sans-serif;">
+            <h3 style="font-weight: 700; margin: 0 0 8px 0; font-size: 16px; color: #1a1a1a;">${computedTitle}</h3>
+            ${address ? `
+              <div style="display: flex; align-items: start; margin-bottom: 6px; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top: 2px; flex-shrink: 0; color: #666;">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <p style="margin: 0; font-size: 13px; color: #666; line-height: 1.4;">${address}</p>
+              </div>
+            ` : ''}
+            ${capacity ? `
+              <div style="display: flex; align-items: center; margin-bottom: 6px; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #666;">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                </svg>
+                <p style="margin: 0; font-size: 13px; color: #666;"><strong>Capacity:</strong> ${capacity}</p>
+              </div>
+            ` : ''}
+            ${programType ? `
+              <div style="display: flex; align-items: center; margin-bottom: 6px; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #666;">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="9" x2="15" y2="9"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <p style="margin: 0; font-size: 13px; color: #666;">${programType}</p>
+              </div>
+            ` : ''}
+            ${installDate ? `
+              <div style="display: flex; align-items: center; margin-bottom: 6px; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #666;">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <p style="margin: 0; font-size: 13px; color: #666;"><strong>Date:</strong> ${new Date(installDate).toLocaleDateString()}</p>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          closeButton: true,
+          maxWidth: '350px'
+        }).setHTML(popupContent);
+
+        const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+          .setLngLat(coordinates)
+          .setPopup(popup)
+          .addTo(map.current!);
+
+        markersRef.current.push(marker);
       });
-      
-      el.addEventListener('mouseleave', () => {
-        dot.style.transform = 'scale(1)';
-        el.style.zIndex = 'auto';
-      });
+    };
 
-      // Prefer meaningful titles and avoid generic numbered labels
-      const computedTitle =
-        (title && !/^Solar Installation\b/i.test(title) ? title : '') ||
-        address ||
-        (programType ? `${programType}${capacity ? ` • ${capacity}` : ''}` : '') ||
-        (capacity ? `Installed Capacity: ${capacity}` : 'Installation');
-
-      const popupContent = `
-        <div style="padding: 12px; min-width: 250px; font-family: system-ui, -apple-system, sans-serif;">
-          <h3 style="font-weight: 700; margin: 0 0 8px 0; font-size: 16px; color: #1a1a1a;">${computedTitle}</h3>
-          ${address ? `
-            <div style="display: flex; align-items: start; margin-bottom: 6px; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top: 2px; flex-shrink: 0; color: #666;">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
-              <p style="margin: 0; font-size: 13px; color: #666; line-height: 1.4;">${address}</p>
-            </div>
-          ` : ''}
-          ${capacity ? `
-            <div style="display: flex; align-items: center; margin-bottom: 6px; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #666;">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-              </svg>
-              <p style="margin: 0; font-size: 13px; color: #666;"><strong>Capacity:</strong> ${capacity}</p>
-            </div>
-          ` : ''}
-          ${programType ? `
-            <div style="display: flex; align-items: center; margin-bottom: 6px; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #666;">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
-              </svg>
-              <p style="margin: 0; font-size: 13px; color: #666;">${programType}</p>
-            </div>
-          ` : ''}
-          ${installDate ? `
-            <div style="display: flex; align-items: center; margin-bottom: 6px; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: #666;">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <p style="margin: 0; font-size: 13px; color: #666;"><strong>Date:</strong> ${new Date(installDate).toLocaleDateString()}</p>
-            </div>
-          ` : ''}
-        </div>
-      `;
-
-      const popup = new mapboxgl.Popup({ 
-        offset: 25,
-        closeButton: true,
-        maxWidth: '350px'
-      }).setHTML(popupContent);
-
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-        .setLngLat(coordinates)
-        .setPopup(popup)
-        .addTo(map.current!);
-
-      markersRef.current.push(marker);
-    });
+    // Ensure markers render after map loads
+    if (map.current.loaded()) {
+      renderMarkers();
+    } else {
+      const onLoad = () => renderMarkers();
+      map.current.once('load', onLoad);
+    }
 
     // Listen for custom marker click events
     const handleMarkerClick = (e: any) => {
