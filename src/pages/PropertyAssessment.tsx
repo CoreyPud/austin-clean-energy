@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Home, Zap, DollarSign, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera } from "lucide-react";
+import { ArrowLeft, Home, Zap, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -244,34 +244,6 @@ const PropertyAssessment = () => {
                         )}
                       </div>
                     </div>
-
-                    {results.solarInsights.financialAnalyses && results.solarInsights.financialAnalyses.length > 0 && (
-                      <div className="border-t border-primary/20 pt-4">
-                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-primary" />
-                          Financial Scenarios for Your Roof
-                        </h4>
-                        <div className="grid md:grid-cols-3 gap-3">
-                          {results.solarInsights.financialAnalyses.map((analysis: any, idx: number) => (
-                            <div key={idx} className="p-3 bg-background/60 rounded-lg border border-primary/10">
-                              <p className="text-xs font-medium text-muted-foreground mb-1">
-                                {analysis.panelConfigIndex ? `Config ${analysis.panelConfigIndex + 1}` : `Scenario ${idx + 1}`}
-                              </p>
-                              {analysis.monthlyBill?.amount && (
-                                <p className="text-sm">
-                                  Monthly Bill: <span className="font-semibold">${analysis.monthlyBill.amount}</span>
-                                </p>
-                              )}
-                              {analysis.financialDetails?.initialAcKwhPerYear && (
-                                <p className="text-xs text-muted-foreground">
-                                  {Math.round(analysis.financialDetails.initialAcKwhPerYear).toLocaleString()} kWh/yr
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               )}
