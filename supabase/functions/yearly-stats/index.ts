@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       const transformedData = data
         .map((item: any) => ({ year: parseInt(item.year), count: parseInt(item.ct) }))
         .filter((item: any) => Number.isFinite(item.year) && Number.isFinite(item.count))
-        .filter((item: any) => item.year >= 2000);
+        .filter((item: any) => item.year >= 2014);
 
       return new Response(
         JSON.stringify({ data: transformedData }),
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const client = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     const currentYear = new Date().getFullYear();
-    const startYear = 2008; // Reasonable lower bound for modern residential PV
+    const startYear = 2014; // Filter to show only recent years with substantial data
 
     const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i);
     const results = await Promise.all(years.map(async (y) => {
