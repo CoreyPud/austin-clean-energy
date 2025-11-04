@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   TrendingUp, 
   Building2, 
@@ -25,7 +26,9 @@ const CityOverview = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
+  const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingYearly, setIsLoadingYearly] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
@@ -96,7 +99,20 @@ const CityOverview = () => {
       }
     };
 
+    const loadYearlyData = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('yearly-stats');
+        if (error) throw error;
+        setYearlyData(data.data || []);
+        setIsLoadingYearly(false);
+      } catch (error) {
+        console.error('Error loading yearly data:', error);
+        setIsLoadingYearly(false);
+      }
+    };
+
     loadData();
+    loadYearlyData();
   }, []);
 
   // Austin's climate goals (from Climate Action Plan)
@@ -291,6 +307,36 @@ const CityOverview = () => {
               Tracking Austin's journey to net-zero emissions and 100% renewable energy
             </p>
           </div>
+
+          {/* Yearly Installations Chart */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="text-2xl">Solar Installations by Year</CardTitle>
+              <CardDescription>
+                Annual growth of solar projects in Austin
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingYearly ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : yearlyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={yearlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No yearly data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid md:grid-cols-3 gap-8">
             {goals.map((goal, index) => (
               <Card key={index}>
