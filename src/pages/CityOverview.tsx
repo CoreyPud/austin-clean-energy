@@ -324,9 +324,9 @@ const CityOverview = () => {
             <CardContent>
               {isLoadingYearly ? (
                 <Skeleton className="h-[300px] w-full" />
-              ) : yearlyData.length > 0 ? (
+              ) : yearlyData.filter((d: any) => Number(d.year) >= 2014).length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={yearlyData}>
+                  <BarChart data={yearlyData.filter((d: any) => Number(d.year) >= 2014)}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
