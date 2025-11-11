@@ -5,13 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Home, Zap, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera } from "lucide-react";
+import { ArrowLeft, Home, Zap, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera, AlertCircle, TrendingUp, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -164,6 +165,23 @@ const PropertyAssessment = () => {
 
           {results && (
             <div className="space-y-6 animate-slide-up">
+              <Alert className="border-primary/30 bg-primary/5">
+                <AlertCircle className="h-4 w-4 text-primary" />
+                <AlertTitle>AI-Generated Assessment</AlertTitle>
+                <AlertDescription>
+                  The Energy Efficiency rating and recommendations below are AI-generated estimates based on available data. 
+                  For a precise, certified energy efficiency rating, we recommend scheduling a professional energy audit through{" "}
+                  <a 
+                    href="https://austinenergy.com/ae/energy-efficiency/ecad-ordinance/home-energy-ratings" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary font-medium hover:underline"
+                  >
+                    Austin Energy's Home Performance program
+                  </a>.
+                </AlertDescription>
+              </Alert>
+
               {results.dataPoints.googleSolarDataUsed && results.solarInsights && (
                 <Card className="border-2 border-primary shadow-lg bg-gradient-to-br from-primary/5 to-primary/10">
                   <CardHeader>
@@ -270,6 +288,61 @@ const PropertyAssessment = () => {
                   </CardContent>
                 </Card>
               </MapTokenLoader>
+
+              {results.dataPoints.greenBuildingAverages && (
+                <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-background">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-accent" />
+                      Austin Green Building Comparison
+                    </CardTitle>
+                    <CardDescription>
+                      How this property compares to {results.dataPoints.greenBuildingCount} certified green buildings in Austin
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-background/80 rounded-lg border border-accent/20">
+                        <div className="flex items-center mb-2">
+                          <Building2 className="h-4 w-4 text-accent mr-2" />
+                          <span className="text-sm font-medium">Average Star Rating</span>
+                        </div>
+                        <p className="text-2xl font-bold text-accent">
+                          {results.dataPoints.greenBuildingAverages.avgStarRating} 
+                          <span className="text-sm text-muted-foreground ml-1">stars</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Austin certified buildings</p>
+                      </div>
+                      <div className="p-4 bg-background/80 rounded-lg border border-accent/20">
+                        <div className="flex items-center mb-2">
+                          <Zap className="h-4 w-4 text-accent mr-2" />
+                          <span className="text-sm font-medium">Avg Energy Savings</span>
+                        </div>
+                        <p className="text-2xl font-bold text-accent">
+                          {results.dataPoints.greenBuildingAverages.avgEnergySavings}
+                          <span className="text-sm text-muted-foreground ml-1">%</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Compared to standard buildings</p>
+                      </div>
+                      <div className="p-4 bg-background/80 rounded-lg border border-accent/20">
+                        <div className="flex items-center mb-2">
+                          <Leaf className="h-4 w-4 text-accent mr-2" />
+                          <span className="text-sm font-medium">Avg Water Savings</span>
+                        </div>
+                        <p className="text-2xl font-bold text-accent">
+                          {results.dataPoints.greenBuildingAverages.avgWaterSavings}
+                          <span className="text-sm text-muted-foreground ml-1">%</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Compared to standard buildings</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      These benchmarks help contextualize your property's potential. The AI assessment considers these averages 
+                      when generating recommendations for your specific situation.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="border-2">
                 <CardHeader>
