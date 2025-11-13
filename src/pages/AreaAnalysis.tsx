@@ -148,7 +148,15 @@ const AreaAnalysis = () => {
               <Card className="border-2 border-primary/20">
                 <CardHeader>
                   <CardTitle>Data Sources</CardTitle>
-                  <CardDescription>Real data from Austin's public datasets</CardDescription>
+                  <CardDescription>
+                    Real data from Austin's public datasets.{" "}
+                    <button
+                      onClick={() => navigate('/data-sources')}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Learn more about our methodology
+                    </button>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-3 gap-4">

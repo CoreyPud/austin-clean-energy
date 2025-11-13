@@ -95,7 +95,13 @@ const Recommendations = () => {
                 <CardHeader>
                   <CardTitle>Strategic Recommendations</CardTitle>
                   <CardDescription>
-                    Based on {results.dataPoints?.solarPermits || 0} solar permits, {results.dataPoints?.energyAudits || 0} energy audits, {results.dataPoints?.weatherizationProjects || 0} weatherization projects, and {results.dataPoints?.greenBuildings || 0} green buildings (avg {results.dataPoints?.avgGreenBuildingRating || 'N/A'} stars)
+                    Based on {results.dataPoints?.solarPermits || 0} solar permits, {results.dataPoints?.energyAudits || 0} energy audits, {results.dataPoints?.weatherizationProjects || 0} weatherization projects, and {results.dataPoints?.greenBuildings || 0} green buildings (avg {results.dataPoints?.avgGreenBuildingRating || 'N/A'} stars).{" "}
+                    <button
+                      onClick={() => navigate('/data-sources')}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Learn about our data sources
+                    </button>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

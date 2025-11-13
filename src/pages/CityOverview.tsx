@@ -313,6 +313,14 @@ const CityOverview = () => {
               </>
             )}
           </div>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => navigate('/data-sources')}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Learn more about our data sources and how these metrics are calculated →
+            </button>
+          </div>
         </div>
       </section>
 

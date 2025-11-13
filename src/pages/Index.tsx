@@ -279,6 +279,14 @@ const Index = () => {
               <h3 className="font-bold text-lg mb-4">Data Sources</h3>
               <ul className="space-y-2 text-sm">
                 <li>
+                  <button
+                    onClick={() => navigate('/data-sources')}
+                    className="text-white/70 hover:text-white transition-colors text-left"
+                  >
+                    Data Sources & Methodology
+                  </button>
+                </li>
+                <li>
                   <a 
                     href="https://data.austintexas.gov" 
                     target="_blank" 

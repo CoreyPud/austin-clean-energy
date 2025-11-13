@@ -179,6 +179,13 @@ const PropertyAssessment = () => {
                   >
                     Austin Energy's Home Performance program
                   </a>.
+                  {" "}Learn more about{" "}
+                  <button
+                    onClick={() => navigate('/data-sources')}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    our data sources and methodology
+                  </button>.
                 </AlertDescription>
               </Alert>
 
