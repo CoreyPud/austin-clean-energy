@@ -91,7 +91,7 @@ const DataSources = () => {
                   with status='Issued' or status='Complete'. This represents permitted solar projects across Austin.
                 </div>
                 <div>
-                  <strong>Total Solar Capacity (MW):</strong> Extracted from permit descriptions which contain 
+                  <strong>Total Solar Capacity:</strong> Extracted from permit descriptions which contain 
                   "installed_kw" values. We parse these values and sum them across all installations. Some older 
                   permits may lack capacity data, which can lead to slight undercounting of total capacity.
                 </div>
