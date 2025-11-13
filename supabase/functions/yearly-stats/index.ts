@@ -61,23 +61,34 @@ Deno.serve(async (req) => {
 
     const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i);
     const results = await Promise.all(years.map(async (y) => {
-      // Primary: count by issued_date within the year, where description mentions KW
-      const { count: byIssued, error: errIssued } = await client
+      // Count by completed_date to match the "Installations This Year" card metric
+      const { count: byCompleted, error: errCompleted } = await client
         .from('solar_installations')
         .select('id', { head: true, count: 'exact' })
-        .gte('issued_date', `${y}-01-01`)
-        .lt('issued_date', `${y + 1}-01-01`)
-        .ilike('description', '%KW%');
+        .gte('completed_date', `${y}-01-01`)
+        .lt('completed_date', `${y + 1}-01-01`);
 
-      let total = (typeof byIssued === 'number' ? byIssued : 0);
+      let total = (typeof byCompleted === 'number' ? byCompleted : 0);
 
-      // Fallback for years with no issued_date: use calendar_year_issued
+      // Fallback: if no completed_date, check issued_date
+      if (total === 0) {
+        const { count: byIssued, error: errIssued } = await client
+          .from('solar_installations')
+          .select('id', { head: true, count: 'exact' })
+          .gte('issued_date', `${y}-01-01`)
+          .lt('issued_date', `${y + 1}-01-01`);
+        
+        if (!errIssued && typeof byIssued === 'number') {
+          total = byIssued;
+        }
+      }
+
+      // Final fallback: use calendar_year_issued
       if (total === 0) {
         const { count: byCalYear, error: errCal } = await client
           .from('solar_installations')
           .select('id', { head: true, count: 'exact' })
-          .eq('calendar_year_issued', y)
-          .ilike('description', '%KW%');
+          .eq('calendar_year_issued', y);
         if (!errCal && typeof byCalYear === 'number') {
           total = byCalYear;
         }
