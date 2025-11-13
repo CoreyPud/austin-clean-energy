@@ -481,7 +481,7 @@ const DataSources = () => {
               <AlertDescription>
                 <strong>This Page Is Maintained:</strong> As we update data sources, modify calculation 
                 methods, or add new features to the platform, this page will be updated to reflect those 
-                changes. Last updated: January 2025.
+                changes.
               </AlertDescription>
             </Alert>
           </CardContent>
