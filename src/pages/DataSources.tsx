@@ -108,6 +108,13 @@ const DataSources = () => {
                   <strong>Yearly Trends:</strong> Installations grouped by the calendar year the permit was issued, 
                   showing adoption momentum over time.
                 </div>
+                <div>
+                  <strong>Permit Processing Time:</strong> Average number of days between the Applied Date 
+                  (when the permit application was submitted) and the Completed Date (when the installation was 
+                  finished). This metric is calculated by grouping permits by the year they were applied for, 
+                  then averaging the time difference for all completed permits in that year. Only permits with 
+                  both dates recorded are included in this calculation.
+                </div>
               </div>
             </div>
 
