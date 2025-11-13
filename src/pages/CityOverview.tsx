@@ -67,20 +67,21 @@ const CityOverview = () => {
 
         // Calculate this year's installations (permitted or completed)
         const currentYear = new Date().getFullYear();
-        const thisYearInstalls = allInstallations?.filter(inst => {
-          // Check completed date first
-          if (inst.completed_date) {
-            const completedYear = new Date(inst.completed_date).getFullYear();
-            if (completedYear === currentYear) return true;
-          }
-          // If not completed this year, check issued date (permitted)
-          if (inst.issued_date) {
-            const issuedYear = new Date(inst.issued_date).getFullYear();
-            return issuedYear === currentYear;
-          }
-          // Fallback to calendar_year_issued field
-          return inst.calendar_year_issued === currentYear;
-        }).length || 0;
+        const startOfYear = `${currentYear}-01-01`;
+        const startOfNextYear = `${currentYear + 1}-01-01`;
+
+        // Use a count query to avoid row limits and align with "completed installations"
+        const { count: completedThisYear, error: countError } = await supabase
+          .from('solar_installations')
+          .select('id', { head: true, count: 'exact' })
+          .gte('completed_date', startOfYear)
+          .lt('completed_date', startOfNextYear);
+
+        if (countError) {
+          console.error('Error counting completed installations this year:', countError);
+        }
+
+        const thisYearInstalls = typeof completedThisYear === 'number' ? completedThisYear : 0;
 
         setStats({
           cached: cachedStats,
