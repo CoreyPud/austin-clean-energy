@@ -91,9 +91,14 @@ const DataSources = () => {
                   with status='Issued' or status='Complete'. This represents permitted solar projects across Austin.
                 </div>
                 <div>
-                  <strong>Total Solar Capacity:</strong> Extracted from permit descriptions which contain 
-                  "installed_kw" values. We parse these values and sum them across all installations. Some older 
-                  permits may lack capacity data, which can lead to slight undercounting of total capacity.
+                  <strong>kW This Year:</strong> Sum of installed capacity (kilowatts) for all installations 
+                  completed in the current calendar year. Note that not all permits have kW values reported in 
+                  the permit data—some older or incomplete records may be missing this information, which can 
+                  result in undercounting of actual capacity.
+                </div>
+                <div>
+                  <strong>Installations This Year:</strong> Count of solar permits completed in the current 
+                  calendar year, based on the completed_date field.
                 </div>
                 <div>
                   <strong>Recent Installations:</strong> Solar permits completed or issued in the last 30 days, 
