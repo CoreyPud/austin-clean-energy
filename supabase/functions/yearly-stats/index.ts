@@ -11,44 +11,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Fetching yearly installation statistics from Austin Open Data API');
+    console.log('Fetching yearly installation statistics with battery counts from database');
 
-    // Try SODA API first
-    try {
-      const baseUrl = "https://data.austintexas.gov/resource/3syk-w9eu.json";
-      const params = new URLSearchParams({
-        '$select': 'date_extract_y(issued_date) as year, count(issued_date) as ct',
-        '$where': "work_class='Auxiliary Power' AND upper(description) like '%KW%' AND issued_date is not null",
-        '$group': 'year',
-        '$order': 'year'
-      });
-      const apiUrl = `${baseUrl}?${params.toString()}`;
-      console.log('API URL:', apiUrl);
-
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        const body = await response.text();
-        console.error('SODA response error body:', body);
-        throw new Error(`SODA API request failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Fetched yearly data from SODA:', data);
-
-      const transformedData = data
-        .map((item: any) => ({ year: parseInt(item.year), count: parseInt(item.ct) }))
-        .filter((item: any) => Number.isFinite(item.year) && Number.isFinite(item.count))
-        .filter((item: any) => item.year >= 2014);
-
-      return new Response(
-        JSON.stringify({ data: transformedData }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    } catch (sodaError) {
-      console.warn('SODA query failed, falling back to backend DB aggregation:', sodaError);
-    }
-
-    // Fallback: aggregate from our database to ensure the UI still works
+    // Use database aggregation to include battery counts
+    // (SODA API doesn't provide individual descriptions needed for battery detection)
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     if (!SUPABASE_URL || !SERVICE_ROLE) {
@@ -118,7 +84,7 @@ Deno.serve(async (req) => {
       return { year: y, count: total, batteryCount };
     }));
 
-    const data = results.filter(r => Number.isFinite(r.count));
+    const data = results.filter(r => Number.isFinite(r.count) && Number.isFinite(r.batteryCount));
 
     return new Response(
       JSON.stringify({ data }),
