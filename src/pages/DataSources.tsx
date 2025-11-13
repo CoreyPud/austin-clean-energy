@@ -487,22 +487,6 @@ const DataSources = () => {
           </CardContent>
         </Card>
 
-        <div className="text-center py-8">
-          <p className="text-muted-foreground mb-4">
-            Have questions about our data or methodology?
-          </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <Button variant="outline" onClick={() => navigate('/')}>
-              Return to Home
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => window.open('https://data.austintexas.gov', '_blank')}
-            >
-              Visit Austin Open Data
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );
