@@ -95,6 +95,7 @@ const CityOverview = () => {
         setStats({
           cached: cachedStats,
           totalCapacity: totalCapacityMW.toFixed(1),
+          totalCapacityKW: totalCapacityKW,
           thisYearInstalls,
           totalInstalls: typeof totalProjectsCount === 'number' ? totalProjectsCount : 0
         });
@@ -299,9 +300,9 @@ const CityOverview = () => {
                   <CardContent className="pt-6">
                     <Zap className="h-8 w-8 text-primary mb-3" />
                     <div className="text-3xl font-bold text-primary mb-1">
-                      {stats?.totalInstalls?.toLocaleString()}
+                      {stats?.totalCapacityKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
-                    <div className="text-sm text-muted-foreground">Solar Projects Tracked</div>
+                    <div className="text-sm text-muted-foreground">Total kW Tracked</div>
                   </CardContent>
                 </Card>
                 <Card>
