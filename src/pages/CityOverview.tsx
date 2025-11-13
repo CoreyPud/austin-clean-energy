@@ -132,7 +132,12 @@ const CityOverview = () => {
       try {
         const { data, error } = await supabase.functions.invoke('yearly-stats');
         if (error) throw error;
-        setYearlyData(data.data || []);
+        // Transform data to separate solar-only from battery installations
+        const transformedData = (data.data || []).map((item: any) => ({
+          ...item,
+          solarOnly: item.count - item.batteryCount
+        }));
+        setYearlyData(transformedData);
         setIsLoadingYearly(false);
       } catch (error) {
         console.error('Error loading yearly data:', error);
@@ -418,8 +423,15 @@ const CityOverview = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <RechartsTooltip />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" />
+                    <RechartsTooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === 'batteryCount') return [value, 'With Battery Storage'];
+                        if (name === 'solarOnly') return [value, 'Solar Only'];
+                        return [value, name];
+                      }}
+                    />
+                    <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
+                    <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
