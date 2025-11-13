@@ -433,7 +433,7 @@ const CityOverview = () => {
           {/* Permit Timeline Chart */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Average Permit Processing Time</CardTitle>
+              <CardTitle className="text-2xl">Average Permit to Completion Time</CardTitle>
               <CardDescription>
                 Average days between permit application and completion by year (2014-present)
               </CardDescription>
