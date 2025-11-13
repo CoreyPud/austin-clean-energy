@@ -430,8 +430,8 @@ const CityOverview = () => {
                         return [value, name];
                       }}
                     />
-                    <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
                     <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
+                    <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
