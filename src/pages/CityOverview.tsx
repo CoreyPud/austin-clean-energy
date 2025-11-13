@@ -51,19 +51,18 @@ const CityOverview = () => {
 
         console.log('Loaded installations for map:', installations?.length || 0);
 
-        // Calculate total capacity (convert kW to MW)
-        // Fetch all installations without default limits for capacity calculation
-        const { data: allInstallations } = await supabase
+        // Calculate capacity for this year only
+        const yearForCapacity = new Date().getFullYear();
+        const { data: thisYearInstallations } = await supabase
           .from('solar_installations')
-          .select('installed_kw, completed_date, issued_date, calendar_year_issued')
-          .range(0, 50000);
+          .select('installed_kw')
+          .gte('completed_date', `${yearForCapacity}-01-01`)
+          .lt('completed_date', `${yearForCapacity + 1}-01-01`);
 
-        const totalCapacityKW = allInstallations?.reduce(
+        const thisYearCapacityKW = thisYearInstallations?.reduce(
           (sum, inst) => sum + (Number(inst.installed_kw) || 0),
           0
         ) || 0;
-
-        const totalCapacityMW = totalCapacityKW / 1000;
 
         // Get accurate total count of all installations
         const { count: totalProjectsCount, error: totalCountError } = await supabase
@@ -94,8 +93,7 @@ const CityOverview = () => {
 
         setStats({
           cached: cachedStats,
-          totalCapacity: totalCapacityMW.toFixed(1),
-          totalCapacityKW: totalCapacityKW,
+          thisYearCapacityKW: thisYearCapacityKW,
           thisYearInstalls,
           totalInstalls: typeof totalProjectsCount === 'number' ? totalProjectsCount : 0
         });
@@ -300,9 +298,9 @@ const CityOverview = () => {
                   <CardContent className="pt-6">
                     <Zap className="h-8 w-8 text-primary mb-3" />
                     <div className="text-3xl font-bold text-primary mb-1">
-                      {stats?.totalCapacityKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      {stats?.thisYearCapacityKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
-                    <div className="text-sm text-muted-foreground">Total kW Tracked</div>
+                    <div className="text-sm text-muted-foreground">kW This Year</div>
                   </CardContent>
                 </Card>
                 <Card>
