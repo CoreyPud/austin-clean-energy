@@ -52,9 +52,11 @@ const CityOverview = () => {
         console.log('Loaded installations for map:', installations?.length || 0);
 
         // Calculate total capacity (convert kW to MW)
+        // Fetch all installations without default limits
         const { data: allInstallations } = await supabase
           .from('solar_installations')
-          .select('installed_kw, completed_date, issued_date, calendar_year_issued');
+          .select('installed_kw, completed_date, issued_date, calendar_year_issued')
+          .limit(50000);
 
         const totalCapacityKW = allInstallations?.reduce(
           (sum, inst) => sum + (Number(inst.installed_kw) || 0),
