@@ -62,39 +62,60 @@ Deno.serve(async (req) => {
     const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i);
     const results = await Promise.all(years.map(async (y) => {
       // Count by completed_date to match the "Installations This Year" card metric
-      const { count: byCompleted, error: errCompleted } = await client
+      const { data: completedInstalls, error: errCompleted } = await client
         .from('solar_installations')
-        .select('id', { head: true, count: 'exact' })
+        .select('id, description')
         .gte('completed_date', `${y}-01-01`)
         .lt('completed_date', `${y + 1}-01-01`);
 
-      let total = (typeof byCompleted === 'number' ? byCompleted : 0);
+      let total = completedInstalls?.length || 0;
+      let batteryCount = 0;
+
+      // Count installations with battery mentions
+      if (completedInstalls && completedInstalls.length > 0) {
+        const batteryTerms = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
+        batteryCount = completedInstalls.filter(install => {
+          const desc = (install.description || '').toLowerCase();
+          return batteryTerms.some(term => desc.includes(term));
+        }).length;
+      }
 
       // Fallback: if no completed_date, check issued_date
       if (total === 0) {
-        const { count: byIssued, error: errIssued } = await client
+        const { data: issuedInstalls, error: errIssued } = await client
           .from('solar_installations')
-          .select('id', { head: true, count: 'exact' })
+          .select('id, description')
           .gte('issued_date', `${y}-01-01`)
           .lt('issued_date', `${y + 1}-01-01`);
         
-        if (!errIssued && typeof byIssued === 'number') {
-          total = byIssued;
+        if (!errIssued && issuedInstalls) {
+          total = issuedInstalls.length;
+          const batteryTerms = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
+          batteryCount = issuedInstalls.filter(install => {
+            const desc = (install.description || '').toLowerCase();
+            return batteryTerms.some(term => desc.includes(term));
+          }).length;
         }
       }
 
       // Final fallback: use calendar_year_issued
       if (total === 0) {
-        const { count: byCalYear, error: errCal } = await client
+        const { data: calYearInstalls, error: errCal } = await client
           .from('solar_installations')
-          .select('id', { head: true, count: 'exact' })
+          .select('id, description')
           .eq('calendar_year_issued', y);
-        if (!errCal && typeof byCalYear === 'number') {
-          total = byCalYear;
+        
+        if (!errCal && calYearInstalls) {
+          total = calYearInstalls.length;
+          const batteryTerms = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
+          batteryCount = calYearInstalls.filter(install => {
+            const desc = (install.description || '').toLowerCase();
+            return batteryTerms.some(term => desc.includes(term));
+          }).length;
         }
       }
 
-      return { year: y, count: total };
+      return { year: y, count: total, batteryCount };
     }));
 
     const data = results.filter(r => Number.isFinite(r.count));
