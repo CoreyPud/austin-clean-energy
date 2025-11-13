@@ -25,8 +25,10 @@ const CityOverview = () => {
   const [stats, setStats] = useState<any>(null);
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
+  const [timelineData, setTimelineData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
@@ -138,8 +140,21 @@ const CityOverview = () => {
       }
     };
 
+    const loadTimelineData = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('permit-timeline-stats');
+        if (error) throw error;
+        setTimelineData(data.data || []);
+        setIsLoadingTimeline(false);
+      } catch (error) {
+        console.error('Error loading timeline data:', error);
+        setIsLoadingTimeline(false);
+      }
+    };
+
     loadData();
     loadYearlyData();
+    loadTimelineData();
   }, []);
 
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
@@ -387,7 +402,7 @@ const CityOverview = () => {
           </div>
 
           {/* Yearly Installations Chart */}
-          <Card>
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-2xl">Solar Installations by Year</CardTitle>
               <CardDescription>
@@ -410,6 +425,40 @@ const CityOverview = () => {
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                   No yearly data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Permit Timeline Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Average Permit Processing Time</CardTitle>
+              <CardDescription>
+                Average days between permit application and completion by year (2014-present)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingTimeline ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : timelineData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} />
+                    <RechartsTooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === 'averageDays') return [`${value} days`, 'Average Processing Time'];
+                        return [value, name];
+                      }}
+                    />
+                    <Bar dataKey="averageDays" fill="hsl(var(--secondary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No timeline data available
                 </div>
               )}
             </CardContent>
