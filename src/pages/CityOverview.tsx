@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
   TrendingUp, 
   Building2, 
@@ -426,7 +426,13 @@ const CityOverview = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <RechartsTooltip 
+                    <Legend 
+                      verticalAlign="top" 
+                      align="right"
+                      iconType="square"
+                      wrapperStyle={{ paddingBottom: '20px' }}
+                    />
+                    <RechartsTooltip
                       labelFormatter={() => ''}
                       formatter={(value: number, name: string, props: any) => {
                         if (name === 'batteryCount') return [value, 'With Battery Storage'];
