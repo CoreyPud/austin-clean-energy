@@ -332,7 +332,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
         const popupContent = `
           <div style="padding: 12px; min-width: 250px; font-family: system-ui, -apple-system, sans-serif;">
             <h3 style="font-weight: 700; margin: 0 0 8px 0; font-size: 16px; color: #1a1a1a;">${computedTitle}</h3>
-            ${address ? `
+            ${address && computedTitle !== address ? `
               <div style="display: flex; align-items: start; margin-bottom: 6px; gap: 6px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top: 2px; flex-shrink: 0; color: #666;">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
