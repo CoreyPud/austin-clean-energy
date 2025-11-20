@@ -438,7 +438,6 @@ const CityOverview = () => {
                           const data = payload[0].payload;
                           return (
                             <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                              <p className="font-semibold mb-2">{data.year}</p>
                               <p className="text-sm"><span className="text-primary">Solar Only:</span> {data.solarOnly}</p>
                               <p className="text-sm"><span className="text-secondary">With Battery:</span> {data.batteryCount}</p>
                               <p className="text-sm font-semibold mt-1"><span className="text-muted-foreground">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
