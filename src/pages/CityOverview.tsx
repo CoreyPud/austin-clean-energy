@@ -75,17 +75,17 @@ const CityOverview = () => {
           console.error('Error counting total installations:', totalCountError);
         }
 
-        // Calculate this year's installations (permitted or completed)
-        const currentYear = new Date().getFullYear();
-        const startOfYear = `${currentYear}-01-01`;
-        const startOfNextYear = `${currentYear + 1}-01-01`;
+        // Calculate rolling 12 months installations
+        const today = new Date();
+        const twelveMonthsAgo = new Date(today);
+        twelveMonthsAgo.setMonth(today.getMonth() - 12);
+        const startDate = twelveMonthsAgo.toISOString().split('T')[0];
 
         // Use a count query to avoid row limits and align with "completed installations"
         const { count: completedThisYear, error: countError } = await supabase
           .from('solar_installations')
           .select('id', { head: true, count: 'exact' })
-          .gte('completed_date', startOfYear)
-          .lt('completed_date', startOfNextYear);
+          .gte('completed_date', startDate);
 
         if (countError) {
           console.error('Error counting completed installations this year:', countError);
@@ -329,7 +329,7 @@ const CityOverview = () => {
                     <div className="text-3xl font-bold text-primary mb-1">
                       {stats?.thisYearInstalls}
                     </div>
-                    <div className="text-sm text-muted-foreground">Installations This Year</div>
+                    <div className="text-sm text-muted-foreground">In the Last 12 Months</div>
                   </CardContent>
                 </Card>
                 <Card>
