@@ -53,13 +53,16 @@ const CityOverview = () => {
 
         console.log('Loaded installations for map:', installations?.length || 0);
 
-        // Calculate capacity for this year only
-        const yearForCapacity = new Date().getFullYear();
+        // Calculate capacity for rolling 12 months
+        const now = new Date();
+        const twelveMonthsAgoForCapacity = new Date(now);
+        twelveMonthsAgoForCapacity.setMonth(now.getMonth() - 12);
+        const startDateForCapacity = twelveMonthsAgoForCapacity.toISOString().split('T')[0];
+        
         const { data: thisYearInstallations } = await supabase
           .from('solar_installations')
           .select('installed_kw')
-          .gte('completed_date', `${yearForCapacity}-01-01`)
-          .lt('completed_date', `${yearForCapacity + 1}-01-01`);
+          .gte('completed_date', startDateForCapacity);
 
         const thisYearCapacityKW = thisYearInstallations?.reduce(
           (sum, inst) => sum + (Number(inst.installed_kw) || 0),
@@ -320,7 +323,7 @@ const CityOverview = () => {
                     <div className="text-3xl font-bold text-primary mb-1">
                       {stats?.thisYearCapacityKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
-                    <div className="text-sm text-muted-foreground">kW This Year</div>
+                    <div className="text-sm text-muted-foreground">kW in the Last 12 Months</div>
                   </CardContent>
                 </Card>
                 <Card>
