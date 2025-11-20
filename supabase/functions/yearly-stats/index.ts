@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Fetching yearly installation statistics with battery counts from database');
+    console.log('Fetching yearly installation statistics with battery counts and kW totals from database');
 
     // Use database aggregation to include battery counts
     // (SODA API doesn't provide individual descriptions needed for battery detection)
@@ -88,7 +88,8 @@ Deno.serve(async (req) => {
       return { year: y, count: total, batteryCount, totalKW };
     }));
 
-    const data = results.filter(r => Number.isFinite(r.count) && Number.isFinite(r.batteryCount));
+    const data = results.filter(r => Number.isFinite(r.count) && Number.isFinite(r.batteryCount) && Number.isFinite(r.totalKW));
+    console.log('Returning data with totalKW:', data.map(d => ({ year: d.year, totalKW: d.totalKW })));
 
     return new Response(
       JSON.stringify({ data }),
