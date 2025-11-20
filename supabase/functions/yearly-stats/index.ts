@@ -30,27 +30,29 @@ Deno.serve(async (req) => {
       // Count by completed_date to match the "Installations This Year" card metric
       const { data: completedInstalls, error: errCompleted, count: completedCount } = await client
         .from('solar_installations')
-        .select('id, description', { count: 'exact' })
+        .select('id, description, installed_kw', { count: 'exact' })
         .gte('completed_date', `${y}-01-01`)
         .lt('completed_date', `${y + 1}-01-01`);
 
       let total = completedCount || 0;
       let batteryCount = 0;
+      let totalKW = 0;
 
-      // Count installations with battery mentions
+      // Count installations with battery mentions and sum kW
       if (completedInstalls && completedInstalls.length > 0 && total > 0) {
         const batteryTerms = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
         batteryCount = completedInstalls.filter(install => {
           const desc = (install.description || '').toLowerCase();
           return batteryTerms.some(term => desc.includes(term));
         }).length;
+        totalKW = completedInstalls.reduce((sum, install) => sum + (Number(install.installed_kw) || 0), 0);
       }
 
       // Fallback: if no completed_date, check issued_date
       if (total === 0) {
         const { data: issuedInstalls, error: errIssued, count: issuedCount } = await client
           .from('solar_installations')
-          .select('id, description', { count: 'exact' })
+          .select('id, description, installed_kw', { count: 'exact' })
           .gte('issued_date', `${y}-01-01`)
           .lt('issued_date', `${y + 1}-01-01`);
         
@@ -61,6 +63,7 @@ Deno.serve(async (req) => {
             const desc = (install.description || '').toLowerCase();
             return batteryTerms.some(term => desc.includes(term));
           }).length;
+          totalKW = issuedInstalls.reduce((sum, install) => sum + (Number(install.installed_kw) || 0), 0);
         }
       }
 
@@ -68,7 +71,7 @@ Deno.serve(async (req) => {
       if (total === 0) {
         const { data: calYearInstalls, error: errCal, count: calYearCount } = await client
           .from('solar_installations')
-          .select('id, description', { count: 'exact' })
+          .select('id, description, installed_kw', { count: 'exact' })
           .eq('calendar_year_issued', y);
         
         if (!errCal && calYearInstalls) {
@@ -78,10 +81,11 @@ Deno.serve(async (req) => {
             const desc = (install.description || '').toLowerCase();
             return batteryTerms.some(term => desc.includes(term));
           }).length;
+          totalKW = calYearInstalls.reduce((sum, install) => sum + (Number(install.installed_kw) || 0), 0);
         }
       }
 
-      return { year: y, count: total, batteryCount };
+      return { year: y, count: total, batteryCount, totalKW };
     }));
 
     const data = results.filter(r => Number.isFinite(r.count) && Number.isFinite(r.batteryCount));
