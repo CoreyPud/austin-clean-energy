@@ -6,6 +6,7 @@ import heroImage from "@/assets/hero-austin-solar.jpg";
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import CampaignPopup from "@/components/CampaignPopup";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -90,6 +91,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <CampaignPopup />
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div 
