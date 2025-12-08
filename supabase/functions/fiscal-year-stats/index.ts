@@ -56,9 +56,9 @@ Deno.serve(async (req) => {
 
   try {
     const requestBody = await req.json().catch(() => ({}));
-    const { fiscalYear: requestedFY, includeDetails } = requestBody;
+    const { fiscalYear: requestedFY, includeDetails, sortByKW } = requestBody;
 
-    console.log('Fetching fiscal year installation statistics', { requestedFY, includeDetails });
+    console.log('Fetching fiscal year installation statistics', { requestedFY, includeDetails, sortByKW });
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -90,12 +90,20 @@ Deno.serve(async (req) => {
         endDate
       );
 
-      // Sort by completed_date descending
-      installations.sort((a, b) => {
-        const dateA = new Date(a.completed_date || 0).getTime();
-        const dateB = new Date(b.completed_date || 0).getTime();
-        return dateB - dateA;
-      });
+      // Sort based on request - by kW descending if sortByKW, otherwise by completed_date descending
+      if (sortByKW) {
+        installations.sort((a, b) => {
+          const kwA = Number(a.installed_kw) || 0;
+          const kwB = Number(b.installed_kw) || 0;
+          return kwB - kwA;
+        });
+      } else {
+        installations.sort((a, b) => {
+          const dateA = new Date(a.completed_date || 0).getTime();
+          const dateB = new Date(b.completed_date || 0).getTime();
+          return dateB - dateA;
+        });
+      }
 
       // Deduplicate by project_id - keep the first occurrence (most recent by completed_date)
       const seenProjectIds = new Set<string>();

@@ -44,8 +44,11 @@ const FiscalYearStats = () => {
   const [data, setData] = useState<FiscalYearData[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFY, setExpandedFY] = useState<number | null>(null);
+  const [expandedCapacityFY, setExpandedCapacityFY] = useState<number | null>(null);
   const [drillDownData, setDrillDownData] = useState<DrillDownData | null>(null);
+  const [capacityDrillDownData, setCapacityDrillDownData] = useState<DrillDownData | null>(null);
   const [drillDownLoading, setDrillDownLoading] = useState(false);
+  const [capacityDrillDownLoading, setCapacityDrillDownLoading] = useState(false);
   const [methodologyOpen, setMethodologyOpen] = useState(false);
   const [sqlOpen, setSqlOpen] = useState(false);
 
@@ -136,6 +139,35 @@ const FiscalYearStats = () => {
   const handleBarClick = (data: { fiscalYear: number }) => {
     if (data?.fiscalYear) {
       fetchDrillDownData(data.fiscalYear);
+    }
+  };
+
+  const fetchCapacityDrillDownData = useCallback(async (fiscalYear: number) => {
+    if (expandedCapacityFY === fiscalYear) {
+      setExpandedCapacityFY(null);
+      setCapacityDrillDownData(null);
+      return;
+    }
+
+    setCapacityDrillDownLoading(true);
+    setExpandedCapacityFY(fiscalYear);
+
+    try {
+      const { data: responseData, error } = await supabase.functions.invoke("fiscal-year-stats", {
+        body: { fiscalYear, includeDetails: true, sortByKW: true }
+      });
+      if (error) throw error;
+      setCapacityDrillDownData(responseData);
+    } catch (err) {
+      console.error("Error fetching capacity drill-down data:", err);
+    } finally {
+      setCapacityDrillDownLoading(false);
+    }
+  }, [expandedCapacityFY]);
+
+  const handleCapacityBarClick = (data: { fiscalYear: number }) => {
+    if (data?.fiscalYear) {
+      fetchCapacityDrillDownData(data.fiscalYear);
     }
   };
 
@@ -489,11 +521,11 @@ WHERE issued_date >= '{fy-1}-10-01'
         )}
 
         {/* Capacity Chart */}
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Installed Capacity by Fiscal Year</CardTitle>
             <CardDescription>
-              Total kilowatts of solar capacity installed each fiscal year
+              Click on a bar to view detailed records sorted by capacity (kW)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -502,7 +534,11 @@ WHERE issued_date >= '{fy-1}-10-01'
             ) : (
               <ChartContainer config={chartConfig} className="h-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <BarChart 
+                    data={chartData} 
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                    onClick={(e) => e?.activePayload?.[0]?.payload && handleCapacityBarClick(e.activePayload[0].payload)}
+                  >
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="name"
@@ -522,7 +558,17 @@ WHERE issued_date >= '{fy-1}-10-01'
                       fill="hsl(var(--chart-3))"
                       name="Total kW"
                       radius={[4, 4, 0, 0]}
-                    />
+                      cursor="pointer"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-capacity-${index}`}
+                          fillOpacity={expandedCapacityFY === entry.fiscalYear ? 1 : 0.8}
+                          stroke={expandedCapacityFY === entry.fiscalYear ? "hsl(var(--foreground))" : "none"}
+                          strokeWidth={expandedCapacityFY === entry.fiscalYear ? 2 : 0}
+                        />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
@@ -532,6 +578,117 @@ WHERE issued_date >= '{fy-1}-10-01'
             </p>
           </CardContent>
         </Card>
+
+        {/* Capacity Drill-Down Section */}
+        {expandedCapacityFY && (
+          <Card className="mb-8 border-2 border-chart-3/40">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    FY {expandedCapacityFY} Installations by Capacity
+                    {capacityDrillDownData && (
+                      <Badge variant="outline">{capacityDrillDownData.installations.length} records</Badge>
+                    )}
+                  </CardTitle>
+                  {capacityDrillDownData && (
+                    <CardDescription>
+                      Sorted by installed kW (descending) • Date range: {formatDate(capacityDrillDownData.dateRange.startDate)} – {formatDate(capacityDrillDownData.dateRange.endDate)}
+                      {capacityDrillDownData.duplicatesRemoved > 0 && (
+                        <span className="ml-2 text-yellow-600">
+                          ({capacityDrillDownData.duplicatesRemoved} duplicates removed)
+                        </span>
+                      )}
+                    </CardDescription>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setExpandedCapacityFY(null); setCapacityDrillDownData(null); }}>
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {capacityDrillDownLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : capacityDrillDownData?.installations && capacityDrillDownData.installations.length > 0 ? (
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background">
+                      <TableRow>
+                        <TableHead className="min-w-[100px]">Capacity ↓</TableHead>
+                        <TableHead className="min-w-[200px]">Address</TableHead>
+                        <TableHead className="min-w-[280px]">Permit Timeline</TableHead>
+                        <TableHead className="min-w-[100px]">Days to Complete</TableHead>
+                        <TableHead className="min-w-[120px]">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {capacityDrillDownData.installations.map((install) => {
+                        const daysToComplete = calculateDaysToComplete(install.applied_date, install.completed_date);
+                        return (
+                          <TableRow key={install.id}>
+                            <TableCell className="font-bold text-lg">
+                              {install.installed_kw ? `${install.installed_kw} kW` : "—"}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <div className="max-w-[200px]">
+                                <div className="truncate" title={install.address}>
+                                  {install.address}
+                                </div>
+                                {install.project_id && (
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    ID: {install.project_id}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-16 text-muted-foreground">Applied:</span>
+                                  <span>{formatDate(install.applied_date)}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="w-16 text-muted-foreground">Issued:</span>
+                                  <span>{formatDate(install.issued_date)}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="w-16 text-muted-foreground">Completed:</span>
+                                  <span className="font-medium">{formatDate(install.completed_date)}</span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {daysToComplete !== null ? (
+                                <Badge variant={daysToComplete <= 30 ? "default" : daysToComplete <= 90 ? "secondary" : "outline"}>
+                                  {daysToComplete} days
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {install.status_current || "Unknown"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">No detailed records available for this fiscal year.</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Data Table */}
         <Card>
