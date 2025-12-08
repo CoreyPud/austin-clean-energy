@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +11,42 @@ function getFiscalYearRange(fy: number) {
   const startDate = `${fy - 1}-10-01`;
   const endDate = `${fy}-09-30`;
   return { startDate, endDate };
+}
+
+// Helper to fetch all rows with pagination (Supabase default limit is 1000)
+async function fetchAllRows(
+  client: SupabaseClient,
+  tableName: string,
+  columns: string,
+  dateColumn: string,
+  startDate: string,
+  endDate: string
+): Promise<any[]> {
+  const allRows: any[] = [];
+  const pageSize = 1000;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await client
+      .from(tableName)
+      .select(columns)
+      .gte(dateColumn, startDate)
+      .lte(dateColumn, endDate)
+      .range(offset, offset + pageSize - 1);
+
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      allRows.push(...data);
+      offset += pageSize;
+      hasMore = data.length === pageSize;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allRows;
 }
 
 Deno.serve(async (req) => {
@@ -44,29 +80,35 @@ Deno.serve(async (req) => {
     if (requestedFY && includeDetails) {
       const { startDate, endDate } = getFiscalYearRange(requestedFY);
       
-      // Fetch detailed records with deduplication by project_id
-      const { data: installations, error } = await client
-        .from('solar_installations')
-        .select('id, project_id, address, description, installed_kw, applied_date, issued_date, completed_date, status_current, contractor_company')
-        .gte('completed_date', startDate)
-        .lte('completed_date', endDate)
-        .order('completed_date', { ascending: false });
+      // Fetch all detailed records with pagination
+      const installations = await fetchAllRows(
+        client,
+        'solar_installations',
+        'id, project_id, address, description, installed_kw, applied_date, issued_date, completed_date, status_current, contractor_company',
+        'completed_date',
+        startDate,
+        endDate
+      );
 
-      if (error) throw error;
+      // Sort by completed_date descending
+      installations.sort((a, b) => {
+        const dateA = new Date(a.completed_date || 0).getTime();
+        const dateB = new Date(b.completed_date || 0).getTime();
+        return dateB - dateA;
+      });
 
       // Deduplicate by project_id - keep the first occurrence (most recent by completed_date)
       const seenProjectIds = new Set<string>();
-      const dedupedInstallations = (installations || []).filter(install => {
+      const dedupedInstallations = installations.filter((install: any) => {
         if (!install.project_id) return true; // Keep records without project_id
         if (seenProjectIds.has(install.project_id)) {
-          console.log(`Duplicate found for project_id: ${install.project_id}`);
           return false;
         }
         seenProjectIds.add(install.project_id);
         return true;
       });
 
-      const duplicatesRemoved = (installations?.length || 0) - dedupedInstallations.length;
+      const duplicatesRemoved = installations.length - dedupedInstallations.length;
       console.log(`Returning ${dedupedInstallations.length} records for FY ${requestedFY} (${duplicatesRemoved} duplicates removed)`);
 
       return new Response(
@@ -87,64 +129,47 @@ Deno.serve(async (req) => {
     const results = await Promise.all(fiscalYears.map(async (fy) => {
       const { startDate, endDate } = getFiscalYearRange(fy);
       
-      // Query by completed_date for fiscal year range
-      const { data: completedInstalls, error: errCompleted } = await client
-        .from('solar_installations')
-        .select('id, project_id, description, installed_kw')
-        .gte('completed_date', startDate)
-        .lte('completed_date', endDate);
+      // Fetch all records with pagination for this fiscal year
+      let allInstalls = await fetchAllRows(
+        client,
+        'solar_installations',
+        'id, project_id, description, installed_kw',
+        'completed_date',
+        startDate,
+        endDate
+      );
+
+      // If no completed_date results, try issued_date
+      if (allInstalls.length === 0) {
+        allInstalls = await fetchAllRows(
+          client,
+          'solar_installations',
+          'id, project_id, description, installed_kw',
+          'issued_date',
+          startDate,
+          endDate
+        );
+      }
 
       // Deduplicate by project_id
       const seenProjectIds = new Set<string>();
-      const dedupedCompleted = (completedInstalls || []).filter(install => {
+      const dedupedInstalls = allInstalls.filter((install: any) => {
         if (!install.project_id) return true;
         if (seenProjectIds.has(install.project_id)) return false;
         seenProjectIds.add(install.project_id);
         return true;
       });
 
-      let total = dedupedCompleted.length;
-      let batteryCount = 0;
-      let totalKW = 0;
-      let duplicatesRemoved = (completedInstalls?.length || 0) - dedupedCompleted.length;
+      const total = dedupedInstalls.length;
+      const duplicatesRemoved = allInstalls.length - dedupedInstalls.length;
 
-      if (dedupedCompleted.length > 0) {
-        const batteryTerms = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
-        batteryCount = dedupedCompleted.filter(install => {
-          const desc = (install.description || '').toLowerCase();
-          return batteryTerms.some(term => desc.includes(term));
-        }).length;
-        totalKW = dedupedCompleted.reduce((sum, install) => sum + (Number(install.installed_kw) || 0), 0);
-      }
-
-      // Fallback to issued_date if no completed_date data
-      if (total === 0) {
-        const { data: issuedInstalls, error: errIssued } = await client
-          .from('solar_installations')
-          .select('id, project_id, description, installed_kw')
-          .gte('issued_date', startDate)
-          .lte('issued_date', endDate);
-        
-        if (!errIssued && issuedInstalls) {
-          const seenIssuedIds = new Set<string>();
-          const dedupedIssued = issuedInstalls.filter(install => {
-            if (!install.project_id) return true;
-            if (seenIssuedIds.has(install.project_id)) return false;
-            seenIssuedIds.add(install.project_id);
-            return true;
-          });
-          
-          total = dedupedIssued.length;
-          duplicatesRemoved = issuedInstalls.length - dedupedIssued.length;
-          
-          const batteryTerms = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
-          batteryCount = dedupedIssued.filter(install => {
-            const desc = (install.description || '').toLowerCase();
-            return batteryTerms.some(term => desc.includes(term));
-          }).length;
-          totalKW = dedupedIssued.reduce((sum, install) => sum + (Number(install.installed_kw) || 0), 0);
-        }
-      }
+      const batteryTerms = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
+      const batteryCount = dedupedInstalls.filter((install: any) => {
+        const desc = (install.description || '').toLowerCase();
+        return batteryTerms.some(term => desc.includes(term));
+      }).length;
+      
+      const totalKW = dedupedInstalls.reduce((sum: number, install: any) => sum + (Number(install.installed_kw) || 0), 0);
 
       return { 
         fiscalYear: fy, 
@@ -157,7 +182,7 @@ Deno.serve(async (req) => {
     }));
 
     const data = results.filter(r => Number.isFinite(r.count) && Number.isFinite(r.batteryCount) && Number.isFinite(r.totalKW));
-    console.log('Returning fiscal year data:', data.map(d => ({ fy: d.fiscalYear, count: d.count, totalKW: d.totalKW, dupes: d.duplicatesRemoved })));
+    console.log('Returning fiscal year data:', data.map(d => ({ fy: d.fiscalYear, count: d.count, totalKW: Math.round(d.totalKW), dupes: d.duplicatesRemoved })));
 
     return new Response(
       JSON.stringify({ data }),
