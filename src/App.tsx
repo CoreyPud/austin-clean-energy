@@ -12,6 +12,7 @@ import Recommendations from "./pages/Recommendations";
 import InstallationDetail from "./pages/InstallationDetail";
 import ImportSolarData from "./pages/ImportSolarData";
 import DataSources from "./pages/DataSources";
+import FiscalYearStats from "./pages/FiscalYearStats";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/installation/:id" element={<InstallationDetail />} />
           <Route path="/import-solar-data" element={<ImportSolarData />} />
           <Route path="/data-sources" element={<DataSources />} />
+          <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
