@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { ArrowLeft, Calendar, Zap, Battery, ChevronDown, ChevronUp, Info, Code, FileText, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Calendar, Zap, Battery, ChevronDown, ChevronUp, Info, Code, FileText, AlertTriangle, ArrowUpDown, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -40,6 +40,9 @@ interface DrillDownData {
   dateRange: { startDate: string; endDate: string };
 }
 
+type SortField = 'address' | 'installed_kw' | 'applied_date' | 'completed_date' | 'days_to_complete' | 'status_current';
+type SortDirection = 'asc' | 'desc';
+
 const FiscalYearStats = () => {
   const [data, setData] = useState<FiscalYearData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +54,10 @@ const FiscalYearStats = () => {
   const [capacityDrillDownLoading, setCapacityDrillDownLoading] = useState(false);
   const [methodologyOpen, setMethodologyOpen] = useState(false);
   const [sqlOpen, setSqlOpen] = useState(false);
+  const [installSortField, setInstallSortField] = useState<SortField>('completed_date');
+  const [installSortDir, setInstallSortDir] = useState<SortDirection>('desc');
+  const [capacitySortField, setCapacitySortField] = useState<SortField>('installed_kw');
+  const [capacitySortDir, setCapacitySortDir] = useState<SortDirection>('desc');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -134,6 +141,100 @@ const FiscalYearStats = () => {
     const end = new Date(completed);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const sortInstallations = useCallback((installations: InstallationDetail[], field: SortField, direction: SortDirection) => {
+    return [...installations].sort((a, b) => {
+      let aVal: string | number | null = null;
+      let bVal: string | number | null = null;
+
+      switch (field) {
+        case 'address':
+          aVal = a.address.toLowerCase();
+          bVal = b.address.toLowerCase();
+          break;
+        case 'installed_kw':
+          aVal = a.installed_kw ?? -1;
+          bVal = b.installed_kw ?? -1;
+          break;
+        case 'applied_date':
+          aVal = a.applied_date ?? '';
+          bVal = b.applied_date ?? '';
+          break;
+        case 'completed_date':
+          aVal = a.completed_date ?? '';
+          bVal = b.completed_date ?? '';
+          break;
+        case 'days_to_complete':
+          aVal = calculateDaysToComplete(a.applied_date, a.completed_date) ?? -1;
+          bVal = calculateDaysToComplete(b.applied_date, b.completed_date) ?? -1;
+          break;
+        case 'status_current':
+          aVal = (a.status_current ?? '').toLowerCase();
+          bVal = (b.status_current ?? '').toLowerCase();
+          break;
+      }
+
+      if (aVal === null || bVal === null) return 0;
+      if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, []);
+
+  const sortedInstallDrillDown = useMemo(() => {
+    if (!drillDownData?.installations) return [];
+    return sortInstallations(drillDownData.installations, installSortField, installSortDir);
+  }, [drillDownData, installSortField, installSortDir, sortInstallations]);
+
+  const sortedCapacityDrillDown = useMemo(() => {
+    if (!capacityDrillDownData?.installations) return [];
+    return sortInstallations(capacityDrillDownData.installations, capacitySortField, capacitySortDir);
+  }, [capacityDrillDownData, capacitySortField, capacitySortDir, sortInstallations]);
+
+  const handleInstallSort = (field: SortField) => {
+    if (installSortField === field) {
+      setInstallSortDir(installSortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setInstallSortField(field);
+      setInstallSortDir('desc');
+    }
+  };
+
+  const handleCapacitySort = (field: SortField) => {
+    if (capacitySortField === field) {
+      setCapacitySortDir(capacitySortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setCapacitySortField(field);
+      setCapacitySortDir('desc');
+    }
+  };
+
+  const exportToCSV = (installations: InstallationDetail[], fiscalYear: number, type: 'installations' | 'capacity') => {
+    const headers = ['Address', 'Project ID', 'Capacity (kW)', 'Applied Date', 'Issued Date', 'Completed Date', 'Days to Complete', 'Status'];
+    const rows = installations.map(install => {
+      const days = calculateDaysToComplete(install.applied_date, install.completed_date);
+      return [
+        `"${install.address.replace(/"/g, '""')}"`,
+        install.project_id || '',
+        install.installed_kw ?? '',
+        install.applied_date || '',
+        install.issued_date || '',
+        install.completed_date || '',
+        days ?? '',
+        install.status_current || ''
+      ].join(',');
+    });
+    
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `FY${fiscalYear}_${type}_drilldown.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleBarClick = (data: { fiscalYear: number }) => {
@@ -433,9 +534,17 @@ WHERE issued_date >= '{fy-1}-10-01'
                     </CardDescription>
                   )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => { setExpandedFY(null); setDrillDownData(null); }}>
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {drillDownData?.installations && drillDownData.installations.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={() => exportToCSV(sortedInstallDrillDown, expandedFY!, 'installations')}>
+                      <Download className="h-4 w-4 mr-1" />
+                      Export CSV
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => { setExpandedFY(null); setDrillDownData(null); }}>
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -445,20 +554,50 @@ WHERE issued_date >= '{fy-1}-10-01'
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-10 w-full" />
                 </div>
-              ) : drillDownData?.installations && drillDownData.installations.length > 0 ? (
+              ) : sortedInstallDrillDown.length > 0 ? (
                 <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-background">
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead className="min-w-[200px]">Address</TableHead>
-                        <TableHead className="min-w-[100px]">Capacity</TableHead>
-                        <TableHead className="min-w-[280px]">Permit Timeline</TableHead>
-                        <TableHead className="min-w-[100px]">Days to Complete</TableHead>
-                        <TableHead className="min-w-[120px]">Status</TableHead>
+                        <TableHead className="min-w-[200px] cursor-pointer hover:bg-muted/50" onClick={() => handleInstallSort('address')}>
+                          <div className="flex items-center gap-1">
+                            Address
+                            <ArrowUpDown className="h-3 w-3" />
+                            {installSortField === 'address' && <span className="text-xs">({installSortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[100px] cursor-pointer hover:bg-muted/50" onClick={() => handleInstallSort('installed_kw')}>
+                          <div className="flex items-center gap-1">
+                            Capacity
+                            <ArrowUpDown className="h-3 w-3" />
+                            {installSortField === 'installed_kw' && <span className="text-xs">({installSortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[280px] cursor-pointer hover:bg-muted/50" onClick={() => handleInstallSort('completed_date')}>
+                          <div className="flex items-center gap-1">
+                            Permit Timeline
+                            <ArrowUpDown className="h-3 w-3" />
+                            {installSortField === 'completed_date' && <span className="text-xs">({installSortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[100px] cursor-pointer hover:bg-muted/50" onClick={() => handleInstallSort('days_to_complete')}>
+                          <div className="flex items-center gap-1">
+                            Days to Complete
+                            <ArrowUpDown className="h-3 w-3" />
+                            {installSortField === 'days_to_complete' && <span className="text-xs">({installSortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[120px] cursor-pointer hover:bg-muted/50" onClick={() => handleInstallSort('status_current')}>
+                          <div className="flex items-center gap-1">
+                            Status
+                            <ArrowUpDown className="h-3 w-3" />
+                            {installSortField === 'status_current' && <span className="text-xs">({installSortDir})</span>}
+                          </div>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {drillDownData.installations.map((install) => {
+                      {sortedInstallDrillDown.map((install) => {
                         const daysToComplete = calculateDaysToComplete(install.applied_date, install.completed_date);
                         return (
                           <TableRow key={install.id}>
@@ -594,7 +733,7 @@ WHERE issued_date >= '{fy-1}-10-01'
                   </CardTitle>
                   {capacityDrillDownData && (
                     <CardDescription>
-                      Sorted by installed kW (descending) • Date range: {formatDate(capacityDrillDownData.dateRange.startDate)} – {formatDate(capacityDrillDownData.dateRange.endDate)}
+                      Date range: {formatDate(capacityDrillDownData.dateRange.startDate)} – {formatDate(capacityDrillDownData.dateRange.endDate)}
                       {capacityDrillDownData.duplicatesRemoved > 0 && (
                         <span className="ml-2 text-yellow-600">
                           ({capacityDrillDownData.duplicatesRemoved} duplicates removed)
@@ -603,9 +742,17 @@ WHERE issued_date >= '{fy-1}-10-01'
                     </CardDescription>
                   )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => { setExpandedCapacityFY(null); setCapacityDrillDownData(null); }}>
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {capacityDrillDownData?.installations && capacityDrillDownData.installations.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={() => exportToCSV(sortedCapacityDrillDown, expandedCapacityFY!, 'capacity')}>
+                      <Download className="h-4 w-4 mr-1" />
+                      Export CSV
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => { setExpandedCapacityFY(null); setCapacityDrillDownData(null); }}>
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -615,20 +762,50 @@ WHERE issued_date >= '{fy-1}-10-01'
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-10 w-full" />
                 </div>
-              ) : capacityDrillDownData?.installations && capacityDrillDownData.installations.length > 0 ? (
+              ) : sortedCapacityDrillDown.length > 0 ? (
                 <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-background">
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead className="min-w-[100px]">Capacity ↓</TableHead>
-                        <TableHead className="min-w-[200px]">Address</TableHead>
-                        <TableHead className="min-w-[280px]">Permit Timeline</TableHead>
-                        <TableHead className="min-w-[100px]">Days to Complete</TableHead>
-                        <TableHead className="min-w-[120px]">Status</TableHead>
+                        <TableHead className="min-w-[100px] cursor-pointer hover:bg-muted/50" onClick={() => handleCapacitySort('installed_kw')}>
+                          <div className="flex items-center gap-1">
+                            Capacity
+                            <ArrowUpDown className="h-3 w-3" />
+                            {capacitySortField === 'installed_kw' && <span className="text-xs">({capacitySortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[200px] cursor-pointer hover:bg-muted/50" onClick={() => handleCapacitySort('address')}>
+                          <div className="flex items-center gap-1">
+                            Address
+                            <ArrowUpDown className="h-3 w-3" />
+                            {capacitySortField === 'address' && <span className="text-xs">({capacitySortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[280px] cursor-pointer hover:bg-muted/50" onClick={() => handleCapacitySort('completed_date')}>
+                          <div className="flex items-center gap-1">
+                            Permit Timeline
+                            <ArrowUpDown className="h-3 w-3" />
+                            {capacitySortField === 'completed_date' && <span className="text-xs">({capacitySortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[100px] cursor-pointer hover:bg-muted/50" onClick={() => handleCapacitySort('days_to_complete')}>
+                          <div className="flex items-center gap-1">
+                            Days to Complete
+                            <ArrowUpDown className="h-3 w-3" />
+                            {capacitySortField === 'days_to_complete' && <span className="text-xs">({capacitySortDir})</span>}
+                          </div>
+                        </TableHead>
+                        <TableHead className="min-w-[120px] cursor-pointer hover:bg-muted/50" onClick={() => handleCapacitySort('status_current')}>
+                          <div className="flex items-center gap-1">
+                            Status
+                            <ArrowUpDown className="h-3 w-3" />
+                            {capacitySortField === 'status_current' && <span className="text-xs">({capacitySortDir})</span>}
+                          </div>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {capacityDrillDownData.installations.map((install) => {
+                      {sortedCapacityDrillDown.map((install) => {
                         const daysToComplete = calculateDaysToComplete(install.applied_date, install.completed_date);
                         return (
                           <TableRow key={install.id}>
