@@ -13,6 +13,8 @@ import InstallationDetail from "./pages/InstallationDetail";
 import ImportSolarData from "./pages/ImportSolarData";
 import DataSources from "./pages/DataSources";
 import FiscalYearStats from "./pages/FiscalYearStats";
+import AdminLogin from "./pages/AdminLogin";
+import AdminCorrections from "./pages/AdminCorrections";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/import-solar-data" element={<ImportSolarData />} />
           <Route path="/data-sources" element={<DataSources />} />
           <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
+          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin/corrections" element={<AdminCorrections />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

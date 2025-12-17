@@ -27,9 +27,9 @@ Deno.serve(async (req) => {
 
     const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i);
     const results = await Promise.all(years.map(async (y) => {
-      // Count by completed_date to match the "Installations This Year" card metric
+      // Count by completed_date to match the "Installations This Year" card metric (using view)
       const { data: completedInstalls, error: errCompleted, count: completedCount } = await client
-        .from('solar_installations')
+        .from('solar_installations_view')
         .select('id, description, installed_kw', { count: 'exact' })
         .gte('completed_date', `${y}-01-01`)
         .lt('completed_date', `${y + 1}-01-01`);
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       // Fallback: if no completed_date, check issued_date
       if (total === 0) {
         const { data: issuedInstalls, error: errIssued, count: issuedCount } = await client
-          .from('solar_installations')
+          .from('solar_installations_view')
           .select('id, description, installed_kw', { count: 'exact' })
           .gte('issued_date', `${y}-01-01`)
           .lt('issued_date', `${y + 1}-01-01`);
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       // Final fallback: use calendar_year_issued
       if (total === 0) {
         const { data: calYearInstalls, error: errCal, count: calYearCount } = await client
-          .from('solar_installations')
+          .from('solar_installations_view')
           .select('id, description, installed_kw', { count: 'exact' })
           .eq('calendar_year_issued', y);
         

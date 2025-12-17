@@ -23,3 +23,21 @@ verify_jwt = false
 
 [functions.check-api-fields]
 verify_jwt = false
+
+[functions.yearly-stats]
+verify_jwt = false
+
+[functions.fiscal-year-stats]
+verify_jwt = false
+
+[functions.permit-timeline-stats]
+verify_jwt = false
+
+[functions.get-mapbox-token]
+verify_jwt = false
+
+[functions.admin-auth]
+verify_jwt = false
+
+[functions.manage-corrections]
+verify_jwt = false

@@ -42,9 +42,9 @@ const CityOverview = () => {
           .from('cached_stats')
           .select('*');
 
-        // Load installations for map (more than just recent)
+        // Load installations for map (using view for corrections)
         const { data: installations } = await supabase
-          .from('solar_installations')
+          .from('solar_installations_view')
           .select('*')
           .not('latitude', 'is', null)
           .not('longitude', 'is', null)
@@ -60,7 +60,7 @@ const CityOverview = () => {
         const startDateForCapacity = twelveMonthsAgoForCapacity.toISOString().split('T')[0];
         
         const { data: thisYearInstallations } = await supabase
-          .from('solar_installations')
+          .from('solar_installations_view')
           .select('installed_kw')
           .gte('completed_date', startDateForCapacity);
 
@@ -71,7 +71,7 @@ const CityOverview = () => {
 
         // Get accurate total count of all installations
         const { count: totalProjectsCount, error: totalCountError } = await supabase
-          .from('solar_installations')
+          .from('solar_installations_view')
           .select('id', { head: true, count: 'exact' });
 
         if (totalCountError) {
@@ -86,7 +86,7 @@ const CityOverview = () => {
 
         // Use a count query to avoid row limits and align with "completed installations"
         const { count: completedThisYear, error: countError } = await supabase
-          .from('solar_installations')
+          .from('solar_installations_view')
           .select('id', { head: true, count: 'exact' })
           .gte('completed_date', startDate);
 
@@ -178,9 +178,9 @@ const CityOverview = () => {
       console.log('Fetching installations for bounds:', bounds);
 
       try {
-        // Query installations within the visible bounds
+        // Query installations within the visible bounds (using view for corrections)
         const { data: boundedInstallations, error } = await supabase
-          .from('solar_installations')
+          .from('solar_installations_view')
           .select('*')
           .gte('latitude', bounds.south)
           .lte('latitude', bounds.north)
