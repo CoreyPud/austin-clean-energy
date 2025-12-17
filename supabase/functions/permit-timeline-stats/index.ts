@@ -22,9 +22,9 @@ Deno.serve(async (req) => {
     
     const client = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Fetch all installations with both applied_date and completed_date
+    // Fetch all installations with both applied_date and completed_date (using view)
     const { data: installations, error } = await client
-      .from('solar_installations')
+      .from('solar_installations_view')
       .select('applied_date, completed_date, calendar_year_issued')
       .not('applied_date', 'is', null)
       .not('completed_date', 'is', null)

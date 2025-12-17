@@ -100,12 +100,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // First, try to find in database
+    // First, try to find in database (using view for corrections)
     const { data: dbInstallation, error: dbError } = await supabase
-      .from('solar_installations')
+      .from('solar_installations_view')
       .select('*')
       .or(`project_id.eq.${id},id.eq.${id}`)
-      .single();
+      .maybeSingle();
 
     if (dbInstallation && !dbError) {
       console.log('Found installation in database:', dbInstallation);

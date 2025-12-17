@@ -38,6 +38,81 @@ export type Database = {
         }
         Relationships: []
       }
+      installation_corrections: {
+        Row: {
+          corrected_address: string | null
+          corrected_applied_date: string | null
+          corrected_completed_date: string | null
+          corrected_description: string | null
+          corrected_issued_date: string | null
+          corrected_kw: number | null
+          corrected_latitude: number | null
+          corrected_longitude: number | null
+          created_at: string | null
+          id: string
+          is_duplicate: boolean | null
+          notes: string | null
+          original_address: string | null
+          original_applied_date: string | null
+          original_completed_date: string | null
+          original_description: string | null
+          original_issued_date: string | null
+          original_kw: number | null
+          original_latitude: number | null
+          original_longitude: number | null
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          corrected_address?: string | null
+          corrected_applied_date?: string | null
+          corrected_completed_date?: string | null
+          corrected_description?: string | null
+          corrected_issued_date?: string | null
+          corrected_kw?: number | null
+          corrected_latitude?: number | null
+          corrected_longitude?: number | null
+          created_at?: string | null
+          id?: string
+          is_duplicate?: boolean | null
+          notes?: string | null
+          original_address?: string | null
+          original_applied_date?: string | null
+          original_completed_date?: string | null
+          original_description?: string | null
+          original_issued_date?: string | null
+          original_kw?: number | null
+          original_latitude?: number | null
+          original_longitude?: number | null
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          corrected_address?: string | null
+          corrected_applied_date?: string | null
+          corrected_completed_date?: string | null
+          corrected_description?: string | null
+          corrected_issued_date?: string | null
+          corrected_kw?: number | null
+          corrected_latitude?: number | null
+          corrected_longitude?: number | null
+          created_at?: string | null
+          id?: string
+          is_duplicate?: boolean | null
+          notes?: string | null
+          original_address?: string | null
+          original_applied_date?: string | null
+          original_completed_date?: string | null
+          original_description?: string | null
+          original_issued_date?: string | null
+          original_kw?: number | null
+          original_latitude?: number | null
+          original_longitude?: number | null
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       solar_installations: {
         Row: {
           address: string
@@ -112,7 +187,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      solar_installations_view: {
+        Row: {
+          address: string | null
+          applied_date: string | null
+          calendar_year_issued: number | null
+          completed_date: string | null
+          contractor_city: string | null
+          contractor_company: string | null
+          correction_notes: string | null
+          council_district: string | null
+          created_at: string | null
+          description: string | null
+          has_correction: boolean | null
+          id: string | null
+          installed_kw: number | null
+          is_duplicate: boolean | null
+          issued_date: string | null
+          jurisdiction: string | null
+          latitude: number | null
+          link: string | null
+          longitude: number | null
+          original_zip: string | null
+          permit_class: string | null
+          project_id: string | null
+          status_current: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

@@ -99,9 +99,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Query database for existing installations in this ZIP
+    // Query database for existing installations in this ZIP (using view for corrections)
     const { data: dbInstallations, error: dbError } = await supabase
-      .from('solar_installations')
+      .from('solar_installations_view')
       .select('*')
       .eq('original_zip', zipCode)
       .not('latitude', 'is', null)

@@ -80,11 +80,11 @@ Deno.serve(async (req) => {
     if (requestedFY && includeDetails) {
       const { startDate, endDate } = getFiscalYearRange(requestedFY);
       
-      // Fetch all detailed records with pagination
+      // Fetch all detailed records with pagination (using view for corrections)
       const installations = await fetchAllRows(
         client,
-        'solar_installations',
-        'id, project_id, address, description, installed_kw, applied_date, issued_date, completed_date, status_current, contractor_company',
+        'solar_installations_view',
+        'id, project_id, address, description, installed_kw, applied_date, issued_date, completed_date, status_current, contractor_company, has_correction',
         'completed_date',
         startDate,
         endDate
@@ -137,10 +137,10 @@ Deno.serve(async (req) => {
     const results = await Promise.all(fiscalYears.map(async (fy) => {
       const { startDate, endDate } = getFiscalYearRange(fy);
       
-      // Fetch all records with pagination for this fiscal year
+      // Fetch all records with pagination for this fiscal year (using view)
       let allInstalls = await fetchAllRows(
         client,
-        'solar_installations',
+        'solar_installations_view',
         'id, project_id, description, installed_kw',
         'completed_date',
         startDate,
@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
       if (allInstalls.length === 0) {
         allInstalls = await fetchAllRows(
           client,
-          'solar_installations',
+          'solar_installations_view',
           'id, project_id, description, installed_kw',
           'issued_date',
           startDate,
