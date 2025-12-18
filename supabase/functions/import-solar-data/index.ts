@@ -35,18 +35,56 @@ function validateCsvData(csvData: string): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
+// Validate admin token by checking the admin_sessions table
+async function validateAdminToken(token: string): Promise<{ valid: boolean; error?: string }> {
+  if (!token) {
+    return { valid: false, error: 'Admin token is required' };
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Check if token exists and is not expired
+  const { data: session, error } = await supabase
+    .from('admin_sessions')
+    .select('*')
+    .eq('token', token)
+    .gt('expires_at', new Date().toISOString())
+    .single();
+
+  if (error || !session) {
+    console.warn('Invalid or expired admin token for import attempt');
+    return { valid: false, error: 'Invalid or expired admin token' };
+  }
+
+  return { valid: true };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Check authentication (JWT should be verified by config)
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.warn('Unauthorized import attempt - no auth header');
+    // Validate admin token from header
+    const adminToken = req.headers.get('x-admin-token');
+    if (!adminToken) {
+      console.warn('Unauthorized import attempt - no admin token');
       return new Response(
-        JSON.stringify({ error: 'Authentication required for this operation' }),
+        JSON.stringify({ error: 'Admin authentication required for this operation' }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Validate the token against the database
+    const tokenValidation = await validateAdminToken(adminToken);
+    if (!tokenValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: tokenValidation.error }),
         { 
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -67,7 +105,7 @@ Deno.serve(async (req) => {
         }
       );
     }
-    console.log('Importing solar installation data...');
+    console.log('Importing solar installation data (authorized admin)...');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

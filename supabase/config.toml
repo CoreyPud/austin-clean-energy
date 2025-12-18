@@ -16,7 +16,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.import-solar-data]
-verify_jwt = true
+verify_jwt = false
 
 [functions.sync-solar-data]
 verify_jwt = false

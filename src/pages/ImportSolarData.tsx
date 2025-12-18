@@ -1,17 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, CheckCircle } from "lucide-react";
+import { Upload, FileText, CheckCircle, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const ImportSolarData = () => {
   const [loading, setLoading] = useState(false);
   const [csvData, setCsvData] = useState<string>("");
   const [fileName, setFileName] = useState<string>("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user has admin token
+    const adminToken = sessionStorage.getItem('admin_token');
+    setIsAuthenticated(!!adminToken);
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -27,6 +34,18 @@ const ImportSolarData = () => {
   };
 
   const handleImport = async () => {
+    const adminToken = sessionStorage.getItem('admin_token');
+    
+    if (!adminToken) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in as admin first",
+        variant: "destructive",
+      });
+      navigate('/admin/login');
+      return;
+    }
+
     if (!csvData) {
       toast({
         title: "No file selected",
@@ -39,7 +58,10 @@ const ImportSolarData = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('import-solar-data', {
-        body: { csvData }
+        body: { csvData },
+        headers: {
+          'x-admin-token': adminToken
+        }
       });
 
       if (error) throw error;
@@ -83,6 +105,21 @@ const ImportSolarData = () => {
             </p>
           </div>
 
+          {!isAuthenticated && (
+            <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+              <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">Admin authentication required</p>
+                <p className="text-sm opacity-80">
+                  <Button variant="link" className="p-0 h-auto text-destructive" onClick={() => navigate('/admin/login')}>
+                    Log in as admin
+                  </Button>
+                  {" "}to import data
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-6">
             <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
               <input
@@ -91,8 +128,9 @@ const ImportSolarData = () => {
                 onChange={handleFileUpload}
                 className="hidden"
                 id="csv-upload"
+                disabled={!isAuthenticated}
               />
-              <label htmlFor="csv-upload" className="cursor-pointer">
+              <label htmlFor="csv-upload" className={`${isAuthenticated ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground mb-2">
                   Click to upload CSV file
@@ -118,7 +156,7 @@ const ImportSolarData = () => {
 
             <Button 
               onClick={handleImport}
-              disabled={!csvData || loading}
+              disabled={!csvData || loading || !isAuthenticated}
               className="w-full"
               size="lg"
             >
