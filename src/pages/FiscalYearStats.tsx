@@ -984,9 +984,10 @@ WHERE issued_date >= '{fy-1}-10-01'
             <div className="space-y-3">
               <h4 className="font-semibold text-foreground">System Capacity (kW)</h4>
               <p>
-                The installed capacity in kilowatts (kW) represents the nameplate DC capacity of the solar array 
-                as recorded in the permit. This is the maximum rated output under ideal conditions. Actual 
-                production may vary based on weather, shading, system orientation, and other factors.
+                The installed capacity in kilowatts (kW) is extracted by parsing the permit description field 
+                for patterns like "X.XX kW" or "X.XX KW". This value represents the rated DC capacity of the 
+                solar array as stated in the permit application. Not all permits include capacity information, 
+                and parsing may not capture all variations in how capacity is documented.
               </p>
             </div>
 
