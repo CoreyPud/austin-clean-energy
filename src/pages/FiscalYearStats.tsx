@@ -921,6 +921,84 @@ WHERE issued_date >= '{fy-1}-10-01'
             )}
           </CardContent>
         </Card>
+
+        {/* Methodology & Data Explanation */}
+        <Card className="mt-8 border-muted">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Info className="h-5 w-5 text-muted-foreground" />
+              About This Data
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 text-sm text-muted-foreground">
+            <div className="space-y-3">
+              <h4 className="font-semibold text-foreground">Data Source</h4>
+              <p>
+                This dashboard displays solar photovoltaic (PV) installation permits from the City of Austin's 
+                open data portal. The data includes residential and commercial solar permits processed through 
+                Austin's Development Services Department.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-semibold text-foreground">Fiscal Year Definition</h4>
+              <p>
+                The City of Austin's fiscal year runs from <strong>October 1 through September 30</strong>. 
+                For example, Fiscal Year 2024 (FY2024) covers October 1, 2023 through September 30, 2024. 
+                This differs from the calendar year and aligns with how the City reports its budget and operational metrics.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-semibold text-foreground">Date Classification Methodology</h4>
+              <p>
+                Installations are assigned to fiscal years based on the <strong>permit completion date</strong> 
+                (<code className="bg-muted px-1 rounded text-xs">completed_date</code>). This represents when the 
+                solar installation passed final inspection and was approved for operation. If a completion date 
+                is not available, the system falls back to the <strong>permit issued date</strong> 
+                (<code className="bg-muted px-1 rounded text-xs">issued_date</code>).
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-semibold text-foreground">Deduplication Process</h4>
+              <p>
+                Some projects may have multiple permit records in the source data (e.g., amendments, corrections, 
+                or resubmissions). To avoid double-counting, permits are deduplicated using the 
+                <code className="bg-muted px-1 rounded text-xs">project_id</code> field. When duplicates are found, 
+                only the most recent record (by completion date) is retained. Permits without a project ID are 
+                always included as they cannot be matched to other records.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-semibold text-foreground">Battery Storage Detection</h4>
+              <p>
+                Installations are flagged as including battery storage based on keyword matching in the permit 
+                description field. Keywords include: <em>BESS, battery, batteries, energy storage, Powerwall, 
+                and backup</em>. This method may not capture all battery installations if they're not explicitly 
+                mentioned in the permit description.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-semibold text-foreground">System Capacity (kW)</h4>
+              <p>
+                The installed capacity in kilowatts (kW) represents the nameplate DC capacity of the solar array 
+                as recorded in the permit. This is the maximum rated output under ideal conditions. Actual 
+                production may vary based on weather, shading, system orientation, and other factors.
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-muted">
+              <p className="text-xs text-muted-foreground/70">
+                <strong>Disclaimer:</strong> This data is provided for informational purposes only. While we strive 
+                for accuracy, permit data may contain errors or omissions from the source. For official City of Austin 
+                statistics, please refer to the City's official publications and data portal.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
