@@ -5,31 +5,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token',
 };
 
-// Normalize address for matching (same logic as import function)
-function normalizeAddress(address: string): string {
-  if (!address) return '';
+// Normalize installer/company name for matching
+function normalizeCompanyName(name: string): string {
+  if (!name) return '';
   
-  return address
+  return name
     .toUpperCase()
     .trim()
-    .replace(/\s+(APT|UNIT|STE|SUITE|#)\s*[\w-]+$/i, '')
-    .replace(/\bSTREET\b/g, 'ST')
-    .replace(/\bDRIVE\b/g, 'DR')
-    .replace(/\bAVENUE\b/g, 'AVE')
-    .replace(/\bBOULEVARD\b/g, 'BLVD')
-    .replace(/\bLANE\b/g, 'LN')
-    .replace(/\bROAD\b/g, 'RD')
-    .replace(/\bCOURT\b/g, 'CT')
-    .replace(/\bCIRCLE\b/g, 'CIR')
-    .replace(/\bPLACE\b/g, 'PL')
-    .replace(/\bTERRACE\b/g, 'TER')
-    .replace(/\bPARKWAY\b/g, 'PKWY')
-    .replace(/\bHIGHWAY\b/g, 'HWY')
-    .replace(/\bNORTH\b/g, 'N')
-    .replace(/\bSOUTH\b/g, 'S')
-    .replace(/\bEAST\b/g, 'E')
-    .replace(/\bWEST\b/g, 'W')
-    .replace(/[.,]/g, '')
+    // Remove common suffixes
+    .replace(/\b(LLC|INC|CORP|CORPORATION|CO|COMPANY|LTD|LIMITED|LP|LLP)\b\.?/g, '')
+    // Remove "DBA" and everything after
+    .replace(/\bDBA\b.*/i, '')
+    // Remove "THE" prefix
+    .replace(/^THE\s+/i, '')
+    // Normalize common solar terms
+    .replace(/\bSOLAR\s*(PANEL|POWER|ENERGY|SYSTEM|INSTALL)S?\b/g, 'SOLAR')
+    // Remove punctuation
+    .replace(/[.,'"()-]/g, '')
+    // Normalize whitespace
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -83,6 +76,47 @@ function datesWithinDays(date1: string | null, date2: string | null, days: numbe
   return diffDays <= days;
 }
 
+// Get the day difference between two dates
+function getDaysDifference(date1: string | null, date2: string | null): number | null {
+  if (!date1 || !date2) return null;
+  
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  
+  if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+  
+  const diffMs = Math.abs(d1.getTime() - d2.getTime());
+  return diffMs / (1000 * 60 * 60 * 24);
+}
+
+// Calculate kW match score (0-100)
+function getKwMatchScore(kw1: number | null, kw2: number | null): number {
+  if (kw1 === null || kw2 === null || kw1 === 0 || kw2 === 0) return 0;
+  
+  const percentDiff = Math.abs(kw1 - kw2) / Math.max(kw1, kw2);
+  
+  if (percentDiff === 0) return 100;
+  if (percentDiff <= 0.02) return 95;  // Within 2%
+  if (percentDiff <= 0.05) return 85;  // Within 5%
+  if (percentDiff <= 0.10) return 70;  // Within 10%
+  if (percentDiff <= 0.15) return 50;  // Within 15%
+  if (percentDiff <= 0.25) return 30;  // Within 25%
+  return 0;
+}
+
+// Extract fiscal year from date (Oct 1 - Sep 30)
+function getFiscalYear(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return null;
+  
+  const month = date.getMonth(); // 0-11
+  const year = date.getFullYear();
+  
+  // Fiscal year starts Oct 1, so Oct-Dec belong to next FY
+  return month >= 9 ? year + 1 : year;
+}
+
 async function validateAdminToken(supabaseClient: any, token: string): Promise<boolean> {
   const { data, error } = await supabaseClient
     .from('admin_sessions')
@@ -101,14 +135,32 @@ interface SolarInstallation {
   address: string;
   installed_kw: number | null;
   completed_date: string | null;
+  issued_date: string | null;
+  applied_date: string | null;
+  contractor_company: string | null;
+  calendar_year_issued: number | null;
 }
 
 interface PIRInstallation {
   id: string;
-  address: string;
+  address: string;  // This is actually a synthetic address (installer + date + kW)
   address_normalized: string | null;
   system_kw: number | null;
   interconnection_date: string | null;
+  raw_data: {
+    installer?: string;
+    fiscal_year?: string;
+    battery_kwh?: number | null;
+    cost?: number | null;
+    ae_rebate?: number | null;
+  } | null;
+}
+
+interface MatchCandidate {
+  pir: PIRInstallation;
+  confidence: number;
+  matchType: string;
+  matchDetails: string[];
 }
 
 Deno.serve(async (req) => {
@@ -137,25 +189,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Starting data source matching...');
+    console.log('Starting enhanced data source matching...');
 
     const stats = {
       newMatches: 0,
-      exactMatches: 0,
+      exactKwDateMatches: 0,
+      installerMatches: 0,
+      dateRangeMatches: 0,
       fuzzyMatches: 0,
-      dateCorrelatedMatches: 0,
       processed: 0,
+      skipped: 0,
       errors: [] as string[]
     };
 
     // Get all city records that haven't been matched yet
+    // Fetch more fields for better matching
     const { data: unmatchedCity, error: cityError } = await supabaseClient
       .from('solar_installations')
-      .select('id, address, installed_kw, completed_date')
+      .select('id, address, installed_kw, completed_date, issued_date, applied_date, contractor_company, calendar_year_issued')
       .not('id', 'in', 
         supabaseClient.from('data_match_results').select('solar_installation_id')
       )
-      .limit(1000);
+      .limit(2000);
 
     if (cityError) {
       console.error('Error fetching city records:', cityError);
@@ -165,10 +220,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get all PIR records
+    // Get all PIR records that haven't been matched yet
     const { data: pirRecords, error: pirError } = await supabaseClient
       .from('pir_installations')
-      .select('id, address, address_normalized, system_kw, interconnection_date');
+      .select('id, address, address_normalized, system_kw, interconnection_date, raw_data')
+      .not('id', 'in',
+        supabaseClient.from('data_match_results').select('pir_installation_id')
+      );
 
     if (pirError) {
       console.error('Error fetching PIR records:', pirError);
@@ -188,16 +246,37 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${unmatchedCity?.length || 0} unmatched city records against ${pirRecords.length} PIR records`);
+    console.log(`Processing ${unmatchedCity?.length || 0} unmatched city records against ${pirRecords.length} unmatched PIR records`);
 
-    // Build a map of normalized PIR addresses for quick lookup
-    const pirByNormalizedAddress = new Map<string, PIRInstallation[]>();
+    // Build indexes for quick lookup
+    const pirByKwRange = new Map<string, PIRInstallation[]>();  // kW rounded to nearest 0.5
+    const pirByFiscalYear = new Map<number, PIRInstallation[]>();
+    const pirByInstaller = new Map<string, PIRInstallation[]>();
+    
     for (const pir of pirRecords) {
-      const normalized = pir.address_normalized || normalizeAddress(pir.address);
-      if (!pirByNormalizedAddress.has(normalized)) {
-        pirByNormalizedAddress.set(normalized, []);
+      // Index by kW (rounded to 0.5 kW)
+      if (pir.system_kw) {
+        const kwKey = (Math.round(pir.system_kw * 2) / 2).toString();
+        if (!pirByKwRange.has(kwKey)) pirByKwRange.set(kwKey, []);
+        pirByKwRange.get(kwKey)!.push(pir);
       }
-      pirByNormalizedAddress.get(normalized)!.push(pir);
+      
+      // Index by fiscal year
+      const fy = pir.raw_data?.fiscal_year ? parseInt(pir.raw_data.fiscal_year) : getFiscalYear(pir.interconnection_date);
+      if (fy) {
+        if (!pirByFiscalYear.has(fy)) pirByFiscalYear.set(fy, []);
+        pirByFiscalYear.get(fy)!.push(pir);
+      }
+      
+      // Index by installer name (normalized)
+      const installer = pir.raw_data?.installer;
+      if (installer) {
+        const normalizedInstaller = normalizeCompanyName(installer);
+        if (normalizedInstaller) {
+          if (!pirByInstaller.has(normalizedInstaller)) pirByInstaller.set(normalizedInstaller, []);
+          pirByInstaller.get(normalizedInstaller)!.push(pir);
+        }
+      }
     }
 
     const matchesToInsert: Array<{
@@ -206,94 +285,208 @@ Deno.serve(async (req) => {
       match_confidence: number;
       match_type: string;
       status: string;
+      reviewed_notes: string;
     }> = [];
+
+    const usedPirIds = new Set<string>();
 
     // Process each unmatched city record
     for (const city of (unmatchedCity || []) as SolarInstallation[]) {
       stats.processed++;
       
-      const normalizedCityAddress = normalizeAddress(city.address);
+      const candidates: MatchCandidate[] = [];
       
-      // Pass 1: Exact normalized address match
-      const exactMatches = pirByNormalizedAddress.get(normalizedCityAddress);
-      if (exactMatches && exactMatches.length > 0) {
-        // Find best match if multiple (prefer matching dates/kW)
-        let bestMatch = exactMatches[0];
-        let bestConfidence = 90;
-        
-        for (const pir of exactMatches) {
-          let confidence = 90;
-          
-          // Boost for date correlation
-          if (datesWithinDays(city.completed_date, pir.interconnection_date, 30)) {
-            confidence += 5;
-          }
-          
-          // Boost for kW match
-          if (city.installed_kw && pir.system_kw) {
-            const kwDiff = Math.abs(city.installed_kw - pir.system_kw) / Math.max(city.installed_kw, pir.system_kw);
-            if (kwDiff < 0.05) confidence += 5;
-          }
-          
-          if (confidence > bestConfidence) {
-            bestConfidence = confidence;
-            bestMatch = pir;
-          }
-        }
-        
-        matchesToInsert.push({
-          solar_installation_id: city.id,
-          pir_installation_id: bestMatch.id,
-          match_confidence: bestConfidence,
-          match_type: 'exact_address',
-          status: bestConfidence >= 95 ? 'confirmed' : 'pending_review'
-        });
-        
-        stats.exactMatches++;
-        stats.newMatches++;
+      // Use completed_date as primary, fall back to issued_date
+      const cityDate = city.completed_date || city.issued_date;
+      const cityFiscalYear = getFiscalYear(cityDate);
+      const normalizedContractor = city.contractor_company ? normalizeCompanyName(city.contractor_company) : null;
+      
+      // Skip if we don't have enough data to match
+      if (!city.installed_kw && !cityDate && !normalizedContractor) {
+        stats.skipped++;
         continue;
       }
-      
-      // Pass 2: Fuzzy address match
-      let bestFuzzyMatch: PIRInstallation | null = null;
-      let bestFuzzyConfidence = 0;
-      
-      for (const pir of pirRecords) {
-        const pirNormalized = pir.address_normalized || normalizeAddress(pir.address);
-        const similarity = calculateSimilarity(normalizedCityAddress, pirNormalized);
+
+      // PASS 1: Exact kW + Date match (highest confidence)
+      // Look for PIR records with same kW and date within 30 days
+      if (city.installed_kw && cityDate) {
+        const kwKey = (Math.round(city.installed_kw * 2) / 2).toString();
+        const nearbyKwRecords = pirByKwRange.get(kwKey) || [];
         
-        if (similarity >= 85) {
-          let confidence = similarity * 0.85; // Scale down to leave room for boosts
+        for (const pir of nearbyKwRecords) {
+          if (usedPirIds.has(pir.id)) continue;
           
-          // Boost for date correlation
-          if (datesWithinDays(city.completed_date, pir.interconnection_date, 60)) {
-            confidence += 10;
-          }
+          const kwScore = getKwMatchScore(city.installed_kw, pir.system_kw);
+          const daysDiff = getDaysDifference(cityDate, pir.interconnection_date);
           
-          // Boost for kW match
-          if (city.installed_kw && pir.system_kw) {
-            const kwDiff = Math.abs(city.installed_kw - pir.system_kw) / Math.max(city.installed_kw, pir.system_kw);
-            if (kwDiff < 0.1) confidence += 5;
-          }
-          
-          if (confidence > bestFuzzyConfidence) {
-            bestFuzzyConfidence = confidence;
-            bestFuzzyMatch = pir;
+          if (kwScore >= 85 && daysDiff !== null && daysDiff <= 30) {
+            let confidence = 70;
+            const matchDetails: string[] = [];
+            
+            // kW contributes up to 15 points
+            confidence += (kwScore / 100) * 15;
+            matchDetails.push(`kW: ${city.installed_kw} vs ${pir.system_kw} (${kwScore}% match)`);
+            
+            // Date proximity contributes up to 15 points
+            const dateScore = daysDiff <= 7 ? 15 : daysDiff <= 14 ? 12 : daysDiff <= 21 ? 8 : 5;
+            confidence += dateScore;
+            matchDetails.push(`Date: ${daysDiff.toFixed(0)} days apart`);
+            
+            // Check installer match for bonus
+            const pirInstaller = pir.raw_data?.installer;
+            if (normalizedContractor && pirInstaller) {
+              const installerSimilarity = calculateSimilarity(normalizedContractor, normalizeCompanyName(pirInstaller));
+              if (installerSimilarity >= 80) {
+                confidence += 10;
+                matchDetails.push(`Installer: ${installerSimilarity.toFixed(0)}% similar`);
+              }
+            }
+            
+            candidates.push({
+              pir,
+              confidence: Math.min(confidence, 98),
+              matchType: 'exact_kw_date',
+              matchDetails
+            });
           }
         }
       }
-      
-      if (bestFuzzyMatch && bestFuzzyConfidence >= 70) {
-        matchesToInsert.push({
-          solar_installation_id: city.id,
-          pir_installation_id: bestFuzzyMatch.id,
-          match_confidence: Math.round(bestFuzzyConfidence),
-          match_type: 'fuzzy_address',
-          status: 'pending_review'
-        });
+
+      // PASS 2: Installer + Fiscal Year match
+      if (normalizedContractor && cityFiscalYear) {
+        // Find PIR records by same installer in same fiscal year
+        const installerRecords = pirByInstaller.get(normalizedContractor) || [];
         
-        stats.fuzzyMatches++;
-        stats.newMatches++;
+        for (const pir of installerRecords) {
+          if (usedPirIds.has(pir.id)) continue;
+          
+          const pirFy = pir.raw_data?.fiscal_year ? parseInt(pir.raw_data.fiscal_year) : getFiscalYear(pir.interconnection_date);
+          if (pirFy !== cityFiscalYear) continue;
+          
+          let confidence = 50;
+          const matchDetails: string[] = [];
+          matchDetails.push(`Installer match: ${city.contractor_company}`);
+          matchDetails.push(`Same fiscal year: FY${cityFiscalYear}`);
+          
+          // kW similarity boost
+          const kwScore = getKwMatchScore(city.installed_kw, pir.system_kw);
+          if (kwScore >= 50) {
+            confidence += (kwScore / 100) * 20;
+            matchDetails.push(`kW: ${city.installed_kw} vs ${pir.system_kw} (${kwScore}% match)`);
+          }
+          
+          // Date proximity boost
+          const daysDiff = getDaysDifference(cityDate, pir.interconnection_date);
+          if (daysDiff !== null && daysDiff <= 90) {
+            const dateBoost = daysDiff <= 30 ? 15 : daysDiff <= 60 ? 10 : 5;
+            confidence += dateBoost;
+            matchDetails.push(`Date: ${daysDiff.toFixed(0)} days apart`);
+          }
+          
+          candidates.push({
+            pir,
+            confidence: Math.min(confidence, 90),
+            matchType: 'installer_fiscal_year',
+            matchDetails
+          });
+        }
+      }
+
+      // PASS 3: Fuzzy installer + kW + broader date range
+      if (normalizedContractor && city.installed_kw) {
+        for (const [installerKey, records] of pirByInstaller.entries()) {
+          const installerSimilarity = calculateSimilarity(normalizedContractor, installerKey);
+          if (installerSimilarity < 70) continue;
+          
+          for (const pir of records) {
+            if (usedPirIds.has(pir.id)) continue;
+            
+            const kwScore = getKwMatchScore(city.installed_kw, pir.system_kw);
+            if (kwScore < 50) continue;
+            
+            let confidence = 35;
+            const matchDetails: string[] = [];
+            
+            matchDetails.push(`Installer: ${installerSimilarity.toFixed(0)}% similar`);
+            confidence += (installerSimilarity / 100) * 15;
+            
+            matchDetails.push(`kW: ${city.installed_kw} vs ${pir.system_kw} (${kwScore}% match)`);
+            confidence += (kwScore / 100) * 15;
+            
+            // Date within same calendar year
+            const daysDiff = getDaysDifference(cityDate, pir.interconnection_date);
+            if (daysDiff !== null && daysDiff <= 180) {
+              const dateBoost = daysDiff <= 60 ? 15 : daysDiff <= 120 ? 10 : 5;
+              confidence += dateBoost;
+              matchDetails.push(`Date: ${daysDiff.toFixed(0)} days apart`);
+            }
+            
+            if (confidence >= 55) {
+              candidates.push({
+                pir,
+                confidence: Math.min(confidence, 85),
+                matchType: 'fuzzy_installer_kw',
+                matchDetails
+              });
+            }
+          }
+        }
+      }
+
+      // PASS 4: Date + kW only (when no installer info)
+      if (!normalizedContractor && city.installed_kw && cityDate) {
+        for (const pir of pirRecords) {
+          if (usedPirIds.has(pir.id)) continue;
+          
+          const kwScore = getKwMatchScore(city.installed_kw, pir.system_kw);
+          const daysDiff = getDaysDifference(cityDate, pir.interconnection_date);
+          
+          if (kwScore >= 90 && daysDiff !== null && daysDiff <= 14) {
+            let confidence = 60;
+            const matchDetails: string[] = [];
+            
+            confidence += (kwScore / 100) * 15;
+            matchDetails.push(`kW: ${city.installed_kw} vs ${pir.system_kw} (${kwScore}% match)`);
+            
+            const dateBoost = daysDiff <= 3 ? 15 : daysDiff <= 7 ? 12 : 8;
+            confidence += dateBoost;
+            matchDetails.push(`Date: ${daysDiff.toFixed(0)} days apart`);
+            
+            candidates.push({
+              pir,
+              confidence: Math.min(confidence, 80),
+              matchType: 'date_kw_only',
+              matchDetails
+            });
+          }
+        }
+      }
+
+      // Select best match
+      if (candidates.length > 0) {
+        // Sort by confidence descending
+        candidates.sort((a, b) => b.confidence - a.confidence);
+        const best = candidates[0];
+        
+        // Only accept if confidence is above threshold
+        if (best.confidence >= 55) {
+          usedPirIds.add(best.pir.id);
+          
+          matchesToInsert.push({
+            solar_installation_id: city.id,
+            pir_installation_id: best.pir.id,
+            match_confidence: Math.round(best.confidence),
+            match_type: best.matchType,
+            status: best.confidence >= 85 ? 'confirmed' : 'pending_review',
+            reviewed_notes: best.matchDetails.join('; ')
+          });
+          
+          stats.newMatches++;
+          if (best.matchType === 'exact_kw_date') stats.exactKwDateMatches++;
+          else if (best.matchType === 'installer_fiscal_year') stats.installerMatches++;
+          else if (best.matchType === 'fuzzy_installer_kw') stats.fuzzyMatches++;
+          else if (best.matchType === 'date_kw_only') stats.dateRangeMatches++;
+        }
       }
     }
 
@@ -305,10 +498,7 @@ Deno.serve(async (req) => {
         
         const { error: insertError } = await supabaseClient
           .from('data_match_results')
-          .upsert(batch, {
-            onConflict: 'solar_installation_id,pir_installation_id',
-            ignoreDuplicates: true
-          });
+          .insert(batch);
         
         if (insertError) {
           console.error('Error inserting matches:', insertError);
@@ -317,7 +507,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('Matching complete:', stats);
+    console.log('Enhanced matching complete:', stats);
 
     return new Response(
       JSON.stringify({ success: true, stats }),
