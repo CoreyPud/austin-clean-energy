@@ -59,6 +59,64 @@ export type Database = {
         }
         Relationships: []
       }
+      data_match_results: {
+        Row: {
+          created_at: string
+          id: string
+          match_confidence: number | null
+          match_type: string
+          pir_installation_id: string | null
+          reviewed_notes: string | null
+          solar_installation_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_confidence?: number | null
+          match_type: string
+          pir_installation_id?: string | null
+          reviewed_notes?: string | null
+          solar_installation_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_confidence?: number | null
+          match_type?: string
+          pir_installation_id?: string | null
+          reviewed_notes?: string | null
+          solar_installation_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_match_results_pir_installation_id_fkey"
+            columns: ["pir_installation_id"]
+            isOneToOne: false
+            referencedRelation: "pir_installations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_match_results_solar_installation_id_fkey"
+            columns: ["solar_installation_id"]
+            isOneToOne: false
+            referencedRelation: "solar_installations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_match_results_solar_installation_id_fkey"
+            columns: ["solar_installation_id"]
+            isOneToOne: false
+            referencedRelation: "solar_installations_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       installation_corrections: {
         Row: {
           corrected_address: string | null
@@ -131,6 +189,51 @@ export type Database = {
           original_longitude?: number | null
           project_id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pir_installations: {
+        Row: {
+          address: string
+          address_normalized: string | null
+          created_at: string
+          customer_type: string | null
+          fuel_type: string | null
+          id: string
+          interconnection_date: string | null
+          pir_number: string | null
+          raw_data: Json | null
+          system_kw: number | null
+          technology: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          address_normalized?: string | null
+          created_at?: string
+          customer_type?: string | null
+          fuel_type?: string | null
+          id?: string
+          interconnection_date?: string | null
+          pir_number?: string | null
+          raw_data?: Json | null
+          system_kw?: number | null
+          technology?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          address_normalized?: string | null
+          created_at?: string
+          customer_type?: string | null
+          fuel_type?: string | null
+          id?: string
+          interconnection_date?: string | null
+          pir_number?: string | null
+          raw_data?: Json | null
+          system_kw?: number | null
+          technology?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
