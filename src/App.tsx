@@ -15,6 +15,8 @@ import DataSources from "./pages/DataSources";
 import FiscalYearStats from "./pages/FiscalYearStats";
 import AdminLogin from "./pages/AdminLogin";
 import AdminCorrections from "./pages/AdminCorrections";
+import PIRImport from "./pages/PIRImport";
+import DataComparison from "./pages/DataComparison";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/corrections" element={<AdminCorrections />} />
+          <Route path="/admin/pir-import" element={<PIRImport />} />
+          <Route path="/admin/data-comparison" element={<DataComparison />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
