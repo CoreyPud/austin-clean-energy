@@ -14,6 +14,7 @@ import ImportSolarData from "./pages/ImportSolarData";
 import DataSources from "./pages/DataSources";
 import FiscalYearStats from "./pages/FiscalYearStats";
 import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminCorrections from "./pages/AdminCorrections";
 import PIRImport from "./pages/PIRImport";
 import DataComparison from "./pages/DataComparison";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/data-sources" element={<DataSources />} />
           <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
           <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/corrections" element={<AdminCorrections />} />
           <Route path="/admin/pir-import" element={<PIRImport />} />
           <Route path="/admin/data-comparison" element={<DataComparison />} />

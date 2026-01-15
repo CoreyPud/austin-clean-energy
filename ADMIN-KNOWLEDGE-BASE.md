@@ -186,6 +186,100 @@ After updating:
 
 ---
 
+## PIR Data Integration & Matching System
+
+### Overview
+
+The platform integrates two primary data sources to create a comprehensive, validated view of solar installations in Austin:
+
+1. **City of Austin Permit Data** - Public API with permit records, addresses, and contractor information
+2. **Austin Energy PIR Data** - Internal interconnection records with accurate capacity and rebate data
+
+### Data Sources Comparison
+
+| Attribute | City Permit Data | Austin Energy PIR |
+|-----------|------------------|-------------------|
+| Source | City Open Data API | Internal CSV export |
+| Addresses | ✅ Full street addresses | ❌ Not included (privacy) |
+| kW Capacity | ⚠️ Self-reported, may vary | ✅ Verified interconnection |
+| Dates | Applied, Issued, Completed | Interconnection date |
+| Installer | Contractor company name | Installer name |
+| Updates | Real-time API sync | Manual CSV import |
+
+### Matching Algorithm
+
+Since PIR data lacks street addresses, the system uses a **multi-pass correlation algorithm**:
+
+#### Pass 1: Exact kW + Date Match (Highest Confidence)
+- Matches records with identical system size (within 2%) 
+- Installation dates within 30 days
+- Base confidence: 70-98%
+
+#### Pass 2: Installer + Fiscal Year Match
+- Exact match on normalized contractor/installer name
+- Same fiscal year (Oct 1 - Sep 30)
+- Boosted by kW and date proximity
+- Base confidence: 50-90%
+
+#### Pass 3: Fuzzy Installer + kW Match
+- Levenshtein similarity on company names (≥70%)
+- Similar kW capacity (within 25%)
+- Dates within 6 months
+- Base confidence: 55-85%
+
+#### Pass 4: Date + kW Only (Fallback)
+- Used when no contractor info available
+- Requires very close kW match (≥90%)
+- Dates within 14 days
+- Base confidence: 60-80%
+
+### Confidence Thresholds
+
+| Confidence | Status | Action |
+|------------|--------|--------|
+| 85%+ | Auto-confirmed | No review needed |
+| 55-84% | Pending review | Manual verification recommended |
+| <55% | Not matched | Requires manual linking |
+
+### Admin Workflow
+
+1. **Import PIR Data**: Upload CSV via `/admin/pir-import`
+2. **Run Auto-Match**: Trigger matching in `/admin/data-comparison`
+3. **Review Pending**: Verify matches with 55-84% confidence
+4. **Resolve Discrepancies**: Identify data quality issues
+
+### Company Name Normalization
+
+The system normalizes installer/contractor names for better matching:
+- Removes suffixes: LLC, INC, CORP, CO, LTD
+- Strips "DBA" and following text
+- Removes "THE" prefix
+- Normalizes "SOLAR PANEL/POWER/ENERGY/INSTALL" → "SOLAR"
+- Case-insensitive comparison
+
+### Known Limitations
+
+- **No Address Cross-Reference**: PIR data has no addresses, so false positives can occur when multiple installations happen on the same day with same capacity
+- **Fiscal Year Boundaries**: Some edge cases near Oct 1 may match to wrong fiscal year
+- **Installer Name Variations**: Same company may appear with different DBA names
+
+### Troubleshooting
+
+**No matches found:**
+- Verify PIR data imported successfully (check record count)
+- Check that date ranges overlap between datasets
+- Review installer name variations
+
+**Too many false positives:**
+- Increase confidence threshold for auto-confirm
+- Review matches manually before confirming
+
+**Missing PIR records:**
+- Ensure CSV has correct column headers
+- Check for parsing errors in edge function logs
+
+---
+
 ## Quick Reference: What to Update When
 
 | Event | Files to Update |
@@ -197,7 +291,8 @@ After updating:
 | API endpoint changes | data-sources.md (+ code changes) |
 | Policy change (federal/state/local) | expert-context.md |
 | Want real-time data from website | expert-context.md (add to External Resources) |
+| PIR CSV format changes | Update import-pir-data edge function |
 
 ---
 
-**Last Updated:** 2025-10-22
+**Last Updated:** 2026-01-15
