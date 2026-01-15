@@ -28,8 +28,31 @@ const PIRImport = () => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('adminToken');
-    setIsAuthenticated(!!token);
+    const validateToken = async () => {
+      const token = sessionStorage.getItem('adminToken');
+      if (!token) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-auth', {
+          body: { action: 'validate', token }
+        });
+        
+        if (error || !data?.valid) {
+          sessionStorage.removeItem('adminToken');
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        console.error('Token validation error:', err);
+        setIsAuthenticated(false);
+      }
+    };
+
+    validateToken();
   }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
