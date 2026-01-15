@@ -177,29 +177,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Find the header row - may not be the first row (look for "Install Date")
+    let headerRowIndex = 0;
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+      if (lines[i].toLowerCase().includes('install date')) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
     // Parse header row
-    const headers = parseCSVLine(lines[0]).map(h => h.toUpperCase().replace(/\s+/g, '_'));
+    const headers = parseCSVLine(lines[headerRowIndex]).map(h => h.toUpperCase().replace(/\s+/g, '_'));
     console.log('CSV Headers:', headers);
 
-    // Map column indices - flexible matching for various column names
+    // Map column indices for Austin Energy PIR format
+    // Columns: Install Date, kW Capacity, Battery kWh, Cost, AE Rebate, $/kW rebate, % rebate, Date, Years old, Installer, Look into, Question, Fiscal year
     const columnMap: Record<string, number> = {};
     
     const columnMappings: Record<string, string[]> = {
-      'pir_number': ['PIR_NUMBER', 'PIR', 'PIR_NO', 'PIRNUMBER'],
-      'address': ['ADDRESS', 'STREET_ADDRESS', 'PROPERTY_ADDRESS', 'SERVICE_ADDRESS'],
-      'city': ['CITY', 'MUNICIPALITY'],
-      'state': ['STATE', 'ST'],
-      'zip': ['ZIP', 'ZIP_CODE', 'ZIPCODE', 'POSTAL_CODE'],
-      'system_kw': ['SYSTEM_KW', 'KW', 'CAPACITY', 'CAPACITY_KW', 'SIZE_KW', 'SYSTEMKW'],
-      'interconnection_date': ['INTERCONNECTION_DATE', 'INTERCONNECT_DATE', 'DATE', 'INSTALL_DATE', 'COMPLETION_DATE'],
-      'customer_type': ['CUSTOMER_TYPE', 'CUSTOMERTYPE', 'TYPE', 'CUST_TYPE'],
-      'fuel_type': ['FUEL_TYPE', 'FUELTYPE', 'FUEL'],
-      'technology': ['TECHNOLOGY', 'TECH', 'SYSTEM_TYPE']
+      'install_date': ['INSTALL_DATE', 'INSTALL', 'DATE'],
+      'kw_capacity': ['KW_CAPACITY', 'KW', 'CAPACITY', 'SYSTEM_KW'],
+      'battery_kwh': ['BATTERY__KWH', 'BATTERY_KWH', 'BATTERY'],
+      'cost': ['COST', '_COST_'],
+      'ae_rebate': ['AE_REBATE', '_AE_REBATE_', 'REBATE'],
+      'dollar_per_kw_rebate': ['$/KW_REBATE', '$_KW_REBATE', 'DOLLAR_KW_REBATE'],
+      'percent_rebate': ['%_REBATE', 'PERCENT_REBATE', '%REBATE'],
+      'date': ['DATE'],
+      'years_old': ['YEARS_OLD', 'YEARSOLD'],
+      'installer': ['INSTALLER', 'CONTRACTOR', 'COMPANY'],
+      'look_into': ['LOOK_INTO', 'LOOKINTO'],
+      'question': ['QUESITON', 'QUESTION'], // Note: typo in original
+      'fiscal_year': ['FISCAL_YEAR', 'FISCALYEAR', 'FY']
     };
 
     for (const [key, possibleNames] of Object.entries(columnMappings)) {
       for (const name of possibleNames) {
-        const idx = headers.indexOf(name);
+        const idx = headers.findIndex(h => h.includes(name) || name.includes(h));
         if (idx !== -1) {
           columnMap[key] = idx;
           break;
@@ -207,18 +220,25 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('Column mapping:', columnMap);
-
-    // Validate we have minimum required columns
-    if (columnMap['address'] === undefined) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Required column ADDRESS not found in CSV. Found columns: ' + headers.join(', ')
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Fallback: map by position if headers match expected pattern
+    if (Object.keys(columnMap).length < 3) {
+      // Expected order: Install Date(0), kW Capacity(1), Battery kWh(2), Cost(3), AE Rebate(4), etc.
+      columnMap['install_date'] = 0;
+      columnMap['kw_capacity'] = 1;
+      columnMap['battery_kwh'] = 2;
+      columnMap['cost'] = 3;
+      columnMap['ae_rebate'] = 4;
+      columnMap['dollar_per_kw_rebate'] = 5;
+      columnMap['percent_rebate'] = 6;
+      columnMap['date'] = 7;
+      columnMap['years_old'] = 8;
+      columnMap['installer'] = 9;
+      columnMap['look_into'] = 10;
+      columnMap['question'] = 11;
+      columnMap['fiscal_year'] = 12;
     }
+
+    console.log('Column mapping:', columnMap);
 
     const stats = {
       total: lines.length - 1,
@@ -230,14 +250,17 @@ Deno.serve(async (req) => {
 
     const batchSize = 100;
     const records: any[] = [];
+    let rowNumber = 0;
 
-    // Process data rows
-    for (let i = 1; i < lines.length; i++) {
+    // Process data rows (skip header and any preceding summary rows)
+    for (let i = headerRowIndex + 1; i < lines.length; i++) {
       const line = lines[i];
       if (!line.trim()) {
         stats.skipped++;
         continue;
       }
+
+      rowNumber++;
 
       try {
         const values = parseCSVLine(line);
@@ -247,44 +270,61 @@ Deno.serve(async (req) => {
           return idx !== undefined && idx < values.length ? values[idx] : '';
         };
 
-        const address = getValue('address');
-        if (!address) {
+        const installDate = getValue('install_date');
+        const kwCapacity = getValue('kw_capacity');
+        const batteryKwh = getValue('battery_kwh');
+        const installer = getValue('installer');
+
+        // Parse values
+        const parsedDate = parseDate(installDate);
+        const parsedKW = parseKW(kwCapacity);
+        const parsedBattery = parseKW(batteryKwh);
+
+        // Skip rows without valid date and kW (likely summary or empty rows)
+        if (!parsedDate && !parsedKW) {
           stats.skipped++;
           continue;
         }
 
-        // Build full address with city, state, zip if available
-        const city = getValue('city');
-        const state = getValue('state');
-        const zip = getValue('zip');
-        
-        let fullAddress = address;
-        if (city || state || zip) {
-          const parts = [address];
-          if (city) parts.push(city);
-          if (state || zip) parts.push([state, zip].filter(Boolean).join(' '));
-          fullAddress = parts.join(', ');
-        }
+        // Generate synthetic address since this data lacks real addresses
+        // Use installer + date + kW as unique identifier
+        const installerClean = installer.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'Unknown';
+        const syntheticAddress = `PIR-${installerClean}-${parsedDate || 'NODATE'}-${parsedKW || 0}kW-R${rowNumber}`;
 
         const record = {
-          pir_number: getValue('pir_number') || null,
-          address: fullAddress,
-          address_normalized: normalizeAddress(fullAddress),
-          system_kw: parseKW(getValue('system_kw')),
-          interconnection_date: parseDate(getValue('interconnection_date')),
-          customer_type: getValue('customer_type') || null,
-          fuel_type: getValue('fuel_type') || null,
-          technology: getValue('technology') || null,
-          raw_data: Object.fromEntries(
-            headers.map((h, idx) => [h, values[idx] || null])
-          )
+          pir_number: `PIR-${rowNumber}`, // Generate unique identifier
+          address: syntheticAddress,
+          address_normalized: syntheticAddress.toUpperCase(),
+          system_kw: parsedKW,
+          interconnection_date: parsedDate,
+          customer_type: 'Residential', // Default for this dataset
+          fuel_type: 'Solar',
+          technology: parsedBattery && parsedBattery > 0 ? 'Solar + Battery' : 'Solar',
+          raw_data: {
+            install_date: installDate,
+            kw_capacity: kwCapacity,
+            battery_kwh: batteryKwh,
+            cost: getValue('cost'),
+            ae_rebate: getValue('ae_rebate'),
+            dollar_per_kw_rebate: getValue('dollar_per_kw_rebate'),
+            percent_rebate: getValue('percent_rebate'),
+            date: getValue('date'),
+            years_old: getValue('years_old'),
+            installer: installer,
+            look_into: getValue('look_into'),
+            question: getValue('question'),
+            fiscal_year: getValue('fiscal_year'),
+            parsed_kw: parsedKW,
+            parsed_battery_kwh: parsedBattery,
+            row_number: rowNumber
+          }
         };
 
         records.push(record);
 
         // Process in batches
         if (records.length >= batchSize) {
-          const result = await processBatch(supabaseClient, records, stats);
+          await processBatch(supabaseClient, records, stats);
           records.length = 0;
         }
       } catch (err: unknown) {

@@ -254,18 +254,30 @@ const PIRImport = () => {
             <CardHeader>
               <CardTitle>Expected CSV Format</CardTitle>
               <CardDescription>
-                The CSV should contain the following columns from the PIR spreadsheet
+                The CSV should match the "PIR no Prem 2004 to 2025 good" tab structure
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto">
                 <div className="text-muted-foreground mb-2"># Expected columns:</div>
-                <div>PIR_NUMBER, ADDRESS, CITY, STATE, ZIP, SYSTEM_KW,</div>
-                <div>INTERCONNECTION_DATE, CUSTOMER_TYPE, FUEL_TYPE, TECHNOLOGY</div>
+                <div>Install Date, kW Capacity, Battery kWh, Cost, AE Rebate,</div>
+                <div>$/kW rebate, % rebate, Date, Years old, Installer,</div>
+                <div>Look into, Question, Fiscal year</div>
               </div>
-              <p className="text-sm text-muted-foreground mt-4">
-                The importer will normalize addresses for matching and handle various date formats.
-                Duplicate PIR numbers will update existing records rather than create new ones.
+              
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No Address Data</AlertTitle>
+                <AlertDescription>
+                  This PIR data doesn't include street addresses. Matching with City permit data 
+                  will rely on <strong>interconnection date</strong>, <strong>kW capacity</strong>, and 
+                  <strong> installer name</strong> correlations instead of address matching.
+                </AlertDescription>
+              </Alert>
+
+              <p className="text-sm text-muted-foreground">
+                The importer will parse dates in M/D/YYYY format and handle currency-formatted numbers.
+                Each row will be assigned a unique PIR identifier based on row number.
               </p>
             </CardContent>
           </Card>
