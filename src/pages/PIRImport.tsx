@@ -192,6 +192,7 @@ const PIRImport = () => {
               )}
 
               <Button 
+                type="button"
                 onClick={handleImport} 
                 disabled={!csvData || isLoading}
                 className="w-full"
@@ -199,6 +200,11 @@ const PIRImport = () => {
                 <Upload className="h-4 w-4 mr-2" />
                 {isLoading ? "Importing..." : "Import PIR Data"}
               </Button>
+              
+              {/* Debug info */}
+              {!csvData && fileName && (
+                <p className="text-sm text-destructive">Warning: File name set but data not loaded. Try re-selecting the file.</p>
+              )}
             </CardContent>
           </Card>
 
