@@ -35,7 +35,7 @@ export default function AdminLogin() {
         sessionStorage.setItem('admin_token', data.token);
         sessionStorage.setItem('admin_token_expires', data.expiresAt);
         toast.success("Login successful");
-        navigate('/admin/corrections');
+        navigate('/admin/dashboard');
       } else {
         toast.error(data?.error || "Invalid password");
       }
