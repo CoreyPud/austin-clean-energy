@@ -23,7 +23,7 @@ const PIRImport = () => {
   const [csvData, setCsvData] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
   const [importStats, setImportStats] = useState<ImportStats | null>(null);
   const [progress, setProgress] = useState(0);
 
@@ -31,7 +31,7 @@ const PIRImport = () => {
     const validateToken = async () => {
       const token = sessionStorage.getItem('adminToken');
       if (!token) {
-        setIsAuthenticated(false);
+        navigate('/admin');
         return;
       }
 
@@ -42,18 +42,18 @@ const PIRImport = () => {
         
         if (error || !data?.valid) {
           sessionStorage.removeItem('adminToken');
-          setIsAuthenticated(false);
+          navigate('/admin');
         } else {
-          setIsAuthenticated(true);
+          setIsValidating(false);
         }
       } catch (err) {
         console.error('Token validation error:', err);
-        setIsAuthenticated(false);
+        navigate('/admin');
       }
     };
 
     validateToken();
-  }, []);
+  }, [navigate]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -124,6 +124,14 @@ const PIRImport = () => {
     }
   };
 
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Verifying authentication...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto">
@@ -131,7 +139,7 @@ const PIRImport = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/admin/corrections')}
+            onClick={() => navigate('/admin/dashboard')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -142,19 +150,6 @@ const PIRImport = () => {
             </p>
           </div>
         </div>
-
-        {!isAuthenticated && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Authentication Required</AlertTitle>
-            <AlertDescription>
-              You must be logged in as an admin to import data.{" "}
-              <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/admin')}>
-                Login here
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
 
         <div className="grid gap-6">
           <Card>
@@ -198,7 +193,7 @@ const PIRImport = () => {
 
               <Button 
                 onClick={handleImport} 
-                disabled={!csvData || isLoading || !isAuthenticated}
+                disabled={!csvData || isLoading}
                 className="w-full"
               >
                 <Upload className="h-4 w-4 mr-2" />
