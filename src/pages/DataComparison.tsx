@@ -48,11 +48,21 @@ const DataComparison = () => {
   const [isRunningMatch, setIsRunningMatch] = useState(false);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('adminToken');
-    if (!token) {
+    const token = sessionStorage.getItem('admin_token');
+    const expires = sessionStorage.getItem('admin_token_expires');
+
+    if (!token || !expires) {
       navigate('/admin');
       return;
     }
+
+    if (new Date(expires) < new Date()) {
+      sessionStorage.removeItem('admin_token');
+      sessionStorage.removeItem('admin_token_expires');
+      navigate('/admin');
+      return;
+    }
+
     setIsAuthenticated(true);
     fetchStats();
   }, [navigate]);
@@ -107,9 +117,10 @@ const DataComparison = () => {
   };
 
   const handleRunMatching = async () => {
-    const token = sessionStorage.getItem('adminToken');
+    const token = sessionStorage.getItem('admin_token');
     if (!token) {
       toast.error('Authentication required');
+      navigate('/admin');
       return;
     }
 
@@ -139,7 +150,8 @@ const DataComparison = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('admin_token');
+    sessionStorage.removeItem('admin_token_expires');
     navigate('/admin');
   };
 

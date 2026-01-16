@@ -42,7 +42,7 @@ const ImportSolarData = () => {
         description: "Please log in as admin first",
         variant: "destructive",
       });
-      navigate('/admin/login');
+      navigate('/admin');
       return;
     }
 
@@ -111,9 +111,9 @@ const ImportSolarData = () => {
               <div>
                 <p className="font-medium">Admin authentication required</p>
                 <p className="text-sm opacity-80">
-                  <Button variant="link" className="p-0 h-auto text-destructive" onClick={() => navigate('/admin/login')}>
-                    Log in as admin
-                  </Button>
+                   <Button variant="link" className="p-0 h-auto text-destructive" onClick={() => navigate('/admin')}>
+                     Log in as admin
+                   </Button>
                   {" "}to import data
                 </p>
               </div>
