@@ -29,19 +29,29 @@ const PIRImport = () => {
 
   useEffect(() => {
     const validateToken = async () => {
-      const token = sessionStorage.getItem('adminToken');
-      if (!token) {
+      const token = sessionStorage.getItem('admin_token');
+      const expires = sessionStorage.getItem('admin_token_expires');
+
+      if (!token || !expires) {
+        navigate('/admin');
+        return;
+      }
+
+      if (new Date(expires) < new Date()) {
+        sessionStorage.removeItem('admin_token');
+        sessionStorage.removeItem('admin_token_expires');
         navigate('/admin');
         return;
       }
 
       try {
         const { data, error } = await supabase.functions.invoke('admin-auth', {
-          body: { action: 'validate', token }
+          body: { action: 'validate', token },
         });
-        
+
         if (error || !data?.valid) {
-          sessionStorage.removeItem('adminToken');
+          sessionStorage.removeItem('admin_token');
+          sessionStorage.removeItem('admin_token_expires');
           navigate('/admin');
         } else {
           setIsValidating(false);
@@ -84,7 +94,7 @@ const PIRImport = () => {
       return;
     }
 
-    const token = sessionStorage.getItem('adminToken');
+    const token = sessionStorage.getItem('admin_token');
     if (!token) {
       toast.error("Admin authentication required");
       navigate('/admin');
