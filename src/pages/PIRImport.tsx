@@ -105,6 +105,8 @@ const PIRImport = () => {
     setProgress(10);
 
     try {
+      console.log('Starting PIR import with', csvData.length, 'bytes of data');
+      
       const { data, error } = await supabase.functions.invoke('import-pir-data', {
         body: { csvData },
         headers: {
@@ -112,24 +114,29 @@ const PIRImport = () => {
         }
       });
 
+      console.log('Import response received:', { data, error });
       setProgress(100);
 
       if (error) {
         console.error('Import error:', error);
         toast.error(`Import failed: ${error.message}`);
+        setIsLoading(false);
         return;
       }
 
-      if (data.success) {
+      if (data?.success) {
+        console.log('Setting import stats:', data.stats);
         setImportStats(data.stats);
         toast.success(`Successfully imported ${data.stats.inserted} new records, updated ${data.stats.updated} existing records`);
       } else {
-        toast.error(data.error || 'Import failed');
+        console.error('Import failed with data:', data);
+        toast.error(data?.error || 'Import failed - no success response');
       }
     } catch (error) {
-      console.error('Import error:', error);
-      toast.error("An error occurred during import");
+      console.error('Import catch error:', error);
+      toast.error("An error occurred during import. The import may still have completed - check the database.");
     } finally {
+      console.log('Import finally block - setting isLoading to false');
       setIsLoading(false);
     }
   };
