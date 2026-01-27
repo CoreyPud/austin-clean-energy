@@ -192,6 +192,30 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_files: {
+        Row: {
+          content: string
+          id: string
+          name: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          content: string
+          id?: string
+          name: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          id?: string
+          name?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       pir_installations: {
         Row: {
           address: string
