@@ -336,7 +336,7 @@ ${greenBuildingInsights.avgEnergySavings > 0 ? `- Benchmark: Similar properties 
 
 **Financial Summary** (3-4 sentences)
 - Total system cost estimate
-- Federal + Austin Energy incentives
+- Austin Energy incentives (note: federal residential solar tax credit is no longer available)
 - Payback period
 - 25-year savings projection
 

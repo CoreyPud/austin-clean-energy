@@ -257,12 +257,12 @@ const Index = () => {
                 </li>
                 <li>
                   <a 
-                    href="https://www.energy.gov/eere/solar/homeowners-guide-federal-tax-credit-solar-photovoltaics" 
+                    href="https://austinenergy.com/rebates" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-white/70 hover:text-white transition-colors"
                   >
-                    Federal Tax Credits
+                    Austin Energy Rebates
                   </a>
                 </li>
                 <li>
