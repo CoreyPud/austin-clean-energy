@@ -322,10 +322,10 @@ const DataComparison = () => {
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
-              size="icon"
-              onClick={() => navigate('/admin/corrections')}
+              onClick={() => navigate('/admin/dashboard')}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              Back to Admin Dashboard
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Data Comparison Dashboard</h1>
