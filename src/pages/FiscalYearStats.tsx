@@ -277,10 +277,10 @@ const FiscalYearStats = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/city-overview">
+          <Link to="/admin/dashboard">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to City Overview
+              Back to Admin Dashboard
             </Button>
           </Link>
           <h1 className="text-3xl font-bold text-foreground mb-2">
