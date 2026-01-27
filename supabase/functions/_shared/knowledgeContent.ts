@@ -15,15 +15,15 @@ This framework guides AI recommendations based on individual climate impact pote
 **Rationale:** Electric vehicles eliminate the largest source of individual carbon emissions. The average driver produces 4.6 tons of CO₂ annually from gasoline combustion. EVs powered by Austin's grid (which is increasingly renewable) eliminate these emissions entirely.  
 **Austin Context:** Growing charging infrastructure, Austin Energy EV rates available, multiple federal and state incentives active.  
 **Key Barriers:** Upfront cost, charging access for renters, range anxiety  
-**Current Incentives:** Federal EV tax credit up to $7,500, Austin Energy rebates for home charging equipment
+**Current Incentives:** Federal EV tax credit up to $7,500 (income limits apply), Austin Energy rebates for home charging equipment
 
 ### 2. Zero-Carbon Home Power (Solar + Clean Grid)
 **Impact Score:** 8/10  
 **Annual CO₂ Reduction:** 3-5 tons per household  
 **Rationale:** Residential solar combined with clean grid electricity eliminates home energy emissions. Austin Energy's grid is moving toward renewable sources, making this increasingly effective.  
-**Austin Context:** Excellent solar conditions (235+ sunny days/year), Austin Energy solar buyback program, 30% federal ITC still available  
+**Austin Context:** Excellent solar conditions (235+ sunny days/year), Austin Energy solar buyback program  
 **Key Barriers:** Roof condition/ownership, HOA restrictions, upfront costs  
-**Current Incentives:** 30% federal solar tax credit, Austin Energy solar rebates up to $2,500
+**Current Incentives:** Austin Energy solar rebates up to $2,500 (note: federal residential solar tax credit is no longer available)
 
 ### 3. Home Energy Efficiency
 **Impact Score:** 7/10  
@@ -111,11 +111,10 @@ Last Updated: 2025-10-22
 **Incentive:** Subscribe to solar credits without rooftop installation  
 **Target Audience:** Renters, condo owners, homes with shaded/unsuitable roofs
 
-### Federal Solar Investment Tax Credit (ITC)
-**URL:** https://www.energy.gov/eere/solar/homeowners-guide-federal-tax-credit-solar-photovoltaics  
-**Incentive:** 30% tax credit on solar installation costs  
-**Eligibility:** All US taxpayers who own their solar system  
-**Valid Through:** 30% credit available through 2032
+### Federal Solar Investment Tax Credit (ITC) - NO LONGER AVAILABLE
+**Status:** The federal residential solar tax credit (ITC) for homeowners has expired and is no longer available.  
+**Alternative:** Focus on Austin Energy rebates (up to $2,500) and potential future state/local incentives.  
+**Archive Note:** This section retained for historical reference. Previously offered 30% tax credit on installation costs.
 
 ## Energy Efficiency
 
@@ -270,9 +269,8 @@ Last Updated: 2025-10-22
 
 ## Current Policy Context
 
-### Federal Incentives (2024-2025)
-- **Inflation Reduction Act (IRA)** continues through 2030s, providing stable incentives
-- **Solar ITC:** 30% through 2032, then steps down to 26% (2033), 22% (2034)
+### Federal Incentives (2025)
+- **Solar ITC:** NO LONGER AVAILABLE for residential homeowners. The federal solar tax credit for homeowners has expired.
 - **EV Tax Credits:** $7,500 for new EVs, $4,000 for used; income caps and sourcing requirements apply
 - **Energy Efficiency Rebates (HOMES Program):** Up to $8,000 for whole-home retrofits based on energy savings
 
@@ -310,9 +308,10 @@ Last Updated: 2025-10-22
 - Battery storage costs dropping rapidly; Tesla Powerwall and competitors at $10k-15k installed
 - Modern panels last 25-30 years with minimal degradation (<1%/year)
 - Virtual power plant programs emerging: batteries can earn revenue providing grid services
+- **Important:** Federal residential solar tax credit is no longer available; Austin Energy rebates (up to $2,500) remain the primary incentive
 
 **Best Practices:**
-- Solar pays back in 6-10 years in Austin with current incentives
+- Solar payback period now 8-12 years in Austin with Austin Energy rebates only (longer without federal credit)
 - Recommend battery storage only for: frequent outages, time-of-use rates, goal of grid independence
 - Size system to 100-110% of current usage (not undersized for future EV)
 - Must evaluate roof condition first; if re-roofing needed, coordinate timing
@@ -421,11 +420,11 @@ The recommendation engine can fetch and cache external resources to supplement t
 **Refresh:** Daily  
 **Sections to extract:** Program updates, current rebate amounts, new initiatives
 
-### Federal IRS Tax Credits
-**URL:** https://www.irs.gov/credits-deductions/residential-clean-energy-credit  
-**Purpose:** Current federal tax credit rates and eligibility requirements  
+### Austin Energy Current Rebates
+**URL:** https://austinenergy.com/rebates  
+**Purpose:** Current Austin Energy rebate programs and amounts  
 **Refresh:** Monthly  
-**Sections to extract:** Credit percentages, income limits, qualifying technologies
+**Sections to extract:** Solar rebates, EV charger rebates, efficiency incentives
 
 ### DSIRE Texas Incentives Database
 **URL:** https://programs.dsireusa.org/system/program?state=TX  
