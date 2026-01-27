@@ -64,7 +64,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Fiscal Year Stats",
-      description: "View installation analytics grouped by Austin's fiscal year (Oct 1 - Sept 30) with drill-down details.",
+      description: "View City permit analytics grouped by Austin's fiscal year (Oct 1 - Sept 30). Based on City of Austin permit data only.",
       icon: BarChart3,
       path: "/fiscal-year-stats",
       color: "text-orange-600"
