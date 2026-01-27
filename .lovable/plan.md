@@ -1,142 +1,141 @@
 
 
-## CSV Column Mapping Feature for PIR Import
+## Data Comparison Bar Graph: City vs PIR Records
 
 ### Overview
-Add an interactive column mapping step between file upload and data import that displays a preview of the CSV data and allows admins to map source columns to target database fields.
+Add an interactive bar chart to the `/admin/data-comparison` page that visually compares installation counts and kW capacity between City permit data (`solar_installations`) and Austin Energy PIR data (`pir_installations`), with a toggle to switch between Calendar Year and Fiscal Year views.
 
-### User Flow
+### User Experience
+1. Admin navigates to Data Comparison page
+2. A new "Year-over-Year Comparison" section displays below the stats cards
+3. Toggle switch allows switching between Calendar Year and Fiscal Year
+4. Grouped bar chart shows City vs PIR data side-by-side for each year
+5. Two metrics available: Installation Count and Total kW
+
+### Design
 
 ```
-Upload CSV → Preview Data → Map Columns → Validate → Import
+┌──────────────────────────────────────────────────────────────────┐
+│  Year-over-Year Comparison                                       │
+│  [Calendar Year] [Fiscal Year]  ←─ Toggle                        │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                Installations by Year                         │ │
+│  │  ■ City Permits   ■ PIR Records                              │ │
+│  │                                                              │ │
+│  │  800 │    ██                                                 │ │
+│  │  600 │    ██ ▓▓                                              │ │
+│  │  400 │    ██ ▓▓    ██ ▓▓    ██ ▓▓                            │ │
+│  │  200 │    ██ ▓▓    ██ ▓▓    ██ ▓▓    ██ ▓▓                   │ │
+│  │    0 └─────────────────────────────────────────              │ │
+│  │       2021    2022    2023    2024    2025                   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                Total Capacity (kW) by Year                   │ │
+│  │  (Same grouped bar format showing kW comparison)             │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-1. Admin selects CSV file
-2. System parses first 5 rows and extracts headers
-3. Preview table displays sample data with auto-detected mappings
-4. Admin adjusts mappings using dropdown selectors
-5. Validation checks required fields are mapped
-6. Warning shows any unmapped columns
-7. Admin confirms and imports
+### Technical Details
 
-### Frontend Changes (src/pages/PIRImport.tsx)
+#### Data Aggregation Logic
 
-**New State Variables:**
-- `csvHeaders: string[]` - Extracted column headers from uploaded file
-- `csvPreview: string[][]` - First 5 data rows for preview display
-- `columnMappings: Record<string, string | null>` - Maps target fields to source columns
-- `step: 'upload' | 'mapping' | 'importing' | 'complete'` - UI flow state
-- `unmappedColumns: string[]` - Source columns not assigned to any field
+**Calendar Year** (January 1 - December 31):
+- City: Group by `EXTRACT(YEAR FROM completed_date)` or fallback to `issued_date`
+- PIR: Group by `EXTRACT(YEAR FROM interconnection_date)`
 
-**New Components:**
+**Fiscal Year** (October 1 - September 30, Austin standard):
+- FY 2024 = October 1, 2023 through September 30, 2024
+- City: If month >= 10 (October+), assign to next year's FY
+- PIR: Same logic applied to `interconnection_date`
 
-1. **ColumnMappingStep** - Main mapping interface
-   - Displays preview table with first 5 rows
-   - Each target field (install_date, kw_capacity, etc.) has a dropdown
-   - Dropdown shows all CSV headers plus "Skip" option
-   - Auto-detect attempts to pre-fill based on header name matching
-   - Required fields (install_date, kw_capacity, installer) marked with asterisk
-
-2. **PreviewTable** - CSV data preview
-   - Shows headers in first row
-   - Displays up to 5 sample data rows
-   - Highlights which columns are mapped vs unmapped
-   - Color-coded: green = mapped, yellow = unmapped
-
-3. **MappingValidation** - Status display
-   - Shows required fields status (mapped/missing)
-   - Warning alert for unmapped columns
-   - Proceed button disabled until required fields mapped
-
-**Target Fields to Map:**
-
-| Field | Required | Database Column |
-|-------|----------|-----------------|
-| Install Date | Yes | interconnection_date |
-| kW Capacity | Yes | installed_kw |
-| Installer | Yes | installer_name |
-| Battery kWh | No | battery_kwh |
-| Cost | No | system_cost |
-| AE Rebate | No | ae_rebate |
-| $/kW Rebate | No | dollar_per_kw_rebate |
-| % Rebate | No | percent_rebate |
-| Fiscal Year | No | fiscal_year |
-| Notes | No | notes |
-
-### Backend Changes (supabase/functions/import-pir-data/index.ts)
-
-**Modified Request Body:**
+#### New State Variables
 ```typescript
-{
-  csvData: string,
-  columnMapping?: Record<string, number>  // Target field → column index
+// Year mode toggle
+const [yearMode, setYearMode] = useState<'calendar' | 'fiscal'>('fiscal');
+
+// Comparison chart data
+const [comparisonData, setComparisonData] = useState<ComparisonYearData[]>([]);
+const [loadingComparison, setLoadingComparison] = useState(false);
+
+interface ComparisonYearData {
+  year: number;
+  label: string;  // "2024" or "FY 2024"
+  cityCount: number;
+  pirCount: number;
+  cityKW: number;
+  pirKW: number;
 }
 ```
 
-**Logic Changes:**
-- If `columnMapping` provided in request, use it directly instead of auto-detection
-- Still perform auto-detection as fallback for backwards compatibility
-- Add validation that required mappings exist before processing
-- Return more detailed error messages for mapping issues
-
-### UI Mockup
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  PIR Data Import                                            │
-├─────────────────────────────────────────────────────────────┤
-│  Step 2: Map Columns                                        │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │ Preview (first 5 rows)                                  ││
-│  ├──────────┬──────────┬──────────┬──────────┬─────────────┤│
-│  │ Column A │ Column B │ Col C    │ Col D    │ Col E       ││
-│  ├──────────┼──────────┼──────────┼──────────┼─────────────┤│
-│  │ 2024-01-5│ 8.5      │ Tesla... │ 25000    │ 2500        ││
-│  │ 2024-01-8│ 12.0     │ Sunrun   │ 32000    │ 3200        ││
-│  │ ...      │ ...      │ ...      │ ...      │ ...         ││
-│  └──────────┴──────────┴──────────┴──────────┴─────────────┘│
-│                                                             │
-│  Map to Database Fields:                                    │
-│  ┌────────────────────┬─────────────────────┐              │
-│  │ Install Date *     │ [Column A ▼]        │              │
-│  ├────────────────────┼─────────────────────┤              │
-│  │ kW Capacity *      │ [Column B ▼]        │              │
-│  ├────────────────────┼─────────────────────┤              │
-│  │ Installer *        │ [Column C ▼]        │              │
-│  ├────────────────────┼─────────────────────┤              │
-│  │ Cost (optional)    │ [Column D ▼]        │              │
-│  ├────────────────────┼─────────────────────┤              │
-│  │ AE Rebate          │ [Column E ▼]        │              │
-│  └────────────────────┴─────────────────────┘              │
-│                                                             │
-│  ⚠️ 3 columns won't be imported: "Col F", "Col G", "Col H"  │
-│                                                             │
-│  [← Back]                          [Confirm & Import →]     │
-└─────────────────────────────────────────────────────────────┘
+#### Data Fetching Function
+```typescript
+const fetchComparisonData = async (mode: 'calendar' | 'fiscal') => {
+  // Fetch all City records with dates and kW
+  const cityData = await supabase
+    .from('solar_installations')
+    .select('completed_date, issued_date, installed_kw');
+  
+  // Fetch all PIR records with dates and kW
+  const pirData = await supabase
+    .from('pir_installations')
+    .select('interconnection_date, system_kw');
+  
+  // Aggregate by year (calendar or fiscal)
+  // Return merged dataset with both sources per year
+};
 ```
 
-### Auto-Detection Logic
-
-When CSV is loaded, attempt to auto-map columns by matching headers:
-- Fuzzy match header names against known patterns
-- Example: "Installation Date", "INSTALL_DATE", "Date Installed" all map to install_date
-- Pre-populate dropdowns with best guesses
-- Admin can override any auto-detected mapping
-
-### Validation Rules
-
-Before allowing import:
-1. Install Date, kW Capacity, and Installer must all be mapped
-2. No duplicate mappings (can't map two fields to same source column)
-3. At least 1 data row after header
+#### Chart Implementation
+- Use `recharts` BarChart with grouped bars (not stacked)
+- Two bars per year: City (primary color) and PIR (secondary color)
+- Separate charts for Count and kW metrics
+- Tooltips show exact values for both sources
+- Follows existing chart patterns from `FiscalYearStats.tsx`
 
 ### Files to Modify
 
-1. `src/pages/PIRImport.tsx` - Add mapping UI, step flow, preview parsing
-2. `supabase/functions/import-pir-data/index.ts` - Accept optional mapping, validation
+**src/pages/DataComparison.tsx**
+1. Add imports for chart components, Switch, and Label
+2. Add new state for `yearMode`, `comparisonData`, `loadingComparison`
+3. Add `fetchComparisonData()` function with aggregation logic
+4. Add useEffect to fetch data on mount and when yearMode changes
+5. Insert new "Year-over-Year Comparison" Card section after stats cards
+6. Add Toggle switch for Calendar/Fiscal year mode
+7. Add two grouped bar charts (Count and kW)
 
-### Estimated Complexity
-- Frontend: Medium (new UI components, state management)
-- Backend: Low (minor changes to accept mapping parameter)
+### Chart Configuration
+```typescript
+const chartConfig = {
+  cityCount: {
+    label: "City Permits",
+    color: "hsl(var(--primary))",
+  },
+  pirCount: {
+    label: "PIR Records", 
+    color: "hsl(var(--chart-2))",
+  },
+  cityKW: {
+    label: "City kW",
+    color: "hsl(var(--primary))",
+  },
+  pirKW: {
+    label: "PIR kW",
+    color: "hsl(var(--chart-2))",
+  },
+};
+```
+
+### Edge Cases
+- Handle years with City data but no PIR data (and vice versa)
+- Show 0 values rather than hiding bars for missing data
+- Limit to years where at least one source has data
+- Handle null dates gracefully (skip records with no date)
+
+### Data Note
+- City records use `completed_date` (preferred) or `issued_date` (fallback)
+- PIR records use `interconnection_date`
+- Both use their respective kW fields: `installed_kw` (City) and `system_kw` (PIR)
 
