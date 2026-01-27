@@ -73,11 +73,10 @@ export default function AdminDashboard() {
 
   const documentationLinks = [
     {
-      title: "Knowledge Base Guide",
-      description: "How to update the recommendation engine's knowledge base",
+      title: "Recommendation Knowledge Base",
+      description: "View and manage the markdown files that drive AI recommendations",
       icon: BookOpen,
-      path: "/ADMIN-KNOWLEDGE-BASE.md",
-      external: true
+      path: "/admin/knowledge-base"
     },
     {
       title: "Data Sources",
@@ -155,7 +154,7 @@ export default function AdminDashboard() {
               <Card 
                 key={doc.path}
                 className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => doc.external ? window.open(doc.path, '_blank') : navigate(doc.path)}
+                onClick={() => navigate(doc.path)}
               >
                 <CardHeader className="flex flex-row items-center gap-4">
                   <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">

@@ -16,6 +16,7 @@ import FiscalYearStats from "./pages/FiscalYearStats";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCorrections from "./pages/AdminCorrections";
+import AdminKnowledgeBase from "./pages/AdminKnowledgeBase";
 import PIRImport from "./pages/PIRImport";
 import DataComparison from "./pages/DataComparison";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/corrections" element={<AdminCorrections />} />
+          <Route path="/admin/knowledge-base" element={<AdminKnowledgeBase />} />
           <Route path="/admin/pir-import" element={<PIRImport />} />
           <Route path="/admin/data-comparison" element={<DataComparison />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
