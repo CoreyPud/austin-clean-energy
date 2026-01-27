@@ -17,6 +17,55 @@ interface KnowledgeFile {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+interface FileGuidance {
+  purpose: string;
+  howUsed: string;
+  updateGuidelines: string[];
+}
+
+const FILE_GUIDANCE: Record<string, FileGuidance> = {
+  priorities: {
+    purpose: "Defines the climate impact framework that ranks clean energy actions by their effectiveness and CO₂ reduction potential.",
+    howUsed: "When users request personalized recommendations, the AI uses this file to prioritize which actions to suggest first based on impact scores. Higher-scored actions (e.g., solar, EVs) are recommended before lower-impact ones.",
+    updateGuidelines: [
+      "Update impact scores (1-10 scale) when new research changes effectiveness estimates",
+      "Revise CO₂ reduction figures when Austin's grid mix changes significantly",
+      "Add new incentive programs under relevant action categories",
+      "Keep the 'Austin Context' section current with local infrastructure changes"
+    ]
+  },
+  resources: {
+    purpose: "Contains Austin-specific programs, rebates, tax credits, and resources that users can take action on.",
+    howUsed: "The AI includes these specific programs and links in recommendations, giving users actionable next steps like 'Apply for Austin Energy's $2,500 solar rebate at [link]'.",
+    updateGuidelines: [
+      "Verify all URLs are still active (broken links frustrate users)",
+      "Update rebate/incentive amounts when programs change",
+      "Add new programs as they launch (e.g., new Austin Energy initiatives)",
+      "Mark discontinued programs as 'No longer available' rather than deleting"
+    ]
+  },
+  "expert-context": {
+    purpose: "Provides current research findings, policy context, best practices, and addresses common misconceptions.",
+    howUsed: "The AI uses this background knowledge to provide accurate, nuanced responses. It helps the AI explain WHY certain actions are recommended and address user concerns with current data.",
+    updateGuidelines: [
+      "Update federal/state/local policy changes (e.g., IRA tax credit updates)",
+      "Revise technology cost figures annually (solar $/watt, battery costs, EV prices)",
+      "Add new research findings from reputable sources (NREL, Project Drawdown)",
+      "Update 'Common Misconceptions' when new myths emerge in public discourse"
+    ]
+  },
+  "data-sources": {
+    purpose: "Configures how external data APIs are interpreted and what thresholds define 'high' vs 'low' activity.",
+    howUsed: "This file tells the AI how to interpret real-time data. For example, if a ZIP code has 75+ solar permits, the AI describes it as 'high solar adoption area'. Changing thresholds here changes how data is characterized in recommendations.",
+    updateGuidelines: [
+      "Update API endpoints if City of Austin changes their data portal URLs",
+      "Adjust interpretation thresholds as adoption patterns change (e.g., raise 'high activity' threshold as solar becomes more common)",
+      "Document known data quality issues or gaps to help the AI caveat its responses",
+      "Add new data sources when integrating additional APIs"
+    ]
+  }
+};
+
 const KNOWLEDGE_FILES: KnowledgeFile[] = [
   {
     name: "priorities",
@@ -307,6 +356,27 @@ export default function AdminKnowledgeBase() {
               </div>
             </CardHeader>
             <CardContent>
+              {/* File Guidance Section */}
+              {FILE_GUIDANCE[currentFile.name] && editMode !== currentFile.name && (
+                <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-border">
+                  <h4 className="font-medium text-sm text-foreground mb-2">📖 How This File Works</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    <strong>Purpose:</strong> {FILE_GUIDANCE[currentFile.name].purpose}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    <strong>How it's used:</strong> {FILE_GUIDANCE[currentFile.name].howUsed}
+                  </p>
+                  <div className="text-sm">
+                    <strong className="text-foreground">When to update:</strong>
+                    <ul className="mt-1 space-y-1 text-muted-foreground list-disc list-inside">
+                      {FILE_GUIDANCE[currentFile.name].updateGuidelines.map((guideline, idx) => (
+                        <li key={idx}>{guideline}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <div className="space-y-3">
                   <Skeleton className="h-4 w-full" />
