@@ -12,6 +12,12 @@ import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import PIRColumnMapper, { 
+  parseCSVPreview, 
+  autoDetectMappings, 
+  TARGET_FIELDS,
+  type TargetFieldKey 
+} from "@/components/PIRColumnMapper";
 
 interface ImportStats {
   total: number;
@@ -36,14 +42,31 @@ interface PIRDashboardStats {
   dateRange: { earliest: string | null; latest: string | null };
 }
 
+type ImportStep = 'upload' | 'mapping' | 'importing' | 'complete';
+
 const PIRImport = () => {
   const navigate = useNavigate();
+  
+  // Step flow state
+  const [step, setStep] = useState<ImportStep>('upload');
+  
+  // Upload state
   const [csvData, setCsvData] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  
+  // Column mapping state
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [csvPreview, setCsvPreview] = useState<string[][]>([]);
+  const [columnMappings, setColumnMappings] = useState<Record<TargetFieldKey, string | null>>({} as Record<TargetFieldKey, string | null>);
+  const [headerRowIndex, setHeaderRowIndex] = useState(0);
+  
+  // Import state
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const [importStats, setImportStats] = useState<ImportStats | null>(null);
   const [progress, setProgress] = useState(0);
+  
+  // Dashboard state
   const [dashboardStats, setDashboardStats] = useState<PIRDashboardStats | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
 
@@ -51,7 +74,6 @@ const PIRImport = () => {
   const fetchDashboardStats = async () => {
     setLoadingDashboard(true);
     try {
-      // Get all PIR records
       const { data: pirRecords, error } = await supabase
         .from('pir_installations')
         .select('id, system_kw, interconnection_date, raw_data');
@@ -63,11 +85,9 @@ const PIRImport = () => {
         return;
       }
 
-      // Calculate stats
       const totalRecords = pirRecords.length;
       const totalKW = pirRecords.reduce((sum, r) => sum + (r.system_kw || 0), 0);
       
-      // Get unique installers from raw_data
       const installers = new Set<string>();
       pirRecords.forEach(r => {
         const installer = (r.raw_data as any)?.installer;
@@ -76,7 +96,6 @@ const PIRImport = () => {
         }
       });
 
-      // Calculate fiscal year breakdown
       const fyMap = new Map<number, { count: number; totalKW: number }>();
       let earliest: string | null = null;
       let latest: string | null = null;
@@ -87,11 +106,10 @@ const PIRImport = () => {
           if (!earliest || date < earliest) earliest = date;
           if (!latest || date > latest) latest = date;
 
-          // Calculate fiscal year (Oct 1 - Sep 30)
           const d = new Date(date);
-          const month = d.getMonth(); // 0-11
+          const month = d.getMonth();
           const year = d.getFullYear();
-          const fiscalYear = month >= 9 ? year + 1 : year; // Oct-Dec = next FY
+          const fiscalYear = month >= 9 ? year + 1 : year;
 
           const existing = fyMap.get(fiscalYear) || { count: 0, totalKW: 0 };
           fyMap.set(fiscalYear, {
@@ -101,7 +119,6 @@ const PIRImport = () => {
         }
       });
 
-      // Convert to sorted array
       const fiscalYearBreakdown: FiscalYearSummary[] = Array.from(fyMap.entries())
         .map(([fy, data]) => ({
           fiscalYear: fy,
@@ -126,7 +143,6 @@ const PIRImport = () => {
     }
   };
 
-  // Load dashboard stats on component mount and after successful import
   useEffect(() => {
     if (!isValidating) {
       fetchDashboardStats();
@@ -207,7 +223,19 @@ const PIRImport = () => {
       setCsvData(text);
       setFileName(file.name);
       setImportStats(null);
+      
+      // Parse CSV for preview and auto-detect mappings
+      const { headers, preview, headerRowIndex: hri } = parseCSVPreview(text);
+      setCsvHeaders(headers);
+      setCsvPreview(preview);
+      setHeaderRowIndex(hri);
+      
+      // Auto-detect column mappings
+      const detectedMappings = autoDetectMappings(headers);
+      setColumnMappings(detectedMappings);
+      
       toast.success(`File "${file.name}" loaded successfully`);
+      setStep('mapping');
     };
     reader.onerror = () => {
       toast.error("Error reading file");
@@ -215,7 +243,18 @@ const PIRImport = () => {
     reader.readAsText(file);
   };
 
-  const handleImport = async () => {
+  const handleMappingChange = (field: TargetFieldKey, value: string | null) => {
+    setColumnMappings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleBackToUpload = () => {
+    setStep('upload');
+  };
+
+  const handleConfirmAndImport = async () => {
     if (!csvData) {
       toast.error("Please select a CSV file first");
       return;
@@ -228,14 +267,31 @@ const PIRImport = () => {
       return;
     }
 
+    // Build column index mapping for backend
+    const columnIndexMapping: Record<string, number> = {};
+    Object.entries(columnMappings).forEach(([field, header]) => {
+      if (header) {
+        const idx = csvHeaders.indexOf(header);
+        if (idx !== -1) {
+          columnIndexMapping[field] = idx;
+        }
+      }
+    });
+
     setIsLoading(true);
+    setStep('importing');
     setProgress(10);
 
     try {
       console.log('Starting PIR import with', csvData.length, 'bytes of data');
+      console.log('Column mapping:', columnIndexMapping);
       
       const { data, error } = await supabase.functions.invoke('import-pir-data', {
-        body: { csvData },
+        body: { 
+          csvData,
+          columnMapping: columnIndexMapping,
+          headerRowIndex
+        },
         headers: {
           'x-admin-token': token
         }
@@ -248,28 +304,40 @@ const PIRImport = () => {
         console.error('Import error:', error);
         toast.error(`Import failed: ${error.message}`);
         setIsLoading(false);
+        setStep('mapping');
         return;
       }
 
       if (data?.success) {
         console.log('Setting import stats:', data.stats);
         setImportStats(data.stats);
+        setStep('complete');
         toast.success(`Successfully imported ${data.stats.inserted} new records, updated ${data.stats.updated} existing records`);
-        // Refresh dashboard stats after successful import
         fetchDashboardStats();
       } else {
         console.error('Import failed with data:', data);
         toast.error(data?.error || 'Import failed - no success response');
+        setStep('mapping');
       }
     } catch (error) {
       console.error('Import catch error:', error);
       toast.error("An error occurred during import. The import may still have completed - check the database.");
-      // Still try to refresh stats in case import succeeded on server
       fetchDashboardStats();
+      setStep('mapping');
     } finally {
       console.log('Import finally block - setting isLoading to false');
       setIsLoading(false);
     }
+  };
+
+  const handleReset = () => {
+    setCsvData(null);
+    setFileName(null);
+    setCsvHeaders([]);
+    setCsvPreview([]);
+    setColumnMappings({} as Record<TargetFieldKey, string | null>);
+    setImportStats(null);
+    setStep('upload');
   };
 
   if (isValidating) {
@@ -300,63 +368,77 @@ const PIRImport = () => {
         </div>
 
         <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5" />
-                Upload PIR CSV
-              </CardTitle>
-              <CardDescription>
-                Upload the "PIR no Prem 2004 to 2025 good" sheet exported as CSV from the Austin Energy spreadsheet.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="csv-file">Select CSV File</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="csv-file"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileUpload}
-                    className="flex-1"
-                  />
-                </div>
-                {fileName && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    Loaded: {fileName}
-                  </p>
-                )}
-              </div>
-
-              {isLoading && (
+          {/* Step 1: Upload */}
+          {step === 'upload' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileSpreadsheet className="h-5 w-5" />
+                  Step 1: Upload PIR CSV
+                </CardTitle>
+                <CardDescription>
+                  Upload the PIR data CSV file. After upload, you'll be able to map columns to database fields.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Progress value={progress} className="w-full" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    Importing data...
-                  </p>
+                  <Label htmlFor="csv-file">Select CSV File</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="csv-file"
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileUpload}
+                      className="flex-1"
+                    />
+                  </div>
                 </div>
-              )}
 
-              <Button 
-                type="button"
-                onClick={handleImport} 
-                disabled={!csvData || isLoading}
-                className="w-full"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {isLoading ? "Importing..." : "Import PIR Data"}
-              </Button>
-              
-              {/* Debug info */}
-              {!csvData && fileName && (
-                <p className="text-sm text-destructive">Warning: File name set but data not loaded. Try re-selecting the file.</p>
-              )}
-            </CardContent>
-          </Card>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Flexible Column Mapping</AlertTitle>
+                  <AlertDescription>
+                    After uploading, you can map any CSV columns to database fields. 
+                    The system will auto-detect common column names, but you can adjust the mappings.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
 
-          {importStats && (
+          {/* Step 2: Column Mapping */}
+          {step === 'mapping' && csvData && (
+            <PIRColumnMapper
+              csvHeaders={csvHeaders}
+              csvPreview={csvPreview}
+              columnMappings={columnMappings}
+              onMappingChange={handleMappingChange}
+              onBack={handleBackToUpload}
+              onConfirm={handleConfirmAndImport}
+              isImporting={isLoading}
+            />
+          )}
+
+          {/* Step 3: Importing */}
+          {step === 'importing' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5 animate-pulse" />
+                  Importing Data...
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Progress value={progress} className="w-full" />
+                <p className="text-sm text-muted-foreground text-center">
+                  Processing {fileName}...
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 4: Complete */}
+          {step === 'complete' && importStats && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -409,11 +491,7 @@ const PIRImport = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setCsvData(null);
-                      setFileName(null);
-                      setImportStats(null);
-                    }}
+                    onClick={handleReset}
                   >
                     Import Another File
                   </Button>
@@ -599,37 +677,36 @@ const PIRImport = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Expected CSV Format</CardTitle>
-              <CardDescription>
-                The CSV should match the "PIR no Prem 2004 to 2025 good" tab structure
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto">
-                <div className="text-muted-foreground mb-2"># Expected columns:</div>
-                <div>Install Date, kW Capacity, Battery kWh, Cost, AE Rebate,</div>
-                <div>$/kW rebate, % rebate, Date, Years old, Installer,</div>
-                <div>Look into, Question, Fiscal year</div>
-              </div>
-              
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No Address Data</AlertTitle>
-                <AlertDescription>
-                  This PIR data doesn't include street addresses. Matching with City permit data 
-                  will rely on <strong>interconnection date</strong>, <strong>kW capacity</strong>, and 
-                  <strong> installer name</strong> correlations instead of address matching.
-                </AlertDescription>
-              </Alert>
+          {step === 'upload' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Expected CSV Format</CardTitle>
+                <CardDescription>
+                  The CSV can have any column structure - you'll map columns after upload
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto">
+                  <div className="text-muted-foreground mb-2"># Common columns (will be auto-detected):</div>
+                  <div>Install Date, kW Capacity, Battery kWh, Cost, AE Rebate,</div>
+                  <div>$/kW rebate, % rebate, Installer, Fiscal year</div>
+                </div>
+                
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Required Fields</AlertTitle>
+                  <AlertDescription>
+                    To successfully import, you'll need to map at least: <strong>Install Date</strong>, <strong>kW Capacity</strong>, and <strong>Installer</strong>.
+                    Other fields are optional.
+                  </AlertDescription>
+                </Alert>
 
-              <p className="text-sm text-muted-foreground">
-                The importer will parse dates in M/D/YYYY format and handle currency-formatted numbers.
-                Each row will be assigned a unique PIR identifier based on row number.
-              </p>
-            </CardContent>
-          </Card>
+                <p className="text-sm text-muted-foreground">
+                  The importer handles various date formats and currency-formatted numbers automatically.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

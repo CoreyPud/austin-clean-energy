@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { csvData } = await req.json();
+    const { csvData, columnMapping, headerRowIndex: providedHeaderRowIndex } = await req.json();
     
     if (!csvData || typeof csvData !== 'string') {
       return new Response(
@@ -177,12 +177,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find the header row - may not be the first row (look for "Install Date")
-    let headerRowIndex = 0;
-    for (let i = 0; i < Math.min(5, lines.length); i++) {
-      if (lines[i].toLowerCase().includes('install date')) {
-        headerRowIndex = i;
-        break;
+    // Use provided header row index or find it
+    let headerRowIndex = providedHeaderRowIndex ?? 0;
+    if (providedHeaderRowIndex === undefined) {
+      for (let i = 0; i < Math.min(5, lines.length); i++) {
+        if (lines[i].toLowerCase().includes('install date')) {
+          headerRowIndex = i;
+          break;
+        }
       }
     }
 
@@ -190,55 +192,76 @@ Deno.serve(async (req) => {
     const headers = parseCSVLine(lines[headerRowIndex]).map(h => h.toUpperCase().replace(/\s+/g, '_'));
     console.log('CSV Headers:', headers);
 
-    // Map column indices for Austin Energy PIR format
-    // Columns: Install Date, kW Capacity, Battery kWh, Cost, AE Rebate, $/kW rebate, % rebate, Date, Years old, Installer, Look into, Question, Fiscal year
-    const columnMap: Record<string, number> = {};
+    // If columnMapping is provided from frontend, use it directly
+    // Otherwise, fall back to auto-detection
+    let columnMap: Record<string, number> = {};
     
-    const columnMappings: Record<string, string[]> = {
-      'install_date': ['INSTALL_DATE', 'INSTALL', 'DATE'],
-      'kw_capacity': ['KW_CAPACITY', 'KW', 'CAPACITY', 'SYSTEM_KW'],
-      'battery_kwh': ['BATTERY__KWH', 'BATTERY_KWH', 'BATTERY'],
-      'cost': ['COST', '_COST_'],
-      'ae_rebate': ['AE_REBATE', '_AE_REBATE_', 'REBATE'],
-      'dollar_per_kw_rebate': ['$/KW_REBATE', '$_KW_REBATE', 'DOLLAR_KW_REBATE'],
-      'percent_rebate': ['%_REBATE', 'PERCENT_REBATE', '%REBATE'],
-      'date': ['DATE'],
-      'years_old': ['YEARS_OLD', 'YEARSOLD'],
-      'installer': ['INSTALLER', 'CONTRACTOR', 'COMPANY'],
-      'look_into': ['LOOK_INTO', 'LOOKINTO'],
-      'question': ['QUESITON', 'QUESTION'], // Note: typo in original
-      'fiscal_year': ['FISCAL_YEAR', 'FISCALYEAR', 'FY']
-    };
+    if (columnMapping && Object.keys(columnMapping).length > 0) {
+      // Use frontend-provided mapping (already has indices)
+      columnMap = columnMapping;
+      console.log('Using frontend-provided column mapping:', columnMap);
+    } else {
+      // Auto-detect column mappings (legacy behavior)
+      const columnMappings: Record<string, string[]> = {
+        'install_date': ['INSTALL_DATE', 'INSTALL', 'DATE'],
+        'kw_capacity': ['KW_CAPACITY', 'KW', 'CAPACITY', 'SYSTEM_KW'],
+        'battery_kwh': ['BATTERY__KWH', 'BATTERY_KWH', 'BATTERY'],
+        'cost': ['COST', '_COST_'],
+        'ae_rebate': ['AE_REBATE', '_AE_REBATE_', 'REBATE'],
+        'dollar_per_kw_rebate': ['$/KW_REBATE', '$_KW_REBATE', 'DOLLAR_KW_REBATE'],
+        'percent_rebate': ['%_REBATE', 'PERCENT_REBATE', '%REBATE'],
+        'date': ['DATE'],
+        'years_old': ['YEARS_OLD', 'YEARSOLD'],
+        'installer': ['INSTALLER', 'CONTRACTOR', 'COMPANY'],
+        'look_into': ['LOOK_INTO', 'LOOKINTO'],
+        'question': ['QUESITON', 'QUESTION'],
+        'fiscal_year': ['FISCAL_YEAR', 'FISCALYEAR', 'FY']
+      };
 
-    for (const [key, possibleNames] of Object.entries(columnMappings)) {
-      for (const name of possibleNames) {
-        const idx = headers.findIndex(h => h.includes(name) || name.includes(h));
-        if (idx !== -1) {
-          columnMap[key] = idx;
-          break;
+      for (const [key, possibleNames] of Object.entries(columnMappings)) {
+        for (const name of possibleNames) {
+          const idx = headers.findIndex(h => h.includes(name) || name.includes(h));
+          if (idx !== -1) {
+            columnMap[key] = idx;
+            break;
+          }
         }
       }
+
+      // Fallback: map by position if headers match expected pattern
+      if (Object.keys(columnMap).length < 3) {
+        columnMap['install_date'] = 0;
+        columnMap['kw_capacity'] = 1;
+        columnMap['battery_kwh'] = 2;
+        columnMap['cost'] = 3;
+        columnMap['ae_rebate'] = 4;
+        columnMap['dollar_per_kw_rebate'] = 5;
+        columnMap['percent_rebate'] = 6;
+        columnMap['date'] = 7;
+        columnMap['years_old'] = 8;
+        columnMap['installer'] = 9;
+        columnMap['look_into'] = 10;
+        columnMap['question'] = 11;
+        columnMap['fiscal_year'] = 12;
+      }
+      console.log('Auto-detected column mapping:', columnMap);
     }
 
-    // Fallback: map by position if headers match expected pattern
-    if (Object.keys(columnMap).length < 3) {
-      // Expected order: Install Date(0), kW Capacity(1), Battery kWh(2), Cost(3), AE Rebate(4), etc.
-      columnMap['install_date'] = 0;
-      columnMap['kw_capacity'] = 1;
-      columnMap['battery_kwh'] = 2;
-      columnMap['cost'] = 3;
-      columnMap['ae_rebate'] = 4;
-      columnMap['dollar_per_kw_rebate'] = 5;
-      columnMap['percent_rebate'] = 6;
-      columnMap['date'] = 7;
-      columnMap['years_old'] = 8;
-      columnMap['installer'] = 9;
-      columnMap['look_into'] = 10;
-      columnMap['question'] = 11;
-      columnMap['fiscal_year'] = 12;
+    // Validate required mappings exist
+    const requiredFields = ['install_date', 'kw_capacity', 'installer'];
+    const missingRequired = requiredFields.filter(f => columnMap[f] === undefined);
+    
+    if (missingRequired.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Missing required column mappings: ${missingRequired.join(', ')}` 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Column mapping:', columnMap);
+    console.log('Final column mapping:', columnMap);
 
     const stats = {
       total: lines.length - 1,
