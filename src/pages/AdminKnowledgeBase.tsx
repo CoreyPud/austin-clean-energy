@@ -15,7 +15,6 @@ interface KnowledgeFile {
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  updateFrequency: string;
 }
 
 const KNOWLEDGE_FILES: KnowledgeFile[] = [
@@ -23,29 +22,25 @@ const KNOWLEDGE_FILES: KnowledgeFile[] = [
     name: "priorities",
     label: "Priorities",
     description: "Climate impact framework that ranks actions by effectiveness",
-    icon: Target,
-    updateFrequency: "Quarterly"
+    icon: Target
   },
   {
     name: "resources",
     label: "Resources",
     description: "Austin-specific programs, incentives, and resources",
-    icon: Link2,
-    updateFrequency: "Monthly"
+    icon: Link2
   },
   {
     name: "expert-context",
     label: "Expert Context",
     description: "Current research, policy context, and best practices",
-    icon: BookOpen,
-    updateFrequency: "Quarterly"
+    icon: BookOpen
   },
   {
     name: "data-sources",
     label: "Data Sources",
     description: "External APIs and data interpretation rules",
-    icon: Database,
-    updateFrequency: "As needed"
+    icon: Database
   }
 ];
 
@@ -244,10 +239,6 @@ export default function AdminKnowledgeBase() {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{file.description}</p>
-                      <Badge variant="outline" className="mt-2 text-xs bg-background">
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        {file.updateFrequency}
-                      </Badge>
                     </div>
                   </button>
                 );
