@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -16,6 +18,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 
 interface DataStats {
   cityRecords: number;
@@ -39,6 +50,34 @@ interface MatchResult {
   pir_kw?: number;
 }
 
+interface ComparisonYearData {
+  year: number;
+  label: string;
+  cityCount: number;
+  pirCount: number;
+  cityKW: number;
+  pirKW: number;
+}
+
+const chartConfig = {
+  cityCount: {
+    label: "City Permits",
+    color: "hsl(var(--primary))",
+  },
+  pirCount: {
+    label: "PIR Records",
+    color: "hsl(var(--chart-2))",
+  },
+  cityKW: {
+    label: "City kW",
+    color: "hsl(var(--primary))",
+  },
+  pirKW: {
+    label: "PIR kW",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig;
+
 const DataComparison = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -46,6 +85,11 @@ const DataComparison = () => {
   const [stats, setStats] = useState<DataStats | null>(null);
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [isRunningMatch, setIsRunningMatch] = useState(false);
+  
+  // Year comparison state
+  const [yearMode, setYearMode] = useState<'calendar' | 'fiscal'>('fiscal');
+  const [comparisonData, setComparisonData] = useState<ComparisonYearData[]>([]);
+  const [loadingComparison, setLoadingComparison] = useState(false);
 
   useEffect(() => {
     const token = sessionStorage.getItem('admin_token');
@@ -65,7 +109,94 @@ const DataComparison = () => {
 
     setIsAuthenticated(true);
     fetchStats();
+    fetchComparisonData(yearMode);
   }, [navigate]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchComparisonData(yearMode);
+    }
+  }, [yearMode, isAuthenticated]);
+
+  const getYearFromDate = (dateStr: string | null, mode: 'calendar' | 'fiscal'): number | null => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return null;
+    
+    const year = date.getFullYear();
+    const month = date.getMonth(); // 0-indexed (0 = January)
+    
+    if (mode === 'fiscal') {
+      // Fiscal year: October (month 9) through September
+      // If month >= 9 (October+), assign to next year's FY
+      return month >= 9 ? year + 1 : year;
+    }
+    return year;
+  };
+
+  const fetchComparisonData = async (mode: 'calendar' | 'fiscal') => {
+    setLoadingComparison(true);
+    try {
+      // Fetch City records - need to handle 1000 row limit
+      const { data: cityData, error: cityError } = await supabase
+        .from('solar_installations')
+        .select('completed_date, issued_date, installed_kw')
+        .order('completed_date', { ascending: false });
+
+      if (cityError) throw cityError;
+
+      // Fetch PIR records
+      const { data: pirData, error: pirError } = await supabase
+        .from('pir_installations')
+        .select('interconnection_date, system_kw')
+        .order('interconnection_date', { ascending: false });
+
+      if (pirError) throw pirError;
+
+      // Aggregate City data by year
+      const cityByYear: Record<number, { count: number; kw: number }> = {};
+      (cityData || []).forEach(record => {
+        const dateToUse = record.completed_date || record.issued_date;
+        const year = getYearFromDate(dateToUse, mode);
+        if (year && year >= 2015 && year <= 2030) {
+          if (!cityByYear[year]) cityByYear[year] = { count: 0, kw: 0 };
+          cityByYear[year].count += 1;
+          cityByYear[year].kw += record.installed_kw || 0;
+        }
+      });
+
+      // Aggregate PIR data by year
+      const pirByYear: Record<number, { count: number; kw: number }> = {};
+      (pirData || []).forEach(record => {
+        const year = getYearFromDate(record.interconnection_date, mode);
+        if (year && year >= 2015 && year <= 2030) {
+          if (!pirByYear[year]) pirByYear[year] = { count: 0, kw: 0 };
+          pirByYear[year].count += 1;
+          pirByYear[year].kw += record.system_kw || 0;
+        }
+      });
+
+      // Merge into comparison data
+      const allYears = new Set([...Object.keys(cityByYear), ...Object.keys(pirByYear)].map(Number));
+      const sortedYears = Array.from(allYears).sort((a, b) => a - b);
+
+      const comparison: ComparisonYearData[] = sortedYears.map(year => ({
+        year,
+        label: mode === 'fiscal' ? `FY ${year}` : `${year}`,
+        cityCount: cityByYear[year]?.count || 0,
+        pirCount: pirByYear[year]?.count || 0,
+        cityKW: Math.round(cityByYear[year]?.kw || 0),
+        pirKW: Math.round(pirByYear[year]?.kw || 0),
+      }));
+
+      setComparisonData(comparison);
+    } catch (error) {
+      console.error('Error fetching comparison data:', error);
+      toast.error('Failed to load comparison chart data');
+    } finally {
+      setLoadingComparison(false);
+    }
+  };
 
   const fetchStats = async () => {
     setIsLoading(true);
@@ -292,6 +423,124 @@ const DataComparison = () => {
             Refresh Stats
           </Button>
         </div>
+
+        {/* Year-over-Year Comparison Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Year-over-Year Comparison</CardTitle>
+                <CardDescription>
+                  Compare installation counts and capacity between City permits and PIR records
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-3">
+                <Label htmlFor="year-mode" className="text-sm text-muted-foreground">
+                  Calendar Year
+                </Label>
+                <Switch
+                  id="year-mode"
+                  checked={yearMode === 'fiscal'}
+                  onCheckedChange={(checked) => setYearMode(checked ? 'fiscal' : 'calendar')}
+                />
+                <Label htmlFor="year-mode" className="text-sm font-medium">
+                  Fiscal Year
+                </Label>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingComparison ? (
+              <div className="space-y-4">
+                <Skeleton className="h-[250px] w-full" />
+                <Skeleton className="h-[250px] w-full" />
+              </div>
+            ) : comparisonData.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">No data available</p>
+                <p className="text-sm">Import data to see year-over-year comparisons</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Installation Count Chart */}
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Installations by Year</h4>
+                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                    <BarChart data={comparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="label" 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => value.toLocaleString()}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartLegend content={<ChartLegendContent />} />
+                      <Bar 
+                        dataKey="cityCount" 
+                        name="cityCount"
+                        fill="var(--color-cityCount)" 
+                        radius={[4, 4, 0, 0]} 
+                      />
+                      <Bar 
+                        dataKey="pirCount" 
+                        name="pirCount"
+                        fill="var(--color-pirCount)" 
+                        radius={[4, 4, 0, 0]} 
+                      />
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+
+                {/* kW Capacity Chart */}
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Total Capacity (kW) by Year</h4>
+                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                    <BarChart data={comparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="label" 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                      />
+                      <ChartTooltip 
+                        content={<ChartTooltipContent />}
+                        formatter={(value: number) => `${value.toLocaleString()} kW`}
+                      />
+                      <ChartLegend content={<ChartLegendContent />} />
+                      <Bar 
+                        dataKey="cityKW" 
+                        name="cityKW"
+                        fill="var(--color-cityKW)" 
+                        radius={[4, 4, 0, 0]} 
+                      />
+                      <Bar 
+                        dataKey="pirKW" 
+                        name="pirKW"
+                        fill="var(--color-pirKW)" 
+                        radius={[4, 4, 0, 0]} 
+                      />
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="matches" className="space-y-4">
