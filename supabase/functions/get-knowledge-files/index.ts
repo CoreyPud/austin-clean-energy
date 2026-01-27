@@ -1,17 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Import the knowledge content directly
-import { 
-  prioritiesContent, 
-  resourcesContent, 
-  expertContextContent, 
-  dataSourcesContent 
-} from "../_shared/knowledgeContent.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -20,17 +13,30 @@ serve(async (req) => {
   }
 
   try {
-    // Return all knowledge file contents
-    const files = {
-      priorities: prioritiesContent,
-      resources: resourcesContent,
-      "expert-context": expertContextContent,
-      "data-sources": dataSourcesContent
-    };
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch knowledge files from database
+    const { data: knowledgeFiles, error } = await supabase
+      .from('knowledge_files')
+      .select('name, content, updated_at');
+
+    if (error) throw error;
+
+    // Transform to expected format
+    const files: Record<string, string> = {};
+    const metadata: Record<string, { updated_at: string }> = {};
+    
+    (knowledgeFiles || []).forEach((file: { name: string; content: string; updated_at: string }) => {
+      files[file.name] = file.content;
+      metadata[file.name] = { updated_at: file.updated_at };
+    });
 
     return new Response(
       JSON.stringify({ 
         files,
+        metadata,
         success: true 
       }),
       { 

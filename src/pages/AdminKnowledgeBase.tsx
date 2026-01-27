@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, BookOpen, FileText, Target, Link2, Database, RefreshCw, Info } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, BookOpen, FileText, Target, Link2, Database, RefreshCw, Info, Pencil, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface KnowledgeFile {
   name: string;
@@ -52,7 +54,11 @@ export default function AdminKnowledgeBase() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState("priorities");
   const [fileContents, setFileContents] = useState<Record<string, string>>({});
+  const [fileMetadata, setFileMetadata] = useState<Record<string, { updated_at: string }>>({});
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -79,22 +85,12 @@ export default function AdminKnowledgeBase() {
   const loadKnowledgeFiles = async () => {
     setLoading(true);
     try {
-      // Fetch knowledge files from the edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-knowledge-files`,
-        {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          }
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('get-knowledge-files');
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch knowledge files');
-      }
+      if (error) throw error;
       
-      const data = await response.json();
       setFileContents(data.files || {});
+      setFileMetadata(data.metadata || {});
     } catch (err) {
       console.error("Error loading knowledge files:", err);
       toast.error("Failed to load knowledge files");
@@ -103,11 +99,62 @@ export default function AdminKnowledgeBase() {
     }
   };
 
+  const handleEdit = (fileName: string) => {
+    setEditMode(fileName);
+    setEditContent(fileContents[fileName] || "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(null);
+    setEditContent("");
+  };
+
+  const handleSave = async () => {
+    if (!editMode) return;
+    
+    setSaving(true);
+    try {
+      const token = sessionStorage.getItem('admin_token');
+      
+      const { data, error } = await supabase.functions.invoke('save-knowledge-file', {
+        body: { name: editMode, content: editContent },
+        headers: { 'x-admin-token': token || '' }
+      });
+      
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to save');
+      
+      // Update local state
+      setFileContents(prev => ({ ...prev, [editMode]: editContent }));
+      setFileMetadata(prev => ({ 
+        ...prev, 
+        [editMode]: { updated_at: new Date().toISOString() } 
+      }));
+      
+      setEditMode(null);
+      setEditContent("");
+      toast.success(`${editMode}.md saved successfully`);
+    } catch (err) {
+      console.error("Error saving knowledge file:", err);
+      toast.error("Failed to save knowledge file");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   if (!isAuthenticated) {
     return null;
   }
-
-  const activeFile = KNOWLEDGE_FILES.find(f => f.name === activeTab);
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,10 +179,10 @@ export default function AdminKnowledgeBase() {
               </h1>
               <p className="text-muted-foreground max-w-2xl">
                 These markdown files drive the AI-generated recommendations shown to users. 
-                Changes to these files take effect immediately after edge function redeployment.
+                Click "Edit" to modify content directly.
               </p>
             </div>
-            <Button variant="outline" onClick={loadKnowledgeFiles} disabled={loading}>
+            <Button variant="outline" onClick={loadKnowledgeFiles} disabled={loading || editMode !== null}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
@@ -148,10 +195,10 @@ export default function AdminKnowledgeBase() {
             <div className="flex gap-3">
               <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-foreground mb-1">How to Update</p>
+                <p className="font-medium text-foreground mb-1">How to Edit</p>
                 <p className="text-muted-foreground">
-                  To modify recommendations, edit these files in <code className="bg-muted px-1 rounded text-xs">supabase/functions/_shared/knowledge/</code>. 
-                  Edge functions redeploy automatically when you save changes (~30 seconds).
+                  Click the <strong>Edit</strong> button on any tab to modify the markdown content. 
+                  Changes are saved to the database and take effect immediately for new recommendations.
                 </p>
               </div>
             </div>
@@ -159,12 +206,21 @@ export default function AdminKnowledgeBase() {
         </Card>
 
         {/* Tabs for different knowledge files */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={(val) => {
+          if (editMode) {
+            toast.error("Please save or cancel your current edit first");
+            return;
+          }
+          setActiveTab(val);
+        }}>
           <TabsList className="grid grid-cols-4 mb-6">
             {KNOWLEDGE_FILES.map((file) => (
               <TabsTrigger key={file.name} value={file.name} className="flex items-center gap-2">
                 <file.icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{file.label}</span>
+                {editMode === file.name && (
+                  <Badge variant="secondary" className="ml-1 text-xs">Editing</Badge>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -188,10 +244,44 @@ export default function AdminKnowledgeBase() {
                         <CardDescription>{file.description}</CardDescription>
                       </div>
                     </div>
-                    <Badge variant="secondary">
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      {file.updateFrequency}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {fileMetadata[file.name] && (
+                        <span className="text-xs text-muted-foreground">
+                          Updated: {formatDate(fileMetadata[file.name].updated_at)}
+                        </span>
+                      )}
+                      {editMode === file.name ? (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleCancelEdit}
+                            disabled={saving}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={handleSave}
+                            disabled={saving}
+                          >
+                            <Save className={`h-4 w-4 mr-1 ${saving ? 'animate-pulse' : ''}`} />
+                            {saving ? 'Saving...' : 'Save'}
+                          </Button>
+                        </>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEdit(file.name)}
+                          disabled={loading}
+                        >
+                          <Pencil className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -204,6 +294,13 @@ export default function AdminKnowledgeBase() {
                       <Skeleton className="h-4 w-full" />
                       <Skeleton className="h-4 w-4/5" />
                     </div>
+                  ) : editMode === file.name ? (
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="min-h-[500px] font-mono text-sm"
+                      placeholder="Enter markdown content..."
+                    />
                   ) : fileContents[file.name] ? (
                     <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border">
                       <ReactMarkdown>{fileContents[file.name]}</ReactMarkdown>
@@ -224,22 +321,23 @@ export default function AdminKnowledgeBase() {
         {/* File Structure Reference */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-base">File Structure Reference</CardTitle>
+            <CardTitle className="text-base">Knowledge Base Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-sm bg-muted p-4 rounded-lg">
-              <div className="text-muted-foreground">supabase/functions/_shared/knowledge/</div>
-              <div className="ml-4 space-y-1 mt-2">
-                {KNOWLEDGE_FILES.map((file) => (
-                  <div key={file.name} className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className={activeTab === file.name ? 'text-primary font-medium' : ''}>
-                      {file.name}.md
-                    </span>
-                    <span className="text-muted-foreground text-xs">— {file.description}</span>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {KNOWLEDGE_FILES.map((file) => (
+                <div key={file.name} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <file.icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm">{file.label}</p>
+                    <p className="text-xs text-muted-foreground">{file.description}</p>
+                    <Badge variant="secondary" className="mt-1 text-xs">
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      {file.updateFrequency}
+                    </Badge>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
