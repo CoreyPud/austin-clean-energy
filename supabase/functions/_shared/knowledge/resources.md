@@ -12,7 +12,7 @@ Last Updated: 2025-10-22
 **URL:** https://austinenergy.com/rebates/solar  
 **Incentive:** Up to $2,500 for residential solar installations  
 **Eligibility:** Austin Energy customers installing new solar systems  
-**Notes:** Rebate amounts vary by system size; combine with federal tax credit for maximum savings
+**Notes:** Rebate amounts vary by system size
 
 ### Community Solar
 **URL:** https://austinenergy.com/community-solar  
@@ -21,19 +21,15 @@ Last Updated: 2025-10-22
 **Target Audience:** Renters, condo owners, homes with shaded/unsuitable roofs
 
 ### Federal Solar Investment Tax Credit (ITC)
-**URL:** https://www.energy.gov/eere/solar/homeowners-guide-federal-tax-credit-solar-photovoltaics  
-**Incentive:** 30% tax credit on solar installation costs  
-**Eligibility:** All US taxpayers who own their solar system  
-**Valid Through:** 30% credit available through 2032
+**Status:** No longer available for residential homeowners  
+**Note:** The federal residential solar tax credit has expired. Focus on Austin Energy rebates and local programs for solar incentives.
 
 ## Energy Efficiency
 
-### Rewiring America FAQs
-**URL:** https://homes.rewiringamerica.org/federal-incentives/faqs
-
-**Description:** Common questions about the Federal Tax Incentives
-
-**Use Case:** Answer questions that people have about how to take advantage of the tax incentives before Jan 1, 2025
+### Rewiring America Home Electrification Guide
+**URL:** https://homes.rewiringamerica.org
+**Description:** Resources for home electrification and clean energy upgrades
+**Use Case:** Learn about electrification options, heat pumps, and energy efficiency
 
 ### Free Home Energy Audit
 **URL:** https://austinenergy.com/energy-efficiency/home-energy-audit  

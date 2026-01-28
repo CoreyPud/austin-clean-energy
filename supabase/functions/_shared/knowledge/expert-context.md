@@ -3,9 +3,8 @@ Last Updated: 2025-10-22
 
 ## Current Policy Context
 
-### Federal Incentives (2024-2025)
-- **Inflation Reduction Act (IRA)** continues through 2030s, providing stable incentives
-- **Solar ITC:** 30% through 2032, then steps down to 26% (2033), 22% (2034)
+### Federal Incentives (2025)
+- **Solar ITC:** No longer available for residential homeowners
 - **EV Tax Credits:** $7,500 for new EVs, $4,000 for used; income caps and sourcing requirements apply
 - **Energy Efficiency Rebates (HOMES Program):** Up to $8,000 for whole-home retrofits based on energy savings
 
@@ -43,9 +42,10 @@ Last Updated: 2025-10-22
 - Battery storage costs dropping rapidly; Tesla Powerwall and competitors at $10k-15k installed
 - Modern panels last 25-30 years with minimal degradation (<1%/year)
 - Virtual power plant programs emerging: batteries can earn revenue providing grid services
+- Federal residential solar tax credit is no longer available; Austin Energy rebates remain
 
 **Best Practices:**
-- Solar pays back in 6-10 years in Austin with current incentives
+- Solar pays back in 8-12 years in Austin with local rebates (no federal credit)
 - Recommend battery storage only for: frequent outages, time-of-use rates, goal of grid independence
 - Size system to 100-110% of current usage (not undersized for future EV)
 - Must evaluate roof condition first; if re-roofing needed, coordinate timing
