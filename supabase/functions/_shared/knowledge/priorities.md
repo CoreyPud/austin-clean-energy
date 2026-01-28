@@ -18,9 +18,9 @@ This framework guides AI recommendations based on individual climate impact pote
 **Impact Score:** 8/10  
 **Annual CO₂ Reduction:** 3-5 tons per household  
 **Rationale:** Residential solar combined with clean grid electricity eliminates home energy emissions. Austin Energy's grid is moving toward renewable sources, making this increasingly effective.  
-**Austin Context:** Excellent solar conditions (235+ sunny days/year), Austin Energy solar buyback program, 30% federal ITC still available  
+**Austin Context:** Excellent solar conditions (235+ sunny days/year), Austin Energy solar buyback program  
 **Key Barriers:** Roof condition/ownership, HOA restrictions, upfront costs  
-**Current Incentives:** 30% federal solar tax credit, Austin Energy solar rebates up to $2,500
+**Current Incentives:** Austin Energy solar rebates up to $2,500
 
 ### 3. Home Energy Efficiency
 **Impact Score:** 7/10  
