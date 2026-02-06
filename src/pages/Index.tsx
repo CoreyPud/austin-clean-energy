@@ -301,7 +301,7 @@ const Index = () => {
                 </li>
                 <li>
                   <a 
-                    href="https://data.austintexas.gov/resource/tk9p-m8c7.json" 
+                    href="https://data.austintexas.gov/Utilities-and-City-Services/Austin-Energy-Single-Family-Audits/tk9p-m8c7/about_data" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-white/70 hover:text-white transition-colors"
