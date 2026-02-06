@@ -23,15 +23,16 @@ const Index = () => {
           .order('stat_type');
 
         if (!cacheError && cachedStats && cachedStats.length > 0) {
-          // Map cached stats to display format
+          // Map cached stats to display format (excluding energy_audits)
           const iconMap: Record<string, any> = {
             'zip_codes': BarChart3,
             'total_projects': Building2,
             'solar_permits': Leaf,
-            'energy_audits': Battery,
           };
 
-          const displayStats = cachedStats.map(stat => ({
+          const displayStats = cachedStats
+            .filter(stat => stat.stat_type !== 'energy_audits')
+            .map(stat => ({
             value: stat.value,
             label: stat.label,
             icon: iconMap[stat.stat_type] || BarChart3
