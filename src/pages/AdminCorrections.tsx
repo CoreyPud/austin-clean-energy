@@ -229,6 +229,11 @@ export default function AdminCorrections() {
                             </Badge>
                           )}
                         </TableCell>
+                        <TableCell className="text-sm">
+                          {install.total_job_valuation
+                            ? `$${Number(install.total_job_valuation).toLocaleString()}`
+                            : '—'}
+                        </TableCell>
                         <TableCell>
                           {install.completed_date 
                             ? new Date(install.completed_date).toLocaleDateString()
