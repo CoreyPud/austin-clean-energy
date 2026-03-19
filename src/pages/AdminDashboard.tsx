@@ -63,6 +63,13 @@ export default function AdminDashboard() {
       color: "text-purple-600"
     },
     {
+      title: "Solar Permit Import",
+      description: "Import City of Austin solar permit data from CSV files with flexible column mapping.",
+      icon: Database,
+      path: "/import-solar-data",
+      color: "text-teal-600"
+    },
+    {
       title: "Fiscal Year Stats",
       description: "View City permit analytics grouped by Austin's fiscal year (Oct 1 - Sept 30). Based on City of Austin permit data only.",
       icon: BarChart3,
