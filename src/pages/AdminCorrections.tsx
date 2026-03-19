@@ -15,8 +15,11 @@ import { CorrectionEditModal } from "@/components/CorrectionEditModal";
 interface Installation {
   id: string;
   project_id: string;
+  permit_number: string | null;
   address: string;
   installed_kw: number | null;
+  total_job_valuation: number | null;
+  electrical_valuation: number | null;
   completed_date: string | null;
   description: string | null;
   has_correction: boolean;
