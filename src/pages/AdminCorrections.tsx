@@ -213,6 +213,9 @@ export default function AdminCorrections() {
                         <TableCell className="font-mono text-sm">
                           {install.project_id?.substring(0, 12) || 'N/A'}
                         </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {install.permit_number || '—'}
+                        </TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           {install.address || 'N/A'}
                         </TableCell>
