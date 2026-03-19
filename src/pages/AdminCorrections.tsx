@@ -198,8 +198,10 @@ export default function AdminCorrections() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Project ID</TableHead>
+                      <TableHead>Permit #</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead>kW</TableHead>
+                      <TableHead>Valuation</TableHead>
                       <TableHead>Completed</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
