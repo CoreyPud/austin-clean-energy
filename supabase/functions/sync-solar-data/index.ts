@@ -29,6 +29,9 @@ interface AustinSolarRecord {
   contractor_city?: string;
   link?: string | { url: string };
   project_id?: string;
+  permit_number?: string;
+  total_job_valuation?: string;
+  electrical_valuation?: string;
 }
 
 // Transform Austin API record to database schema
@@ -45,6 +48,7 @@ function transformRecord(record: AustinSolarRecord) {
   
   return {
     project_id: record.project_id || null,
+    permit_number: record.permit_number || null,
     permit_class: record.permit_class_mapped || null,
     address: record.original_address1 || 'Unknown',
     description: record.description || null,
@@ -62,6 +66,8 @@ function transformRecord(record: AustinSolarRecord) {
     contractor_company: record.contractor_company_name || null,
     contractor_city: record.contractor_city || null,
     link: record.link ? (typeof record.link === 'string' ? record.link : record.link.url) : null,
+    total_job_valuation: record.total_job_valuation ? parseFloat(record.total_job_valuation) : null,
+    electrical_valuation: record.electrical_valuation ? parseFloat(record.electrical_valuation) : null,
   };
 }
 

@@ -73,7 +73,7 @@ serve(async (req) => {
         .range(offset, offset + limit - 1);
       
       if (search) {
-        query = query.or(`address.ilike.%${search}%,project_id.ilike.%${search}%,description.ilike.%${search}%`);
+        query = query.or(`address.ilike.%${search}%,project_id.ilike.%${search}%,description.ilike.%${search}%,permit_number.ilike.%${search}%`);
       }
       
       if (filter === 'missing_kw') {

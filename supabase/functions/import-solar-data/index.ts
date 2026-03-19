@@ -181,6 +181,7 @@ Deno.serve(async (req) => {
 
         const installation: Record<string, any> = {
           project_id: projectId,
+          permit_number: getVal('permit_number')?.trim() || null,
           address: getVal('address')?.trim() || 'Unknown',
           description: getVal('description')?.trim() || null,
           permit_class: getVal('permit_class')?.trim() || null,
@@ -198,6 +199,8 @@ Deno.serve(async (req) => {
           contractor_company: getVal('contractor_company')?.trim() || null,
           contractor_city: getVal('contractor_city')?.trim() || null,
           link: getVal('link')?.trim() || null,
+          total_job_valuation: safeParseFloat(getVal('total_job_valuation')),
+          electrical_valuation: safeParseFloat(getVal('electrical_valuation')),
         };
 
         batch.push(installation);

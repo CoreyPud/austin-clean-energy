@@ -272,6 +272,7 @@ export type Database = {
           council_district: string | null
           created_at: string | null
           description: string | null
+          electrical_valuation: number | null
           id: string
           installed_kw: number | null
           issued_date: string | null
@@ -281,8 +282,10 @@ export type Database = {
           longitude: number | null
           original_zip: string | null
           permit_class: string | null
+          permit_number: string | null
           project_id: string | null
           status_current: string | null
+          total_job_valuation: number | null
           updated_at: string | null
         }
         Insert: {
@@ -295,6 +298,7 @@ export type Database = {
           council_district?: string | null
           created_at?: string | null
           description?: string | null
+          electrical_valuation?: number | null
           id?: string
           installed_kw?: number | null
           issued_date?: string | null
@@ -304,8 +308,10 @@ export type Database = {
           longitude?: number | null
           original_zip?: string | null
           permit_class?: string | null
+          permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          total_job_valuation?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -318,6 +324,7 @@ export type Database = {
           council_district?: string | null
           created_at?: string | null
           description?: string | null
+          electrical_valuation?: number | null
           id?: string
           installed_kw?: number | null
           issued_date?: string | null
@@ -327,8 +334,10 @@ export type Database = {
           longitude?: number | null
           original_zip?: string | null
           permit_class?: string | null
+          permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          total_job_valuation?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -347,6 +356,7 @@ export type Database = {
           council_district: string | null
           created_at: string | null
           description: string | null
+          electrical_valuation: number | null
           has_correction: boolean | null
           id: string | null
           installed_kw: number | null
@@ -358,8 +368,10 @@ export type Database = {
           longitude: number | null
           original_zip: string | null
           permit_class: string | null
+          permit_number: string | null
           project_id: string | null
           status_current: string | null
+          total_job_valuation: number | null
           updated_at: string | null
         }
         Relationships: []

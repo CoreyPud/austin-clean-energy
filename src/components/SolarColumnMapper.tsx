@@ -9,11 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { parseCSVLine } from "@/components/PIRColumnMapper";
 
 export const SOLAR_TARGET_FIELDS = [
-  { key: 'project_id', label: 'Project ID', required: true, patterns: ['project id', 'project_id', 'projectid', 'permit num'] },
+  { key: 'project_id', label: 'Project ID', required: true, patterns: ['project id', 'project_id', 'projectid'] },
+  { key: 'permit_number', label: 'Permit Number', required: false, patterns: ['permit num', 'permit_number', 'permit number'] },
   { key: 'address', label: 'Address', required: true, patterns: ['address', 'original address', 'address 1', 'street'] },
   { key: 'description', label: 'Description', required: false, patterns: ['description', 'desc', 'project name'] },
   { key: 'permit_class', label: 'Permit Class', required: false, patterns: ['permit class mapped', 'permit class', 'permit_class'] },
   { key: 'installed_kw', label: 'Installed kW', required: false, patterns: ['installed kw', 'installed_kw', 'kw', 'capacity'] },
+  { key: 'total_job_valuation', label: 'Total Job Valuation', required: false, patterns: ['total job valuation', 'total_job_valuation', 'total valuation', 'job valuation'] },
+  { key: 'electrical_valuation', label: 'Electrical Valuation', required: false, patterns: ['electrical valuation', 'electrical_valuation', 'elec valuation'] },
   { key: 'applied_date', label: 'Applied Date', required: false, patterns: ['applied date', 'applied_date', 'date applied'] },
   { key: 'issued_date', label: 'Issued Date', required: false, patterns: ['issued date', 'issued_date', 'date issued'] },
   { key: 'calendar_year_issued', label: 'Calendar Year Issued', required: false, patterns: ['calendar year issued', 'calendar_year_issued', 'year issued'] },

@@ -15,8 +15,11 @@ import { CorrectionEditModal } from "@/components/CorrectionEditModal";
 interface Installation {
   id: string;
   project_id: string;
+  permit_number: string | null;
   address: string;
   installed_kw: number | null;
+  total_job_valuation: number | null;
+  electrical_valuation: number | null;
   completed_date: string | null;
   description: string | null;
   has_correction: boolean;
@@ -195,8 +198,10 @@ export default function AdminCorrections() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Project ID</TableHead>
+                      <TableHead>Permit #</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead>kW</TableHead>
+                      <TableHead>Valuation</TableHead>
                       <TableHead>Completed</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
@@ -207,6 +212,9 @@ export default function AdminCorrections() {
                       <TableRow key={install.id} className={install.is_duplicate ? "opacity-50" : ""}>
                         <TableCell className="font-mono text-sm">
                           {install.project_id?.substring(0, 12) || 'N/A'}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {install.permit_number || '—'}
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           {install.address || 'N/A'}
@@ -220,6 +228,11 @@ export default function AdminCorrections() {
                               Missing
                             </Badge>
                           )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {install.total_job_valuation
+                            ? `$${Number(install.total_job_valuation).toLocaleString()}`
+                            : '—'}
                         </TableCell>
                         <TableCell>
                           {install.completed_date 
