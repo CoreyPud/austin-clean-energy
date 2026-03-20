@@ -190,10 +190,45 @@ const InstallationDetail = () => {
                 </div>
               </div>
 
-              {installation.application_id && (
+              {(permitNumber || installation.application_id) && (
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <span className="font-semibold text-sm">Application ID: </span>
-                  <span className="text-sm text-muted-foreground">{installation.application_id}</span>
+                  <div className="flex items-center mb-2">
+                    <FileText className="h-5 w-5 text-primary mr-2" />
+                    <span className="font-semibold">Permit / Project ID</span>
+                  </div>
+                  {permitNumber && (
+                    <p className="text-sm text-foreground">Permit #: {permitNumber}</p>
+                  )}
+                  {installation.application_id && installation.application_id !== permitNumber && (
+                    <p className="text-sm text-muted-foreground">Project ID: {installation.application_id}</p>
+                  )}
+                </div>
+              )}
+
+              {(installation.total_job_valuation || installation.electrical_valuation) && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {installation.total_job_valuation && (
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <DollarSign className="h-5 w-5 text-primary mr-2" />
+                        <span className="font-semibold">Total Job Valuation</span>
+                      </div>
+                      <p className="text-sm text-foreground">
+                        ${Number(installation.total_job_valuation).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {installation.electrical_valuation && (
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <DollarSign className="h-5 w-5 text-accent mr-2" />
+                        <span className="font-semibold">Electrical Valuation</span>
+                      </div>
+                      <p className="text-sm text-foreground">
+                        ${Number(installation.electrical_valuation).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
