@@ -172,6 +172,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validate admin token
+    const adminToken = req.headers.get('x-admin-token');
+    if (!(await validateToken(adminToken))) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Solar data sync initiated');
 
     // Run the sync - it processes in batches so it should complete within timeout limits
