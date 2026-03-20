@@ -10,7 +10,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.fetch-stats]
-verify_jwt = true
+verify_jwt = false
 
 [functions.installation-detail]
 verify_jwt = false
