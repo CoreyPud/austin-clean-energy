@@ -111,7 +111,7 @@ serve(async (req) => {
       console.log('Found installation in database:', dbInstallation);
       // Transform database format to match expected output
       const installation = {
-        permit_number: dbInstallation.project_id,
+        permit_number: dbInstallation.permit_number || dbInstallation.project_id,
         original_address_1: dbInstallation.address,
         solar_panel_capacity_output_dc_watts: dbInstallation.installed_kw ? dbInstallation.installed_kw * 1000 : null,
         issued_date: dbInstallation.issued_date,
@@ -119,6 +119,8 @@ serve(async (req) => {
         work_class: dbInstallation.permit_class,
         status_current: dbInstallation.status_current,
         application_id: dbInstallation.project_id,
+        total_job_valuation: dbInstallation.total_job_valuation,
+        electrical_valuation: dbInstallation.electrical_valuation,
         location: dbInstallation.latitude && dbInstallation.longitude ? {
           latitude: dbInstallation.latitude.toString(),
           longitude: dbInstallation.longitude.toString()
