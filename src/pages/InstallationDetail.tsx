@@ -79,23 +79,59 @@ const InstallationDetail = () => {
     );
   }
 
-  const address = installation.service_address || installation.address || 'Address not available';
-  const capacity = installation.system_size_kw ? `${installation.system_size_kw} kW` : installation.capacity || 'Not specified';
-  const programType = installation.program_type || 'Austin Energy Program';
-  const installDate = installation.installation_date || installation.date_completed || installation.install_date;
+  const address = installation.service_address || installation.address || installation.original_address_1 || 'Address not available';
+  const capacity = installation.system_size_kw 
+    ? `${installation.system_size_kw} kW` 
+    : (installation.solar_panel_capacity_output_dc_watts 
+      ? `${(installation.solar_panel_capacity_output_dc_watts / 1000).toFixed(1)} kW`
+      : installation.capacity || 'Not specified');
+  const programType = installation.program_type || installation.work_class || 'Austin Energy Program';
+  const installDate = installation.installation_date || installation.completed_date || installation.issued_date || installation.date_completed || installation.install_date;
   const projectName = installation.project_name || address.split(',')[0];
+  const permitNumber = installation.permit_number || installation.project_id || null;
+
+  const handleDownloadCsv = useCallback(() => {
+    const rows: Record<string, string> = {
+      'Project Name': projectName,
+      'Address': address,
+      'System Capacity': capacity,
+      'Program Type': programType,
+      'Installation Date': installDate ? new Date(installDate).toLocaleDateString() : 'N/A',
+      'Permit Number': permitNumber || 'N/A',
+      'Application / Project ID': installation.application_id || installation.project_id || 'N/A',
+      'Status': installation.status_current || 'N/A',
+      'Data Source': installation.source || 'N/A',
+    };
+
+    const csvContent = 'Field,Value\n' + Object.entries(rows)
+      .map(([field, value]) => `"${field}","${String(value).replace(/"/g, '""')}"`)
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `installation-${permitNumber || id || 'detail'}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [installation, projectName, address, capacity, programType, installDate, permitNumber, id]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <div className="container mx-auto px-4 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadCsv}>
+            <Download className="mr-2 h-4 w-4" />
+            Download CSV
+          </Button>
+        </div>
 
         <div className="max-w-4xl mx-auto">
           <div className="mb-8 animate-fade-in">
