@@ -100,6 +100,8 @@ const InstallationDetail = () => {
       'Permit Number': permitNumber || 'N/A',
       'Application / Project ID': installation.application_id || installation.project_id || 'N/A',
       'Status': installation.status_current || 'N/A',
+      'Total Job Valuation': installation.total_job_valuation ? `$${Number(installation.total_job_valuation).toLocaleString()}` : 'N/A',
+      'Electrical Valuation': installation.electrical_valuation ? `$${Number(installation.electrical_valuation).toLocaleString()}` : 'N/A',
       'Data Source': installation.source || 'N/A',
     };
 
