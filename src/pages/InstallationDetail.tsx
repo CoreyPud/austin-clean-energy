@@ -90,7 +90,7 @@ const InstallationDetail = () => {
   const projectName = installation.project_name || address.split(',')[0];
   const permitNumber = installation.permit_number || installation.project_id || null;
 
-  const handleDownloadCsv = useCallback(() => {
+  const handleDownloadCsv = () => {
     const rows: Record<string, string> = {
       'Project Name': projectName,
       'Address': address,
@@ -114,7 +114,7 @@ const InstallationDetail = () => {
     link.download = `installation-${permitNumber || id || 'detail'}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [installation, projectName, address, capacity, programType, installDate, permitNumber, id]);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
