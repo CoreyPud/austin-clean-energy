@@ -118,16 +118,7 @@ const CityOverview = () => {
         setMapMarkers(initialMarkers);
         setIsLoading(false);
 
-        // Background sync: first sync solar data from Austin API, then refresh stats
-        supabase.functions.invoke('sync-solar-data').then(async (syncResult) => {
-          console.log('Solar data sync completed:', syncResult.data);
-          // After sync, refresh the cached stats
-          await supabase.functions.invoke('fetch-stats');
-          const { data: refreshed } = await supabase
-            .from('cached_stats')
-            .select('*');
-          setStats((prev: any) => ({ ...prev, cached: refreshed || prev?.cached }));
-        }).catch((e) => console.error('Failed to sync solar data', e));
+        // Data sync is now admin-only; public pages read cached data only
       } catch (error) {
         console.error('Error loading city data:', error);
         setIsLoading(false);

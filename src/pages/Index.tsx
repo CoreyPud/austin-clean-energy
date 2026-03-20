@@ -42,14 +42,7 @@ const Index = () => {
           setIsLoading(false);
         }
 
-        // Trigger background refresh of stats
-        supabase.functions.invoke('fetch-stats').then(({ data, error }) => {
-          if (error) {
-            console.error('Error refreshing stats:', error);
-          } else {
-            console.log('Stats refreshed in background');
-          }
-        });
+        // Stats refresh is now admin-only; public pages read cached data only
 
       } catch (error) {
         console.error('Error loading stats:', error);
