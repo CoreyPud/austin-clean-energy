@@ -2,8 +2,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token',
 };
+
+// Admin token validation
+async function validateToken(token: string | null): Promise<boolean> {
+  if (!token) return false;
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ action: 'validate', token }),
+    });
+    const result = await response.json();
+    return result.valid === true;
+  } catch {
+    return false;
+  }
+}
 
 // Batch size for database operations
 const BATCH_SIZE = 500;
@@ -150,6 +172,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validate admin token
+    const adminToken = req.headers.get('x-admin-token');
+    if (!(await validateToken(adminToken))) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Solar data sync initiated');
 
     // Run the sync - it processes in batches so it should complete within timeout limits
