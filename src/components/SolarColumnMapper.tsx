@@ -102,6 +102,63 @@ export function parseSolarCSVPreview(csvData: string): { headers: string[]; prev
   return { headers, preview, headerRowIndex };
 }
 
+function ColumnCombobox({
+  headers,
+  value,
+  onChange,
+}: {
+  headers: string[];
+  value: string | null;
+  onChange: (value: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="flex-1 justify-between bg-background font-normal truncate"
+        >
+          <span className={cn("truncate", !value && "text-muted-foreground")}>
+            {value || "— Skip —"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[280px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search columns..." />
+          <CommandList>
+            <CommandEmpty>No column found.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="__skip__"
+                onSelect={() => { onChange(null); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
+                <span className="text-muted-foreground">— Skip —</span>
+              </CommandItem>
+              {headers.map((header, idx) => (
+                <CommandItem
+                  key={idx}
+                  value={header}
+                  onSelect={() => { onChange(header); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === header ? "opacity-100" : "opacity-0")} />
+                  {header}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function SolarColumnMapper({
   csvHeaders,
   csvPreview,
