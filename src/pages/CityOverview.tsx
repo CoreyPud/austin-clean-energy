@@ -232,8 +232,7 @@ const CityOverview = () => {
         });
 
         setQuarterlyData(qData);
-        // Store years for chart rendering
-        (window as any).__quarterlyYears = sortedYears;
+        setQuarterlyYears(sortedYears);
       } catch (error) {
         console.error('Error loading quarterly data:', error);
       } finally {
@@ -559,9 +558,8 @@ const CityOverview = () => {
                     <Skeleton className="h-[400px] w-full" />
                   ) : quarterlyData.length > 0 ? (
                     (() => {
-                      const years = ((window as any).__quarterlyYears || []) as number[];
                       // Show last 5 years for readability
-                      const displayYears = years.slice(-5);
+                      const displayYears = quarterlyYears.slice(-5);
                       return (
                         <>
                           <ResponsiveContainer width="100%" height={400}>
