@@ -30,6 +30,7 @@ const CityOverview = () => {
   const [chartView, setChartView] = useState<'yearly' | 'quarterly'>('yearly');
   const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
   const [quarterlyYears, setQuarterlyYears] = useState<number[]>([]);
+  const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
