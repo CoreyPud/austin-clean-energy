@@ -172,6 +172,77 @@ const CityOverview = () => {
     loadTimelineData();
   }, []);
 
+  // Load quarterly data when user switches to quarterly view
+  useEffect(() => {
+    if (chartView !== 'quarterly' || quarterlyData.length > 0) return;
+    
+    const loadQuarterlyData = async () => {
+      setIsLoadingQuarterly(true);
+      try {
+        // Fetch all installations with dates - paginate to get all records
+        let allInstallations: any[] = [];
+        let from = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('solar_installations_view')
+            .select('completed_date, issued_date, installed_kw')
+            .not('completed_date', 'is', null)
+            .range(from, from + pageSize - 1);
+          
+          if (error) throw error;
+          if (data) allInstallations = [...allInstallations, ...data];
+          hasMore = data?.length === pageSize;
+          from += pageSize;
+        }
+
+        // Group by year and quarter
+        const yearQuarterMap: Record<string, { count: number; kw: number }> = {};
+        const years = new Set<number>();
+
+        allInstallations.forEach((inst: any) => {
+          const dateStr = inst.completed_date || inst.issued_date;
+          if (!dateStr) return;
+          const date = new Date(dateStr);
+          const year = date.getFullYear();
+          if (year < 2014) return;
+          const quarter = Math.floor(date.getMonth() / 3) + 1;
+          years.add(year);
+          const key = `${year}-Q${quarter}`;
+          if (!yearQuarterMap[key]) yearQuarterMap[key] = { count: 0, kw: 0 };
+          yearQuarterMap[key].count += 1;
+          yearQuarterMap[key].kw += Number(inst.installed_kw) || 0;
+        });
+
+        // Build quarterly comparison data: one row per quarter, years as bars
+        const sortedYears = Array.from(years).sort();
+        const quarterLabels = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
+        
+        const qData = [1, 2, 3, 4].map((q, idx) => {
+          const row: any = { quarter: quarterLabels[idx] };
+          sortedYears.forEach(year => {
+            const key = `${year}-Q${q}`;
+            row[`y${year}`] = yearQuarterMap[key]?.count || 0;
+            row[`kw${year}`] = yearQuarterMap[key]?.kw || 0;
+          });
+          return row;
+        });
+
+        setQuarterlyData(qData);
+        // Store years for chart rendering
+        (window as any).__quarterlyYears = sortedYears;
+      } catch (error) {
+        console.error('Error loading quarterly data:', error);
+      } finally {
+        setIsLoadingQuarterly(false);
+      }
+    };
+
+    loadQuarterlyData();
+  }, [chartView, quarterlyData.length]);
+
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     // Debounce to prevent rapid repeated calls
     if (loadingTimeoutRef.current) {
