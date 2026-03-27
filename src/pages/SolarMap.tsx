@@ -1,0 +1,45 @@
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ExternalLink } from "lucide-react";
+
+const SolarMap = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Home
+          </Button>
+          <div className="h-5 w-px bg-border" />
+          <h1 className="text-lg font-semibold text-foreground">Austin Solar Installation Map</h1>
+        </div>
+        <a
+          href="https://solar-austin.netlify.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+        >
+          Open Full Map
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </header>
+
+      {/* Iframe */}
+      <div className="flex-1">
+        <iframe
+          src="https://solar-austin.netlify.app/"
+          title="Austin Solar Installation Map"
+          className="w-full h-full border-0"
+          style={{ minHeight: "calc(100vh - 57px)" }}
+          allow="geolocation"
+        />
+      </div>
+    </div>
+  );
+};
+
+export default SolarMap;
