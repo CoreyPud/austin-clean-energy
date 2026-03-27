@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { 
   TrendingUp, 
   Building2, 
@@ -26,6 +27,10 @@ const CityOverview = () => {
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [timelineData, setTimelineData] = useState<any[]>([]);
+  const [chartView, setChartView] = useState<'yearly' | 'quarterly'>('yearly');
+  const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
+  const [quarterlyYears, setQuarterlyYears] = useState<number[]>([]);
+  const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
@@ -33,6 +38,15 @@ const CityOverview = () => {
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
   const loadingTimeoutRef = useRef<NodeJS.Timeout>();
+
+  const QUARTER_COLORS = [
+    'hsl(var(--primary))',
+    'hsl(var(--secondary))',
+    'hsl(142, 76%, 36%)',
+    'hsl(280, 65%, 60%)',
+    'hsl(25, 95%, 53%)',
+    'hsl(199, 89%, 48%)',
+  ];
 
   useEffect(() => {
     const loadData = async () => {
@@ -158,6 +172,76 @@ const CityOverview = () => {
     loadYearlyData();
     loadTimelineData();
   }, []);
+
+  // Load quarterly data when user switches to quarterly view
+  useEffect(() => {
+    if (chartView !== 'quarterly' || quarterlyData.length > 0) return;
+    
+    const loadQuarterlyData = async () => {
+      setIsLoadingQuarterly(true);
+      try {
+        // Fetch all installations with dates - paginate to get all records
+        let allInstallations: any[] = [];
+        let from = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('solar_installations_view')
+            .select('completed_date, issued_date, installed_kw')
+            .not('completed_date', 'is', null)
+            .range(from, from + pageSize - 1);
+          
+          if (error) throw error;
+          if (data) allInstallations = [...allInstallations, ...data];
+          hasMore = data?.length === pageSize;
+          from += pageSize;
+        }
+
+        // Group by year and quarter
+        const yearQuarterMap: Record<string, { count: number; kw: number }> = {};
+        const years = new Set<number>();
+
+        allInstallations.forEach((inst: any) => {
+          const dateStr = inst.completed_date || inst.issued_date;
+          if (!dateStr) return;
+          const date = new Date(dateStr);
+          const year = date.getFullYear();
+          if (year < 2014) return;
+          const quarter = Math.floor(date.getMonth() / 3) + 1;
+          years.add(year);
+          const key = `${year}-Q${quarter}`;
+          if (!yearQuarterMap[key]) yearQuarterMap[key] = { count: 0, kw: 0 };
+          yearQuarterMap[key].count += 1;
+          yearQuarterMap[key].kw += Number(inst.installed_kw) || 0;
+        });
+
+        // Build quarterly comparison data: one row per quarter, years as bars
+        const sortedYears = Array.from(years).sort();
+        const quarterLabels = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
+        
+        const qData = [1, 2, 3, 4].map((q, idx) => {
+          const row: any = { quarter: quarterLabels[idx] };
+          sortedYears.forEach(year => {
+            const key = `${year}-Q${q}`;
+            row[`y${year}`] = yearQuarterMap[key]?.count || 0;
+            row[`kw${year}`] = yearQuarterMap[key]?.kw || 0;
+          });
+          return row;
+        });
+
+        setQuarterlyData(qData);
+        setQuarterlyYears(sortedYears);
+      } catch (error) {
+        console.error('Error loading quarterly data:', error);
+      } finally {
+        setIsLoadingQuarterly(false);
+      }
+    };
+
+    loadQuarterlyData();
+  }, [chartView, quarterlyData.length]);
 
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     // Debounce to prevent rapid repeated calls
@@ -403,58 +487,131 @@ const CityOverview = () => {
             </p>
           </div>
 
-          {/* Yearly Installations Chart */}
+          {/* Yearly / Quarterly Installations Chart */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-2xl">Solar Installations by Year</CardTitle>
-              <CardDescription>
-                Annual growth of solar projects in Austin (2014-present)
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="text-2xl">
+                    {chartView === 'yearly' ? 'Solar Installations by Year' : 'Quarterly Year-over-Year Comparison'}
+                  </CardTitle>
+                  <CardDescription>
+                    {chartView === 'yearly' 
+                      ? 'Annual growth of solar projects in Austin (2014-present)'
+                      : 'Compare installation counts by quarter across years'}
+                  </CardDescription>
+                </div>
+                <Tabs value={chartView} onValueChange={(v) => setChartView(v as 'yearly' | 'quarterly')}>
+                  <TabsList>
+                    <TabsTrigger value="yearly">By Year</TabsTrigger>
+                    <TabsTrigger value="quarterly">Quarterly</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
             </CardHeader>
             <CardContent>
-              {isLoadingYearly ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : yearlyData.filter((d: any) => Number(d.year) >= 2014).length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={yearlyData.filter((d: any) => Number(d.year) >= 2014)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis />
-                    <Legend 
-                      verticalAlign="top" 
-                      align="right"
-                      iconType="square"
-                      wrapperStyle={{ paddingBottom: '20px' }}
-                    />
-                    <RechartsTooltip
-                      labelFormatter={() => ''}
-                      formatter={(value: number, name: string, props: any) => {
-                        if (name === 'batteryCount') return [value, 'With Battery Storage'];
-                        if (name === 'solarOnly') return [value, 'Solar Only'];
-                        return [value, name];
-                      }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                              <p className="text-sm"><span className="text-primary">Solar Only:</span> {data.solarOnly}</p>
-                              <p className="text-sm"><span className="text-secondary">With Battery:</span> {data.batteryCount}</p>
-                              <p className="text-sm font-semibold mt-1"><span className="text-muted-foreground">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
-                    <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
-                  </BarChart>
-                </ResponsiveContainer>
+              {chartView === 'yearly' ? (
+                <>
+                  {isLoadingYearly ? (
+                    <Skeleton className="h-[300px] w-full" />
+                  ) : yearlyData.filter((d: any) => Number(d.year) >= 2014).length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={yearlyData.filter((d: any) => Number(d.year) >= 2014)}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis />
+                        <Legend 
+                          verticalAlign="top" 
+                          align="right"
+                          iconType="square"
+                          wrapperStyle={{ paddingBottom: '20px' }}
+                        />
+                        <RechartsTooltip
+                          labelFormatter={() => ''}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                                  <p className="text-sm"><span className="text-primary">Solar Only:</span> {data.solarOnly}</p>
+                                  <p className="text-sm"><span className="text-secondary">With Battery:</span> {data.batteryCount}</p>
+                                  <p className="text-sm font-semibold mt-1"><span className="text-muted-foreground">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
+                        <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                      No yearly data available
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No yearly data available
-                </div>
+                <>
+                  {isLoadingQuarterly ? (
+                    <Skeleton className="h-[400px] w-full" />
+                  ) : quarterlyData.length > 0 ? (
+                    (() => {
+                      // Show last 5 years for readability
+                      const displayYears = quarterlyYears.slice(-5);
+                      return (
+                        <>
+                          <ResponsiveContainer width="100%" height={400}>
+                            <BarChart data={quarterlyData} barCategoryGap="15%">
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="quarter" />
+                              <YAxis />
+                              <Legend 
+                                verticalAlign="top" 
+                                align="center"
+                                iconType="square"
+                                wrapperStyle={{ paddingBottom: '20px' }}
+                              />
+                              <RechartsTooltip
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                                        <p className="font-medium text-sm mb-2">{label}</p>
+                                        {payload.map((entry: any, idx: number) => (
+                                          <p key={idx} className="text-sm" style={{ color: entry.color }}>
+                                            {entry.name}: {entry.value?.toLocaleString()}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              {displayYears.map((year, idx) => (
+                                <Bar 
+                                  key={year} 
+                                  dataKey={`y${year}`} 
+                                  name={String(year)} 
+                                  fill={QUARTER_COLORS[idx % QUARTER_COLORS.length]}
+                                />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                          <p className="text-xs text-muted-foreground mt-2 text-center">
+                            Showing {displayYears[0]}–{displayYears[displayYears.length - 1]}. Based on permit completion dates.
+                          </p>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                      No quarterly data available
+                    </div>
+                  )}
+                </>
               )}
               <div className="mt-4 text-xs text-muted-foreground italic px-2">
                 Note: kW capacity values are based on permit records and may not represent total installed capacity in all cases.
