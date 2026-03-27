@@ -27,6 +27,9 @@ const CityOverview = () => {
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [timelineData, setTimelineData] = useState<any[]>([]);
+  const [chartView, setChartView] = useState<'yearly' | 'quarterly'>('yearly');
+  const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
+  const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
@@ -34,6 +37,15 @@ const CityOverview = () => {
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
   const loadingTimeoutRef = useRef<NodeJS.Timeout>();
+
+  const QUARTER_COLORS = [
+    'hsl(var(--primary))',
+    'hsl(var(--secondary))',
+    'hsl(142, 76%, 36%)',
+    'hsl(280, 65%, 60%)',
+    'hsl(25, 95%, 53%)',
+    'hsl(199, 89%, 48%)',
+  ];
 
   useEffect(() => {
     const loadData = async () => {
