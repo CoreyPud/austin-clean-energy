@@ -202,24 +202,11 @@ export default function SolarColumnMapper({
                   {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
                 </label>
-                <Select
-                  value={columnMappings[field.key] || "__skip__"}
-                  onValueChange={(value) => onMappingChange(field.key, value === "__skip__" ? null : value)}
-                >
-                  <SelectTrigger className="flex-1 bg-background">
-                    <SelectValue placeholder="Select column..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border z-50">
-                    <SelectItem value="__skip__">
-                      <span className="text-muted-foreground">— Skip —</span>
-                    </SelectItem>
-                    {csvHeaders.map((header, idx) => (
-                      <SelectItem key={idx} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ColumnCombobox
+                  headers={csvHeaders}
+                  value={columnMappings[field.key]}
+                  onChange={(value) => onMappingChange(field.key, value)}
+                />
                 {columnMappings[field.key] && (
                   <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
                 )}
