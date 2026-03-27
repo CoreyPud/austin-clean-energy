@@ -487,58 +487,132 @@ const CityOverview = () => {
             </p>
           </div>
 
-          {/* Yearly Installations Chart */}
+          {/* Yearly / Quarterly Installations Chart */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-2xl">Solar Installations by Year</CardTitle>
-              <CardDescription>
-                Annual growth of solar projects in Austin (2014-present)
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="text-2xl">
+                    {chartView === 'yearly' ? 'Solar Installations by Year' : 'Quarterly Year-over-Year Comparison'}
+                  </CardTitle>
+                  <CardDescription>
+                    {chartView === 'yearly' 
+                      ? 'Annual growth of solar projects in Austin (2014-present)'
+                      : 'Compare installation counts by quarter across years'}
+                  </CardDescription>
+                </div>
+                <Tabs value={chartView} onValueChange={(v) => setChartView(v as 'yearly' | 'quarterly')}>
+                  <TabsList>
+                    <TabsTrigger value="yearly">By Year</TabsTrigger>
+                    <TabsTrigger value="quarterly">Quarterly</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
             </CardHeader>
             <CardContent>
-              {isLoadingYearly ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : yearlyData.filter((d: any) => Number(d.year) >= 2014).length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={yearlyData.filter((d: any) => Number(d.year) >= 2014)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis />
-                    <Legend 
-                      verticalAlign="top" 
-                      align="right"
-                      iconType="square"
-                      wrapperStyle={{ paddingBottom: '20px' }}
-                    />
-                    <RechartsTooltip
-                      labelFormatter={() => ''}
-                      formatter={(value: number, name: string, props: any) => {
-                        if (name === 'batteryCount') return [value, 'With Battery Storage'];
-                        if (name === 'solarOnly') return [value, 'Solar Only'];
-                        return [value, name];
-                      }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                              <p className="text-sm"><span className="text-primary">Solar Only:</span> {data.solarOnly}</p>
-                              <p className="text-sm"><span className="text-secondary">With Battery:</span> {data.batteryCount}</p>
-                              <p className="text-sm font-semibold mt-1"><span className="text-muted-foreground">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
-                    <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
-                  </BarChart>
-                </ResponsiveContainer>
+              {chartView === 'yearly' ? (
+                <>
+                  {isLoadingYearly ? (
+                    <Skeleton className="h-[300px] w-full" />
+                  ) : yearlyData.filter((d: any) => Number(d.year) >= 2014).length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={yearlyData.filter((d: any) => Number(d.year) >= 2014)}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis />
+                        <Legend 
+                          verticalAlign="top" 
+                          align="right"
+                          iconType="square"
+                          wrapperStyle={{ paddingBottom: '20px' }}
+                        />
+                        <RechartsTooltip
+                          labelFormatter={() => ''}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                                  <p className="text-sm"><span className="text-primary">Solar Only:</span> {data.solarOnly}</p>
+                                  <p className="text-sm"><span className="text-secondary">With Battery:</span> {data.batteryCount}</p>
+                                  <p className="text-sm font-semibold mt-1"><span className="text-muted-foreground">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
+                        <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                      No yearly data available
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No yearly data available
-                </div>
+                <>
+                  {isLoadingQuarterly ? (
+                    <Skeleton className="h-[400px] w-full" />
+                  ) : quarterlyData.length > 0 ? (
+                    (() => {
+                      const years = ((window as any).__quarterlyYears || []) as number[];
+                      // Show last 5 years for readability
+                      const displayYears = years.slice(-5);
+                      return (
+                        <>
+                          <ResponsiveContainer width="100%" height={400}>
+                            <BarChart data={quarterlyData} barCategoryGap="15%">
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="quarter" />
+                              <YAxis />
+                              <Legend 
+                                verticalAlign="top" 
+                                align="center"
+                                iconType="square"
+                                wrapperStyle={{ paddingBottom: '20px' }}
+                              />
+                              <RechartsTooltip
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                                        <p className="font-medium text-sm mb-2">{label}</p>
+                                        {payload.map((entry: any, idx: number) => (
+                                          <p key={idx} className="text-sm" style={{ color: entry.color }}>
+                                            {entry.name}: {entry.value?.toLocaleString()}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              {displayYears.map((year, idx) => (
+                                <Bar 
+                                  key={year} 
+                                  dataKey={`y${year}`} 
+                                  name={String(year)} 
+                                  fill={QUARTER_COLORS[idx % QUARTER_COLORS.length]}
+                                />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                          <p className="text-xs text-muted-foreground mt-2 text-center">
+                            Showing {displayYears[0]}–{displayYears[displayYears.length - 1]}. Based on permit completion dates.
+                          </p>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                      No quarterly data available
+                    </div>
+                  )}
+                </>
               )}
               <div className="mt-4 text-xs text-muted-foreground italic px-2">
                 Note: kW capacity values are based on permit records and may not represent total installed capacity in all cases.
