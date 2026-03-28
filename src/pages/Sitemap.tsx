@@ -46,7 +46,7 @@ const publicPages = [
   },
   {
     path: "/decarb-dashboard",
-    title: "Austin Energy Decarb Dashboard",
+    title: "Austin's Decarb Dashboard",
     description: "Interactive Austin Energy Power Simulator for exploring decarbonization scenarios.",
     icon: Zap,
   },

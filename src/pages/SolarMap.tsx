@@ -15,7 +15,7 @@ const SolarMap = () => {
             Home
           </Button>
           <div className="h-5 w-px bg-border" />
-          <h1 className="text-lg font-semibold text-foreground">Austin Decarb Dashboard</h1>
+          <h1 className="text-lg font-semibold text-foreground">Austin's Decarb Dashboard</h1>
         </div>
         <a
           href="https://solar-austin.netlify.app/"
@@ -39,7 +39,7 @@ const SolarMap = () => {
       <div className="flex-1">
         <iframe
           src="https://solar-austin.netlify.app/"
-          title="Austin Decarb Dashboard – Simulate net zero generation by 2035"
+          title="Austin's Decarb Dashboard – Simulate net zero generation by 2035"
           className="w-full h-full border-0"
           style={{ minHeight: "calc(100vh - 57px)" }}
           allow="geolocation"

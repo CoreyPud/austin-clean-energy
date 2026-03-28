@@ -127,7 +127,7 @@ const Index = () => {
                 onClick={() => navigate("/decarb-dashboard")}
                 className="bg-white/10 hover:bg-white/20 text-white border-white/30"
               >
-                Austin Energy Decarb Dashboard
+                Austin's Decarb Dashboard
               </Button>
             </div>
           </div>
