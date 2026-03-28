@@ -291,6 +291,14 @@ const Index = () => {
                   </button>
                 </li>
                 <li>
+                  <button
+                    onClick={() => navigate('/sitemap')}
+                    className="text-white/70 hover:text-white transition-colors text-left"
+                  >
+                    Sitemap
+                  </button>
+                </li>
+                <li>
                   <a 
                     href="https://data.austintexas.gov" 
                     target="_blank" 
