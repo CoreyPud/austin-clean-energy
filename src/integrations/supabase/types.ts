@@ -117,6 +117,51 @@ export type Database = {
           },
         ]
       }
+      guide_pages: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          icon: string
+          id: string
+          meta_description: string
+          published: boolean
+          slug: string
+          sort_order: number
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          meta_description?: string
+          published?: boolean
+          slug: string
+          sort_order?: number
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          meta_description?: string
+          published?: boolean
+          slug?: string
+          sort_order?: number
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       installation_corrections: {
         Row: {
           corrected_address: string | null
