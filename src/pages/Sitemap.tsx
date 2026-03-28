@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Lightbulb, Database, CalendarDays, Zap } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Lightbulb, Database, CalendarDays, Zap, BookOpen } from "lucide-react";
 
 const publicPages = [
   {
@@ -37,6 +37,12 @@ const publicPages = [
     title: "Fiscal Year Stats",
     description: "Solar permit data broken down by City of Austin fiscal year periods.",
     icon: CalendarDays,
+  },
+  {
+    path: "/knowledge-base",
+    title: "Knowledge Base",
+    description: "Explore the research, data sources, and frameworks behind our clean energy recommendations.",
+    icon: BookOpen,
   },
   {
     path: "/decarb-dashboard",
