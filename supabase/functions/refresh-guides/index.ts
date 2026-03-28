@@ -87,6 +87,7 @@ serve(async (req) => {
 2. Improve clarity, readability, and SEO where possible
 3. Ensure all program details (amounts, URLs, eligibility) match the knowledge base
 4. Fix the tone to be informational and neutral (see tone guidelines below)
+5. Improve SEO: make sure the intro paragraph naturally includes common Google search queries for this topic
 
 CURRENT KNOWLEDGE BASE:
 ${resources}
@@ -104,6 +105,11 @@ Return a JSON object with:
 - "summary": Updated 1-2 sentence card description
 - "content": Updated full markdown content
 - "changes_made": Brief list of what was changed/updated (or "No changes needed" if content is already accurate)
+
+SEO REQUIREMENTS:
+- The intro paragraph (first 2-3 sentences) MUST naturally incorporate common Google search queries for this topic
+- H2 headers should match common search queries (e.g. "How Much Does It Cost?" not "Cost Information")
+- Include a FAQ section at the end with 3-4 common questions and concise answers (### for each question)
 
 IMPORTANT:
 - The federal residential solar tax credit is NO LONGER available — remove any references to it as active
