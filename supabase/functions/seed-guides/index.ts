@@ -85,7 +85,13 @@ REQUIREMENTS:
    - "summary": 1-2 sentence card description for the hub page
    - "content": Full markdown guide content
 
-2. Content guidelines:
+2. SEO guidelines:
+   - The intro paragraph (first 2-3 sentences) MUST naturally incorporate the most common Google search queries people use for this topic (e.g. "how much do solar panels cost in Austin", "does Austin Energy offer rebates")
+   - Use the slug words as primary keywords and weave them naturally throughout the content
+   - Use H2 headers that match common search queries (e.g. "How Much Does It Cost?" instead of "Cost Information")
+   - Include a FAQ-style section at the end with 3-4 common questions and concise answers (use ### for each question)
+
+3. Content guidelines:
    - Write for residents searching Google for this topic
    - Use H2 (##) and H3 (###) headers for structure
    - Include specific dollar amounts, program names, and URLs from the knowledge base
@@ -96,7 +102,7 @@ REQUIREMENTS:
    - IMPORTANT: The federal residential solar tax credit is NO LONGER available — do not mention it as active
    - Federal EV tax credits ARE still available
 
-3. TONE GUIDELINES (critical):
+4. TONE GUIDELINES (critical):
    - Write like a helpful local newspaper article or city information page — factual, neutral, informative
    - DO NOT use promotional or salesy language (no "amazing", "fantastic", "game-changer", "exciting")
    - DO NOT use climate activist framing (no "save the planet", "fight climate change", "go green", "eco-warrior")
