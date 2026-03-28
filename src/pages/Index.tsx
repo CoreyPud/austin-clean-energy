@@ -121,6 +121,14 @@ const Index = () => {
               >
                 Get Personalized Plan
               </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => navigate("/decarb-dashboard")}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+              >
+                Austin Energy Decarb Dashboard
+              </Button>
             </div>
           </div>
         </div>
