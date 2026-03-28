@@ -91,11 +91,20 @@ REQUIREMENTS:
    - Include specific dollar amounts, program names, and URLs from the knowledge base
    - Add a "How to Get Started" section with numbered steps
    - Include an "Eligibility" section if relevant
-   - Add a "Pro Tips" section with insider advice
-   - Keep tone warm, practical, and encouraging — not technical
+   - Add a "Good to Know" section with practical tips
    - 600-1000 words
    - IMPORTANT: The federal residential solar tax credit is NO LONGER available — do not mention it as active
    - Federal EV tax credits ARE still available
+
+3. TONE GUIDELINES (critical):
+   - Write like a helpful local newspaper article or city information page — factual, neutral, informative
+   - DO NOT use promotional or salesy language (no "amazing", "fantastic", "game-changer", "exciting")
+   - DO NOT use climate activist framing (no "save the planet", "fight climate change", "go green", "eco-warrior")
+   - DO NOT use exclamation marks excessively
+   - Focus on practical information: what the program is, who qualifies, what it costs, how to apply
+   - Present environmental benefits as factual data points, not emotional appeals
+   - Let the facts speak for themselves — if a program saves $800/year, state that plainly
+   - Write as if you're a knowledgeable neighbor explaining how a city program works, not a salesperson
 
 Return ONLY valid JSON, no markdown code fences.`;
 
@@ -108,7 +117,7 @@ Return ONLY valid JSON, no markdown code fences.`;
             body: JSON.stringify({
               model: 'google/gemini-2.5-flash',
               messages: [
-                { role: 'system', content: 'You are an expert Austin, Texas clean energy guide writer. Return only valid JSON.' },
+                { role: 'system', content: 'You are a factual, informative writer covering Austin city programs and energy topics. Write like a local newspaper or city information page — neutral, clear, and practical. Avoid promotional language and climate activism framing. Return only valid JSON.' },
                 { role: 'user', content: prompt }
               ],
             }),
