@@ -50,6 +50,7 @@ const App = () => (
           <Route path="/admin/pir-import" element={<PIRImport />} />
           <Route path="/admin/data-comparison" element={<DataComparison />} />
           <Route path="/decarb-dashboard" element={<SolarMap />} />
+          <Route path="/knowledge-base" element={<KnowledgeBase />} />
           <Route path="/sitemap" element={<Sitemap />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
