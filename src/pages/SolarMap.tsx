@@ -15,7 +15,7 @@ const SolarMap = () => {
             Home
           </Button>
           <div className="h-5 w-px bg-border" />
-          <h1 className="text-lg font-semibold text-foreground">Austin Solar Installation Map</h1>
+          <h1 className="text-lg font-semibold text-foreground">Austin Decarb Dashboard</h1>
         </div>
         <a
           href="https://solar-austin.netlify.app/"
@@ -23,7 +23,7 @@ const SolarMap = () => {
           rel="noopener noreferrer"
           className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
         >
-          Open Full Map
+          Open Full Dashboard
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </header>
@@ -32,7 +32,7 @@ const SolarMap = () => {
       <div className="flex-1">
         <iframe
           src="https://solar-austin.netlify.app/"
-          title="Austin Solar Installation Map"
+          title="Austin Decarb Dashboard – Simulate net zero generation by 2035"
           className="w-full h-full border-0"
           style={{ minHeight: "calc(100vh - 57px)" }}
           allow="geolocation"
