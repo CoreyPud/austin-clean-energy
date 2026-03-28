@@ -21,6 +21,7 @@ import PIRImport from "./pages/PIRImport";
 import DataComparison from "./pages/DataComparison";
 import SolarMap from "./pages/SolarMap";
 import Sitemap from "./pages/Sitemap";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
