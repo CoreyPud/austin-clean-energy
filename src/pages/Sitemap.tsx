@@ -39,9 +39,9 @@ const publicPages = [
     icon: CalendarDays,
   },
   {
-    path: "/knowledge-base",
-    title: "Knowledge Base",
-    description: "Explore the research, data sources, and frameworks behind our clean energy recommendations.",
+    path: "/guides",
+    title: "Clean Energy Guide",
+    description: "Your complete guide to Austin's clean energy programs, rebates, and resources.",
     icon: BookOpen,
   },
   {
