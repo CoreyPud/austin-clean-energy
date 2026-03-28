@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Calendar, Lightbulb } from "lucide-react";
+import { ArrowLeft, Calendar, Lightbulb, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 
 interface GuidePage {
@@ -65,6 +66,11 @@ export default function GuideDetail() {
     }
   };
 
+  // Strip the first H1 from content since we show it in the header
+  const getContentWithoutH1 = (content: string) => {
+    return content.replace(/^#\s+.+\n+/, '');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -108,8 +114,11 @@ export default function GuideDetail() {
     day: 'numeric',
   });
 
+  const cleanContent = getContentWithoutH1(guide.content);
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
       <div className="border-b border-border bg-muted/30">
         <div className="container mx-auto px-4 py-8 max-w-3xl">
           <Link
@@ -131,23 +140,65 @@ export default function GuideDetail() {
         </div>
       </div>
 
+      {/* Content */}
       <article className="container mx-auto px-4 py-10 max-w-3xl">
-        <div className="
-          prose prose-lg max-w-none dark:prose-invert
-          prose-headings:text-foreground prose-headings:font-bold
-          prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-border
-          prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
-          prose-p:text-muted-foreground prose-p:leading-relaxed
-          prose-strong:text-foreground
-          prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline
-          prose-li:text-muted-foreground prose-li:leading-relaxed
-          prose-ul:my-4 prose-ol:my-4
-          prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-          prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-lg prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:not-italic
-          prose-hr:border-border prose-hr:my-8
-        ">
-          <ReactMarkdown>{guide.content}</ReactMarkdown>
-        </div>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            h2: ({ children }) => (
+              <h2 className="text-2xl font-bold text-foreground mt-10 mb-4 pb-2 border-b border-border">
+                {children}
+              </h2>
+            ),
+            h3: ({ children }) => (
+              <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                {children}
+              </h3>
+            ),
+            p: ({ children }) => (
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                {children}
+              </p>
+            ),
+            strong: ({ children }) => (
+              <strong className="font-semibold text-foreground">{children}</strong>
+            ),
+            a: ({ href, children }) => (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-medium hover:underline inline-flex items-center gap-1"
+              >
+                {children}
+                <ExternalLink className="h-3 w-3 inline" />
+              </a>
+            ),
+            ul: ({ children }) => (
+              <ul className="my-4 ml-6 space-y-2 list-disc marker:text-primary">
+                {children}
+              </ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="my-4 ml-6 space-y-2 list-decimal marker:text-primary">
+                {children}
+              </ol>
+            ),
+            li: ({ children }) => (
+              <li className="text-muted-foreground leading-relaxed pl-1">
+                {children}
+              </li>
+            ),
+            blockquote: ({ children }) => (
+              <blockquote className="my-6 border-l-4 border-primary bg-primary/5 rounded-r-lg py-3 px-5 not-italic">
+                {children}
+              </blockquote>
+            ),
+            hr: () => <hr className="my-8 border-border" />,
+          }}
+        >
+          {cleanContent}
+        </ReactMarkdown>
 
         {/* CTA */}
         <Card className="mt-12 border-primary/20">
