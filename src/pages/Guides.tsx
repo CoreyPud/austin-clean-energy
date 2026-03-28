@@ -1,83 +1,77 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, Sun, Zap, Car, Bike, Building2, DollarSign,
-  ExternalLink, Lightbulb, RefreshCw, Sparkles
+  Lightbulb, ArrowRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Program {
-  title: string;
-  provider: string;
-  description: string;
-  incentive: string | null;
-  eligibility: string | null;
-  url: string;
-  tip: string | null;
-}
-
-interface Category {
+interface GuidePage {
   id: string;
+  slug: string;
   title: string;
+  meta_description: string;
+  category: string;
   icon: string;
-  description: string;
-  programs: Program[];
+  summary: string;
+  sort_order: number;
 }
-
-interface GuideData {
-  categories: Category[];
-  quickTips: string[];
-}
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  sun: Sun,
-  zap: Zap,
-  car: Car,
-  bike: Bike,
-  building: Building2,
-  dollar: DollarSign,
-};
 
 function getIcon(iconName: string) {
-  // Map common icon names
   const normalized = iconName.toLowerCase();
-  if (normalized.includes("sun") || normalized.includes("solar")) return Sun;
-  if (normalized.includes("zap") || normalized.includes("energy") || normalized.includes("efficiency")) return Zap;
-  if (normalized.includes("car") || normalized.includes("ev") || normalized.includes("vehicle")) return Car;
-  if (normalized.includes("bike") || normalized.includes("transport")) return Bike;
-  if (normalized.includes("building") || normalized.includes("green")) return Building2;
-  if (normalized.includes("dollar") || normalized.includes("financ")) return DollarSign;
+  if (normalized.includes("sun")) return Sun;
+  if (normalized.includes("zap")) return Zap;
+  if (normalized.includes("car")) return Car;
+  if (normalized.includes("bike")) return Bike;
+  if (normalized.includes("building")) return Building2;
+  if (normalized.includes("dollar")) return DollarSign;
   return Lightbulb;
 }
 
+// Category colors using semantic tokens
+const CATEGORY_COLORS: Record<string, string> = {
+  "Solar Energy": "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  "Energy Efficiency": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  "Electric Vehicles": "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  "Transportation": "bg-violet-500/10 text-violet-700 dark:text-violet-400",
+  "Green Building": "bg-teal-500/10 text-teal-700 dark:text-teal-400",
+  "Financial Assistance": "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+};
+
 export default function Guides() {
-  const [guideData, setGuideData] = useState<GuideData | null>(null);
+  const [guides, setGuides] = useState<GuidePage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadGuide();
+    loadGuides();
   }, []);
 
-  const loadGuide = async () => {
-    setLoading(true);
-    setError(null);
+  const loadGuides = async () => {
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('generate-guide');
-      if (fnError) throw fnError;
-      if (!data.success) throw new Error(data.error);
-      setGuideData(data.guide);
+      const { data, error } = await supabase
+        .from('guide_pages')
+        .select('id, slug, title, meta_description, category, icon, summary, sort_order')
+        .eq('published', true)
+        .order('sort_order');
+
+      if (error) throw error;
+      setGuides(data || []);
     } catch (err) {
-      console.error("Error loading guide:", err);
-      setError("Unable to load guide content. Please try again.");
+      console.error("Error loading guides:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Group by category
+  const categories = guides.reduce<Record<string, GuidePage[]>>((acc, guide) => {
+    if (!acc[guide.category]) acc[guide.category] = [];
+    acc[guide.category].push(guide);
+    return acc;
+  }, {});
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,8 +86,8 @@ export default function Guides() {
             Austin Clean Energy Guide
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl">
-            Your complete guide to Austin's clean energy programs, rebates, and resources. 
-            Save money while reducing your carbon footprint.
+            Everything Austin residents need to know about solar, EVs, energy efficiency, 
+            and local programs that save money and reduce emissions.
           </p>
         </div>
       </div>
@@ -104,128 +98,64 @@ export default function Guides() {
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-4">
                 <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-96" />
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Skeleton className="h-40" />
-                  <Skeleton className="h-40" />
+                  <Skeleton className="h-32" />
+                  <Skeleton className="h-32" />
                 </div>
               </div>
             ))}
           </div>
-        ) : error ? (
+        ) : guides.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={loadGuide} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Try Again
-              </Button>
+              <Lightbulb className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <p className="text-muted-foreground">Guide content is being prepared. Check back soon!</p>
             </CardContent>
           </Card>
-        ) : guideData ? (
-          <>
-            {/* Quick Tips */}
-            {guideData.quickTips && guideData.quickTips.length > 0 && (
-              <Card className="mb-10 border-primary/20 bg-primary/5">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    Quick Tips to Get Started
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="grid gap-2 sm:grid-cols-2">
-                    {guideData.quickTips.map((tip, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        {tip}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Categories */}
-            <div className="space-y-12">
-              {guideData.categories.map((category) => {
-                const Icon = getIcon(category.icon);
-                return (
-                  <section key={category.id} id={category.id}>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-foreground">{category.title}</h2>
-                      </div>
+        ) : (
+          <div className="space-y-12">
+            {Object.entries(categories).map(([category, categoryGuides]) => {
+              const Icon = getIcon(categoryGuides[0]?.icon || "");
+              const colorClass = CATEGORY_COLORS[category] || "bg-primary/10 text-primary";
+              return (
+                <section key={category}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`p-2 rounded-lg ${colorClass.split(' ')[0]}`}>
+                      <Icon className={`h-6 w-6 ${colorClass.split(' ').slice(1).join(' ')}`} />
                     </div>
-                    <p className="text-muted-foreground mb-6 ml-14">{category.description}</p>
+                    <h2 className="text-2xl font-bold text-foreground">{category}</h2>
+                    <Badge variant="outline" className="text-xs font-normal">
+                      {categoryGuides.length} {categoryGuides.length === 1 ? 'guide' : 'guides'}
+                    </Badge>
+                  </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {category.programs.map((program, i) => (
-                        <Card key={i} className="hover:shadow-md transition-shadow">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {categoryGuides.map((guide) => (
+                      <Link key={guide.id} to={`/guides/${guide.slug}`}>
+                        <Card className="h-full hover:shadow-md hover:border-primary/30 transition-all group cursor-pointer">
                           <CardHeader className="pb-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <CardTitle className="text-base">{program.title}</CardTitle>
-                                <CardDescription className="text-xs">{program.provider}</CardDescription>
-                              </div>
-                              {program.incentive && (
-                                <Badge variant="secondary" className="shrink-0 text-xs">
-                                  {program.incentive}
-                                </Badge>
-                              )}
-                            </div>
+                            <CardTitle className="text-base group-hover:text-primary transition-colors leading-snug">
+                              {guide.title}
+                            </CardTitle>
                           </CardHeader>
-                          <CardContent className="space-y-3">
-                            <p className="text-sm text-muted-foreground">{program.description}</p>
-                            
-                            {program.eligibility && (
-                              <p className="text-xs text-muted-foreground">
-                                <span className="font-medium text-foreground">Who qualifies:</span> {program.eligibility}
-                              </p>
-                            )}
-
-                            {program.tip && (
-                              <div className="text-xs bg-accent/50 rounded-md px-3 py-2 text-muted-foreground">
-                                <span className="font-medium text-foreground">💡 Tip:</span> {program.tip}
-                              </div>
-                            )}
-
-                            <a
-                              href={program.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-medium"
-                            >
-                              Learn More
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
+                          <CardContent>
+                            <CardDescription className="text-sm mb-3 line-clamp-3">
+                              {guide.summary}
+                            </CardDescription>
+                            <span className="text-sm text-primary font-medium inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                              Read Guide
+                              <ArrowRight className="h-3 w-3" />
+                            </span>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-
-            {/* CTA */}
-            <Card className="mt-12 text-center border-primary/20">
-              <CardContent className="py-8">
-                <h3 className="text-xl font-bold text-foreground mb-2">Want a Personalized Plan?</h3>
-                <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                  Tell us about your home, transportation, and interests and we'll create a 
-                  custom clean energy action plan just for you.
-                </p>
-                <Button asChild>
-                  <Link to="/recommendations">Get Your Personalized Plan</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </>
-        ) : null}
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

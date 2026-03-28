@@ -22,6 +22,7 @@ import DataComparison from "./pages/DataComparison";
 import SolarMap from "./pages/SolarMap";
 import Sitemap from "./pages/Sitemap";
 import Guides from "./pages/Guides";
+import GuideDetail from "./pages/GuideDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/admin/data-comparison" element={<DataComparison />} />
           <Route path="/decarb-dashboard" element={<SolarMap />} />
           <Route path="/guides" element={<Guides />} />
+          <Route path="/guides/:slug" element={<GuideDetail />} />
           <Route path="/sitemap" element={<Sitemap />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
