@@ -132,7 +132,20 @@ export default function GuideDetail() {
       </div>
 
       <article className="container mx-auto px-4 py-10 max-w-3xl">
-        <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-li:text-muted-foreground prose-code:bg-muted prose-code:px-1 prose-code:rounded">
+        <div className="
+          prose prose-lg max-w-none dark:prose-invert
+          prose-headings:text-foreground prose-headings:font-bold
+          prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-border
+          prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+          prose-p:text-muted-foreground prose-p:leading-relaxed
+          prose-strong:text-foreground
+          prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline
+          prose-li:text-muted-foreground prose-li:leading-relaxed
+          prose-ul:my-4 prose-ol:my-4
+          prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+          prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-lg prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:not-italic
+          prose-hr:border-border prose-hr:my-8
+        ">
           <ReactMarkdown>{guide.content}</ReactMarkdown>
         </div>
 
