@@ -82,11 +82,11 @@ serve(async (req) => {
 
       const batchPromises = batch.map(async (guide) => {
         try {
-          const prompt = `You are reviewing and updating an existing Austin clean energy guide page. Your job is to:
+          const prompt = `You are reviewing and updating an existing Austin guide page. Your job is to:
 1. Check if the content is accurate and up-to-date based on the latest knowledge base
 2. Improve clarity, readability, and SEO where possible
 3. Ensure all program details (amounts, URLs, eligibility) match the knowledge base
-4. Keep the same warm, practical tone
+4. Fix the tone to be informational and neutral (see tone guidelines below)
 
 CURRENT KNOWLEDGE BASE:
 ${resources}
@@ -109,7 +109,17 @@ IMPORTANT:
 - The federal residential solar tax credit is NO LONGER available — remove any references to it as active
 - Federal EV tax credits ARE still available
 - Keep content 600-1000 words
-- Preserve the existing structure (H2/H3 headers, How to Get Started, Pro Tips sections)
+- Preserve the existing structure (H2/H3 headers, How to Get Started, Good to Know sections)
+
+TONE GUIDELINES (critical):
+- Write like a helpful local newspaper article or city information page — factual, neutral, informative
+- DO NOT use promotional or salesy language (no "amazing", "fantastic", "game-changer", "exciting", "incredible")
+- DO NOT use climate activist framing (no "save the planet", "fight climate change", "go green", "eco-warrior", "Live Greener")
+- DO NOT use exclamation marks excessively
+- Focus on practical information: what the program is, who qualifies, what it costs, how to apply
+- Present environmental benefits as factual data points, not emotional appeals
+- Let the facts speak for themselves — if a program saves $800/year, state that plainly
+- Write as if you're a knowledgeable neighbor explaining how a city program works
 
 Return ONLY valid JSON, no markdown code fences.`;
 
@@ -122,7 +132,7 @@ Return ONLY valid JSON, no markdown code fences.`;
             body: JSON.stringify({
               model: 'google/gemini-2.5-flash',
               messages: [
-                { role: 'system', content: 'You are an expert Austin clean energy guide editor. Return only valid JSON.' },
+                { role: 'system', content: 'You are a factual, informative writer covering Austin city programs and energy topics. Write like a local newspaper or city information page — neutral, clear, and practical. Avoid promotional language and climate activism framing. Return only valid JSON.' },
                 { role: 'user', content: prompt }
               ],
             }),
