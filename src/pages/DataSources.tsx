@@ -13,7 +13,6 @@ import {
   Map as MapIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import { useSeo } from "@/hooks/use-seo";
 
 const DataSources = () => {
