@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+
 import {
   ArrowLeft, Sun, Zap, Car, Bike, Building2, DollarSign,
   Lightbulb, ArrowRight
@@ -32,14 +32,32 @@ function getIcon(iconName: string) {
   return Lightbulb;
 }
 
-// Category colors using semantic tokens
-const CATEGORY_COLORS: Record<string, string> = {
-  "Solar Energy": "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  "Energy Efficiency": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  "Electric Vehicles": "bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  "Transportation": "bg-violet-500/10 text-violet-700 dark:text-violet-400",
-  "Green Building": "bg-teal-500/10 text-teal-700 dark:text-teal-400",
-  "Financial Assistance": "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+// Category colors and descriptions
+const CATEGORY_META: Record<string, { color: string; description: string }> = {
+  "Solar Energy": {
+    color: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    description: "Learn about rooftop solar, community solar programs, and how Austin residents can harness the sun to save money.",
+  },
+  "Energy Efficiency": {
+    color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    description: "Tips and programs to reduce energy use at home — from weatherization and insulation to smart thermostats.",
+  },
+  "Electric Vehicles": {
+    color: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    description: "Everything about EV ownership in Austin including charging infrastructure, incentives, and cost comparisons.",
+  },
+  "Transportation": {
+    color: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
+    description: "Sustainable transportation options beyond cars — biking, transit, and micro-mobility in Austin.",
+  },
+  "Green Building": {
+    color: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
+    description: "Green building standards, certifications, and sustainable construction practices in Austin.",
+  },
+  "Financial Assistance": {
+    color: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+    description: "Rebates, tax credits, and financing options to make clean energy upgrades more affordable.",
+  },
 };
 
 export default function Guides() {
@@ -121,18 +139,19 @@ export default function Guides() {
           <div className="space-y-12">
             {Object.entries(categories).map(([category, categoryGuides]) => {
               const Icon = getIcon(categoryGuides[0]?.icon || "");
-              const colorClass = CATEGORY_COLORS[category] || "bg-primary/10 text-primary";
+              const meta = CATEGORY_META[category] || { color: "bg-primary/10 text-primary", description: "" };
+              const colorClass = meta.color;
               return (
                 <section key={category}>
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-1">
                     <div className={`p-2 rounded-lg ${colorClass.split(' ')[0]}`}>
                       <Icon className={`h-6 w-6 ${colorClass.split(' ').slice(1).join(' ')}`} />
                     </div>
                     <h2 className="text-2xl font-bold text-foreground">{category}</h2>
-                    <Badge variant="outline" className="text-xs font-normal">
-                      {categoryGuides.length} {categoryGuides.length === 1 ? 'guide' : 'guides'}
-                    </Badge>
                   </div>
+                  {meta.description && (
+                    <p className="text-sm text-muted-foreground mb-4 ml-12">{meta.description}</p>
+                  )}
 
                   <div className="space-y-3">
                     {categoryGuides.map((guide) => (

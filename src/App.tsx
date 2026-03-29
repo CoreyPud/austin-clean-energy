@@ -55,6 +55,7 @@ const App = () => (
             <Route path="/data-sources" element={<DataSources />} />
             <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
             <Route path="/decarb-dashboard" element={<SolarMap />} />
+
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />
             <Route path="/sitemap" element={<Sitemap />} />
