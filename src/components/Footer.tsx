@@ -17,6 +17,30 @@ const Footer = () => {
             <h3 className="font-bold text-lg mb-4">Resources</h3>
             <ul className="space-y-2 text-sm">
               <li>
+                <button
+                  onClick={() => navigate('/guides')}
+                  className="text-white/70 hover:text-white transition-colors text-left"
+                >
+                  Clean Energy Guides
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/data-sources')}
+                  className="text-white/70 hover:text-white transition-colors text-left"
+                >
+                  Data Sources & Methodology
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => navigate('/sitemap')}
+                  className="text-white/70 hover:text-white transition-colors text-left"
+                >
+                  Sitemap
+                </button>
+              </li>
+              <li>
                 <a
                   href="https://austinenergy.com/green-power/solar-solutions"
                   target="_blank"
@@ -46,35 +70,11 @@ const Footer = () => {
                   Installation Partners
                 </a>
               </li>
-              <li>
-                <button
-                  onClick={() => navigate('/guides')}
-                  className="text-white/70 hover:text-white transition-colors text-left"
-                >
-                  Clean Energy Guides
-                </button>
-              </li>
             </ul>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-4">Data Sources</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <button
-                  onClick={() => navigate('/data-sources')}
-                  className="text-white/70 hover:text-white transition-colors text-left"
-                >
-                  Data Sources & Methodology
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => navigate('/sitemap')}
-                  className="text-white/70 hover:text-white transition-colors text-left"
-                >
-                  Sitemap
-                </button>
-              </li>
               <li>
                 <a
                   href="https://data.austintexas.gov"
