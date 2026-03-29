@@ -137,7 +137,7 @@ IMPORTANT:
 - The federal residential solar tax credit is NO LONGER available — remove any references to it as active
 - Federal EV tax credits ARE still available
 - Keep content 600-1000 words
-- Preserve the existing structure (H2/H3 headers, How to Get Started, Good to Know sections)
+- You may reorganize the structure to improve flow — use H2/H3 headers but convert bullet-heavy sections into prose paragraphs
 
 TONE GUIDELINES (critical):
 - Write like a helpful local newspaper article or city information page — factual, neutral, informative
