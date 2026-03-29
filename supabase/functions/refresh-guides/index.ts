@@ -82,12 +82,30 @@ serve(async (req) => {
 
       const batchPromises = batch.map(async (guide) => {
         try {
+          const SLUG_SEO_TERMS: Record<string, string> = {
+            'how-to-get-solar-panels-austin': 'Weave in naturally: "how much do solar panels cost in Austin", "Austin solar panel installation". FAQ ideas: How much does a solar system cost in Austin? How long does installation take?',
+            'austin-energy-solar-rebate': 'Weave in naturally: "Austin Energy solar rebate", "how to apply for Austin solar rebate". FAQ ideas: How much is the rebate? Who qualifies for the Austin Energy solar rebate?',
+            'community-solar-austin-renters': 'Weave in naturally: "community solar Austin TX", "solar for renters Austin". FAQ ideas: Can renters get solar in Austin? How does community solar billing work?',
+            'free-home-energy-audit-austin': 'Weave in naturally: "free energy audit Austin", "Austin Energy home assessment". FAQ ideas: Is the Austin Energy audit really free? What does the auditor check?',
+            'austin-weatherization-assistance': 'Weave in naturally: "Austin weatherization program", "free insulation Austin TX". FAQ ideas: Who qualifies for free weatherization? What improvements are covered?',
+            'heat-pump-rebates-austin': 'Weave in naturally: "heat pump rebate Austin TX", "heat pump vs AC Austin". FAQ ideas: How much is the Austin heat pump rebate? Do heat pumps work well in Austin?',
+            'ev-tax-credits-texas': 'Weave in naturally: "EV tax credit Texas", "Austin EV rebate". FAQ ideas: Is there a state EV tax credit in Texas? Does Austin Energy offer EV rebates?',
+            'ev-charging-austin': 'Weave in naturally: "EV charging stations Austin TX", "home EV charger installation Austin". FAQ ideas: Where can I charge my EV in Austin? Does Austin Energy offer a charger rebate?',
+            'austin-bike-commuting-guide': 'Weave in naturally: "bike commuting Austin TX", "best bike routes Austin". FAQ ideas: Is Austin a good city for bike commuting? What are the safest bike routes?',
+            'capmetro-transit-savings': 'Weave in naturally: "CapMetro fares", "Austin bus pass cost". FAQ ideas: How much is a CapMetro bus pass? Does Austin have a train?',
+            'green-building-austin': 'Weave in naturally: "green building Austin TX", "Austin Green Building program". FAQ ideas: What is the Austin Green Building program? Is green building more expensive?',
+            'pace-financing-texas': 'Weave in naturally: "PACE financing Texas", "PACE loan Austin TX". FAQ ideas: How does PACE financing work in Texas? Who qualifies for PACE?',
+            'austin-energy-power-saver-rebates': 'Weave in naturally: "Austin Energy Power Saver rebate", "AC rebate Austin Energy". FAQ ideas: What appliances qualify for Power Saver rebates? How do I apply?',
+          };
+
+          const seoGuidance = SLUG_SEO_TERMS[guide.slug] || 'Weave in 2-3 common Google search phrases for this topic naturally into the intro paragraph.';
+
           const prompt = `You are reviewing and updating an existing Austin guide page. Your job is to:
 1. Check if the content is accurate and up-to-date based on the latest knowledge base
 2. Improve clarity, readability, and SEO where possible
 3. Ensure all program details (amounts, URLs, eligibility) match the knowledge base
 4. Fix the tone to be informational and neutral (see tone guidelines below)
-5. Improve SEO: make sure the intro paragraph naturally includes common Google search queries for this topic
+5. Improve SEO per the guide-specific instructions below
 
 CURRENT KNOWLEDGE BASE:
 ${resources}
@@ -106,10 +124,14 @@ Return a JSON object with:
 - "content": Updated full markdown content
 - "changes_made": Brief list of what was changed/updated (or "No changes needed" if content is already accurate)
 
-SEO REQUIREMENTS:
-- The intro paragraph (first 2-3 sentences) MUST naturally incorporate common Google search queries for this topic
-- H2 headers should match common search queries (e.g. "How Much Does It Cost?" not "Cost Information")
-- Include a FAQ section at the end with 3-4 common questions and concise answers (### for each question)
+GUIDE-SPECIFIC SEO INSTRUCTIONS:
+${seoGuidance}
+
+SEO REQUIREMENTS (critical):
+- The opening paragraph (first 2-3 sentences) MUST naturally incorporate the search phrases listed above. They should read as smooth, conversational sentences — NOT stuffed or awkward. A reader should not notice they are search terms.
+- Pick 2-3 of the suggested phrases and weave them into the intro so it flows naturally.
+- H2 headers should match common search queries (e.g. "How Much Does Solar Cost in Austin?" not "Cost Information")
+- Include a FAQ section at the end titled "## Frequently Asked Questions" with 2-3 questions using ### headers and concise 2-3 sentence answers
 
 IMPORTANT:
 - The federal residential solar tax credit is NO LONGER available — remove any references to it as active
