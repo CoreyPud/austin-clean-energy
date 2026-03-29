@@ -79,6 +79,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const DataComparison = () => {
+  useSeo({
+    title: "Data Comparison",
+    description: "Compare solar permit and interconnection data sources side-by-side to ensure data accuracy.",
+  });
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

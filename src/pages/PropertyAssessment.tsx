@@ -13,8 +13,13 @@ import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useSeo } from "@/hooks/use-seo";
 
 const PropertyAssessment = () => {
+  useSeo({
+    title: "Property Assessment",
+    description: "Get a personalized solar and energy efficiency assessment for your Austin property. Estimate savings, incentives, and payback period.",
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
   const [address, setAddress] = useState("");

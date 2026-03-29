@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useSeo } from "@/hooks/use-seo";
 
 interface FiscalYearData {
   fiscalYear: number;
@@ -44,6 +45,10 @@ type SortField = 'address' | 'installed_kw' | 'applied_date' | 'completed_date' 
 type SortDirection = 'asc' | 'desc';
 
 const FiscalYearStats = () => {
+  useSeo({
+    title: "Fiscal Year Statistics",
+    description: "Explore Austin solar permit statistics by fiscal year. Compare installation counts, capacity, and growth trends across years.",
+  });
   const [data, setData] = useState<FiscalYearData[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFY, setExpandedFY] = useState<number | null>(null);

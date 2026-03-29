@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
+import { useSeo } from "@/hooks/use-seo";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { 
   TrendingUp, 
@@ -22,6 +23,10 @@ import {
 } from "lucide-react";
 
 const CityOverview = () => {
+  useSeo({
+    title: "City Overview",
+    description: "Track Austin's clean energy progress with real-time solar permit data, installation trends, and city-wide adoption metrics.",
+  });
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);

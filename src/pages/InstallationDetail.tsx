@@ -6,7 +6,13 @@ import { ArrowLeft, MapPin, Zap, Calendar, Building, Loader2, Download, DollarSi
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+import { useSeo } from "@/hooks/use-seo";
+
 const InstallationDetail = () => {
+  useSeo({
+    title: "Installation Detail",
+    description: "View detailed information about a specific solar installation in Austin including permit data, system size, and timeline.",
+  });
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();

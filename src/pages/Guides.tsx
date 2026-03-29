@@ -8,6 +8,7 @@ import {
   Lightbulb, ArrowRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSeo } from "@/hooks/use-seo";
 
 interface GuidePage {
   id: string;
@@ -42,6 +43,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function Guides() {
+  useSeo({
+    title: "Clean Energy Guides",
+    description: "Practical guides for Austin residents on solar panels, EV charging, energy efficiency, rebates, and more.",
+  });
   const [guides, setGuides] = useState<GuidePage[]>([]);
   const [loading, setLoading] = useState(true);
 

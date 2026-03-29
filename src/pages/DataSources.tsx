@@ -13,8 +13,14 @@ import {
   Map as MapIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useSeo } from "@/hooks/use-seo";
 
 const DataSources = () => {
+  useSeo({
+    title: "Data Sources",
+    description: "Learn about the open data sources powering Austin's clean energy dashboard including solar permits, energy audits, and green building data.",
+  });
   const navigate = useNavigate();
 
   return (
