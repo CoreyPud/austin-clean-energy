@@ -149,6 +149,16 @@ TONE GUIDELINES (critical):
 - Let the facts speak for themselves — if a program saves $800/year, state that plainly
 - Write as if you're a knowledgeable neighbor explaining how a city program works
 
+WRITING STYLE (critical):
+- Write in flowing prose paragraphs, not long bulleted lists. Bullets are OK only for short reference items (eligibility criteria, step-by-step instructions) but the main body should read like a well-written article.
+- Limit bullet lists to no more than 2 per article, each with no more than 5 items.
+
+HONEST TAKE — DRAWBACKS & LIMITATIONS:
+- Every guide MUST include at least 2-3 honest drawbacks, limitations, or tradeoffs relevant to the topic.
+- Present them matter-of-factly within the article flow (e.g. in a "What to Consider" or "Good to Know" section, or woven into the relevant paragraph).
+- Examples of drawbacks to consider: upfront costs, eligibility restrictions, waitlists or caps, long payback periods, maintenance requirements, limited availability, technology limitations, or situations where the program may not be the best fit.
+- Do NOT dismiss the drawbacks or immediately counter them with positives — let the reader weigh the tradeoffs themselves.
+
 Return ONLY valid JSON, no markdown code fences.`;
 
           const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
