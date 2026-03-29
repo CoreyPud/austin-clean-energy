@@ -27,6 +27,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { useSeo } from "@/hooks/use-seo";
 
 interface DataStats {
   cityRecords: number;
