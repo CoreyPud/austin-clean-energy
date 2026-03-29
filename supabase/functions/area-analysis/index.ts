@@ -55,7 +55,7 @@ serve(async (req) => {
 
   try {
     // Rate limiting check
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for')?.split(',').pop()?.trim() || 'unknown';
     const rateCheck = checkRateLimit(ip);
     
     if (!rateCheck.allowed) {
@@ -392,9 +392,8 @@ Format with markdown: Use **bold** for section headers, keep sentences short and
     );
   } catch (error) {
     console.error('Error in area-analysis function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An internal error occurred. Please try again.' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -13,6 +13,38 @@ async function generateToken(): Promise<string> {
   return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Constant-time string comparison to prevent timing attacks
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+// Rate limiting for login attempts: 5 attempts per 15 minutes per IP
+const loginAttemptMap = new Map<string, { count: number; resetTime: number }>();
+const LOGIN_RATE_LIMIT = 5;
+const LOGIN_RATE_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+function checkLoginRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const record = loginAttemptMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    loginAttemptMap.set(ip, { count: 1, resetTime: now + LOGIN_RATE_WINDOW });
+    return { allowed: true, remaining: LOGIN_RATE_LIMIT - 1 };
+  }
+  
+  if (record.count >= LOGIN_RATE_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  record.count++;
+  return { allowed: true, remaining: LOGIN_RATE_LIMIT - record.count };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,6 +95,18 @@ serve(async (req) => {
     
     // Login action
     if (action === 'login') {
+      // Rate limit login attempts
+      const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for')?.split(',').pop()?.trim() || 'unknown';
+      const rateCheck = checkLoginRateLimit(ip);
+      
+      if (!rateCheck.allowed) {
+        console.warn(`Login rate limit exceeded for IP`);
+        return new Response(
+          JSON.stringify({ error: 'Too many login attempts. Please try again later.' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+        );
+      }
+
       if (!password) {
         return new Response(
           JSON.stringify({ error: 'Password is required' }),
@@ -79,7 +123,7 @@ serve(async (req) => {
         );
       }
       
-      if (password !== ADMIN_PASSWORD) {
+      if (!constantTimeEqual(password, ADMIN_PASSWORD)) {
         console.warn('Invalid admin login attempt');
         return new Response(
           JSON.stringify({ error: 'Invalid password' }),
