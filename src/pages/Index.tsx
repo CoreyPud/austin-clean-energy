@@ -7,8 +7,13 @@ import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import CampaignPopup from "@/components/CampaignPopup";
+import { useSeo } from "@/hooks/use-seo";
 
 const Index = () => {
+  useSeo({
+    title: "Austin Clean Energy Opportunity Dashboard",
+    description: "Data-driven insights for solar adoption, energy efficiency, and battery storage in Austin. Empowering residents and policymakers to accelerate clean energy transition.",
+  });
   const navigate = useNavigate();
   const [stats, setStats] = useState<Array<{ value: string; label: string; icon: any }> | null>(null);
   const [isLoading, setIsLoading] = useState(true);

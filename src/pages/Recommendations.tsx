@@ -9,8 +9,13 @@ import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import ReactMarkdown from 'react-markdown';
 import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
+import { useSeo } from "@/hooks/use-seo";
 
 const Recommendations = () => {
+  useSeo({
+    title: "Personalized Clean Energy Recommendations",
+    description: "Get a customized action plan for solar, efficiency, and battery storage based on your Austin home, commute, and lifestyle.",
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
