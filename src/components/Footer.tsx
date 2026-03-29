@@ -46,6 +46,14 @@ const Footer = () => {
                   Installation Partners
                 </a>
               </li>
+              <li>
+                <button
+                  onClick={() => navigate('/guides')}
+                  className="text-white/70 hover:text-white transition-colors text-left"
+                >
+                  Clean Energy Guides
+                </button>
+              </li>
             </ul>
           </div>
           <div>

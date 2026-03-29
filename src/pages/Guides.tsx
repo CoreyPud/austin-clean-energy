@@ -134,24 +134,21 @@ export default function Guides() {
                     </Badge>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-3">
                     {categoryGuides.map((guide) => (
-                      <Link key={guide.id} to={`/guides/${guide.slug}`}>
-                        <Card className="h-full hover:shadow-md hover:border-primary/30 transition-all group cursor-pointer">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base group-hover:text-primary transition-colors leading-snug">
-                              {guide.title}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <CardDescription className="text-sm mb-3 line-clamp-3">
-                              {guide.summary}
-                            </CardDescription>
-                            <span className="text-sm text-primary font-medium inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                              Read Guide
-                              <ArrowRight className="h-3 w-3" />
-                            </span>
-                          </CardContent>
+                      <Link key={guide.id} to={`/guides/${guide.slug}`} className="block">
+                        <Card className="hover:shadow-md hover:border-primary/30 transition-all group cursor-pointer">
+                          <div className="flex items-center gap-4 p-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
+                                {guide.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                {guide.summary}
+                              </p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
+                          </div>
                         </Card>
                       </Link>
                     ))}
