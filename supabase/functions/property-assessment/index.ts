@@ -76,7 +76,7 @@ serve(async (req) => {
 
   try {
     // Rate limiting check
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for')?.split(',').pop()?.trim() || 'unknown';
     const rateCheck = checkRateLimit(ip);
     
     if (!rateCheck.allowed) {
@@ -408,9 +408,8 @@ Keep it SHORT and ACTIONABLE. Reference the Austin Green Building trends data wh
     );
   } catch (error) {
     console.error('Error in property-assessment function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An internal error occurred. Please try again.' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

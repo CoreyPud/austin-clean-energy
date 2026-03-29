@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
     console.error('Error fetching fiscal year stats:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: 'An internal error occurred. Please try again.',
         data: []
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

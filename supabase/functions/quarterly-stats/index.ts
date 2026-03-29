@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     console.error('Error fetching quarterly stats:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'An internal error occurred. Please try again.',
         data: [],
         years: [],
       }),
