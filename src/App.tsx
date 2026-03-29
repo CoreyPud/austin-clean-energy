@@ -25,6 +25,7 @@ import Sitemap from "./pages/Sitemap";
 import Guides from "./pages/Guides";
 import GuideDetail from "./pages/GuideDetail";
 import NotFound from "./pages/NotFound";
+import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <TrailingSlashRedirect />
         <Routes>
           {/* Public pages with footer */}
           <Route element={<PublicLayout />}>
