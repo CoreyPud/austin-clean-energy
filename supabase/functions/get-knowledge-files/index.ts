@@ -46,10 +46,9 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error("Error fetching knowledge files:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
+        error: 'An internal error occurred. Please try again.',
         success: false 
       }),
       { 

@@ -26,9 +26,8 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An internal error occurred. Please try again.' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
