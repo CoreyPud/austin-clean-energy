@@ -54,6 +54,7 @@ const Footer = () => {
                   Clean Energy Guides
                 </button>
               </li>
+            </ul>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-4">Data Sources</h3>
