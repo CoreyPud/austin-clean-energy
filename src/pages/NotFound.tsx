@@ -1,7 +1,12 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { useSeo } from "@/hooks/use-seo";
 
 const NotFound = () => {
+  useSeo({
+    title: "Page Not Found",
+    description: "The page you're looking for doesn't exist on Austin Clean Energy.",
+  });
   const location = useLocation();
 
   useEffect(() => {

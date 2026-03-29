@@ -11,8 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import { InstallationDetailModal } from "@/components/InstallationDetailModal";
+import { useSeo } from "@/hooks/use-seo";
 
 const AreaAnalysis = () => {
+  useSeo({
+    title: "Area Analysis",
+    description: "Analyze solar adoption and clean energy trends by ZIP code in Austin. See permit counts, installation density, and neighborhood comparisons.",
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
   const [zipCode, setZipCode] = useState("");

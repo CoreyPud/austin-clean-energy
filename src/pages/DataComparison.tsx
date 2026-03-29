@@ -27,6 +27,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { useSeo } from "@/hooks/use-seo";
 
 interface DataStats {
   cityRecords: number;
@@ -79,6 +80,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const DataComparison = () => {
+  useSeo({
+    title: "Data Comparison",
+    description: "Compare solar permit and interconnection data sources side-by-side to ensure data accuracy.",
+  });
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

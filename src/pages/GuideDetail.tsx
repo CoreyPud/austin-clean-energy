@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Calendar, Lightbulb, ExternalLink } from "lucide-react";
+import { useSeo } from "@/hooks/use-seo";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,20 +30,10 @@ export default function GuideDetail() {
     if (slug) loadGuide(slug);
   }, [slug]);
 
-  useEffect(() => {
-    if (guide) {
-      document.title = `${guide.title} | Austin Clean Energy`;
-      const meta = document.querySelector('meta[name="description"]');
-      if (meta) {
-        meta.setAttribute('content', guide.meta_description);
-      } else {
-        const newMeta = document.createElement('meta');
-        newMeta.name = 'description';
-        newMeta.content = guide.meta_description;
-        document.head.appendChild(newMeta);
-      }
-    }
-  }, [guide]);
+  useSeo({
+    title: guide?.title ?? "Guide",
+    description: guide?.meta_description ?? "Austin clean energy guide",
+  });
 
   const loadGuide = async (guideSlug: string) => {
     try {

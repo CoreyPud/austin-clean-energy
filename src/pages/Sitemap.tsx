@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Home, BarChart3, MapPin, Building2, Lightbulb, Database, CalendarDays, Zap, BookOpen } from "lucide-react";
+import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
   {
@@ -59,6 +60,10 @@ const publicPages = [
 ];
 
 const Sitemap = () => {
+  useSeo({
+    title: "Sitemap",
+    description: "Complete list of all pages on the Austin Clean Energy dashboard.",
+  });
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12">
