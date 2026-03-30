@@ -39,7 +39,7 @@ const SolarMap = () => {
       <div className="flex-1">
         <iframe
           src="https://solar-austin.netlify.app/"
-          title="Austin's Decarb Dashboard – Simulate net zero generation by 2035"
+          title="Austin's 2035 Zero Emissions Energy Simulator"
           className="w-full h-full border-0"
           style={{ minHeight: "calc(100vh - 57px)" }}
           allow="geolocation"
