@@ -5,8 +5,8 @@ import { useSeo } from "@/hooks/use-seo";
 
 const SolarMap = () => {
   useSeo({
-    title: "Austin's Decarb Dashboard",
-    description: "Explore Austin Energy's path to net-zero generation by 2035. Interactive dashboard simulating solar, wind, storage, and demand response scenarios.",
+    title: "Austin's 2035 Zero Emissions Energy Simulator",
+    description: "Explore Austin Energy's path to net-zero generation by 2035. Interactive simulator for solar, wind, storage, and demand response scenarios.",
   });
   const navigate = useNavigate();
 
