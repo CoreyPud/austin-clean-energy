@@ -5,8 +5,8 @@ import { useSeo } from "@/hooks/use-seo";
 
 const SolarMap = () => {
   useSeo({
-    title: "Austin's Decarb Dashboard",
-    description: "Explore Austin Energy's path to net-zero generation by 2035. Interactive dashboard simulating solar, wind, storage, and demand response scenarios.",
+    title: "Austin's 2035 Zero Emissions Energy Simulator",
+    description: "Explore Austin Energy's path to net-zero generation by 2035. Interactive simulator for solar, wind, storage, and demand response scenarios.",
   });
   const navigate = useNavigate();
 
@@ -20,7 +20,7 @@ const SolarMap = () => {
             Home
           </Button>
           <div className="h-5 w-px bg-border" />
-          <h1 className="text-lg font-semibold text-foreground">Austin's Decarb Dashboard</h1>
+          <h1 className="text-lg font-semibold text-foreground">Austin's 2035 Zero Emissions Energy Simulator</h1>
         </div>
         <a
           href="https://solar-austin.netlify.app/"
@@ -39,7 +39,7 @@ const SolarMap = () => {
       <div className="flex-1">
         <iframe
           src="https://solar-austin.netlify.app/"
-          title="Austin's Decarb Dashboard – Simulate net zero generation by 2035"
+          title="Austin's 2035 Zero Emissions Energy Simulator"
           className="w-full h-full border-0"
           style={{ minHeight: "calc(100vh - 57px)" }}
           allow="geolocation"
