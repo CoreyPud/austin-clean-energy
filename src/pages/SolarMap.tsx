@@ -20,7 +20,7 @@ const SolarMap = () => {
             Home
           </Button>
           <div className="h-5 w-px bg-border" />
-          <h1 className="text-lg font-semibold text-foreground">Austin's Decarb Dashboard</h1>
+          <h1 className="text-lg font-semibold text-foreground">Austin's 2035 Zero Emissions Energy Simulator</h1>
         </div>
         <a
           href="https://solar-austin.netlify.app/"
