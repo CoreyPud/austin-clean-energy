@@ -10,7 +10,11 @@ import {
   BarChart3,
   Building2,
   Battery,
-  Map as MapIcon
+  Map as MapIcon,
+  Calendar,
+  Zap,
+  BookOpen,
+  CheckCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSeo } from "@/hooks/use-seo";
