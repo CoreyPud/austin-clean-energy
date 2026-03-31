@@ -489,7 +489,11 @@ const DataSources = () => {
                 This page exists because we believe users should understand where data comes from and how 
                 metrics are calculated. If you notice discrepancies, have questions about our methodology, 
                 or want to verify specific data points, we encourage you to consult the original source links 
-                provided throughout this page and in our footer.
+                provided throughout this page and in our footer. You can also{" "}
+                <a href="/contact" className="text-primary underline hover:text-primary/80 transition-colors">
+                  contact us directly
+                </a>{" "}
+                — we'd love to hear from you.
               </p>
             </div>
 
