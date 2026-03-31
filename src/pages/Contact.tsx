@@ -13,6 +13,15 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <nav className="container mx-auto px-4 py-4">
+        <Button variant="ghost" asChild className="gap-2 text-foreground hover:text-primary">
+          <Link to="/">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
+      </nav>
+
       <section className="bg-gradient-to-br from-primary via-primary/90 to-secondary py-16">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
