@@ -24,6 +24,7 @@ import SolarMap from "./pages/SolarMap";
 import Sitemap from "./pages/Sitemap";
 import Guides from "./pages/Guides";
 import GuideDetail from "./pages/GuideDetail";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />
             <Route path="/sitemap" element={<Sitemap />} />
+            <Route path="/contact" element={<Contact />} />
           </Route>
 
           {/* Pages without footer */}
