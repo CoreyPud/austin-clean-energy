@@ -455,6 +455,203 @@ const DataSources = () => {
           </CardContent>
         </Card>
 
+        {/* Fiscal Year Statistics Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <Calendar className="h-6 w-6 text-primary" />
+              <CardTitle className="text-2xl">Fiscal Year Statistics</CardTitle>
+            </div>
+            <CardDescription>
+              How we group and analyze solar installation trends by Austin's fiscal year
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                Fiscal Year Definition
+              </h3>
+              <p className="text-muted-foreground mb-3">
+                Austin's fiscal year runs from <strong>October 1 through September 30</strong>. For example, 
+                FY2024 covers October 1, 2023 through September 30, 2024. This aligns with how the City of Austin 
+                budgets and reports, making our trends directly comparable to city planning documents and Austin Energy 
+                reporting.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Metrics & Calculations</h3>
+              <div className="space-y-3 text-muted-foreground">
+                <div>
+                  <strong>Installation Count:</strong> Total solar permits completed within the fiscal year, 
+                  based on the completed_date field. Flagged duplicate records are excluded from counts.
+                </div>
+                <div>
+                  <strong>Battery Storage Count:</strong> Permits identified as battery or energy storage 
+                  installations based on permit description keywords. These are tracked separately from solar PV.
+                </div>
+                <div>
+                  <strong>Total Capacity (kW):</strong> Sum of installed kilowatt capacity for all installations 
+                  in the fiscal year. As noted elsewhere, not all permits include kW values, so this may 
+                  undercount actual installed capacity.
+                </div>
+              </div>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Note:</strong> The fiscal year view may show different totals than the calendar year 
+                view on the City Overview page because they group the same data by different date boundaries. 
+                Neither is wrong — they reflect different reporting conventions.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
+        {/* Data Verification Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle className="h-6 w-6 text-primary" />
+              <CardTitle className="text-2xl">Data Verification & Corrections</CardTitle>
+            </div>
+            <CardDescription>
+              How we improve data quality beyond what the raw permit records provide
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Manual Correction Process</h3>
+              <p className="text-muted-foreground mb-3">
+                Raw permit data from the City of Austin sometimes contains errors — incorrect addresses, 
+                missing capacity values, duplicate entries, or inaccurate dates. When we identify these issues, 
+                we apply manual corrections that override the raw data for public display while preserving 
+                the original record for transparency.
+              </p>
+              <p className="text-muted-foreground">
+                The correction system prioritizes manually verified data over raw API data. If a correction 
+                exists for a record, the corrected values are shown on all public-facing pages. If no correction 
+                exists, the original City data is displayed as-is.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Duplicate Detection</h3>
+              <p className="text-muted-foreground">
+                Some solar projects appear multiple times in the permit database — for example, when a permit 
+                is reissued or when separate electrical and building permits are filed for the same installation. 
+                We flag suspected duplicates so they are excluded from aggregate counts and capacity totals. 
+                This prevents inflating the number of actual solar installations in Austin.
+              </p>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Transparency Note:</strong> Individual installation detail pages indicate whether 
+                a record has been manually corrected, so you can always see if the data you're viewing 
+                has been adjusted from its original source.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
+        {/* Decarb Dashboard Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <Zap className="h-6 w-6 text-primary" />
+              <CardTitle className="text-2xl">Path to Net Zero Simulator</CardTitle>
+            </div>
+            <CardDescription>
+              An interactive tool for exploring Austin Energy's 2035 zero-emissions goal
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                About This Tool
+              </h3>
+              <p className="text-muted-foreground mb-3">
+                The Net Zero Simulator is an <strong>external interactive tool</strong> embedded on our site. 
+                It models scenarios for how Austin Energy could reach its goal of 100% carbon-free electricity 
+                generation by 2035, allowing users to adjust variables like solar capacity, wind generation, 
+                battery storage, and demand response.
+              </p>
+              <p className="text-muted-foreground">
+                This tool is hosted separately and its data sources and methodology are maintained independently 
+                from the rest of this site. The simulator uses publicly available Austin Energy generation data 
+                and planning documents as its baseline.
+              </p>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Note:</strong> Because this is an externally hosted tool, its data may update on a 
+                different schedule than the rest of this site. Scenario results are illustrative models, 
+                not predictions — actual grid outcomes depend on many factors beyond what any simulator 
+                can capture.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
+        {/* Guides Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <BookOpen className="h-6 w-6 text-primary" />
+              <CardTitle className="text-2xl">Educational Guides</CardTitle>
+            </div>
+            <CardDescription>
+              How our guide articles are created and maintained
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Content Generation</h3>
+              <p className="text-muted-foreground mb-3">
+                Our guide articles are <strong>AI-generated from a curated knowledge base</strong> of Austin-specific 
+                clean energy information. This knowledge base includes details about local incentive programs, 
+                rebate amounts, eligibility requirements, provider information, and best practices — all 
+                reviewed and maintained by our team.
+              </p>
+              <p className="text-muted-foreground">
+                Each guide is written to answer common questions Austin residents have about topics like solar 
+                rebates, EV charging, home weatherization, and battery storage. The AI synthesizes the knowledge 
+                base into readable articles that include both benefits and honest drawbacks of each option.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-primary" />
+                Keeping Guides Current
+              </h3>
+              <p className="text-muted-foreground">
+                When Austin Energy programs change, rebate amounts are updated, or new incentives become 
+                available, we update our knowledge base and regenerate the affected guides. However, program 
+                details can change at any time — we always recommend verifying current terms directly with 
+                the program provider before making financial decisions.
+              </p>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Disclaimer:</strong> Guide content is educational and informational. It does not 
+                constitute financial, legal, or professional advice. Specific rebate amounts, eligibility 
+                criteria, and program availability should be confirmed with Austin Energy or the relevant 
+                provider.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
         {/* General Notes Section */}
         <Card className="mb-8">
           <CardHeader>
