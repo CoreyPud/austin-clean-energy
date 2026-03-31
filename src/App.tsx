@@ -60,6 +60,7 @@ const App = () => (
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />
             <Route path="/sitemap" element={<Sitemap />} />
+            <Route path="/contact" element={<Contact />} />
           </Route>
 
           {/* Pages without footer */}

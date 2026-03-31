@@ -9,9 +9,15 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-8">
           <div>
             <h3 className="font-bold text-lg mb-4">About</h3>
-            <p className="text-white/70 text-sm">
+            <p className="text-white/70 text-sm mb-4">
               Empowering Austin's climate action through data-driven clean energy insights
             </p>
+            <button
+              onClick={() => navigate('/contact')}
+              className="text-white/70 hover:text-white transition-colors text-sm text-left"
+            >
+              Contact Us →
+            </button>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-4">Resources</h3>
