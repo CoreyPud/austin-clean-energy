@@ -262,7 +262,7 @@ const CityOverview = () => {
     {
       title: "Solar Rebate Program",
       description: "Up to $2,500 for residential solar installations",
-      link: "https://austinenergy.com/rebates/solar",
+      link: "https://austinenergy.com/green-power/solar-solutions",
       icon: Zap,
     },
     {
