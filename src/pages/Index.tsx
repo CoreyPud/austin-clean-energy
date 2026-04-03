@@ -113,15 +113,14 @@ const Index = () => {
               <Button 
                 size="lg" 
                 onClick={() => navigate("/city-overview")}
-                className="bg-accent hover:bg-accent/90 text-foreground font-semibold group"
+                className="bg-accent hover:bg-accent/90 text-foreground font-semibold"
               >
                 View City-Wide Progress
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button 
                 size="lg" 
                 onClick={() => navigate("/recommendations")}
-                className="bg-white hover:bg-white/90 text-primary font-semibold"
+                className="bg-accent hover:bg-accent/90 text-foreground font-semibold"
               >
                 Get Personalized Plan
               </Button>
