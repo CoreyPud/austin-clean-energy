@@ -120,17 +120,15 @@ const Index = () => {
               </Button>
               <Button 
                 size="lg" 
-                variant="outline" 
                 onClick={() => navigate("/recommendations")}
-                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                className="bg-white hover:bg-white/90 text-primary font-semibold"
               >
                 Get Personalized Plan
               </Button>
               <Button 
                 size="lg" 
-                variant="outline" 
                 onClick={() => navigate("/decarb-dashboard")}
-                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                className="bg-accent hover:bg-accent/90 text-foreground font-semibold"
               >
                 Path to Net Zero Simulator
               </Button>
