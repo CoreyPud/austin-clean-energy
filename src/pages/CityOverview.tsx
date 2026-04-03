@@ -274,7 +274,7 @@ const CityOverview = () => {
     {
       title: "Climate Action Plan",
       description: "Track Austin's progress toward net-zero emissions",
-      link: "https://austin-climate-equity-plan-implementation-dashboard-austin.hub.arcgis.com/pages/database",
+      link: "https://www.austintexas.gov/climate",
       icon: TreePine,
     },
     {
