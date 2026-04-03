@@ -1,21 +1,21 @@
 # Austin Clean Energy Resources
-Last Updated: 2025-10-22
+Last Updated: 2026-04-03
 
 ## Solar Programs
 
 ### Austin Energy Solar Solutions
-**URL:** https://austinenergy.com/solar  
+**URL:** https://austinenergy.com/green-power/solar-solutions  
 **Description:** Comprehensive solar program information and interconnection process  
 **Target Audience:** Homeowners, businesses considering solar installation
 
 ### Solar Rebate Program
-**URL:** https://austinenergy.com/rebates/solar  
+**URL:** https://austinenergy.com/green-power/solar-solutions  
 **Incentive:** Up to $2,500 for residential solar installations  
 **Eligibility:** Austin Energy customers installing new solar systems  
 **Notes:** Rebate amounts vary by system size
 
 ### Community Solar
-**URL:** https://austinenergy.com/community-solar  
+**URL:** https://austinenergy.com/green-power/solar-solutions/for-your-home/community-solar  
 **Description:** Solar access for renters and those with unsuitable roofs  
 **Incentive:** Subscribe to solar credits without rooftop installation  
 **Target Audience:** Renters, condo owners, homes with shaded/unsuitable roofs
@@ -32,7 +32,7 @@ Last Updated: 2025-10-22
 **Use Case:** Learn about electrification options, heat pumps, and energy efficiency
 
 ### Free Home Energy Audit
-**URL:** https://austinenergy.com/energy-efficiency/home-energy-audit  
+**URL:** https://austinenergy.com/energy-efficiency  
 **Service:** Professional assessment of home energy use with personalized recommendations  
 **Cost:** Free for Austin Energy customers  
 **Value:** Typically identifies $300-800 in annual savings opportunities
@@ -44,7 +44,7 @@ Last Updated: 2025-10-22
 **Eligibility:** Austin Energy customers
 
 ### Weatherization Assistance Program
-**URL:** https://www.austintexas.gov/department/weatherization  
+**URL:** https://austinenergy.com/energy-efficiency  
 **Service:** Free home weatherization for income-qualified households  
 **Includes:** Insulation, air sealing, AC repair/replacement, LED lighting  
 **Eligibility:** Income at or below 200% of federal poverty level
@@ -68,7 +68,7 @@ Last Updated: 2025-10-22
 **Notes:** Check vehicle eligibility before purchase
 
 ### CapMetro Electric Bus Program
-**URL:** https://www.capmetro.org/electric-buses  
+**URL:** https://www.capmetro.org  
 **Description:** Transit system transitioning to electric buses  
 **Relevance:** Demonstrates city commitment to transportation electrification
 
@@ -85,7 +85,7 @@ Last Updated: 2025-10-22
 **Incentives:** Free employer transit passes, reduced fares for low-income riders
 
 ### Austin BCycle Bike Share
-**URL:** https://austin.bcycle.com  
+**URL:** https://austinbcycle.com  
 **Service:** Bike-share system with 75+ stations  
 **Cost:** Various pass options from single rides to annual memberships  
 **Subsidies:** Reduced memberships for low-income residents
@@ -96,50 +96,45 @@ Last Updated: 2025-10-22
 **Use Case:** Plan bike commute routes, assess biking feasibility
 
 ### Commute Solutions
-**URL:** https://www.capmetro.org/commutesolutions  
+**URL:** https://www.capmetro.org/services  
 **Services:** Carpool matching, vanpool subsidies, telework resources, employer programs  
 **Target Audience:** Employers and commuters looking for alternatives to solo driving
 
 ## Green Building
 
 ### Austin Energy Green Building Program
-**URL:** https://austinenergy.com/green-building  
+**URL:** https://austinenergy.com/energy-efficiency/green-building  
 **Services:** Technical assistance, ratings, incentives for green construction/renovation  
 **Incentives:** Rebates up to $10,000+ for certified green buildings  
 **Ratings:** 1-star to 5-star certification system
 
-### Sustainable Materials Library
-**URL:** https://sxsw.eco/sustainable-materials  
-**Resource:** Information on low-carbon building materials available locally  
-**Target Audience:** Builders, architects, homeowners planning renovations
-
 ## Financial Assistance
 
 ### Property Assessed Clean Energy (PACE) Financing
-**URL:** https://comptroller.texas.gov/economy/economic-development/pace  
+**URL:** https://comptroller.texas.gov/economy/local/pace  
 **Service:** Financing for energy efficiency and renewable energy improvements  
 **Terms:** Repaid through property tax bills, can be 20-year terms  
 **Eligibility:** Property owners; program availability varies by county
 
 ### Austin Community Solar Credits
-**URL:** https://austinenergy.com/community-solar  
+**URL:** https://austinenergy.com/green-power/solar-solutions/for-your-home/community-solar  
 **Benefit:** Monthly bill credits for community solar subscriptions  
 **Use Case:** Solar benefits without installation for renters/unsuitable properties
 
 ## Education and Advocacy
 
-### Austin Climate Action Plan
-**URL:** https://www.austintexas.gov/department/austin-climate-action-plan  
+### Austin Climate Equity Plan
+**URL:** https://www.austintexas.gov/climate  
 **Resource:** City's roadmap to net-zero emissions  
 **Use Case:** Understand city priorities and how individual actions align
 
-### Austin Climate Action Plan
+### Austin Climate Equity Plan Dashboard
 **URL:** https://austin-climate-equity-plan-implementation-dashboard-austin.hub.arcgis.com/pages/database  
-**Resource:** Progress tracker on Austin's progrees towards climate equity goals  
-**Use Case:** See the progress we are making at a city level and where more work needs to be done. 
+**Resource:** Progress tracker on Austin's progress towards climate equity goals  
+**Use Case:** See the progress we are making at a city level and where more work needs to be done.
 
-### Environment Texas
-**URL:** https://environmenttexas.org/austin  
+### Environment America Texas
+**URL:** https://environmentamerica.org/texas  
 **Organization:** Local environmental advocacy group  
 **Activities:** Policy advocacy, educational events, volunteer opportunities
 
