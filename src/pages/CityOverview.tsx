@@ -268,7 +268,7 @@ const CityOverview = () => {
     {
       title: "Free Home Energy Audit",
       description: "Professional assessment identifying $300-800 in annual savings",
-      link: "https://austinenergy.com/energy-efficiency/home-energy-audit",
+      link: "https://austinenergy.com/energy-efficiency",
       icon: Home,
     },
     {
