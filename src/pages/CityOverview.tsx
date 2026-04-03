@@ -262,19 +262,19 @@ const CityOverview = () => {
     {
       title: "Solar Rebate Program",
       description: "Up to $2,500 for residential solar installations",
-      link: "https://austinenergy.com/rebates/solar",
+      link: "https://austinenergy.com/green-power/solar-solutions",
       icon: Zap,
     },
     {
       title: "Free Home Energy Audit",
       description: "Professional assessment identifying $300-800 in annual savings",
-      link: "https://austinenergy.com/energy-efficiency/home-energy-audit",
+      link: "https://austinenergy.com/energy-efficiency",
       icon: Home,
     },
     {
       title: "Climate Action Plan",
       description: "Track Austin's progress toward net-zero emissions",
-      link: "https://austin-climate-equity-plan-implementation-dashboard-austin.hub.arcgis.com/pages/database",
+      link: "https://www.austintexas.gov/climate",
       icon: TreePine,
     },
     {

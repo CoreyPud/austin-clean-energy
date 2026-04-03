@@ -177,7 +177,7 @@ const PropertyAssessment = () => {
                   The Energy Efficiency rating and recommendations below are AI-generated estimates based on available data. 
                   For a precise, certified energy efficiency rating, we recommend scheduling a professional energy audit through{" "}
                   <a 
-                    href="https://austinenergy.com/ae/energy-efficiency/ecad-ordinance/home-energy-ratings" 
+                    href="https://austinenergy.com/energy-efficiency/ecad-ordinance/ecad-for-residential-customers" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-primary font-medium hover:underline"
