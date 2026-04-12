@@ -35,13 +35,6 @@ function validateLifestyleData(lifestyleData: any): { valid: boolean; error?: st
     return { valid: false, error: 'Lifestyle data is required' };
   }
   
-  // Sanitize string values to prevent prompt injection
-  const sanitizeString = (str: any): string => {
-    if (typeof str !== 'string') return '';
-    return str.trim().substring(0, 500); // Limit length
-  };
-  
-  // Basic validation of expected fields
   const requiredFields = ['housingStatus', 'homeType', 'currentEnergy', 'transportation', 'commuteType'];
   for (const field of requiredFields) {
     if (!lifestyleData[field]) {
@@ -49,7 +42,6 @@ function validateLifestyleData(lifestyleData: any): { valid: boolean; error?: st
     }
   }
   
-  // Validate interests array
   if (!Array.isArray(lifestyleData.interests) || lifestyleData.interests.length === 0) {
     return { valid: false, error: 'At least one interest must be selected' };
   }
@@ -84,7 +76,7 @@ serve(async (req) => {
     
     console.log(`Rate limit check passed. Remaining: ${rateCheck.remaining}`);
 
-    const { lifestyleData } = await req.json();
+    const { lifestyleData, propertyData } = await req.json();
     
     // Input validation
     if (lifestyleData) {
@@ -100,7 +92,7 @@ serve(async (req) => {
       }
     }
     
-    console.log('Generating personalized recommendations');
+    console.log('Generating personalized recommendations', { hasPropertyData: !!propertyData });
 
     // Load knowledge base configuration
     const knowledge = await loadKnowledge();
@@ -165,7 +157,6 @@ serve(async (req) => {
     const dbProjectIds = new Set((dbInstallations || []).map((i: any) => i.project_id).filter(Boolean));
     
     solarPermitsArr.forEach((item: any) => {
-      // Skip if already in database
       if (dbProjectIds.has(item.permit_number)) return;
       
       const zip = item.original_zip || item.zip || item.zip_code || item.zipcode || item.customer_zip || item.customer_zip_code;
@@ -201,16 +192,9 @@ serve(async (req) => {
         zip,
         count,
         coordinates: coordinatesByZip[zip],
-        intensity: Math.min((count as number) / 10, 1) // Normalize intensity (0-1 scale)
+        intensity: Math.min((count as number) / 10, 1)
       }))
       .sort((a, b) => b.count - a.count);
-
-    console.log('Heatmap aggregation:', {
-      zipsWithPermits: Object.keys(permitsByZip).length,
-      zipsWithCoordinates: Object.keys(coordinatesByZip).length,
-      heatmapPoints: heatmapData.length,
-      sample: heatmapData.slice(0, 3)
-    });
 
     // Use Lovable AI to generate strategic recommendations
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -218,7 +202,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Aggregate statistics for AI prompt (database + API, avoiding duplicates)
+    // Aggregate statistics for AI prompt
     const uniqueRecentPermits = solarPermitsArr.filter((p: any) => !dbProjectIds.has(p.permit_number)).length;
     const totalSolarPermits = (dbInstallations?.length || 0) + uniqueRecentPermits;
     const totalAudits = auditArr.reduce((sum: number, a: any) => sum + (parseInt(a.all_homes_audited) || 0), 0);
@@ -246,7 +230,47 @@ PERSONALIZATION REQUIREMENTS:
 - Provide specific, actionable advice they can take based on their circumstances`;
     }
 
-    const aiPrompt = `You are a clean energy strategist for Austin, Texas. Write a CONCISE ${lifestyleData ? 'PERSONALIZED' : ''} strategic overview based on this data:
+    // Build property-specific context if available
+    let propertyContext = '';
+    if (propertyData) {
+      propertyContext = `
+
+🏠 PROPERTY-SPECIFIC DATA:
+- Address: ${propertyData.address || 'N/A'}
+- Property Type: ${propertyData.propertyType || 'N/A'}`;
+
+      if (propertyData.solarInsights) {
+        const si = propertyData.solarInsights;
+        propertyContext += `
+- Google Solar Analysis Available: Yes
+- Max Solar Panels: ${si.maxPanels || 'N/A'}
+- Roof Area: ${si.roofArea ? Math.round(si.roofArea) + 'm²' : 'N/A'}
+- Annual Sunshine Hours: ${si.sunshineHours ? Math.round(si.sunshineHours) : 'N/A'}
+- Estimated Annual Production: ${si.annualProduction || 'N/A'} kWh/yr
+- CO₂ Offset Potential: ${si.carbonOffset ? Math.round(si.carbonOffset) + 'kg/yr' : 'N/A'}`;
+      }
+
+      if (propertyData.greenBuildingContext) {
+        propertyContext += `
+- Nearby Green Building Avg Rating: ${propertyData.greenBuildingContext.avgStarRating || 'N/A'} stars
+- Nearby Green Building Avg Energy Savings: ${propertyData.greenBuildingContext.avgEnergySavings || 'N/A'}%`;
+      }
+
+      if (propertyData.nearbyPermitCount != null) {
+        propertyContext += `
+- Nearby Solar Installations: ${propertyData.nearbyPermitCount}`;
+      }
+
+      propertyContext += `
+
+PROPERTY-SPECIFIC REQUIREMENTS:
+- Reference the actual solar potential data for their roof when discussing solar recommendations
+- Mention their specific property type and how it affects recommendations
+- Compare their property to nearby green building benchmarks when relevant
+- Make recommendations that are grounded in the real data for their address`;
+    }
+
+    const aiPrompt = `You are a clean energy strategist for Austin, Texas. Write a CONCISE ${lifestyleData ? 'PERSONALIZED' : ''}${propertyData ? ' PROPERTY-SPECIFIC' : ''} strategic overview based on this data:
 
 📊 AUSTIN CLEAN ENERGY SNAPSHOT:
 - Total Solar Permits: ${totalSolarPermits}
@@ -254,7 +278,7 @@ PERSONALIZATION REQUIREMENTS:
 - Weatherization Projects: ${totalWeatherization}
 - Green Building Avg Rating: ${avgGreenBuildingRating} stars
 - Top Solar ZIP Codes: ${heatmapData.slice(0, 5).map(d => `${d.zip} (${d.count} permits)`).join(', ')}
-${personalContext}
+${propertyContext}${personalContext}
 
 📋 PRIORITY FRAMEWORK & EXPERT CONTEXT:
 ${knowledge.priorities}
@@ -266,13 +290,13 @@ ${knowledge.expertContext}
 ${knowledge.resources}
 ${getExternalContext(knowledge)}
 
-Write a punchy, scannable ${lifestyleData ? 'personalized ' : ''}strategic plan using this EXACT structure:
+Write a punchy, scannable ${lifestyleData ? 'personalized ' : ''}${propertyData ? 'property-specific ' : ''}strategic plan using this EXACT structure:
 
 **${lifestyleData ? 'Your Personalized Overview' : 'Executive Summary'}** (3-4 sentences)
-${lifestyleData ? 'Address their specific situation and acknowledge what they\'re already doing right. Then highlight their top opportunity aligned with impact priorities.' : 'Brief snapshot of Austin\'s clean energy momentum and top opportunity aligned with impact priorities.'}
+${lifestyleData ? 'Address their specific situation and acknowledge what they\'re already doing right. Then highlight their top opportunity aligned with impact priorities.' : 'Brief snapshot of Austin\'s clean energy momentum and top opportunity aligned with impact priorities.'}${propertyData ? ' Reference their specific property data (solar potential, roof area, etc.) in the summary.' : ''}
 
 **Priority Actions${lifestyleData ? ' For You' : ''}** (3 items max, 2-3 sentences each)
-${lifestyleData ? 'Customized to their housing, transportation, and interests. Focus on highest-impact areas they can actually act on.' : 'Focus on the highest-impact areas from the framework above. Include specific actions.'}
+${lifestyleData ? 'Customized to their housing, transportation, and interests. Focus on highest-impact areas they can actually act on.' : 'Focus on the highest-impact areas from the framework above. Include specific actions.'}${propertyData ? ' Ground each action in their property\'s actual data where relevant.' : ''}
 1. **[Title]**: [What + Expected Impact${lifestyleData ? ' + Why it fits their situation' : ' + Connection to top priorities'}]
 2. **[Title]**: [What + Expected Impact${lifestyleData ? ' + Why it fits their situation' : ' + Connection to top priorities'}]  
 3. **[Title]**: [What + Expected Impact${lifestyleData ? ' + Why it fits their situation' : ' + Connection to top priorities'}]

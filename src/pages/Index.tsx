@@ -74,17 +74,10 @@ const Index = () => {
     },
     {
       icon: Building2,
-      title: "Property Assessment",
-      description: "Get tailored clean energy recommendations for individual properties with detailed ROI analysis.",
-      features: ["Solar viability scores", "Efficiency upgrades", "Battery storage fit"],
+      title: "Property Assessment & Action Plan",
+      description: "Get a detailed property evaluation with Google Solar roof analysis, then a personalized action plan tailored to your lifestyle.",
+      features: ["Solar viability scores", "Personalized recommendations", "Property-specific ROI"],
       gradient: "from-secondary to-accent",
-    },
-    {
-      icon: Battery,
-      title: "Recommendation Engine",
-      description: "Prioritized action plans combining solar, efficiency, and storage for maximum impact.",
-      features: ["Strategic insights", "Financial overview", "Next steps guidance"],
-      gradient: "from-accent to-primary",
     },
   ];
 
@@ -119,7 +112,7 @@ const Index = () => {
               </Button>
               <Button 
                 size="lg" 
-                onClick={() => navigate("/recommendations")}
+                onClick={() => navigate("/property-assessment")}
                 className="bg-accent hover:bg-accent/90 text-foreground font-semibold"
               >
                 Get Personalized Plan
@@ -177,9 +170,9 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {modules.map((module, index) => {
-            const routes = ["/area-analysis", "/property-assessment", "/recommendations"];
+            const routes = ["/area-analysis", "/property-assessment"];
             return (
               <Card 
                 key={index} 

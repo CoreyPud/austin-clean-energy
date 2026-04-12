@@ -9,7 +9,7 @@ import CityOverview from "./pages/CityOverview";
 import AreaAnalysis from "./pages/AreaAnalysis";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
-import Recommendations from "./pages/Recommendations";
+import { Navigate } from "react-router-dom";
 import InstallationDetail from "./pages/InstallationDetail";
 import ImportSolarData from "./pages/ImportSolarData";
 import DataSources from "./pages/DataSources";
@@ -51,7 +51,7 @@ const App = () => (
             <Route path="/city-overview" element={<CityOverview />} />
             <Route path="/area-analysis" element={<AreaAnalysis />} />
             <Route path="/property-assessment" element={<PropertyAssessment />} />
-            <Route path="/recommendations" element={<Recommendations />} />
+            <Route path="/recommendations" element={<Navigate to="/property-assessment" replace />} />
             <Route path="/installation/:id" element={<InstallationDetail />} />
             <Route path="/data-sources" element={<DataSources />} />
             <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />

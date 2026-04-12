@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Lightbulb, Database, CalendarDays, Zap, BookOpen } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
@@ -23,15 +23,9 @@ const publicPages = [
   },
   {
     path: "/property-assessment",
-    title: "Property Assessment",
-    description: "Look up solar installation details for a specific property address.",
+    title: "Property Assessment & Personalized Plan",
+    description: "Get a property-specific solar evaluation and personalized clean energy action plan tailored to your lifestyle.",
     icon: Building2,
-  },
-  {
-    path: "/recommendations",
-    title: "Personalized Plan",
-    description: "Get AI-powered clean energy recommendations tailored to your lifestyle and housing situation.",
-    icon: Lightbulb,
   },
   {
     path: "/fiscal-year-stats",
