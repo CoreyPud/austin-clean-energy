@@ -293,21 +293,33 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
         // Container element (Mapbox positions this element via CSS transform)
         const el = document.createElement('div');
         el.className = 'marker-container';
-        el.style.width = '14px';
-        el.style.height = '14px';
+        const isTargetProperty = id === 'target-property';
+        const containerSize = isTargetProperty ? '32px' : '14px';
+        el.style.width = containerSize;
+        el.style.height = containerSize;
         el.style.cursor = 'pointer';
+
+        if (isTargetProperty) {
+          // Pulsing ring for target property
+          const pulse = document.createElement('div');
+          pulse.style.position = 'absolute';
+          pulse.style.inset = '0';
+          pulse.style.borderRadius = '50%';
+          pulse.style.border = '3px solid #ef4444';
+          pulse.style.animation = 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite';
+          pulse.style.opacity = '0.6';
+          el.appendChild(pulse);
+        }
 
         // Inner dot (we scale this so we don't override Mapbox's translate transform)
         const dot = document.createElement('div');
         dot.className = 'marker';
         dot.style.backgroundColor = color;
-        // Make target property marker larger
-        const isTargetProperty = id === 'target-property';
-        const markerSize = isTargetProperty ? '18px' : '14px';
+        const markerSize = isTargetProperty ? '32px' : '14px';
         dot.style.width = markerSize;
         dot.style.height = markerSize;
         dot.style.borderRadius = '50%';
-        dot.style.border = isTargetProperty ? '3px solid white' : '2px solid white';
+        dot.style.border = isTargetProperty ? '4px solid white' : '2px solid white';
         dot.style.boxShadow = isTargetProperty ? '0 3px 8px rgba(239,68,68,0.5)' : '0 2px 4px rgba(0,0,0,0.3)';
         dot.style.transition = 'transform 0.2s';
         el.appendChild(dot);
