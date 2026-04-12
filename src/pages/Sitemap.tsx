@@ -23,15 +23,9 @@ const publicPages = [
   },
   {
     path: "/property-assessment",
-    title: "Property Assessment",
-    description: "Look up solar installation details for a specific property address.",
+    title: "Property Assessment & Personalized Plan",
+    description: "Get a property-specific solar evaluation and personalized clean energy action plan tailored to your lifestyle.",
     icon: Building2,
-  },
-  {
-    path: "/recommendations",
-    title: "Personalized Plan",
-    description: "Get AI-powered clean energy recommendations tailored to your lifestyle and housing situation.",
-    icon: Lightbulb,
   },
   {
     path: "/fiscal-year-stats",
