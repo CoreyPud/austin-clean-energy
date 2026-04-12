@@ -100,3 +100,19 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@media print {
+  .no-print, nav, footer, button {
+    display: none !important;
+  }
+  .prose {
+    max-width: 100% !important;
+  }
+}
