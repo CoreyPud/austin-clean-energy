@@ -322,6 +322,10 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
         dot.style.border = isTargetProperty ? '4px solid white' : '2px solid white';
         dot.style.boxShadow = isTargetProperty ? '0 3px 8px rgba(239,68,68,0.5)' : '0 2px 4px rgba(0,0,0,0.3)';
         dot.style.transition = 'transform 0.2s';
+        if (isTargetProperty) {
+          el.style.zIndex = '10';
+          dot.style.position = 'relative';
+        }
         el.appendChild(dot);
         
         el.addEventListener('mouseenter', () => {
