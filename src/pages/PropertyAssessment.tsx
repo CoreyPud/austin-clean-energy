@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Home, Zap, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera, AlertCircle, TrendingUp, Building2, Lightbulb, ArrowDown } from "lucide-react";
+import { ArrowLeft, Home, Zap, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera, AlertCircle, TrendingUp, Building2, Lightbulb, ArrowDown, Printer, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,17 @@ const PropertyAssessment = () => {
     }
     if (/[<>{}]/.test(trimmedAddress)) {
       toast({ title: "Invalid Address", description: "Address contains invalid characters", variant: "destructive" });
+      return;
+    }
+    // Require a street number + street name pattern
+    if (!/^\d+\s+\S/.test(trimmedAddress)) {
+      toast({ title: "Incomplete Address", description: "Please enter a full street address (e.g. 123 Main St, Austin, TX)", variant: "destructive" });
+      return;
+    }
+    // Must reference Austin, TX area
+    const austinPattern = /austin|ATX|787\d{2}/i;
+    if (!austinPattern.test(trimmedAddress)) {
+      toast({ title: "Austin Addresses Only", description: "This tool is designed for Austin, TX properties. Please include 'Austin' or an Austin ZIP code (787xx) in your address.", variant: "destructive" });
       return;
     }
     if (!propertyType) {
@@ -441,6 +452,7 @@ const PropertyAssessment = () => {
                   <LifestyleAssessmentForm 
                     onSubmit={handleGenerateRecommendations}
                     loading={recommendationsLoading}
+                    initialHomeType={propertyType}
                   />
                 </div>
               )}
@@ -516,7 +528,7 @@ const PropertyAssessment = () => {
                     </CardContent>
                   </Card>
 
-                  <div className="flex justify-center gap-4">
+                  <div className="flex justify-center gap-4 flex-wrap">
                     <Button 
                       onClick={() => {
                         setRecommendations(null);
@@ -541,6 +553,13 @@ const PropertyAssessment = () => {
                       variant="outline"
                     >
                       Start Over
+                    </Button>
+                    <Button 
+                      onClick={() => window.print()}
+                      variant="outline"
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print / Save as PDF
                     </Button>
                   </div>
                 </div>

@@ -18,11 +18,22 @@ export interface LifestyleData {
 interface LifestyleAssessmentFormProps {
   onSubmit: (data: LifestyleData) => void;
   loading?: boolean;
+  initialHomeType?: string;
 }
 
-const LifestyleAssessmentForm = ({ onSubmit, loading = false }: LifestyleAssessmentFormProps) => {
+const mapPropertyTypeToHomeType = (propertyType?: string): string => {
+  switch (propertyType) {
+    case 'single-family': return 'single-family';
+    case 'condo': return 'condo-townhouse';
+    case 'multi-family': return 'apartment';
+    default: return '';
+  }
+};
+
+const LifestyleAssessmentForm = ({ onSubmit, loading = false, initialHomeType }: LifestyleAssessmentFormProps) => {
   const [housingStatus, setHousingStatus] = useState("");
-  const [homeType, setHomeType] = useState("");
+  const mappedHomeType = mapPropertyTypeToHomeType(initialHomeType);
+  const [homeType, setHomeType] = useState(mappedHomeType);
   const [currentEnergy, setCurrentEnergy] = useState("");
   const [transportation, setTransportation] = useState("");
   const [commuteType, setCommuteType] = useState("");
@@ -75,24 +86,26 @@ const LifestyleAssessmentForm = ({ onSubmit, loading = false }: LifestyleAssessm
             </RadioGroup>
           </div>
 
-          {/* Home Type */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">What type of home do you live in?</Label>
-            <RadioGroup value={homeType} onValueChange={setHomeType}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="single-family" id="single-family" />
-                <Label htmlFor="single-family" className="font-normal cursor-pointer">Single-family house</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="condo-townhouse" id="condo-townhouse" />
-                <Label htmlFor="condo-townhouse" className="font-normal cursor-pointer">Condo or townhouse</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="apartment" id="apartment" />
-                <Label htmlFor="apartment" className="font-normal cursor-pointer">Apartment</Label>
-              </div>
-            </RadioGroup>
-          </div>
+          {/* Home Type - only show if not pre-filled from Step 1 */}
+          {!mappedHomeType && (
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">What type of home do you live in?</Label>
+              <RadioGroup value={homeType} onValueChange={setHomeType}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="single-family" id="single-family" />
+                  <Label htmlFor="single-family" className="font-normal cursor-pointer">Single-family house</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="condo-townhouse" id="condo-townhouse" />
+                  <Label htmlFor="condo-townhouse" className="font-normal cursor-pointer">Condo or townhouse</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="apartment" id="apartment" />
+                  <Label htmlFor="apartment" className="font-normal cursor-pointer">Apartment</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
 
           {/* Current Energy */}
           <div className="space-y-3">
