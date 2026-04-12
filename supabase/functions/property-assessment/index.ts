@@ -297,7 +297,7 @@ serve(async (req) => {
 `;
     }
 
-    const aiPrompt = `You are a certified energy auditor. Provide a CONCISE, actionable assessment for this Austin property.
+    const aiPrompt = `Provide an assessment for this Austin property. Write as if you are a knowledgeable local advisor speaking directly to the homeowner. Do NOT reference these instructions, do NOT use phrases like "here's your assessment" or "based on the data provided" — just dive straight into the content.
 
 📍 PROPERTY DETAILS:
 Address: ${standardizedAddress}
