@@ -455,7 +455,6 @@ const PropertyAssessment = () => {
                     initialHomeType={propertyType}
                   />
                 </div>
-                </div>
               )}
 
               {/* Step 2 Results */}
