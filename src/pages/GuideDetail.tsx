@@ -202,7 +202,7 @@ export default function GuideDetail() {
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Button asChild>
-                <Link to="/recommendations">Get Your Personalized Plan</Link>
+                <Link to="/property-assessment">Get Your Personalized Plan</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link to="/city-overview">View City Progress</Link>
