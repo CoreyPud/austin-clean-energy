@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Home, Zap, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera, AlertCircle, TrendingUp, Building2 } from "lucide-react";
+import { ArrowLeft, Home, Zap, Leaf, Loader2, CheckCircle2, Sun, Battery, ExternalLink, Camera, AlertCircle, TrendingUp, Building2, Lightbulb, ArrowDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,11 +14,12 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSeo } from "@/hooks/use-seo";
+import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 
 const PropertyAssessment = () => {
   useSeo({
-    title: "Property Assessment",
-    description: "Get a personalized solar and energy efficiency assessment for your Austin property. Estimate savings, incentives, and payback period.",
+    title: "Property Assessment & Personalized Plan",
+    description: "Get a personalized solar and energy efficiency assessment for your Austin property, then dive deeper with a customized action plan.",
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,80 +28,88 @@ const PropertyAssessment = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
 
+  // Step 2 state
+  const [showLifestyleForm, setShowLifestyleForm] = useState(false);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState<any>(null);
+  const lifestyleRef = useRef<HTMLDivElement>(null);
+
   const handleAssess = async () => {
-    // Client-side validation
     const trimmedAddress = address.trim();
     
     if (!trimmedAddress) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter your property address",
-        variant: "destructive",
-      });
+      toast({ title: "Missing Information", description: "Please enter your property address", variant: "destructive" });
       return;
     }
-    
     if (trimmedAddress.length > 200) {
-      toast({
-        title: "Invalid Address",
-        description: "Address must be less than 200 characters",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid Address", description: "Address must be less than 200 characters", variant: "destructive" });
       return;
     }
-    
-    // Check for suspicious characters
     if (/[<>{}]/.test(trimmedAddress)) {
-      toast({
-        title: "Invalid Address",
-        description: "Address contains invalid characters",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid Address", description: "Address contains invalid characters", variant: "destructive" });
       return;
     }
-    
     if (!propertyType) {
-      toast({
-        title: "Missing Information",
-        description: "Please select a property type",
-        variant: "destructive",
-      });
+      toast({ title: "Missing Information", description: "Please select a property type", variant: "destructive" });
       return;
     }
 
     setLoading(true);
+    setShowLifestyleForm(false);
+    setRecommendations(null);
     try {
       const { data, error } = await supabase.functions.invoke('property-assessment', {
         body: { address: trimmedAddress, propertyType }
       });
-
       if (error) throw error;
-
       setResults(data);
-      toast({
-        title: "Assessment Complete",
-        description: "Property analysis generated successfully",
-      });
+      toast({ title: "Assessment Complete", description: "Property analysis generated successfully" });
     } catch (error: any) {
       console.error("Assessment error:", error);
-      toast({
-        title: "Assessment Failed",
-        description: error.message || "Failed to assess property",
-        variant: "destructive",
-      });
+      toast({ title: "Assessment Failed", description: error.message || "Failed to assess property", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGetPersonalizedPlan = () => {
+    setShowLifestyleForm(true);
+    setTimeout(() => {
+      lifestyleRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const handleGenerateRecommendations = async (lifestyleData: LifestyleData) => {
+    setRecommendationsLoading(true);
+    try {
+      // Build propertyData from Step 1 results
+      const propertyData = results ? {
+        address: results.address,
+        propertyType,
+        solarInsights: results.solarInsights || null,
+        greenBuildingContext: results.dataPoints?.greenBuildingAverages || null,
+        nearbyPermitCount: results.dataPoints?.citySolarPermits || null,
+      } : undefined;
+
+      const { data, error } = await supabase.functions.invoke('generate-recommendations', {
+        body: { lifestyleData, propertyData }
+      });
+      if (error) throw error;
+      setRecommendations(data);
+      setShowLifestyleForm(false);
+      toast({ title: "Personalized Plan Generated", description: "Your customized action plan is ready" });
+    } catch (error: any) {
+      console.error("Recommendations error:", error);
+      toast({ title: "Generation Failed", description: error.message || "Failed to generate recommendations", variant: "destructive" });
+    } finally {
+      setRecommendationsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <div className="container mx-auto px-4 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/")}
-          className="mb-6"
-        >
+        <Button variant="ghost" onClick={() => navigate("/")} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>
@@ -109,10 +118,28 @@ const PropertyAssessment = () => {
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl font-bold mb-3 text-foreground">Property Assessment</h1>
             <p className="text-lg text-muted-foreground">
-              Get a comprehensive clean energy evaluation for your property
+              Get a comprehensive clean energy evaluation for your property, then optionally dive deeper with a personalized action plan
             </p>
           </div>
 
+          {/* Step indicator */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-2">
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${results ? 'bg-primary text-primary-foreground' : 'bg-primary/20 text-primary'}`}>
+                {results ? <CheckCircle2 className="h-5 w-5" /> : '1'}
+              </div>
+              <span className="text-sm font-medium">Property Analysis</span>
+            </div>
+            <div className="h-px flex-1 bg-border" />
+            <div className="flex items-center gap-2">
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${recommendations ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                {recommendations ? <CheckCircle2 className="h-5 w-5" /> : '2'}
+              </div>
+              <span className={`text-sm font-medium ${recommendations ? 'text-foreground' : 'text-muted-foreground'}`}>Personalized Plan</span>
+            </div>
+          </div>
+
+          {/* Step 1: Property Form */}
           <Card className="mb-8 shadow-lg border-2">
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -168,6 +195,7 @@ const PropertyAssessment = () => {
             </CardContent>
           </Card>
 
+          {/* Step 1 Results */}
           {results && (
             <div className="space-y-6 animate-slide-up">
               <Alert className="border-primary/30 bg-primary/5">
@@ -291,7 +319,6 @@ const PropertyAssessment = () => {
                       markers={results.locations || []}
                       className="h-[400px]"
                       onMarkerClick={(id) => {
-                        // Don't try to open detail page for the user's own property
                         if (id !== 'target-property') {
                           window.open(`/installation/${id}`, '_blank');
                         }
@@ -386,6 +413,138 @@ const PropertyAssessment = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Step 2 CTA */}
+              {!showLifestyleForm && !recommendations && (
+                <Card className="border-2 border-primary/40 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 shadow-lg">
+                  <CardContent className="py-8 text-center">
+                    <Lightbulb className="h-12 w-12 text-primary mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold mb-2 text-foreground">Want a Personalized Action Plan?</h3>
+                    <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+                      Answer a few quick questions about your lifestyle and we'll combine your property data with personalized recommendations for maximum impact.
+                    </p>
+                    <Button 
+                      size="lg" 
+                      onClick={handleGetPersonalizedPlan}
+                      className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                    >
+                      <ArrowDown className="mr-2 h-5 w-5" />
+                      Get My Personalized Plan
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Step 2: Lifestyle Form */}
+              {showLifestyleForm && !recommendations && (
+                <div ref={lifestyleRef} className="animate-slide-up">
+                  <LifestyleAssessmentForm 
+                    onSubmit={handleGenerateRecommendations}
+                    loading={recommendationsLoading}
+                  />
+                </div>
+              )}
+
+              {/* Step 2 Results */}
+              {recommendations && (
+                <div className="space-y-6 animate-slide-up">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb className="h-6 w-6 text-primary" />
+                    <h2 className="text-2xl font-bold text-foreground">Your Personalized Action Plan</h2>
+                  </div>
+
+                  <MapTokenLoader>
+                    <Card className="border-2 border-primary/20 overflow-hidden">
+                      <CardHeader>
+                        <CardTitle>Austin Solar Activity Heatmap</CardTitle>
+                        <CardDescription>Permit density by ZIP code - darker areas show higher solar adoption</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <Map 
+                          center={results?.center || [-97.7431, 30.2672]}
+                          zoom={10}
+                          heatmapData={recommendations.heatmapData}
+                          className="h-[500px]"
+                        />
+                      </CardContent>
+                    </Card>
+                  </MapTokenLoader>
+
+                  <Card className="border-2 border-primary/20">
+                    <CardHeader>
+                      <CardTitle>Strategic Recommendations</CardTitle>
+                      <CardDescription>
+                        Based on your property at {results?.address} and {recommendations.dataPoints?.solarPermits || 0} solar permits, {recommendations.dataPoints?.energyAudits || 0} energy audits, {recommendations.dataPoints?.weatherizationProjects || 0} weatherization projects, and {recommendations.dataPoints?.greenBuildings || 0} green buildings.{" "}
+                        <button
+                          onClick={() => navigate('/data-sources')}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          Learn about our data sources
+                        </button>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown
+                          components={{
+                            a: ({ node, ...props }) => (
+                              <a {...props} className="text-primary hover:text-primary/80 underline" target="_blank" rel="noopener noreferrer" />
+                            ),
+                            strong: ({ node, ...props }) => (
+                              <strong {...props} className="font-bold text-foreground" />
+                            ),
+                            ul: ({ node, ...props }) => (
+                              <ul {...props} className="list-disc list-inside space-y-1 my-3" />
+                            ),
+                            ol: ({ node, ...props }) => (
+                              <ol {...props} className="list-decimal list-inside space-y-1 my-3" />
+                            ),
+                            p: ({ node, ...props }) => (
+                              <p {...props} className="mb-3 leading-relaxed" />
+                            ),
+                            h2: ({ node, ...props }) => (
+                              <h2 {...props} className="text-xl font-bold mt-6 mb-3" />
+                            ),
+                            h3: ({ node, ...props }) => (
+                              <h3 {...props} className="text-lg font-semibold mt-4 mb-2" />
+                            ),
+                          }}
+                        >
+                          {recommendations.overview}
+                        </ReactMarkdown>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex justify-center gap-4">
+                    <Button 
+                      onClick={() => {
+                        setRecommendations(null);
+                        setShowLifestyleForm(true);
+                        setTimeout(() => {
+                          lifestyleRef.current?.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                      }}
+                      variant="outline"
+                    >
+                      Retake Lifestyle Assessment
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setResults(null);
+                        setRecommendations(null);
+                        setShowLifestyleForm(false);
+                        setAddress("");
+                        setPropertyType("");
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      variant="outline"
+                    >
+                      Start Over
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
