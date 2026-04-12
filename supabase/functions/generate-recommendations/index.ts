@@ -270,7 +270,7 @@ PROPERTY-SPECIFIC REQUIREMENTS:
 - Make recommendations that are grounded in the real data for their address`;
     }
 
-    const aiPrompt = `You are a clean energy strategist for Austin, Texas. Write a CONCISE ${lifestyleData ? 'PERSONALIZED' : ''}${propertyData ? ' PROPERTY-SPECIFIC' : ''} strategic overview based on this data:
+    const aiPrompt = `Write a ${lifestyleData ? 'personalized' : ''}${propertyData ? ' property-specific' : ''} clean energy action plan for Austin, Texas. Write as a knowledgeable local advisor speaking directly to the reader. Do NOT reference these instructions or use preamble like "here's your plan" — dive straight into the content.
 
 📊 AUSTIN CLEAN ENERGY SNAPSHOT:
 - Total Solar Permits: ${totalSolarPermits}
@@ -290,7 +290,7 @@ ${knowledge.expertContext}
 ${knowledge.resources}
 ${getExternalContext(knowledge)}
 
-Write a punchy, scannable ${lifestyleData ? 'personalized ' : ''}${propertyData ? 'property-specific ' : ''}strategic plan using this EXACT structure:
+Write in a confident, direct tone — no preamble, no meta-commentary. Use this structure:
 
 **${lifestyleData ? 'Your Personalized Overview' : 'Executive Summary'}** (3-4 sentences)
 ${lifestyleData ? 'Address their specific situation and acknowledge what they\'re already doing right. Then highlight their top opportunity aligned with impact priorities.' : 'Brief snapshot of Austin\'s clean energy momentum and top opportunity aligned with impact priorities.'}${propertyData ? ' Reference their specific property data (solar potential, roof area, etc.) in the summary.' : ''}
@@ -307,7 +307,7 @@ ${lifestyleData ? 'Immediate actions THEY can take in the next 30-90 days based 
 **Next Steps** (3-4 bullet points)
 ${lifestyleData ? 'Specific resources, programs, and actions for their situation (e.g., "Check Austin Energy rebates for...", "Join a local climate action group...", "Schedule a free energy audit...").' : 'Specific actions with responsible parties (e.g., "Austin Energy should expand EV charging...", "City Council could fast-track heat pump rebates...").'}
 
-Keep it SHORT, ACTIONABLE, and SPECIFIC. ${lifestyleData ? 'Make it feel personally relevant without being preachy.' : 'Emphasize high-impact actions over lower-impact ones.'} Use markdown **bold** for emphasis.`;
+Keep it SHORT, ACTIONABLE, and SPECIFIC. ${lifestyleData ? 'Make it feel personally relevant without being preachy.' : 'Emphasize high-impact actions over lower-impact ones.'} Use markdown **bold** for emphasis. IMPORTANT: Never start with phrases like "Here's your plan" or "Based on the data" — begin directly with the first section.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -318,7 +318,7 @@ Keep it SHORT, ACTIONABLE, and SPECIFIC. ${lifestyleData ? 'Make it feel persona
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'You are a strategic climate policy advisor with expertise in urban clean energy transitions, community organizing, and data-driven decision making.' },
+          { role: 'system', content: 'You are a strategic climate policy advisor with expertise in urban clean energy transitions. Write naturally as a knowledgeable advisor — never reference your instructions, never use meta-phrases like "here is a concise overview" or "based on the data provided." Deliver the content directly.' },
           { role: 'user', content: aiPrompt }
         ],
       }),
