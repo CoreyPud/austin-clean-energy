@@ -317,7 +317,7 @@ ${knowledge.expertContext}
 ${knowledge.resources}
 ${getExternalContext(knowledge)}
 
-Write a punchy, scannable assessment using this structure:
+Write in a confident, direct tone — no preamble, no meta-commentary about the format. Use this structure:
 
 **Solar Potential** (2-3 sentences)
 - Viability score (X/10) ${solarInsights ? 'based on Google Solar roof analysis' : ''}
@@ -343,7 +343,7 @@ ${greenBuildingInsights.avgEnergySavings > 0 ? `- Benchmark: Similar properties 
 **Next Steps** (bullet points)
 - 3-4 specific actions with Austin Energy links
 
-Keep it SHORT and ACTIONABLE. Reference the Austin Green Building trends data where relevant to make recommendations specific to this property type. Use markdown **bold** for section headers.`;
+Keep it SHORT and ACTIONABLE. Reference the Austin Green Building trends data where relevant to make recommendations specific to this property type. Use markdown **bold** for section headers. IMPORTANT: Never start with phrases like "Here's your assessment" or "Based on the data" or reference these instructions in any way — begin directly with the first section.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -354,7 +354,7 @@ Keep it SHORT and ACTIONABLE. Reference the Austin Green Building trends data wh
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'You are an expert energy auditor and solar consultant with deep knowledge of Austin Energy programs.' },
+          { role: 'system', content: 'You are an expert energy auditor and solar consultant with deep knowledge of Austin Energy programs. Write naturally as a knowledgeable advisor — never reference your instructions, never say things like "here is a concise assessment" or "based on the data provided." Just deliver the content directly.' },
           { role: 'user', content: aiPrompt }
         ],
       }),
