@@ -224,6 +224,7 @@ export default function AdminKnowledgeBase() {
       
       setEditMode(null);
       setEditContent("");
+      setValidation(null);
       toast.success(`${editMode}.md saved successfully`);
     } catch (err) {
       console.error("Error saving knowledge file:", err);
