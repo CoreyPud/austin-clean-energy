@@ -459,3 +459,64 @@ export default function AdminKnowledgeBase() {
     </div>
   );
 }
+
+function ValidatorPanel({ result }: { result: CouncilMarkdownValidationResult }) {
+  const errors = result.issues.filter((i) => i.severity === "error");
+  const warnings = result.issues.filter((i) => i.severity === "warning");
+
+  if (result.valid && warnings.length === 0) {
+    return (
+      <div className="flex items-start gap-2 p-3 rounded-md border border-green-500/30 bg-green-500/10 text-sm">
+        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+        <div>
+          <p className="font-medium text-foreground">Markdown looks valid</p>
+          <p className="text-muted-foreground text-xs">
+            All 11 sections (Mayor + Districts 1–10) and required fields are present.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {errors.length > 0 && (
+        <div className="p-3 rounded-md border border-destructive/40 bg-destructive/10">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <p className="font-medium text-sm text-foreground">
+              {errors.length} formatting error{errors.length === 1 ? "" : "s"} — must fix before saving
+            </p>
+          </div>
+          <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
+            {errors.map((issue, idx) => (
+              <li key={idx}>
+                {issue.line ? <span className="font-mono text-foreground">L{issue.line}: </span> : null}
+                {issue.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {warnings.length > 0 && (
+        <div className="p-3 rounded-md border border-yellow-500/40 bg-yellow-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            <p className="font-medium text-sm text-foreground">
+              {warnings.length} warning{warnings.length === 1 ? "" : "s"} — review but won't block saving
+            </p>
+          </div>
+          <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
+            {warnings.map((issue, idx) => (
+              <li key={idx}>
+                {issue.line ? <span className="font-mono text-foreground">L{issue.line}: </span> : null}
+                {issue.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
