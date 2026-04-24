@@ -1,66 +1,155 @@
 
 
-## Plan: Unified Property Assessment + Recommendations Flow
+## Plan: Unified "My Austin Energy Profile" — Full Build (with Council Lookup)
 
-### Current State
+### What changes overall
 
-**Property Assessment** (`/property-assessment`): User enters address + property type. The backend geocodes it, calls Google Solar API for roof data, fetches nearby solar permits from the database, queries green building benchmarks, and generates an AI assessment with solar stats, map, and efficiency rating.
+Today the site has two overlapping address tools (`/area-analysis` for ZIP, `/property-assessment` for address) plus an opt-in lifestyle deep-dive. This plan collapses them into **one card-driven flow at `/property-assessment`** ("My Austin Energy Profile"). One address entry produces a dashboard covering property, neighborhood, savings, local advocacy (with live council-district lookup + admin-editable contact info), and prioritized recommendations. The lifestyle questionnaire stays as an optional "Go Deeper" step.
 
-**Recommendation Engine** (`/recommendations`): User fills out a 6-question lifestyle form (own/rent, home type, energy setup, transportation, commute, interests). The backend fetches city-wide solar/audit/weatherization/green-building data, builds a heatmap, and generates an AI action plan. No address or property-specific data is used.
+### Page structure (after address submit)
 
-These are currently completely separate — different pages, different edge functions, no shared state.
+```text
+┌───────────────────────────────────────────────────────────┐
+│  Header: 1234 Main St · Austin, TX 78704                  │
+│  [ Print/PDF ]  [ Start Over ]                            │
+├───────────────────────────────────────────────────────────┤
+│  NEIGHBORHOOD SNAPSHOT (4 stat cards)                     │
+│   Solar in your ZIP · Permits 90d · Green-rated · Avg ★   │
+│                                                           │
+│  YOUR ROOF (Google Solar card — existing)                 │
+│   Max panels · roof area · sunshine hrs · CO₂ offset      │
+│                                                           │
+│  POTENTIAL SAVINGS (3 cards)                              │
+│   $/yr · payback yrs · 25-yr savings                      │
+│                                                           │
+│  MAP: your pin + nearby installations                     │
+│                                                           │
+│  LOCAL ADVOCACY                                           │
+│   District N · Council Member · Email · Phone · Office    │
+│   Current priorities (from admin-editable .md)            │
+│                                                           │
+│  TOP RECOMMENDATIONS (3 action cards, not prose)          │
+│   icon · headline · expected $ impact · [Take action →]   │
+│                                                           │
+│  Compact AI summary (3-4 sentences max)                   │
+│                                                           │
+│  [ Get a personalized lifestyle action plan → ]           │
+│   expands to existing LifestyleAssessmentForm + plan      │
+└───────────────────────────────────────────────────────────┘
+```
 
-### Proposed Unified Flow
+### Data sources per section
 
-A single page at `/property-assessment` with a **two-step progressive experience**:
+- **Neighborhood snapshot** — existing `solar_installations` table filtered by geocoded ZIP, plus existing Austin Open Data feeds (audits `tk9p-m8c7`, green buildings `dpvb-c5fy`, weatherization)
+- **Your roof / savings** — existing Google Solar API; savings computed deterministically (kWh × $0.13 Austin Energy avg residential rate; payback from `financialAnalyses` when present, else Austin averages from `data-sources.md`)
+- **Local advocacy** —
+  - **District** via Austin's public ArcGIS `ContactCouncilMember` MapServer (spatial query against geocoded lat/lng); always live
+  - **Member contact + priorities** from a new admin-editable markdown file `council-members.md` stored in `knowledge_files`
+  - **Always-live fallback link**: `COUNCIL_DISTRICT_PATH` returned by ArcGIS (e.g., `austintexas.gov/department/district-5`) so even stale markdown still routes users to the official page
+- **Top recommendations** — deterministic rules engine (no AI). Picks 3 from a fixed library based on solar viability score, current housing/energy setup if Step 2 is done, and neighborhood adoption percentile
+- **Compact AI summary** — Lovable AI Gateway (`google/gemini-2.5-flash`), tight prompt: "3-4 sentences max. Do NOT repeat numbers shown in the cards. Focus on the single biggest opportunity for this property and one local-advocacy hook." Matches existing "knowledgeable local advisor" persona memory
 
-**Step 1 — Property Assessment (address-based)**
-- User enters address + property type (same as today)
-- Results show: Google Solar roof analysis, nearby permits map, green building comparison, AI assessment
-- A prominent CTA appears at the bottom: "Get a Personalized Action Plan" — this transitions to Step 2
+### Backend
 
-**Step 2 — Lifestyle Deep-Dive (optional, builds on Step 1)**
-- The lifestyle form appears below or replaces the form area
-- Address and property type are pre-filled / carried forward
-- The `generate-recommendations` edge function receives the address, property type, AND lifestyle data
-- The AI prompt now incorporates the Google Solar data and property-specific context alongside the lifestyle answers
-- Results show the heatmap + strategic recommendations, now personalized to both the property AND the person
+**New edge function `unified-assessment`** consolidating today's `property-assessment` + `area-analysis` work
+- Input: `{ address, propertyType }`
+- Geocode → extract lat/lng + ZIP
+- Parallel fetch: Google Solar, neighborhood permit counts (DB by ZIP), city-wide audits/weatherization/green building, council district via ArcGIS
+- Deterministically compute savings + pick top-3 recommendations
+- Single short AI summary call
+- Return structured JSON for all cards + summary string
 
-### Key Considerations
+**Council lookup utility (new)** `supabase/functions/_shared/councilLookup.ts`
+- `getCouncilDistrict(lat, lng)` — calls ArcGIS, returns `{ district, districtPath }`
+- `parseCouncilMembers(markdown)` — parses `council-members.md` into `{ district | "mayor" → { name, email, phone, officePage, priorities } }`
 
-1. **Data continuity**: The property assessment results (Google Solar data, geocoded coordinates, nearby permits, green building stats) need to be passed into Step 2 so the recommendation engine can use them without re-fetching.
+**Admin-editable contact directory (new)** `supabase/functions/_shared/knowledge/council-members.md`
+- Seed content for Mayor + Districts 1–10 (name, email, phone, office page, current priorities)
+- Loaded the same way as the other knowledge files; structured headings so the parser is reliable but file stays human-editable in the admin UI
 
-2. **Edge function changes**: The `generate-recommendations` function needs to accept optional property data (address, coords, solar insights, property type) and incorporate it into the AI prompt when available. This makes recommendations property-specific rather than generic city-wide.
+```markdown
+# Austin City Council Contact Directory
+Last Updated: 2026-04-23
 
-3. **UX flow**: Users should be able to complete Step 1 only and leave satisfied, or continue to Step 2. The transition should feel natural — not like starting over. A stepper/progress indicator would help.
+## Mayor
+**Name:** Kirk Watson
+**Email:** mayor@austintexas.gov
+**Phone:** 512-978-2100
+**Office Page:** https://austintexas.gov/mayor
+**Current Priorities:** Climate equity plan implementation, Project Connect
 
-4. **Rate limiting**: Since the combined flow hits two edge functions, consider whether the rate limits (10/hr for property, 20/hr for recommendations) need adjustment.
+## District 1
+**Name:** Natasha Harper-Madison
+...
+## District 10
+...
+```
 
-5. **Loading states**: Two sequential API calls means potentially long wait times. Show Step 1 results immediately, then a separate loading state for Step 2.
+**`generate-recommendations` (kept)** — receives richer property context (savings stats, neighborhood adoption percentile, council district + member) so the optional lifestyle plan can also reference local advocacy hooks
 
-6. **Navigation updates**: Remove the separate `/recommendations` route. Update the homepage cards from 3 modules to 2 (Area Analysis + Property Assessment). Redirect `/recommendations` to `/property-assessment` for any existing links.
+### Knowledge-file plumbing
 
-7. **SEO**: Merge meta descriptions. Add a redirect from the old URL.
+- **Modified** `supabase/functions/_shared/loadKnowledge.ts` — add `'council-members'` to the loaded set
+- **Modified** `supabase/functions/save-knowledge-file/index.ts` — add `'council-members'` to `validNames` so the admin save endpoint accepts it
+- **Migration** — insert one row into `knowledge_files` with `name = 'council-members'` and the seed markdown so `/admin/knowledge-base` shows it as a 5th editable file alongside priorities, resources, expert-context, data-sources
+- No admin UI code changes needed — the page lists `knowledge_files` rows dynamically
 
-### Implementation Steps
+### Frontend
 
-1. **Update the `generate-recommendations` edge function** to accept optional `propertyData` (address, propertyType, solarInsights, coordinates) and weave it into the AI prompt when present.
+- **`src/pages/PropertyAssessment.tsx`** — major refactor to the card grid above. Replace the long `<ReactMarkdown>` block with discrete `<Card>` components per section. Compact AI summary stays as a small markdown block at the bottom. Keep existing print styles, "Start Over", strict address validation (number + street + Austin keyword), and 32px pulsing target pin
+- **`src/pages/Index.tsx`** — collapse "Three Ways to Get Started" → two primary CTAs: City-Wide Progress + **My Austin Energy Profile** (folds in former Area Analysis copy)
+- **`src/pages/AreaAnalysis.tsx`** — convert to `<Navigate to="/property-assessment" replace />`
+- **`src/App.tsx`** — add `/area-analysis` redirect; keep `/recommendations` redirect
+- **`src/pages/DataSources.tsx`** — document new methodology (savings calculation, ArcGIS council lookup, admin-editable contact source)
+- **`src/components/Footer.tsx`** — link cleanup
+- **New components** under `src/components/assessment/`:
+  - `NeighborhoodSnapshot.tsx`
+  - `SavingsCards.tsx`
+  - `CouncilMemberCard.tsx`
+  - `RecommendationCards.tsx`
 
-2. **Refactor `PropertyAssessment.tsx`** into a multi-step page:
-   - Step 1: Current address form + results display
-   - Step 2: Lifestyle form (shown after Step 1 results, with a CTA button to expand)
-   - Step 2 results: Heatmap + personalized recommendations displayed below
+### What stays the same
 
-3. **Update the homepage** (`Index.tsx`): Change from 3 module cards to 2. Update the "Recommendation Engine" card to describe the combined flow, or merge its description into the Property Assessment card.
+- Lovable AI Gateway (`google/gemini-2.5-flash`) for the short summary and the optional lifestyle plan — no new keys
+- Lifestyle questionnaire and personalized plan output (now reached via the same page's "Go Deeper" CTA)
+- Existing print/PDF, map pin styling, address validation rules, all RLS policies
+- Embedded route `/embed/area-analysis` continues to use `area-analysis` edge function for backward compat (flagged for future removal)
 
-4. **Update routing** (`App.tsx`): Add a redirect from `/recommendations` to `/property-assessment`. Remove the standalone Recommendations page import.
+### Files affected
 
-5. **Update internal links**: Any references to `/recommendations` across the app (footer, data sources page, etc.) should point to `/property-assessment`.
+**Created**
+- `supabase/functions/unified-assessment/index.ts`
+- `supabase/functions/_shared/councilLookup.ts`
+- `supabase/functions/_shared/knowledge/council-members.md` (seed)
+- New migration: insert seed `knowledge_files` row for `council-members`
+- `src/components/assessment/NeighborhoodSnapshot.tsx`
+- `src/components/assessment/SavingsCards.tsx`
+- `src/components/assessment/CouncilMemberCard.tsx`
+- `src/components/assessment/RecommendationCards.tsx`
 
-### Technical Details
+**Modified**
+- `src/pages/PropertyAssessment.tsx` (card-grid rebuild, calls `unified-assessment`)
+- `src/pages/Index.tsx` (single primary CTA + City Overview)
+- `src/pages/AreaAnalysis.tsx` (redirect-only)
+- `src/App.tsx` (`/area-analysis` redirect)
+- `src/pages/DataSources.tsx` (new methodology section)
+- `src/components/Footer.tsx` (link cleanup)
+- `supabase/functions/generate-recommendations/index.ts` (accept extended property + council context)
+- `supabase/functions/_shared/loadKnowledge.ts` (load `council-members`)
+- `supabase/functions/save-knowledge-file/index.ts` (allow `council-members` name)
 
-- **State management**: Store Step 1 results in component state; pass relevant fields (`solarInsights`, `center`, `address`, `propertyType`, `dataPoints`) to the `generate-recommendations` call body.
-- **Edge function signature change**: `{ lifestyleData, propertyData? }` where `propertyData` includes address, propertyType, solarInsights summary, and green building context.
-- **Backward compatibility**: The lifestyle-only flow still works if `propertyData` is absent (defensive coding in the edge function).
-- Files affected: `PropertyAssessment.tsx`, `Recommendations.tsx` (delete or redirect), `Index.tsx`, `App.tsx`, `generate-recommendations/index.ts`, `Footer.tsx`, and any page linking to `/recommendations`.
+**Deprecated (kept temporarily)**
+- `supabase/functions/area-analysis/index.ts` — still serves `/embed/area-analysis`; flag for future removal
+
+### AI prompt discipline
+
+Summary call is capped at 3-4 sentences and explicitly told not to duplicate stat-card numbers, addressing prior "too text-heavy / instruction language leaking" feedback. Same persona ("knowledgeable local advisor") used in both the summary and the lifestyle plan.
+
+### Why this design
+
+- **One entry point** removes the Area-vs-Property confusion
+- **Cards over prose** matches the "less text-heavy, more visual cues" requirement
+- **Deterministic savings + recommendations** keeps numbers accurate and consistent
+- **Live ArcGIS district lookup** means zero maintenance for boundaries
+- **Admin-editable `council-members.md`** lets non-developers refresh names/contacts/priorities through the existing Knowledge Base UI; the ArcGIS `districtPath` is the always-fresh fallback if the markdown drifts after an election
 
