@@ -66,18 +66,20 @@ const Index = () => {
 
   const modules = [
     {
-      icon: BarChart3,
-      title: "Analyze Your Neighborhood",
-      description: "Analyze neighborhoods and zip codes for solar, efficiency, and storage potential across Austin.",
-      features: ["Community-level insights", "Adoption momentum tracking", "Incentive opportunities"],
-      gradient: "from-primary to-secondary",
+      icon: Building2,
+      title: "My Austin Energy Profile",
+      description: "Enter your address to get neighborhood solar trends, your roof's potential, savings estimates, your council member, and tailored next steps — all in one place.",
+      features: ["Neighborhood snapshot + map", "Solar savings + payback", "Your council representative", "Optional personalized plan"],
+      gradient: "from-primary to-accent",
+      route: "/property-assessment",
     },
     {
-      icon: Building2,
-      title: "Property Assessment & Action Plan",
-      description: "Get a detailed property evaluation with Google Solar roof analysis, then a personalized action plan tailored to your lifestyle.",
-      features: ["Solar viability scores", "Personalized recommendations", "Property-specific ROI"],
+      icon: BarChart3,
+      title: "City-Wide Progress",
+      description: "See how Austin is tracking on solar permits, battery storage, and efficiency programs across every ZIP and council district.",
+      features: ["Adoption by ZIP code", "Yearly + fiscal trends", "Permit timeline data"],
       gradient: "from-secondary to-accent",
+      route: "/city-overview",
     },
   ];
 
