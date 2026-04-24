@@ -428,15 +428,22 @@ export default function AdminKnowledgeBase() {
                   <Skeleton className="h-4 w-4/5" />
                 </div>
               ) : editMode === currentFile.name ? (
-                <Textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="min-h-[500px] font-mono text-sm"
-                  placeholder="Enter markdown content..."
-                />
+                <div className="space-y-3">
+                  {currentFile.name === "council-members" && validation && (
+                    <ValidatorPanel result={validation} />
+                  )}
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => handleEditContentChange(e.target.value)}
+                    className="min-h-[500px] font-mono text-sm"
+                    placeholder="Enter markdown content..."
+                  />
+                </div>
               ) : fileContents[currentFile.name] ? (
                 <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border">
-                  <ReactMarkdown>{fileContents[currentFile.name]}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                    {fileContents[currentFile.name]}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
