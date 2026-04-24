@@ -66,18 +66,20 @@ const Index = () => {
 
   const modules = [
     {
-      icon: BarChart3,
-      title: "Analyze Your Neighborhood",
-      description: "Analyze neighborhoods and zip codes for solar, efficiency, and storage potential across Austin.",
-      features: ["Community-level insights", "Adoption momentum tracking", "Incentive opportunities"],
-      gradient: "from-primary to-secondary",
+      icon: Building2,
+      title: "My Austin Energy Profile",
+      description: "Enter your address to get neighborhood solar trends, your roof's potential, savings estimates, your council member, and tailored next steps — all in one place.",
+      features: ["Neighborhood snapshot + map", "Solar savings + payback", "Your council representative", "Optional personalized plan"],
+      gradient: "from-primary to-accent",
+      route: "/property-assessment",
     },
     {
-      icon: Building2,
-      title: "Property Assessment & Action Plan",
-      description: "Get a detailed property evaluation with Google Solar roof analysis, then a personalized action plan tailored to your lifestyle.",
-      features: ["Solar viability scores", "Personalized recommendations", "Property-specific ROI"],
+      icon: BarChart3,
+      title: "City-Wide Progress",
+      description: "See how Austin is tracking on solar permits, battery storage, and efficiency programs across every ZIP and council district.",
+      features: ["Adoption by ZIP code", "Yearly + fiscal trends", "Permit timeline data"],
       gradient: "from-secondary to-accent",
+      route: "/city-overview",
     },
   ];
 
@@ -163,47 +165,44 @@ const Index = () => {
       <section className="py-20 container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 text-foreground">
-            Three Ways to Get Started
+            Two Ways to Get Started
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From broad community insights to property-specific assessments and actionable recommendations
+            From your address-driven personal profile to city-wide progress trends
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {modules.map((module, index) => {
-            const routes = ["/area-analysis", "/property-assessment"];
-            return (
-              <Card 
-                key={index} 
-                onClick={() => navigate(routes[index])}
-                className="group hover:shadow-lg transition-all duration-300 animate-scale-in border-2 hover:border-primary/50 cursor-pointer"
-                style={{ animationDelay: `${index * 0.15}s` }}
-              >
-                <CardHeader>
-                  <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${module.gradient} p-3.5 mb-4 group-hover:scale-110 transition-transform`}>
-                    <module.icon className="h-full w-full text-white" />
-                  </div>
-                  <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
-                  <CardDescription className="text-base">{module.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 mb-4">
-                    {module.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sm text-muted-foreground">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant="ghost" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {modules.map((module, index) => (
+            <Card
+              key={index}
+              onClick={() => navigate(module.route)}
+              className="group hover:shadow-lg transition-all duration-300 animate-scale-in border-2 hover:border-primary/50 cursor-pointer"
+              style={{ animationDelay: `${index * 0.15}s` }}
+            >
+              <CardHeader>
+                <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${module.gradient} p-3.5 mb-4 group-hover:scale-110 transition-transform`}>
+                  <module.icon className="h-full w-full text-white" />
+                </div>
+                <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
+                <CardDescription className="text-base">{module.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 mb-4">
+                  {module.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-center text-sm text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button variant="ghost" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </section>
 

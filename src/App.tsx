@@ -49,7 +49,7 @@ const App = () => (
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/city-overview" element={<CityOverview />} />
-            <Route path="/area-analysis" element={<AreaAnalysis />} />
+            <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
             <Route path="/property-assessment" element={<PropertyAssessment />} />
             <Route path="/recommendations" element={<Navigate to="/property-assessment" replace />} />
             <Route path="/installation/:id" element={<InstallationDetail />} />

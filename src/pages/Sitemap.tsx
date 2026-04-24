@@ -16,16 +16,10 @@ const publicPages = [
     icon: BarChart3,
   },
   {
-    path: "/area-analysis",
-    title: "Analyze Your Neighborhood",
-    description: "Explore solar adoption by ZIP code with interactive maps and area-specific data.",
-    icon: MapPin,
-  },
-  {
     path: "/property-assessment",
-    title: "Property Assessment & Personalized Plan",
-    description: "Get a property-specific solar evaluation and personalized clean energy action plan tailored to your lifestyle.",
-    icon: Building2,
+    title: "My Austin Energy Profile",
+    description: "Address-driven profile: neighborhood snapshot, solar potential, savings, council member, and recommendations.",
+    icon: Home,
   },
   {
     path: "/fiscal-year-stats",
