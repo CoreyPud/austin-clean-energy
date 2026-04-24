@@ -122,6 +122,7 @@ export default function AdminKnowledgeBase() {
   const [editMode, setEditMode] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [validation, setValidation] = useState<CouncilMarkdownValidationResult | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
