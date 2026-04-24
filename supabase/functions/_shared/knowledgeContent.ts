@@ -687,3 +687,89 @@ Update this file when:
 - Interpretation thresholds change based on new data
 - Known limitations are discovered
 - New secrets/credentials are required`;
+
+
+export const councilMembersContent = `# Austin City Council Contact Directory
+Last Updated: 2026-04-23
+
+> Editing rules:
+> - Each council member section must start with \`## Mayor\` or \`## District N\` (where N is 1-10).
+> - Each section must include lines that start with \`**Name:**\`, \`**Email:**\`, \`**Phone:**\`, \`**Office Page:**\`, and \`**Current Priorities:**\`.
+
+## Mayor
+**Name:** Kirk Watson
+**Email:** mayor@austintexas.gov
+**Phone:** 512-978-2100
+**Office Page:** https://www.austintexas.gov/department/mayor
+**Current Priorities:** Climate equity plan implementation, Project Connect, affordable housing
+
+## District 1
+**Name:** Natasha Harper-Madison
+**Email:** district1@austintexas.gov
+**Phone:** 512-978-2101
+**Office Page:** https://www.austintexas.gov/department/district-1
+**Current Priorities:** Eastside weatherization access, EV charging equity, displacement prevention
+
+## District 2
+**Name:** Vanessa Fuentes
+**Email:** district2@austintexas.gov
+**Phone:** 512-978-2102
+**Office Page:** https://www.austintexas.gov/department/district-2
+**Current Priorities:** Southeast Austin air quality, weatherization for older homes, transit access
+
+## District 3
+**Name:** José Velásquez
+**Email:** district3@austintexas.gov
+**Phone:** 512-978-2103
+**Office Page:** https://www.austintexas.gov/department/district-3
+**Current Priorities:** Heat island mitigation, multifamily efficiency, gentrification protections
+
+## District 4
+**Name:** José "Chito" Vela
+**Email:** district4@austintexas.gov
+**Phone:** 512-978-2104
+**Office Page:** https://www.austintexas.gov/department/district-4
+**Current Priorities:** Land Development Code reform, North Lamar transit corridor, renter protections
+
+## District 5
+**Name:** Ryan Alter
+**Email:** district5@austintexas.gov
+**Phone:** 512-978-2105
+**Office Page:** https://www.austintexas.gov/department/district-5
+**Current Priorities:** Watershed protection, residential solar adoption, missing-middle housing
+
+## District 6
+**Name:** Mackenzie Kelly
+**Email:** district6@austintexas.gov
+**Phone:** 512-978-2106
+**Office Page:** https://www.austintexas.gov/department/district-6
+**Current Priorities:** Wildfire resilience, public safety, Northwest Austin infrastructure
+
+## District 7
+**Name:** Mike Siegel
+**Email:** district7@austintexas.gov
+**Phone:** 512-978-2107
+**Office Page:** https://www.austintexas.gov/department/district-7
+**Current Priorities:** Climate action plan, public power expansion, North Austin transit
+
+## District 8
+**Name:** Paige Ellis
+**Email:** district8@austintexas.gov
+**Phone:** 512-978-2108
+**Office Page:** https://www.austintexas.gov/department/district-8
+**Current Priorities:** Austin Climate Equity Plan, Barton Springs watershed, multimodal transportation
+
+## District 9
+**Name:** Zohaib "Zo" Qadri
+**Email:** district9@austintexas.gov
+**Phone:** 512-978-2109
+**Office Page:** https://www.austintexas.gov/department/district-9
+**Current Priorities:** Downtown density, transit-oriented development, renter rights
+
+## District 10
+**Name:** Marc Duchen
+**Email:** district10@austintexas.gov
+**Phone:** 512-978-2110
+**Office Page:** https://www.austintexas.gov/department/district-10
+**Current Priorities:** Western watersheds, neighborhood preservation, wildfire preparedness
+`;
