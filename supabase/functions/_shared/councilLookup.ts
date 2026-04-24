@@ -47,7 +47,7 @@ export async function lookupDistrictByCoords(
       }),
       inSR: "4326",
       spatialRel: "esriSpatialRelIntersects",
-      outFields: "COUNCIL_DISTRICT,COUNCIL_DISTRICT_NUMBER,DISTRICT_NUMBER",
+      outFields: "COUNCIL_DISTRICT",
       returnGeometry: "false",
       f: "json",
     });
@@ -59,19 +59,22 @@ export async function lookupDistrictByCoords(
     }
 
     const data = await response.json();
+    if (data?.error) {
+      console.warn("ArcGIS council lookup returned error:", data.error);
+      return null;
+    }
     const feature = data.features?.[0];
-    if (!feature) return null;
+    if (!feature) {
+      console.warn("ArcGIS council lookup: no feature returned for", lat, lng);
+      return null;
+    }
 
-    const attrs = feature.attributes || {};
-    const raw =
-      attrs.COUNCIL_DISTRICT ??
-      attrs.COUNCIL_DISTRICT_NUMBER ??
-      attrs.DISTRICT_NUMBER;
-
+    const raw = feature.attributes?.COUNCIL_DISTRICT;
     const parsed = parseInt(String(raw), 10);
     if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 10) {
       return parsed;
     }
+    console.warn("ArcGIS council lookup: unexpected district value:", raw);
     return null;
   } catch (err) {
     console.warn("ArcGIS council lookup error:", err);
