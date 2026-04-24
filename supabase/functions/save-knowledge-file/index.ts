@@ -58,7 +58,7 @@ serve(async (req) => {
     }
 
     // Valid file names
-    const validNames = ['priorities', 'resources', 'expert-context', 'data-sources'];
+    const validNames = ['priorities', 'resources', 'expert-context', 'data-sources', 'council-members'];
     if (!validNames.includes(name)) {
       return new Response(
         JSON.stringify({ error: 'Invalid file name', success: false }),
