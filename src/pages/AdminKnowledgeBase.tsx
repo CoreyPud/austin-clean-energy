@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, FileText, Target, Link2, Database, RefreshCw, Info, Pencil, Save, X } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, Target, Link2, Database, RefreshCw, Info, Pencil, Save, X, Users } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +63,17 @@ const FILE_GUIDANCE: Record<string, FileGuidance> = {
       "Document known data quality issues or gaps to help the AI caveat its responses",
       "Add new data sources when integrating additional APIs"
     ]
+  },
+  "council-members": {
+    purpose: "Contact directory for the Austin Mayor and City Council members (Districts 1–10), including emails, phone numbers, office pages, and current local priorities.",
+    howUsed: "When a user runs a property assessment, the system maps their address to a council district and pulls the matching member's info from this file to populate the 'Local Advocacy' card with names, contact info, and current priorities.",
+    updateGuidelines: [
+      "Refresh after every council election (Novembers of even-numbered years) and any time a member's contact info changes",
+      "Keep section headings exactly as `## Mayor` or `## District N` — the parser depends on them",
+      "Preserve the field labels (`**Name:**`, `**Email:**`, `**Phone:**`, `**Office Page:**`, `**Current Priorities:**`) — only edit the values after the colon",
+      "If a value is unknown, leave it blank after the colon rather than deleting the line",
+      "Verify contact info against https://www.austintexas.gov/department/city-council before saving"
+    ]
   }
 };
 
@@ -90,6 +101,12 @@ const KNOWLEDGE_FILES: KnowledgeFile[] = [
     label: "Data Sources",
     description: "External APIs and data interpretation rules",
     icon: Database
+  },
+  {
+    name: "council-members",
+    label: "Council Members",
+    description: "Mayor + District 1–10 contact info and priorities",
+    icon: Users
   }
 ];
 
