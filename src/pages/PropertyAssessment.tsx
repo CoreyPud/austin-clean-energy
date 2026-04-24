@@ -210,18 +210,45 @@ const PropertyAssessment = () => {
           {/* Results */}
           {results && (
             <div className="space-y-6 animate-slide-up">
-              {/* Header summary */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <CheckCircle2 className="h-6 w-6 text-primary" />
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">{results.address}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {propertyType.replace("-", " ")} • ZIP {results.zipCode || "—"} • {results.councilMember.district}
-                  </p>
-                </div>
-              </div>
+              {/* Hero score */}
+              <CleanEnergyScoreCard
+                address={results.address}
+                district={results.councilMember.district}
+                zipCode={results.zipCode}
+                propertyType={propertyType}
+                solarViability={
+                  results.solarInsights
+                    ? Math.min(
+                        10,
+                        Math.max(1, Math.round((results.solarInsights.sunshineHours / 2000) * 7)),
+                      )
+                    : null
+                }
+                neighborInstalls={results.neighborhoodSnapshot.installationsInZip}
+                paybackYears={results.savings?.paybackYears ?? null}
+              />
 
-              {/* Neighborhood snapshot */}
+              {/* ☀️ Your Roof */}
+              {results.solarInsights && (
+                <>
+                  <SectionHeading emoji="☀️" title="Your Roof" subtitle="What the satellite sees up there" />
+                  <SolarPotentialCard
+                    solarInsights={results.solarInsights}
+                    center={results.center}
+                  />
+                </>
+              )}
+
+              {/* 💰 The Money */}
+              {results.savings && (
+                <>
+                  <SectionHeading emoji="💰" title="The Money" subtitle="What going solar would cost and save" />
+                  <SavingsCards savings={results.savings} />
+                </>
+              )}
+
+              {/* 🏘️ Your Block */}
+              <SectionHeading emoji="🏘️" title="Your Block" subtitle="How your neighborhood is going clean" />
               <NeighborhoodSnapshot
                 zipCode={results.zipCode}
                 installationsInZip={results.neighborhoodSnapshot.installationsInZip}
@@ -253,18 +280,8 @@ const PropertyAssessment = () => {
                 </Card>
               </MapTokenLoader>
 
-              {/* Solar potential */}
-              {results.solarInsights && (
-                <SolarPotentialCard
-                  solarInsights={results.solarInsights}
-                  center={results.center}
-                />
-              )}
-
-              {/* Savings */}
-              {results.savings && <SavingsCards savings={results.savings} />}
-
-              {/* Council member */}
+              {/* 🏛️ Your Rep */}
+              <SectionHeading emoji="🏛️" title="Your Rep" subtitle="Local advocacy starts here" />
               <CouncilMemberCard
                 councilMember={{
                   ...results.councilMember,
@@ -272,17 +289,10 @@ const PropertyAssessment = () => {
                 }}
               />
 
-              {/* Recommendation cards */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Lightbulb className="h-5 w-5 text-primary" />
-                  <h2 className="text-2xl font-bold text-foreground">Recommended Actions</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Ranked by climate impact, tailored to your property type and neighborhood data.
-                </p>
-                <RecommendationCards cards={results.recommendationCards || []} />
-              </div>
+              {/* ✅ Smart Next Moves */}
+              <SectionHeading emoji="✅" title="Smart Next Moves" subtitle="Ranked by climate impact for your property" />
+              <RecommendationCards cards={results.recommendationCards || []} />
+
 
               {/* Data caveat moved to bottom of page */}
               {/* Personalized plan CTA */}
