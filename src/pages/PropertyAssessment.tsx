@@ -333,31 +333,12 @@ const PropertyAssessment = () => {
               {/* Personalized plan */}
               {personalizedPlan && (
                 <div ref={planRef} className="space-y-4 animate-slide-up">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-6 w-6 text-primary" />
-                    <h2 className="text-2xl font-bold text-foreground">Your Personalized Plan</h2>
-                  </div>
-                  <Card className="border-2 border-primary/30">
-                    <CardContent className="p-6">
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <ReactMarkdown
-                          components={{
-                            a: (p) => (
-                              <a {...p} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" />
-                            ),
-                            strong: (p) => <strong {...p} className="text-foreground font-semibold" />,
-                            ul: (p) => <ul {...p} className="list-disc pl-5 space-y-1 my-3" />,
-                            ol: (p) => <ol {...p} className="list-decimal pl-5 space-y-1 my-3" />,
-                            p: (p) => <p {...p} className="mb-3 text-foreground/90 leading-relaxed" />,
-                            h2: (p) => <h2 {...p} className="text-xl font-bold mt-5 mb-2" />,
-                            h3: (p) => <h3 {...p} className="text-lg font-semibold mt-4 mb-2" />,
-                          }}
-                        >
-                          {personalizedPlan}
-                        </ReactMarkdown>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <SectionHeading
+                    emoji="🪄"
+                    title="Your Personalized Plan"
+                    subtitle="Tailored from your lifestyle answers"
+                  />
+                  <PersonalizedPlanDisplay markdown={personalizedPlan} />
 
                   <div className="flex justify-center gap-3 flex-wrap">
                     <Button
