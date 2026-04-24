@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,9 +8,7 @@ import {
   ArrowLeft,
   Home,
   Loader2,
-  CheckCircle2,
   AlertCircle,
-  Lightbulb,
   ArrowDown,
   Printer,
   Sparkles,
@@ -29,6 +26,9 @@ import SolarPotentialCard from "@/components/assessment/SolarPotentialCard";
 import SavingsCards from "@/components/assessment/SavingsCards";
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
+import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
+import SectionHeading from "@/components/assessment/SectionHeading";
+import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
 
 const PropertyAssessment = () => {
   useSeo({
@@ -210,18 +210,45 @@ const PropertyAssessment = () => {
           {/* Results */}
           {results && (
             <div className="space-y-6 animate-slide-up">
-              {/* Header summary */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <CheckCircle2 className="h-6 w-6 text-primary" />
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">{results.address}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {propertyType.replace("-", " ")} • ZIP {results.zipCode || "—"} • {results.councilMember.district}
-                  </p>
-                </div>
-              </div>
+              {/* Hero score */}
+              <CleanEnergyScoreCard
+                address={results.address}
+                district={results.councilMember.district}
+                zipCode={results.zipCode}
+                propertyType={propertyType}
+                solarViability={
+                  results.solarInsights
+                    ? Math.min(
+                        10,
+                        Math.max(1, Math.round((results.solarInsights.sunshineHours / 2000) * 7)),
+                      )
+                    : null
+                }
+                neighborInstalls={results.neighborhoodSnapshot.installationsInZip}
+                paybackYears={results.savings?.paybackYears ?? null}
+              />
 
-              {/* Neighborhood snapshot */}
+              {/* ☀️ Your Roof */}
+              {results.solarInsights && (
+                <>
+                  <SectionHeading emoji="☀️" title="Your Roof" subtitle="What the satellite sees up there" />
+                  <SolarPotentialCard
+                    solarInsights={results.solarInsights}
+                    center={results.center}
+                  />
+                </>
+              )}
+
+              {/* 💰 The Money */}
+              {results.savings && (
+                <>
+                  <SectionHeading emoji="💰" title="The Money" subtitle="What going solar would cost and save" />
+                  <SavingsCards savings={results.savings} />
+                </>
+              )}
+
+              {/* 🏘️ Your Block */}
+              <SectionHeading emoji="🏘️" title="Your Block" subtitle="How your neighborhood is going clean" />
               <NeighborhoodSnapshot
                 zipCode={results.zipCode}
                 installationsInZip={results.neighborhoodSnapshot.installationsInZip}
@@ -253,18 +280,8 @@ const PropertyAssessment = () => {
                 </Card>
               </MapTokenLoader>
 
-              {/* Solar potential */}
-              {results.solarInsights && (
-                <SolarPotentialCard
-                  solarInsights={results.solarInsights}
-                  center={results.center}
-                />
-              )}
-
-              {/* Savings */}
-              {results.savings && <SavingsCards savings={results.savings} />}
-
-              {/* Council member */}
+              {/* 🏛️ Your Rep */}
+              <SectionHeading emoji="🏛️" title="Your Rep" subtitle="Local advocacy starts here" />
               <CouncilMemberCard
                 councilMember={{
                   ...results.councilMember,
@@ -272,17 +289,10 @@ const PropertyAssessment = () => {
                 }}
               />
 
-              {/* Recommendation cards */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Lightbulb className="h-5 w-5 text-primary" />
-                  <h2 className="text-2xl font-bold text-foreground">Recommended Actions</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Ranked by climate impact, tailored to your property type and neighborhood data.
-                </p>
-                <RecommendationCards cards={results.recommendationCards || []} />
-              </div>
+              {/* ✅ Smart Next Moves */}
+              <SectionHeading emoji="✅" title="Smart Next Moves" subtitle="Ranked by climate impact for your property" />
+              <RecommendationCards cards={results.recommendationCards || []} />
+
 
               {/* Data caveat moved to bottom of page */}
               {/* Personalized plan CTA */}
@@ -323,31 +333,12 @@ const PropertyAssessment = () => {
               {/* Personalized plan */}
               {personalizedPlan && (
                 <div ref={planRef} className="space-y-4 animate-slide-up">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-6 w-6 text-primary" />
-                    <h2 className="text-2xl font-bold text-foreground">Your Personalized Plan</h2>
-                  </div>
-                  <Card className="border-2 border-primary/30">
-                    <CardContent className="p-6">
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <ReactMarkdown
-                          components={{
-                            a: (p) => (
-                              <a {...p} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" />
-                            ),
-                            strong: (p) => <strong {...p} className="text-foreground font-semibold" />,
-                            ul: (p) => <ul {...p} className="list-disc pl-5 space-y-1 my-3" />,
-                            ol: (p) => <ol {...p} className="list-decimal pl-5 space-y-1 my-3" />,
-                            p: (p) => <p {...p} className="mb-3 text-foreground/90 leading-relaxed" />,
-                            h2: (p) => <h2 {...p} className="text-xl font-bold mt-5 mb-2" />,
-                            h3: (p) => <h3 {...p} className="text-lg font-semibold mt-4 mb-2" />,
-                          }}
-                        >
-                          {personalizedPlan}
-                        </ReactMarkdown>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <SectionHeading
+                    emoji="🪄"
+                    title="Your Personalized Plan"
+                    subtitle="Tailored from your lifestyle answers"
+                  />
+                  <PersonalizedPlanDisplay markdown={personalizedPlan} />
 
                   <div className="flex justify-center gap-3 flex-wrap">
                     <Button
