@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,9 +8,7 @@ import {
   ArrowLeft,
   Home,
   Loader2,
-  CheckCircle2,
   AlertCircle,
-  Lightbulb,
   ArrowDown,
   Printer,
   Sparkles,
@@ -29,6 +26,9 @@ import SolarPotentialCard from "@/components/assessment/SolarPotentialCard";
 import SavingsCards from "@/components/assessment/SavingsCards";
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
+import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
+import SectionHeading from "@/components/assessment/SectionHeading";
+import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
 
 const PropertyAssessment = () => {
   useSeo({
