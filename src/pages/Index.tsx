@@ -173,39 +173,36 @@ const Index = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {modules.map((module, index) => {
-            const routes = ["/area-analysis", "/property-assessment"];
-            return (
-              <Card 
-                key={index} 
-                onClick={() => navigate(routes[index])}
-                className="group hover:shadow-lg transition-all duration-300 animate-scale-in border-2 hover:border-primary/50 cursor-pointer"
-                style={{ animationDelay: `${index * 0.15}s` }}
-              >
-                <CardHeader>
-                  <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${module.gradient} p-3.5 mb-4 group-hover:scale-110 transition-transform`}>
-                    <module.icon className="h-full w-full text-white" />
-                  </div>
-                  <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
-                  <CardDescription className="text-base">{module.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 mb-4">
-                    {module.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sm text-muted-foreground">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant="ghost" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {modules.map((module, index) => (
+            <Card
+              key={index}
+              onClick={() => navigate(module.route)}
+              className="group hover:shadow-lg transition-all duration-300 animate-scale-in border-2 hover:border-primary/50 cursor-pointer"
+              style={{ animationDelay: `${index * 0.15}s` }}
+            >
+              <CardHeader>
+                <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${module.gradient} p-3.5 mb-4 group-hover:scale-110 transition-transform`}>
+                  <module.icon className="h-full w-full text-white" />
+                </div>
+                <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
+                <CardDescription className="text-base">{module.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 mb-4">
+                  {module.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-center text-sm text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button variant="ghost" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </section>
 
