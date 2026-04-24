@@ -284,23 +284,7 @@ const PropertyAssessment = () => {
                 <RecommendationCards cards={results.recommendationCards || []} />
               </div>
 
-              {/* Data caveat */}
-              <Alert className="border-primary/30 bg-primary/5">
-                <AlertCircle className="h-4 w-4 text-primary" />
-                <AlertTitle>How we built this</AlertTitle>
-                <AlertDescription>
-                  Solar potential comes from Google Solar API. Neighborhood counts come from Austin's
-                  open permit data. Council district is resolved live from Austin's ArcGIS service.{" "}
-                  <button
-                    onClick={() => navigate("/data-sources")}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    See full methodology
-                  </button>
-                  .
-                </AlertDescription>
-              </Alert>
-
+              {/* Data caveat moved to bottom of page */}
               {/* Personalized plan CTA */}
               {!showLifestyleForm && !personalizedPlan && (
                 <Card className="border-2 border-primary/40 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 shadow-lg">
