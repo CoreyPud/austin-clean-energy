@@ -193,7 +193,16 @@ export default function AdminKnowledgeBase() {
 
   const handleSave = async () => {
     if (!editMode) return;
-    
+
+    if (editMode === "council-members") {
+      const result = validateCouncilMarkdown(editContent);
+      setValidation(result);
+      if (!result.valid) {
+        toast.error("Fix the formatting errors before saving (see the validator above the editor).");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const token = sessionStorage.getItem('admin_token');
