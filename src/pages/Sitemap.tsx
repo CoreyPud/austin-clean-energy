@@ -22,12 +22,6 @@ const publicPages = [
     icon: Home,
   },
   {
-    path: "/property-assessment",
-    title: "Personalized Action Plan",
-    description: "Get a property-specific solar evaluation and personalized clean energy action plan tailored to your lifestyle.",
-    icon: Building2,
-  },
-  {
     path: "/fiscal-year-stats",
     title: "Fiscal Year Stats",
     description: "Solar permit data broken down by City of Austin fiscal year periods.",
