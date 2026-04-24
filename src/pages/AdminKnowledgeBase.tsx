@@ -5,10 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, FileText, Target, Link2, Database, RefreshCw, Info, Pencil, Save, X, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, Target, Link2, Database, RefreshCw, Info, Pencil, Save, X, Users, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
+import { validateCouncilMarkdown, type CouncilMarkdownValidationResult } from "@/lib/validateCouncilMarkdown";
 
 interface KnowledgeFile {
   name: string;
@@ -119,6 +122,7 @@ export default function AdminKnowledgeBase() {
   const [editMode, setEditMode] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [validation, setValidation] = useState<CouncilMarkdownValidationResult | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -169,17 +173,36 @@ export default function AdminKnowledgeBase() {
 
   const handleEdit = (fileName: string) => {
     setEditMode(fileName);
-    setEditContent(fileContents[fileName] || "");
+    const initial = fileContents[fileName] || "";
+    setEditContent(initial);
+    setValidation(fileName === "council-members" ? validateCouncilMarkdown(initial) : null);
+  };
+
+  const handleEditContentChange = (value: string) => {
+    setEditContent(value);
+    if (editMode === "council-members") {
+      setValidation(validateCouncilMarkdown(value));
+    }
   };
 
   const handleCancelEdit = () => {
     setEditMode(null);
     setEditContent("");
+    setValidation(null);
   };
 
   const handleSave = async () => {
     if (!editMode) return;
-    
+
+    if (editMode === "council-members") {
+      const result = validateCouncilMarkdown(editContent);
+      setValidation(result);
+      if (!result.valid) {
+        toast.error("Fix the formatting errors before saving (see the validator above the editor).");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const token = sessionStorage.getItem('admin_token');
@@ -201,6 +224,7 @@ export default function AdminKnowledgeBase() {
       
       setEditMode(null);
       setEditContent("");
+      setValidation(null);
       toast.success(`${editMode}.md saved successfully`);
     } catch (err) {
       console.error("Error saving knowledge file:", err);
@@ -404,15 +428,22 @@ export default function AdminKnowledgeBase() {
                   <Skeleton className="h-4 w-4/5" />
                 </div>
               ) : editMode === currentFile.name ? (
-                <Textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="min-h-[500px] font-mono text-sm"
-                  placeholder="Enter markdown content..."
-                />
+                <div className="space-y-3">
+                  {currentFile.name === "council-members" && validation && (
+                    <ValidatorPanel result={validation} />
+                  )}
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => handleEditContentChange(e.target.value)}
+                    className="min-h-[500px] font-mono text-sm"
+                    placeholder="Enter markdown content..."
+                  />
+                </div>
               ) : fileContents[currentFile.name] ? (
                 <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border">
-                  <ReactMarkdown>{fileContents[currentFile.name]}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                    {fileContents[currentFile.name]}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -428,3 +459,64 @@ export default function AdminKnowledgeBase() {
     </div>
   );
 }
+
+function ValidatorPanel({ result }: { result: CouncilMarkdownValidationResult }) {
+  const errors = result.issues.filter((i) => i.severity === "error");
+  const warnings = result.issues.filter((i) => i.severity === "warning");
+
+  if (result.valid && warnings.length === 0) {
+    return (
+      <div className="flex items-start gap-2 p-3 rounded-md border border-green-500/30 bg-green-500/10 text-sm">
+        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+        <div>
+          <p className="font-medium text-foreground">Markdown looks valid</p>
+          <p className="text-muted-foreground text-xs">
+            All 11 sections (Mayor + Districts 1–10) and required fields are present.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {errors.length > 0 && (
+        <div className="p-3 rounded-md border border-destructive/40 bg-destructive/10">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <p className="font-medium text-sm text-foreground">
+              {errors.length} formatting error{errors.length === 1 ? "" : "s"} — must fix before saving
+            </p>
+          </div>
+          <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
+            {errors.map((issue, idx) => (
+              <li key={idx}>
+                {issue.line ? <span className="font-mono text-foreground">L{issue.line}: </span> : null}
+                {issue.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {warnings.length > 0 && (
+        <div className="p-3 rounded-md border border-yellow-500/40 bg-yellow-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            <p className="font-medium text-sm text-foreground">
+              {warnings.length} warning{warnings.length === 1 ? "" : "s"} — review but won't block saving
+            </p>
+          </div>
+          <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
+            {warnings.map((issue, idx) => (
+              <li key={idx}>
+                {issue.line ? <span className="font-mono text-foreground">L{issue.line}: </span> : null}
+                {issue.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
