@@ -173,12 +173,22 @@ export default function AdminKnowledgeBase() {
 
   const handleEdit = (fileName: string) => {
     setEditMode(fileName);
-    setEditContent(fileContents[fileName] || "");
+    const initial = fileContents[fileName] || "";
+    setEditContent(initial);
+    setValidation(fileName === "council-members" ? validateCouncilMarkdown(initial) : null);
+  };
+
+  const handleEditContentChange = (value: string) => {
+    setEditContent(value);
+    if (editMode === "council-members") {
+      setValidation(validateCouncilMarkdown(value));
+    }
   };
 
   const handleCancelEdit = () => {
     setEditMode(null);
     setEditContent("");
+    setValidation(null);
   };
 
   const handleSave = async () => {
