@@ -22,8 +22,11 @@ export interface CouncilMember {
   source: "knowledge-base" | "arcgis-fallback";
 }
 
+// City of Austin "Council Districts Fill" feature service.
+// The previous URL (COA_SINGLE_MEMBER_DISTRICTS_FY2014) no longer exists and returns
+// HTTP 400 ("Invalid URL"), causing every lookup to silently fall back to the Mayor.
 const ARCGIS_URL =
-  "https://services.arcgis.com/0L95CJ0VTaxqcmED/ArcGIS/rest/services/COA_SINGLE_MEMBER_DISTRICTS_FY2014/FeatureServer/0/query";
+  "https://services.arcgis.com/0L95CJ0VTaxqcmED/ArcGIS/rest/services/BOUNDARIES_single_member_districts/FeatureServer/0/query";
 
 /**
  * Query Austin's public ArcGIS service for the council district at a coordinate.
@@ -44,7 +47,7 @@ export async function lookupDistrictByCoords(
       }),
       inSR: "4326",
       spatialRel: "esriSpatialRelIntersects",
-      outFields: "COUNCIL_DISTRICT,COUNCIL_DISTRICT_NUMBER,DISTRICT_NUMBER",
+      outFields: "COUNCIL_DISTRICT",
       returnGeometry: "false",
       f: "json",
     });
@@ -56,19 +59,22 @@ export async function lookupDistrictByCoords(
     }
 
     const data = await response.json();
+    if (data?.error) {
+      console.warn("ArcGIS council lookup returned error:", data.error);
+      return null;
+    }
     const feature = data.features?.[0];
-    if (!feature) return null;
+    if (!feature) {
+      console.warn("ArcGIS council lookup: no feature returned for", lat, lng);
+      return null;
+    }
 
-    const attrs = feature.attributes || {};
-    const raw =
-      attrs.COUNCIL_DISTRICT ??
-      attrs.COUNCIL_DISTRICT_NUMBER ??
-      attrs.DISTRICT_NUMBER;
-
+    const raw = feature.attributes?.COUNCIL_DISTRICT;
     const parsed = parseInt(String(raw), 10);
     if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 10) {
       return parsed;
     }
+    console.warn("ArcGIS council lookup: unexpected district value:", raw);
     return null;
   } catch (err) {
     console.warn("ArcGIS council lookup error:", err);
