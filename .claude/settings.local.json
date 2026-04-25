@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(supabase --version)",
+      "Bash(deno --version)",
+      "Bash(docker --version)",
+      "Bash(npm install *)",
+      "Bash(npm error *)",
+      "Bash(curl -L \"https://github.com/supabase/cli/releases/latest/download/supabase_windows_amd64.tar.gz\" -o /tmp/supabase.tar.gz)",
+      "Bash(tar -xzf /tmp/supabase.tar.gz -C /tmp)",
+      "Bash(ls /tmp/supabase*)",
+      "Bash(cp /tmp/supabase.exe /usr/local/bin/supabase)",
+      "Bash(chmod +x /usr/local/bin/supabase)",
+      "*",
+      "Bash(mkdir -p ~/bin)",
+      "Bash(cp /tmp/supabase.exe ~/bin/supabase)",
+      "Bash(chmod +x ~/bin/supabase)",
+      "Bash(export PATH=\"$HOME/bin:$PATH\")",
+      "Bash(~/bin/supabase --version)"
+    ]
+  }
+}

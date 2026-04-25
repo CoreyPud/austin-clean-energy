@@ -44,3 +44,12 @@ verify_jwt = false
 
 [functions.manage-corrections]
 verify_jwt = false
+
+[functions.get-maps-config]
+verify_jwt = false
+
+[functions.solar-insights]
+verify_jwt = false
+
+[functions.parse-bill]
+verify_jwt = false
