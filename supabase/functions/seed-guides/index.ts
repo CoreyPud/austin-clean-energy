@@ -100,7 +100,7 @@ REQUIREMENTS:
    - Add a "Good to Know" section with practical tips
    - 600-1000 words
    - IMPORTANT: The federal residential solar tax credit is NO LONGER available — do not mention it as active
-   - Federal EV tax credits ARE still available
+   - IMPORTANT: The federal EV tax credit (Clean Vehicle Credit) ended September 30, 2025 — do not mention it as active. Focus on Austin Energy rebates and EV rate plans.
 
 4. TONE GUIDELINES (critical):
    - Write like a helpful local newspaper article or city information page — factual, neutral, informative

@@ -12,7 +12,7 @@ This framework guides AI recommendations based on individual climate impact pote
 **Rationale:** Electric vehicles eliminate the largest source of individual carbon emissions. The average driver produces 4.6 tons of CO₂ annually from gasoline combustion. EVs powered by Austin's grid (which is increasingly renewable) eliminate these emissions entirely.  
 **Austin Context:** Growing charging infrastructure, Austin Energy EV rates available, multiple federal and state incentives active.  
 **Key Barriers:** Upfront cost, charging access for renters, range anxiety  
-**Current Incentives:** Federal EV tax credit up to $7,500, Austin Energy rebates for home charging equipment
+**Current Incentives:** Austin Energy rebates for home charging equipment (up to $1,200) and EV-friendly time-of-use electricity rates. (The federal EV tax credit ended Sept 30, 2025 and is no longer available.)
 
 ### 2. Zero-Carbon Home Power (Solar + Clean Grid)
 **Impact Score:** 8/10  

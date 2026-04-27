@@ -352,8 +352,8 @@ function buildRecommendationCards(opts: {
       title: "Switch to an EV",
       summary: "Replacing one gas car with an EV cuts ~4-6 tons of CO₂/year — the single biggest individual climate action.",
       bullets: [
-        "Federal EV tax credit up to $7,500 (income limits apply)",
-        "Austin Energy rebates for home EV chargers",
+        "Austin Energy rebates up to $1,200 for home Level 2 chargers",
+        "EV-friendly time-of-use electricity rates from Austin Energy",
         "Charge for less than half the cost of gasoline",
       ],
       cta: {
