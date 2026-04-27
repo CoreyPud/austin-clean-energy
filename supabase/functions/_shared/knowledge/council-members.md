@@ -14,7 +14,7 @@ Last Updated: 2026-04-23
 **Name:** Kirk Watson
 **Email:** mayor@austintexas.gov
 **Phone:** 512-978-2100
-**Office Page:** https://www.austintexas.gov/department/mayor
+**Office Page:** https://www.austintexas.gov/mayor
 **Current Priorities:** Climate equity plan implementation, Project Connect, affordable housing
 
 ## District 1

@@ -192,7 +192,7 @@ To add a new external resource:
 Example:
 ```markdown
 ### Austin Transportation Electrification Plan
-**URL:** https://www.austintexas.gov/department/electric-vehicle-plan  
+**URL:** https://www.austintexas.gov/department/transportation-public-works  
 **Purpose:** City's EV infrastructure and policy roadmap  
 **Refresh:** Monthly  
 **Sections to extract:** Charging station expansion, fleet electrification timeline
