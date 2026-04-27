@@ -110,7 +110,7 @@ When a user requests recommendations, the edge functions:
 **Example update:**
 ```markdown
 ### Solar Permits
-**API Endpoint:** `https://data.austintexas.gov/resource/fvet-w56k.json`  
+**API Endpoint:** `https://data.austintexas.gov/resource/3syk-w9eu.json`  
 **Interpretation:**
 - **High activity (>75 permits/ZIP in past year):** "This area has strong solar adoption" (increased from 50 due to overall growth)
 ```

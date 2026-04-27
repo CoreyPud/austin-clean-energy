@@ -134,7 +134,7 @@ export function getCouncilMember(
   const officePage =
     fields["Office Page"] ||
     (districtNumber === null
-      ? "https://www.austintexas.gov/department/mayor"
+      ? "https://www.austintexas.gov/mayor"
       : `https://www.austintexas.gov/department/district-${districtNumber}`);
 
   return {

@@ -166,8 +166,9 @@ const DataSources = () => {
                   (sourced from Austin Open Data) filtered by ZIP code or geographic coordinates
                 </li>
                 <li>
-                  <strong>Austin Open Data API:</strong> Real-time queries for energy audits (dataset 77pk-yxf5), 
-                  weatherization projects, and green building certifications within the target area
+                  <strong>Austin Open Data API:</strong> Real-time queries against the Issued
+                  Construction Permits dataset (3syk-w9eu) for solar installations within the
+                  target area
                 </li>
                 <li>
                   <strong>Geographic Boundaries:</strong> ZIP code boundaries and council district assignments 
