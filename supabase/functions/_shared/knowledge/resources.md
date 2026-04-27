@@ -62,10 +62,8 @@ Last Updated: 2026-04-03
 **Rebates:** Up to $1,200 for home Level 2 charger installation
 
 ### Federal EV Tax Credit
-**URL:** https://fueleconomy.gov/feg/taxevb.shtml  
-**Incentive:** Up to $7,500 for new EVs, $4,000 for used EVs  
-**Eligibility:** Income limits apply; vehicle must meet criteria  
-**Notes:** Check vehicle eligibility before purchase
+**Status:** No longer available — the federal Clean Vehicle Credit (up to $7,500 new / $4,000 used) ended for vehicles acquired after September 30, 2025 under Public Law 119-21 (the "One Big Beautiful Bill").
+**Note:** Direct buyers to Austin Energy's home charger rebate and EV rate plans for current incentives.
 
 ### CapMetro Electric Bus Program
 **URL:** https://www.capmetro.org  

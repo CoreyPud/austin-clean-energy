@@ -15,7 +15,7 @@ This framework guides AI recommendations based on individual climate impact pote
 **Rationale:** Electric vehicles eliminate the largest source of individual carbon emissions. The average driver produces 4.6 tons of CO₂ annually from gasoline combustion. EVs powered by Austin's grid (which is increasingly renewable) eliminate these emissions entirely.  
 **Austin Context:** Growing charging infrastructure, Austin Energy EV rates available, multiple federal and state incentives active.  
 **Key Barriers:** Upfront cost, charging access for renters, range anxiety  
-**Current Incentives:** Federal EV tax credit up to $7,500 (income limits apply), Austin Energy rebates for home charging equipment
+**Current Incentives:** Austin Energy rebates for home charging equipment (up to $1,200) and EV-friendly time-of-use electricity rates. (The federal EV tax credit ended Sept 30, 2025 and is no longer available.)
 
 ### 2. Zero-Carbon Home Power (Solar + Clean Grid)
 **Impact Score:** 8/10  
@@ -103,7 +103,7 @@ Last Updated: 2025-10-22
 **URL:** https://austinenergy.com/rebates/solar  
 **Incentive:** Up to $2,500 for residential solar installations  
 **Eligibility:** Austin Energy customers installing new solar systems  
-**Notes:** Rebate amounts vary by system size; combine with federal tax credit for maximum savings
+**Notes:** Rebate amounts vary by system size. The federal residential solar tax credit is no longer available, so Austin Energy's rebate is the primary incentive.
 
 ### Community Solar
 **URL:** https://austinenergy.com/community-solar  
@@ -155,11 +155,10 @@ Last Updated: 2025-10-22
 **Services:** Home charging rebates, special EV electricity rates, public charging map  
 **Rebates:** Up to $1,200 for home Level 2 charger installation
 
-### Federal EV Tax Credit
-**URL:** https://fueleconomy.gov/feg/taxevb.shtml  
-**Incentive:** Up to $7,500 for new EVs, $4,000 for used EVs  
-**Eligibility:** Income limits apply; vehicle must meet criteria  
-**Notes:** Check vehicle eligibility before purchase
+### Federal EV Tax Credit - NO LONGER AVAILABLE
+**Status:** The federal Clean Vehicle Credit (up to $7,500 new / $4,000 used) ended for vehicles acquired after September 30, 2025 under Public Law 119-21 (the "One Big Beautiful Bill").  
+**Alternative:** Point users to Austin Energy's home charger rebate (up to $1,200) and EV rate plans.  
+**Archive Note:** Retained for historical reference only — do not present as an active incentive.
 
 ### CapMetro Electric Bus Program
 **URL:** https://www.capmetro.org/electric-buses  
@@ -269,10 +268,10 @@ Last Updated: 2025-10-22
 
 ## Current Policy Context
 
-### Federal Incentives (2025)
-- **Solar ITC:** NO LONGER AVAILABLE for residential homeowners. The federal solar tax credit for homeowners has expired.
-- **EV Tax Credits:** $7,500 for new EVs, $4,000 for used; income caps and sourcing requirements apply
-- **Energy Efficiency Rebates (HOMES Program):** Up to $8,000 for whole-home retrofits based on energy savings
+### Federal Incentives (current)
+- **Solar ITC (Residential):** NO LONGER AVAILABLE for homeowners — the federal residential solar tax credit has expired.
+- **EV Tax Credits:** NO LONGER AVAILABLE — the Clean Vehicle Credit ended for vehicles acquired after September 30, 2025 (Public Law 119-21).
+- **Energy Efficiency Rebates (HOMES Program):** State-administered rebates for whole-home retrofits remain active in jurisdictions that have launched the program — verify current Texas status before citing amounts.
 
 ### Texas State Context
 - **No state renewable energy tax credits** (unlike many states)
