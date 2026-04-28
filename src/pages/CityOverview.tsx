@@ -305,22 +305,14 @@ const CityOverview = () => {
             <p className="text-xl md:text-2xl text-white/90 mb-8">
               Real-time insights into our city's solar adoption, energy efficiency, and path to net-zero emissions
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/area-analysis")}
+            <div className="flex justify-center">
+              <Button
+                size="lg"
+                onClick={() => navigate("/property-assessment")}
                 className="bg-white text-primary hover:bg-white/90"
               >
-                Analyze Your Neighborhood
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => navigate("/property-assessment")}
-                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
-              >
                 Assess Your Property
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </div>
