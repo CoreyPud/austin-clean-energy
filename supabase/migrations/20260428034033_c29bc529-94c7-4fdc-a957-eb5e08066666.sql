@@ -1,0 +1,1 @@
+DELETE FROM public.cached_stats WHERE stat_type = 'momentum_global';
