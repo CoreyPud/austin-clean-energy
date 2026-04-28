@@ -395,6 +395,11 @@ const PropertyAssessment = () => {
                 </div>
               )}
 
+
+              {/* Community momentum + share — placed after recommendations & plan */}
+              <CommunityMomentumCard district={results.councilMember?.district} />
+              <ShareAssessmentCard address={results.address || address} />
+
               <div className="flex justify-center">
                 <Button variant="ghost" onClick={handleStartOver}>
                   Start over with a new address
