@@ -302,19 +302,9 @@ const CityOverview = () => {
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Austin's Clean Energy Progress
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-8">
+            <p className="text-xl md:text-2xl text-white/90">
               Real-time insights into our city's solar adoption, energy efficiency, and path to net-zero emissions
             </p>
-            <div className="flex justify-center">
-              <Button
-                size="lg"
-                onClick={() => navigate("/property-assessment")}
-                className="bg-white text-primary hover:bg-white/90"
-              >
-                Assess Your Property
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
           </div>
         </div>
       </section>
