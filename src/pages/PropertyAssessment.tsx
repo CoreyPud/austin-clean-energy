@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft,
@@ -29,6 +29,8 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
+import SolarCalculator from "@/components/assessment/SolarCalculator";
+import SolarRoofMap from "@/components/assessment/SolarRoofMap";
 
 const PropertyAssessment = () => {
   useSeo({
@@ -39,7 +41,7 @@ const PropertyAssessment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [address, setAddress] = useState("");
-  const [propertyType, setPropertyType] = useState("");
+  const [propertyType, setPropertyType] = useState("single-family");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
 
@@ -126,7 +128,7 @@ const PropertyAssessment = () => {
     setPersonalizedPlan(null);
     setShowLifestyleForm(false);
     setAddress("");
-    setPropertyType("");
+    setPropertyType("single-family");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -162,12 +164,10 @@ const PropertyAssessment = () => {
               <div className="grid md:grid-cols-[1fr_220px_auto] gap-3 items-end">
                 <div>
                   <Label htmlFor="address">Address</Label>
-                  <Input
+                  <AddressAutocomplete
                     id="address"
-                    type="text"
-                    placeholder="123 Main St, Austin, TX"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={setAddress}
                     className="mt-1"
                     onKeyDown={(e) => e.key === "Enter" && !loading && handleAssess()}
                   />
@@ -175,8 +175,8 @@ const PropertyAssessment = () => {
                 <div>
                   <Label htmlFor="propertyType">Property type</Label>
                   <Select value={propertyType} onValueChange={setPropertyType}>
-                    <SelectTrigger id="propertyType" className="mt-1">
-                      <SelectValue placeholder="Select" />
+                    <SelectTrigger id="propertyType" className="mt-1 w-full min-w-[180px]">
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="single-family">Single family</SelectItem>
@@ -247,6 +247,17 @@ const PropertyAssessment = () => {
                 </>
               )}
 
+              {/* 🔧 Customize your system */}
+              {results.solarInsights && results.savings && (
+                <>
+                  <SectionHeading emoji="🔧" title="Run the Numbers" subtitle="Adjust system size, battery, and financing to see live savings" />
+                  <SolarCalculator
+                    solarInsights={results.solarInsights}
+                    recommendedSystemKw={results.savings.recommendedSystemKw}
+                  />
+                </>
+              )}
+
               {/* 🏘️ Your Block */}
               <SectionHeading emoji="🏘️" title="Your Block" subtitle="How your neighborhood is going clean" />
               <NeighborhoodSnapshot
@@ -257,28 +268,41 @@ const PropertyAssessment = () => {
                 newest={results.neighborhoodSnapshot.newest}
               />
 
-              {/* Map */}
-              <MapTokenLoader>
+              {/* Maps — side by side on desktop, stacked on mobile */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <MapTokenLoader>
+                  <Card className="border-2 border-primary/20 overflow-hidden">
+                    <CardHeader className="py-3 px-4">
+                      <CardTitle className="text-sm">Neighborhood</CardTitle>
+                      <p className="text-xs text-muted-foreground">Red = your address · Green = nearby solar</p>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Map
+                        center={results.center || [-97.7431, 30.2672]}
+                        zoom={14}
+                        markers={results.locations || []}
+                        className="h-[340px]"
+                        onMarkerClick={(id) => {
+                          if (id !== "target-property") window.open(`/installation/${id}`, "_blank");
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                </MapTokenLoader>
+
                 <Card className="border-2 border-primary/20 overflow-hidden">
-                  <CardHeader>
-                    <CardTitle>Property & nearby installations</CardTitle>
-                    <CardDescription>
-                      Red pin = your address • Green pins = nearby solar installations
-                    </CardDescription>
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-sm">Solar Roof</CardTitle>
+                    <p className="text-xs text-muted-foreground">Satellite view · flux overlay coming soon</p>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <Map
+                    <SolarRoofMap
                       center={results.center || [-97.7431, 30.2672]}
-                      zoom={14}
-                      markers={results.locations || []}
-                      className="h-[400px]"
-                      onMarkerClick={(id) => {
-                        if (id !== "target-property") window.open(`/installation/${id}`, "_blank");
-                      }}
+                      solarInsights={results.solarInsights}
                     />
                   </CardContent>
                 </Card>
-              </MapTokenLoader>
+              </div>
 
               {/* 🏛️ Your Rep */}
               <SectionHeading emoji="🏛️" title="Your Rep" subtitle="Local advocacy starts here" />
