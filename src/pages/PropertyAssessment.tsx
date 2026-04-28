@@ -90,6 +90,7 @@ const PropertyAssessment = () => {
     setLoading(true);
     setShowLifestyleForm(false);
     setPersonalizedPlan(null);
+    setCouncilOutreachScript(null);
     // Sync the URL so this view is shareable
     const trimmed = address.trim();
     if (trimmed && searchParams.get("address") !== trimmed) {
@@ -155,6 +156,7 @@ const PropertyAssessment = () => {
   const handleStartOver = () => {
     setResults(null);
     setPersonalizedPlan(null);
+    setCouncilOutreachScript(null);
     setShowLifestyleForm(false);
     setAddress("");
     setPropertyType("");
@@ -381,6 +383,7 @@ const PropertyAssessment = () => {
                       variant="outline"
                       onClick={() => {
                         setPersonalizedPlan(null);
+                        setCouncilOutreachScript(null);
                         setShowLifestyleForm(true);
                         setTimeout(
                           () => lifestyleRef.current?.scrollIntoView({ behavior: "smooth" }),
