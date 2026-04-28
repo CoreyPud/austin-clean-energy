@@ -371,6 +371,27 @@ const PropertyAssessment = () => {
                   />
                   <PersonalizedPlanDisplay markdown={personalizedPlan} />
 
+                  {/* Your Rep — surfaced alongside the personalized plan so advocacy feels actionable */}
+                  <SectionHeading
+                    emoji="🏛️"
+                    title="Reach out to your council representative"
+                    subtitle="Local decisions shape Austin's clean energy future"
+                  />
+                  <CouncilMemberCard
+                    councilMember={{
+                      ...results.councilMember,
+                      lookupSucceeded: results.dataPoints.councilLookupSource === "arcgis",
+                    }}
+                  />
+                  {councilOutreachScript && (
+                    <CouncilOutreachCard
+                      script={councilOutreachScript}
+                      councilName={results.councilMember.name}
+                      councilEmail={results.councilMember.email}
+                      district={results.councilMember.district}
+                    />
+                  )}
+
                   <div className="flex justify-center gap-3 flex-wrap">
                     <Button
                       variant="outline"
