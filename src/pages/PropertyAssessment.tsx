@@ -88,6 +88,13 @@ const PropertyAssessment = () => {
     setLoading(true);
     setShowLifestyleForm(false);
     setPersonalizedPlan(null);
+    // Sync the URL so this view is shareable
+    const trimmed = address.trim();
+    if (trimmed && searchParams.get("address") !== trimmed) {
+      const next = new URLSearchParams(searchParams);
+      next.set("address", trimmed);
+      setSearchParams(next, { replace: true });
+    }
     try {
       const data = await callUnified();
       setResults(data);
@@ -103,6 +110,18 @@ const PropertyAssessment = () => {
       setLoading(false);
     }
   };
+
+  // Auto-run when arriving via shared link (?address=...). Defaults propertyType to single-family.
+  useEffect(() => {
+    if (!sharedAddress || autoRanFromUrl || results || loading) return;
+    setAutoRanFromUrl(true);
+    if (!propertyType) setPropertyType("single-family");
+    // Defer to next tick so state settles
+    setTimeout(() => {
+      handleAssess();
+    }, 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedAddress]);
 
   const handleGetPersonalizedPlan = () => {
     setShowLifestyleForm(true);
