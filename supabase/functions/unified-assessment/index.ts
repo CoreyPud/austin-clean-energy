@@ -417,7 +417,7 @@ function buildRecommendationCards(opts: {
     ],
     cta: {
       label: "Schedule a Home Energy Audit",
-      url: "https://austinenergy.com/energy-efficiency/home-improvements/free-home-energy-checkup",
+      url: "https://austinenergy.com/energy-efficiency/rebates-incentives/residential/home-improvements/home-energy-savings",
     },
     icon: "Wrench",
   });
