@@ -268,20 +268,32 @@ serve(async (req) => {
       savings,
     });
 
-    // 7. Optional personalized AI plan when lifestyle data is provided
+    // 7. Optional personalized AI plan + council outreach script when lifestyle data is provided
     let personalizedPlan: string | null = null;
+    let councilOutreachScript: string | null = null;
     if (lifestyleData && LOVABLE_API_KEY) {
-      personalizedPlan = await generatePersonalizedPlan({
-        apiKey: LOVABLE_API_KEY,
-        knowledge,
-        standardizedAddress,
-        propertyType,
-        lifestyleData,
-        solarInsights,
-        savings,
-        neighborhoodSnapshot,
-        councilMember,
-      });
+      [personalizedPlan, councilOutreachScript] = await Promise.all([
+        generatePersonalizedPlan({
+          apiKey: LOVABLE_API_KEY,
+          knowledge,
+          standardizedAddress,
+          propertyType,
+          lifestyleData,
+          solarInsights,
+          savings,
+          neighborhoodSnapshot,
+          councilMember,
+        }),
+        generateCouncilOutreachScript({
+          apiKey: LOVABLE_API_KEY,
+          standardizedAddress,
+          lifestyleData,
+          solarInsights,
+          savings,
+          neighborhoodSnapshot,
+          councilMember,
+        }),
+      ]);
     }
 
     return new Response(
@@ -298,6 +310,7 @@ serve(async (req) => {
         councilMember,
         recommendationCards,
         personalizedPlan,
+        councilOutreachScript,
         dataPoints: {
           citySolarPermits: cityPermits.length,
           dbInstallationsInZip: dbInstallations.length,
