@@ -32,7 +32,7 @@ Last Updated: 2026-04-03
 **Use Case:** Learn about electrification options, heat pumps, and energy efficiency
 
 ### Free Home Energy Audit
-**URL:** https://austinenergy.com/energy-efficiency  
+**URL:** https://austinenergy.com/energy-efficiency/rebates-incentives/residential/home-improvements/home-energy-savings  
 **Service:** Professional assessment of home energy use with personalized recommendations  
 **Cost:** Free for Austin Energy customers  
 **Value:** Typically identifies $300-800 in annual savings opportunities

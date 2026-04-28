@@ -126,7 +126,7 @@ Last Updated: 2025-10-22
 **Use Case:** Answer questions that people have about how to take advantage of the tax incentives before Jan 1, 2025
 
 ### Free Home Energy Audit
-**URL:** https://austinenergy.com/energy-efficiency/home-energy-audit  
+**URL:** https://austinenergy.com/energy-efficiency/rebates-incentives/residential/home-improvements/home-energy-savings  
 **Service:** Professional assessment of home energy use with personalized recommendations  
 **Cost:** Free for Austin Energy customers  
 **Value:** Typically identifies $300-800 in annual savings opportunities
