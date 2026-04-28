@@ -300,13 +300,17 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
 
 // ── Environmental impact ──────────────────────────────────────────────────────
 
-const CO2_PER_KWH = 0.000386; // metric tons CO2 / kWh (EPA US avg)
+const CO2_PER_KWH            = 0.000386; // metric tons CO2 / kWh (EPA US avg)
+const TONS_CO2_PER_CAR_MILE  = 0.000404; // metric tons CO2 / mile
+const TONS_CO2_PER_TREE      = 0.021;    // metric tons CO2 / tree / year
+const TONS_CO2_PER_FLIGHT    = 1.0;      // metric tons CO2 / long-haul flight
 
 export function environmentalImpact(annualSolarKwh: number) {
   const metricTonsCo2 = annualSolarKwh * CO2_PER_KWH;
   return {
     metricTonsCo2: Math.round(metricTonsCo2 * 10) / 10,
-    carsEquivalent: Math.round(metricTonsCo2 / 0.404 * 10) / 10,
-    treesEquivalent: Math.round(metricTonsCo2 / 0.021),
+    carMilesAvoided: Math.round(metricTonsCo2 / TONS_CO2_PER_CAR_MILE),
+    treesEquivalent: Math.round(metricTonsCo2 / TONS_CO2_PER_TREE),
+    flightsAvoided: Math.round(metricTonsCo2 / TONS_CO2_PER_FLIGHT),
   };
 }

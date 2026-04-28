@@ -226,7 +226,7 @@ const PropertyAssessment = () => {
                 <Button
                   onClick={handleAssess}
                   disabled={loading}
-                  className="bg-gradient-to-r from-secondary to-accent hover:opacity-90 h-10"
+                  className="bg-gradient-to-r from-secondary to-accent hover:opacity-90 h-10 w-[164px] justify-center"
                 >
                   {loading ? (
                     <>
@@ -269,10 +269,24 @@ const PropertyAssessment = () => {
               {results.solarInsights && (
                 <>
                   <SectionHeading emoji="☀️" title="Your Roof" subtitle="What the satellite sees up there" />
-                  <SolarPotentialCard
-                    solarInsights={results.solarInsights}
-                    center={results.center}
-                  />
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <SolarPotentialCard
+                      solarInsights={results.solarInsights}
+                      center={results.center}
+                    />
+                    <Card className="border-2 border-primary/20 overflow-hidden">
+                      <CardHeader className="py-3 px-4">
+                        <CardTitle className="text-sm">Solar Roof View</CardTitle>
+                        <p className="text-xs text-muted-foreground">Satellite · annual flux overlay</p>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <SolarRoofMap
+                          center={results.center || [-97.7431, 30.2672]}
+                          solarInsights={results.solarInsights}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </>
               )}
 
@@ -297,21 +311,19 @@ const PropertyAssessment = () => {
 
               {/* 🏘️ Your Block */}
               <SectionHeading emoji="🏘️" title="Your Block" subtitle="How your neighborhood is going clean" />
-              <NeighborhoodSnapshot
-                zipCode={results.zipCode}
-                installationsInZip={results.neighborhoodSnapshot.installationsInZip}
-                pendingPermitsInZip={results.neighborhoodSnapshot.pendingPermitsInZip}
-                averageSystemKw={results.neighborhoodSnapshot.averageSystemKw}
-                newest={results.neighborhoodSnapshot.newest}
-              />
-
-              {/* Maps — side by side on desktop, stacked on mobile */}
               <div className="grid md:grid-cols-2 gap-4">
+                <NeighborhoodSnapshot
+                  zipCode={results.zipCode}
+                  installationsInZip={results.neighborhoodSnapshot.installationsInZip}
+                  pendingPermitsInZip={results.neighborhoodSnapshot.pendingPermitsInZip}
+                  averageSystemKw={results.neighborhoodSnapshot.averageSystemKw}
+                  newest={results.neighborhoodSnapshot.newest}
+                />
                 <MapTokenLoader>
                   <Card className="border-2 border-primary/20 overflow-hidden">
                     <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-sm">Neighborhood</CardTitle>
-                      <p className="text-xs text-muted-foreground">Red = your address · Green = nearby solar</p>
+                      <CardTitle className="text-sm">Neighborhood solar map</CardTitle>
+                      <p className="text-xs text-muted-foreground">Red = your address · Green = nearby solar installations</p>
                     </CardHeader>
                     <CardContent className="p-0">
                       <Map
@@ -326,19 +338,6 @@ const PropertyAssessment = () => {
                     </CardContent>
                   </Card>
                 </MapTokenLoader>
-
-                <Card className="border-2 border-primary/20 overflow-hidden">
-                  <CardHeader className="py-3 px-4">
-                    <CardTitle className="text-sm">Solar Roof</CardTitle>
-                    <p className="text-xs text-muted-foreground">Satellite view · flux overlay coming soon</p>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <SolarRoofMap
-                      center={results.center || [-97.7431, 30.2672]}
-                      solarInsights={results.solarInsights}
-                    />
-                  </CardContent>
-                </Card>
               </div>
 
               {/* Your Rep moved into the Personalized Plan section below */}

@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
+import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import BillUpload from "@/components/assessment/BillUpload";
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { Zap, Battery, TrendingUp, Leaf, DollarSign } from "lucide-react";
+import { Zap, Battery } from "lucide-react";
 import {
   MONTHS,
   MONTHLY_SOLAR_PROFILE,
@@ -20,7 +20,6 @@ import {
   calculateAustinEnergyUsageBill,
   billToMonthlyKwh,
   austinInstallCost,
-  environmentalImpact,
 } from "@/lib/solar-model";
 
 interface Props {
@@ -75,8 +74,6 @@ const SolarCalculator = ({ solarInsights, recommendedSystemKw }: Props) => {
 
   const yearOne = useMemo(() => buildYearModel(inputs, 0), [inputs]);
   const thirtyYear = useMemo(() => buildThirtyYearModel(inputs, installCost), [inputs, installCost]);
-  const impact = useMemo(() => environmentalImpact(yearOne.solarTotal), [yearOne.solarTotal]);
-
   const avgMonthlyWithSolar = yearOne.billWithSolar / 12;
   const avgMonthlyWithoutSolar = yearOne.billWithoutSolar / 12;
 
@@ -99,7 +96,7 @@ const SolarCalculator = ({ solarInsights, recommendedSystemKw }: Props) => {
   }));
 
   return (
-    <Card className="border-2 border-primary/20 shadow-md">
+    <Fragment>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-primary" />
@@ -242,11 +239,10 @@ const SolarCalculator = ({ solarInsights, recommendedSystemKw }: Props) => {
 
           {/* ── Charts ── */}
           <Tabs defaultValue="bills">
-            <TabsList className="mb-4 w-full grid grid-cols-4">
+            <TabsList className="mb-4 w-full grid grid-cols-3">
               <TabsTrigger value="bills">Bills</TabsTrigger>
               <TabsTrigger value="30yr">30-year</TabsTrigger>
               <TabsTrigger value="energy">Energy</TabsTrigger>
-              <TabsTrigger value="impact">Impact</TabsTrigger>
             </TabsList>
 
             <TabsContent value="bills">
@@ -302,40 +298,13 @@ const SolarCalculator = ({ solarInsights, recommendedSystemKw }: Props) => {
                 </BarChart>
               </ResponsiveContainer>
             </TabsContent>
-
-            <TabsContent value="impact">
-              <p className="text-xs text-muted-foreground mb-4">Annual environmental benefit from your system</p>
-              <div className="grid grid-cols-3 gap-4 mt-6">
-                <ImpactStat
-                  icon={<Leaf className="h-8 w-8 text-green-500" />}
-                  value={`${impact.metricTonsCo2}`}
-                  unit="metric tons CO₂"
-                  label="avoided per year"
-                />
-                <ImpactStat
-                  icon={<span className="text-3xl">🚗</span>}
-                  value={`${impact.carsEquivalent}`}
-                  unit="cars"
-                  label="off the road"
-                />
-                <ImpactStat
-                  icon={<span className="text-3xl">🌳</span>}
-                  value={`${impact.treesEquivalent}`}
-                  unit="trees"
-                  label="planted equivalent"
-                />
-              </div>
-              <div className="mt-6 rounded-lg border bg-muted/30 p-3 text-center">
-                <Badge variant="secondary" className="text-sm">
-                  <Zap className="h-3 w-3 mr-1" />
-                  {Math.round(yearOne.solarTotal).toLocaleString()} kWh clean energy per year
-                </Badge>
-              </div>
-            </TabsContent>
           </Tabs>
         </div>
+
       </CardContent>
     </Card>
+    <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} />
+    </Fragment>
   );
 };
 
@@ -352,19 +321,6 @@ const StatRow = ({
       </span>
       {sub && <span className="block text-[10px] text-muted-foreground">{sub}</span>}
     </span>
-  </div>
-);
-
-const ImpactStat = ({
-  icon, value, unit, label,
-}: {
-  icon: React.ReactNode; value: string; unit: string; label: string;
-}) => (
-  <div className="text-center space-y-1">
-    <div className="flex justify-center mb-2">{icon}</div>
-    <div className="text-2xl font-bold tabular-nums">{value}</div>
-    <div className="text-xs font-medium text-foreground">{unit}</div>
-    <div className="text-xs text-muted-foreground">{label}</div>
   </div>
 );
 
