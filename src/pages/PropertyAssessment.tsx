@@ -318,14 +318,7 @@ const PropertyAssessment = () => {
                 </Card>
               </MapTokenLoader>
 
-              {/* 🏛️ Your Rep */}
-              <SectionHeading emoji="🏛️" title="Your Rep" subtitle="Local advocacy starts here" />
-              <CouncilMemberCard
-                councilMember={{
-                  ...results.councilMember,
-                  lookupSucceeded: results.dataPoints.councilLookupSource === "arcgis",
-                }}
-              />
+              {/* Your Rep moved into the Personalized Plan section below */}
 
               {/* ✅ Smart Next Moves */}
               <SectionHeading emoji="✅" title="Smart Next Moves" subtitle="Ranked by climate impact for your property" />
