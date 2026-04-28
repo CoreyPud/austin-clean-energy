@@ -155,6 +155,11 @@ const PropertyAssessment = () => {
     setShowLifestyleForm(false);
     setAddress("");
     setPropertyType("");
+    if (searchParams.get("address")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("address");
+      setSearchParams(next, { replace: true });
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
