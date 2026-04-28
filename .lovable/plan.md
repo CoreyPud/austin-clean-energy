@@ -1,132 +1,84 @@
-## Goal
+# Community Layer — Phase 2 Implementation Plan
 
-Make `/property-assessment` results **scan-friendly, visually playful, and easy to digest** — instead of dense text and uniform stat grids, the page should feel like a personal energy dashboard with visual storytelling.
+Based on your answers, the scope shifts meaningfully:
 
-## What's text-heavy today
+- **No site-activity counter.** You're right — at current traffic, "3 neighbors this week" hurts more than it helps. We'll lean entirely on real permit momentum, which is always a healthy non-zero number.
+- **Share button** lives at the bottom of results, after recommendations.
+- **Community card** is inline below results.
+- **No new database table needed** for now — all numbers come from existing `solar_installations` data via the authoritative `fiscal-year-stats` pipeline.
 
-1. **Personalized plan** renders as long markdown paragraphs (the screenshot you shared).
-2. **Solar Potential / Savings / Neighborhood** cards all use the same 4-column stat grid — no visual hierarchy, no hero metric.
-3. **Recommendations** are dense bullet lists.
-4. No visual indicators (gauges, progress bars, badges with personality) and no illustrations / emoji glyphs.
+This keeps us aligned with the project's data-transparency core rule: every number shown has a real source.
 
-## The redesign
+---
 
-### 1. Hero Score Card (new — replaces the plain header summary)
+## What we're building
 
-A bold, large card at the top of results with:
-- A circular **"Clean Energy Score"** gauge (0–100), composed deterministically from solar viability + neighborhood adoption + savings payback. SVG ring with animated fill.
-- One-line headline: "Your home has **strong** clean energy potential."
-- Three pill stats inline: Solar viability (sun emoji + score/10), Neighborhood adoption (home emoji + N installs), Estimated payback (clock emoji + N yrs).
-- Subtle gradient background tied to the score (high = primary/green glow, medium = amber, low = neutral).
+### 1. Deep linking on Property Assessment
 
-### 2. Solar Potential Card — visual upgrade
+The `/property-assessment` page currently holds the address in local state only. After someone runs an assessment, the URL stays `/property-assessment` — unshareable.
 
-- Large hero number: **"X panels"** with sun icon, big and centered.
-- Below it: a horizontal **roof-coverage progress bar** showing "Used roof area / Total roof area".
-- A small annotated row of icon-stats (sunshine hours, CO₂ offset) — but smaller, secondary.
-- Add a subtle animated sun-ray SVG decoration in the corner.
+Change:
+- Read `?address=` from the URL on mount. If present, auto-populate the input and auto-run the assessment.
+- When the user submits, push the address into the URL via `useSearchParams` (replace, not push, to avoid history spam).
+- A recipient who opens a shared link lands directly on the populated results.
 
-### 3. Savings Card — make it pop
+Edge cases handled:
+- Invalid/malformed `address` param → show the form with the value pre-filled but don't auto-submit; user clicks Generate.
+- Loading state while auto-running so the page doesn't flash empty.
 
-- One huge hero number: **annual savings $** in display font, with a tiny up-arrow trend icon.
-- A horizontal **payback timeline bar** (0 → 25 years) showing the payback marker visually with a flag, then "pure profit" zone shaded.
-- Three secondary chips: Net cost, 25-yr savings, Production. Smaller than today.
-- Confetti-style accent (small coin/leaf icons sprinkled in the corner).
+### 2. Share button
 
-### 4. Neighborhood Snapshot — give it a story
+Placement: at the **end** of the results, after the recommendations section, in its own subtle card ("Help a neighbor explore their options").
 
-- Lead with a comparison sentence: **"You'd join 47 neighbors in 78703"** (big, friendly).
-- A horizontal **adoption bar** comparing user's ZIP vs. Austin average (sourced from existing aggregate data, or a sensible default).
-- 3 mini-stats (pending permits, avg system size, newest install) as small icon chips below.
+Behavior:
+- Copies the current URL (which now includes `?address=...`) to clipboard via `navigator.clipboard.writeText`.
+- Shows a sonner toast: "Link copied — share it with a neighbor."
+- Falls back to a select-all textarea on browsers that block the Clipboard API.
+- Optional secondary actions: native `navigator.share` on mobile (iOS/Android share sheet) when available, plus pre-filled mailto/SMS links as fallbacks. All optional, behind feature detection.
 
-### 5. Council Member Card — keep but humanize
+### 3. Community Momentum card (inline, below results)
 
-- Add a circular avatar placeholder with the member's initials in a colored ring.
-- Move priorities into a small "🎯 Currently focused on" bullet list (max 3 chips) instead of a paragraph.
+A clean card titled **"Austin's clean energy momentum"** showing 3 real numbers, all derived from existing `solar_installations` data:
 
-### 6. Recommendation Cards — dense → playful
+- **This week:** *N* new solar projects permitted in Austin
+- **This month:** *N* projects · *X* kW capacity added
+- **Council District {user's district}:** *N* installations in the past 12 months — *contextualizes their own neighborhood*
 
-- Add a colored left border per impact tier (high = primary, medium = secondary, low = muted).
-- Replace the icon-in-square with a larger circular tinted icon.
-- Show only the **first 2 bullets** by default; "Show details" expands the rest.
-- Add a small "⏱️ ~X hours to act" or "💰 ~$X cost" meta chip pulled from the card data when available.
+Below the numbers: a single line — *"You're not alone. Austin homeowners are going solar every week."* — and a link to `/city-progress` for the full picture.
 
-### 7. Personalized Plan — structured, not a wall of text
+Data source: a new lightweight edge function `community-momentum` that queries `solar_installations` for:
+- count where `issued_date >= now() - 7 days`
+- count + sum(installed_kw) where `issued_date >= now() - 30 days`
+- count where `council_district = $1` and `issued_date >= now() - 365 days`
 
-Currently the AI returns markdown like "**Your Top 3 Moves** / 1. ... / 2. ...". Parse this into a **visual layout**:
-- "Top 3 Moves" rendered as 3 numbered cards in a horizontal grid (each with rank circle 1/2/3, title, sentence).
-- "This Month" → green-tinted checklist card with checkbox-style bullets.
-- "This Year" → blue-tinted timeline card with bullets.
-- Falls back to plain ReactMarkdown if parsing fails (no breakage).
+Cached via the existing `cached_stats` table pattern with a 1-hour TTL to keep load minimal.
 
-### 8. Section dividers + section emoji headers
+### 4. What we are explicitly NOT building (yet)
 
-- Each section gets a friendly emoji-led mini-header: "☀️ Your Roof", "💰 The Money", "🏘️ Your Block", "🏛️ Your Rep", "✅ Smart Next Moves".
-- Thin gradient horizontal rule between sections so the page breathes.
+- No "neighbors explored" counter — revisit when monthly site traffic clears ~500 unique assessments.
+- No supporter wall, no name capture, no user-generated content.
+- No heatmap layer (the existing solar map already serves this need).
+- No new tables, no PII collection, zero moderation surface.
 
-### 9. Animated counters
+---
 
-- All hero numbers (score, $ savings, panel count) use a count-up animation on first reveal (~600ms), so the page feels alive.
+## Technical details
 
-## Visual diagram
+**Files to modify:**
+- `src/pages/PropertyAssessment.tsx` — wire up `useSearchParams`, auto-run on mount when `?address=` present, add Share card and Community card to the results section.
+- `src/components/ShareAssessmentCard.tsx` *(new)* — share button + copy logic + native share fallback.
+- `src/components/CommunityMomentumCard.tsx` *(new)* — fetches and displays the 3 momentum numbers.
+- `supabase/functions/community-momentum/index.ts` *(new)* — public edge function (no auth), accepts optional `?district=` query param, returns cached aggregates.
+- `src/hooks/useSeo.ts` — when `?address=` is present, append the address to the page title and meta description so shared links preview meaningfully on social cards.
 
-```text
-┌──────────────────────────────────────────────────┐
-│ HERO: ⚡ Clean Energy Score 84/100  [gauge ring] │
-│ "Strong potential" • ☀️9/10 • 🏘️47 • ⏰9yr      │
-└──────────────────────────────────────────────────┘
-☀️ Your Roof ───────────────────────────────────
-┌──────────────────────────────────────────────────┐
-│        202 panels   [sun decoration]             │
-│  ▓▓▓▓▓▓▓▓▓░░░ 80% of usable roof                 │
-│  2,847h sun • 12,400 kg CO₂/yr                   │
-└──────────────────────────────────────────────────┘
-💰 The Money ───────────────────────────────────
-┌──────────────────────────────────────────────────┐
-│  $2,800 / yr  ↗                                  │
-│  0 ────🏁9yr────────── pure profit ────── 25yr   │
-│  [Net cost $37k] [25yr +$45k] [11,200 kWh/yr]    │
-└──────────────────────────────────────────────────┘
-🏘️ Your Block ──────────────────────────────────
-┌──────────────────────────────────────────────────┐
-│  Join 47 neighbors in 78703                      │
-│  78703  ▓▓▓▓▓▓░░░░ above Austin avg              │
-│  [12 pending] [6.2 kW avg] [Mar 2026 newest]     │
-└──────────────────────────────────────────────────┘
-🏛️ Your Rep ────────  ✅ Smart Next Moves ──────
-[avatar card]         [recommendation cards grid]
+**SEO/share preview:** when address is in URL, set Open Graph `og:title` to *"See clean energy options for {address} — Austin Clean Energy"* so Slack/iMessage/Twitter unfurls show the personalized result, not a generic page.
 
-[CTA: Get personalized plan ↓]
-... lifestyle form / personalized plan as structured cards ...
+**Privacy:** addresses in URLs are user-initiated and only persist if the user themselves shares the link. No server-side logging of shared addresses beyond standard edge function logs.
 
-[Bottom: AI / data disclaimer]
-```
+**Caching:** `community-momentum` writes results to `cached_stats` keyed by `momentum_global` and `momentum_district_{N}`, with the existing `updated_at` trigger. TTL check inside the function.
 
-## Files I'll change
+---
 
-- `src/pages/PropertyAssessment.tsx` — section emoji headers, dividers, hero score card, render personalized plan via new structured component.
-- `src/components/assessment/SolarPotentialCard.tsx` — hero panel count + roof progress bar.
-- `src/components/assessment/SavingsCards.tsx` — hero $ + payback timeline bar.
-- `src/components/assessment/NeighborhoodSnapshot.tsx` — comparison sentence + adoption bar.
-- `src/components/assessment/CouncilMemberCard.tsx` — avatar + priority chips.
-- `src/components/assessment/RecommendationCards.tsx` — collapsible details, impact left border, larger icons.
-- **New:** `src/components/assessment/CleanEnergyScoreCard.tsx` (hero + gauge + score logic).
-- **New:** `src/components/assessment/PersonalizedPlanDisplay.tsx` (parses markdown plan into Top 3 / This Month / This Year cards, with Markdown fallback).
-- **New:** `src/components/assessment/SectionHeading.tsx` (emoji + title + thin gradient rule).
-- **New:** `src/hooks/useCountUp.ts` (lightweight count-up animation hook, no new deps).
+## Open question for after approval
 
-## Technical notes
-
-- Score formula (deterministic, computed client-side from existing data): `solarViability*40 + min(neighbors/50,1)*30 + (paybackYears<=10 ? 30 : paybackYears<=15 ? 20 : 10)`. Capped 0–100.
-- Gauge: pure SVG `<circle>` with `strokeDasharray` — no chart library needed.
-- Count-up: simple `requestAnimationFrame` hook, respects `prefers-reduced-motion`.
-- All colors via existing semantic tokens (`primary`, `secondary`, `accent`, `muted`) — no new tokens.
-- Plan parser: regex-splits on `**Your Top 3 Moves**`, `**This Month**`, `**This Year**` headings; if any section is missing, falls back to current ReactMarkdown render.
-- No new npm dependencies.
-- No backend / edge-function changes — the personalized-plan prompt already produces the structure we need.
-
-## Out of scope
-
-- Changing the AI prompt itself (the existing structure works for the new parser).
-- Adding new data sources / API calls.
-- Print-stylesheet polish (existing print button still works).
+Should the auto-run on shared links also re-call the AI recommendation engine (costs a Lovable AI call per shared-link visit), or should we cache the most recent assessment per-address for ~24h to make shared links cheap? My recommendation: **cache for 24h** in a new `cached_assessments` table keyed by normalized address — a shared link viewed by 10 friends should not cost 10 AI calls. I'll include this if you approve.

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   Printer,
   Sparkles,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
@@ -29,19 +29,28 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
+import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
+import CommunityMomentumCard from "@/components/assessment/CommunityMomentumCard";
 
 const PropertyAssessment = () => {
-  useSeo({
-    title: "My Austin Energy Profile — Property + Neighborhood Insights",
-    description:
-      "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
-  });
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sharedAddress = searchParams.get("address") || "";
   const { toast } = useToast();
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(sharedAddress);
   const [propertyType, setPropertyType] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
+
+  useSeo({
+    title: sharedAddress
+      ? `Clean energy options for ${sharedAddress} — Austin Clean Energy`
+      : "My Austin Energy Profile — Property + Neighborhood Insights",
+    description: sharedAddress
+      ? `See solar potential, neighborhood adoption, savings estimates and personalized clean energy actions for ${sharedAddress}.`
+      : "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
+  });
 
   const [showLifestyleForm, setShowLifestyleForm] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
@@ -79,6 +88,13 @@ const PropertyAssessment = () => {
     setLoading(true);
     setShowLifestyleForm(false);
     setPersonalizedPlan(null);
+    // Sync the URL so this view is shareable
+    const trimmed = address.trim();
+    if (trimmed && searchParams.get("address") !== trimmed) {
+      const next = new URLSearchParams(searchParams);
+      next.set("address", trimmed);
+      setSearchParams(next, { replace: true });
+    }
     try {
       const data = await callUnified();
       setResults(data);
@@ -94,6 +110,18 @@ const PropertyAssessment = () => {
       setLoading(false);
     }
   };
+
+  // Auto-run when arriving via shared link (?address=...). Defaults propertyType to single-family.
+  useEffect(() => {
+    if (!sharedAddress || autoRanFromUrl || results || loading) return;
+    setAutoRanFromUrl(true);
+    if (!propertyType) setPropertyType("single-family");
+    // Defer to next tick so state settles
+    setTimeout(() => {
+      handleAssess();
+    }, 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedAddress]);
 
   const handleGetPersonalizedPlan = () => {
     setShowLifestyleForm(true);
@@ -127,6 +155,11 @@ const PropertyAssessment = () => {
     setShowLifestyleForm(false);
     setAddress("");
     setPropertyType("");
+    if (searchParams.get("address")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("address");
+      setSearchParams(next, { replace: true });
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -361,6 +394,11 @@ const PropertyAssessment = () => {
                   </div>
                 </div>
               )}
+
+
+              {/* Community momentum + share — placed after recommendations & plan */}
+              <CommunityMomentumCard district={results.councilMember?.district} />
+              <ShareAssessmentCard address={results.address || address} />
 
               <div className="flex justify-center">
                 <Button variant="ghost" onClick={handleStartOver}>
