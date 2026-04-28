@@ -15,7 +15,7 @@ This framework guides AI recommendations based on individual climate impact pote
 **Rationale:** Electric vehicles eliminate the largest source of individual carbon emissions. The average driver produces 4.6 tons of CO₂ annually from gasoline combustion. EVs powered by Austin's grid (which is increasingly renewable) eliminate these emissions entirely.  
 **Austin Context:** Growing charging infrastructure, Austin Energy EV rates available, multiple federal and state incentives active.  
 **Key Barriers:** Upfront cost, charging access for renters, range anxiety  
-**Current Incentives:** Federal EV tax credit up to $7,500 (income limits apply), Austin Energy rebates for home charging equipment
+**Current Incentives:** Austin Energy rebates for home charging equipment (up to $1,200) and EV-friendly time-of-use electricity rates. (The federal EV tax credit ended Sept 30, 2025 and is no longer available.)
 
 ### 2. Zero-Carbon Home Power (Solar + Clean Grid)
 **Impact Score:** 8/10  
@@ -103,7 +103,7 @@ Last Updated: 2025-10-22
 **URL:** https://austinenergy.com/rebates/solar  
 **Incentive:** Up to $2,500 for residential solar installations  
 **Eligibility:** Austin Energy customers installing new solar systems  
-**Notes:** Rebate amounts vary by system size; combine with federal tax credit for maximum savings
+**Notes:** Rebate amounts vary by system size. The federal residential solar tax credit is no longer available, so Austin Energy's rebate is the primary incentive.
 
 ### Community Solar
 **URL:** https://austinenergy.com/community-solar  
@@ -126,7 +126,7 @@ Last Updated: 2025-10-22
 **Use Case:** Answer questions that people have about how to take advantage of the tax incentives before Jan 1, 2025
 
 ### Free Home Energy Audit
-**URL:** https://austinenergy.com/energy-efficiency/home-energy-audit  
+**URL:** https://austinenergy.com/energy-efficiency/rebates-incentives/residential/home-improvements/home-energy-savings  
 **Service:** Professional assessment of home energy use with personalized recommendations  
 **Cost:** Free for Austin Energy customers  
 **Value:** Typically identifies $300-800 in annual savings opportunities
@@ -155,11 +155,10 @@ Last Updated: 2025-10-22
 **Services:** Home charging rebates, special EV electricity rates, public charging map  
 **Rebates:** Up to $1,200 for home Level 2 charger installation
 
-### Federal EV Tax Credit
-**URL:** https://fueleconomy.gov/feg/taxevb.shtml  
-**Incentive:** Up to $7,500 for new EVs, $4,000 for used EVs  
-**Eligibility:** Income limits apply; vehicle must meet criteria  
-**Notes:** Check vehicle eligibility before purchase
+### Federal EV Tax Credit - NO LONGER AVAILABLE
+**Status:** The federal Clean Vehicle Credit (up to $7,500 new / $4,000 used) ended for vehicles acquired after September 30, 2025 under Public Law 119-21 (the "One Big Beautiful Bill").  
+**Alternative:** Point users to Austin Energy's home charger rebate (up to $1,200) and EV rate plans.  
+**Archive Note:** Retained for historical reference only — do not present as an active incentive.
 
 ### CapMetro Electric Bus Program
 **URL:** https://www.capmetro.org/electric-buses  
@@ -269,10 +268,10 @@ Last Updated: 2025-10-22
 
 ## Current Policy Context
 
-### Federal Incentives (2025)
-- **Solar ITC:** NO LONGER AVAILABLE for residential homeowners. The federal solar tax credit for homeowners has expired.
-- **EV Tax Credits:** $7,500 for new EVs, $4,000 for used; income caps and sourcing requirements apply
-- **Energy Efficiency Rebates (HOMES Program):** Up to $8,000 for whole-home retrofits based on energy savings
+### Federal Incentives (current)
+- **Solar ITC (Residential):** NO LONGER AVAILABLE for homeowners — the federal residential solar tax credit has expired.
+- **EV Tax Credits:** NO LONGER AVAILABLE — the Clean Vehicle Credit ended for vehicles acquired after September 30, 2025 (Public Law 119-21).
+- **Energy Efficiency Rebates (HOMES Program):** State-administered rebates for whole-home retrofits remain active in jurisdictions that have launched the program — verify current Texas status before citing amounts.
 
 ### Texas State Context
 - **No state renewable energy tax credits** (unlike many states)
@@ -458,7 +457,7 @@ To add a new external resource:
 Example (markdown snippet):
 ~~~markdown
 ### Austin Transportation Electrification Plan
-**URL:** https://www.austintexas.gov/department/electric-vehicle-plan  
+**URL:** https://www.austintexas.gov/department/transportation-public-works  
 **Purpose:** City's EV infrastructure and policy roadmap  
 **Refresh:** Monthly  
 **Sections to extract:** Charging station expansion, fleet electrification timeline
@@ -496,20 +495,21 @@ This file defines the external data sources used by the recommendation engine. E
 ## Austin Open Data Portal
 
 ### Solar Permits
-**API Endpoint:** \`https://data.austintexas.gov/resource/fvet-w56k.json\`  
+**API Endpoint:** \`https://data.austintexas.gov/resource/3syk-w9eu.json\`  
+**Dataset Page:** https://data.austintexas.gov/Building-and-Development/Issued-Construction-Permits/3syk-w9eu  
 **Purpose:** Track solar installation activity by ZIP code and neighborhood  
-**Update Frequency:** Updated monthly by Austin Energy  
+**Update Frequency:** Updated daily by the City of Austin  
 **Key Fields:**
-- \`issue_date\`: When permit was issued
+- \`issued_date\`: When permit was issued
 - \`completed_date\`: When installation was completed  
-- \`zipcode\`: Location of installation
+- \`original_zip\`: Location of installation
 - \`work_class\`: Type of work (filter for "Auxiliary Power" for solar)
-- \`permit_type\`: Usually "Solar Photovoltaic System"
+- \`permit_type_desc\`: Usually "Electrical Permit" with \`work_class='Auxiliary Power'\`
 - \`latitude\`, \`longitude\`: Location coordinates
 
 **Filter Parameters:**
-- \`$where=issue_date >= '2020-01-01'\` (get recent installations, past 5 years)
-- \`work_class='Auxiliary Power'\` (isolates solar from other electrical work)
+- \`work_class=Auxiliary Power\` (isolates solar from other electrical work)
+- \`$where=issued_date >= '2020-01-01'\` (recent installations, past 5 years)
 
 **Interpretation:**
 - **High activity (>50 permits/ZIP in past year):** "This area has strong solar adoption"
@@ -518,50 +518,32 @@ This file defines the external data sources used by the recommendation engine. E
 
 **Fallback:** If API unavailable, use generic language: "Solar installations are growing across Austin"
 
-### Energy Audits
-**API Endpoint:** \`https://data.austintexas.gov/resource/77pk-yxf5.json\`  
-**Purpose:** Track participation in free energy audit program  
-**Update Frequency:** Updated quarterly  
+### Energy Audits (Single-Family)
+**API Endpoint:** \`https://data.austintexas.gov/resource/tk9p-m8c7.json\`  
+**Dataset Page:** https://data.austintexas.gov/Utilities-and-City-Services/Austin-Energy-Single-Family-Audits/tk9p-m8c7/about_data  
+**Purpose:** Track participation in the Austin Energy single-family audit program  
+**Update Frequency:** Updated periodically by Austin Energy  
 **Key Fields:**
 - \`zip_code\`: Where audit was conducted
 - \`year\`: Year of audit
-- \`number_of_audits\`: Count in that ZIP/year
+- Counts of audits and recommended measures
 
 **Interpretation:**
 - **High audit activity:** Indicates community awareness of efficiency programs
-- **Low audit activity:** Opportunity to promote free audit program
+- **Low audit activity:** Opportunity to promote the free audit program
 
-**Fallback:** Always recommend energy audits; API data just adds context
+**Fallback:** Always recommend energy audits; API data just adds context. (Note: this dataset is not currently surfaced as a metric in the UI — it is only used as background context for recommendations.)
 
-### Weatherization Projects
-**API Endpoint:** \`https://data.austintexas.gov/resource/4c7y-k5ay.json\`  
-**Purpose:** Track low-income weatherization assistance program  
-**Update Frequency:** Updated quarterly  
-**Key Fields:**
-- \`zip_code\`: Project location
-- \`year_of_completion\`: When work was completed
-- \`project_type\`: Type of weatherization work
+### Weatherization & Green Buildings
+The City of Austin previously published separate datasets for weatherization
+projects and Austin Energy Green Building certifications. Those endpoints are
+no longer available on the open data portal, so the recommendation engine no
+longer queries them. When the city republishes these datasets, add them back
+here with the new resource IDs and link to their dataset pages.
 
-**Interpretation:**
-- Indicates areas with older housing stock and energy burden
-- Use to contextualize efficiency recommendations
-
-**Fallback:** Don't penalize missing data; weatherization data is for context only
-
-### Green Buildings
-**API Endpoint:** \`https://data.austintexas.gov/resource/4c7y-k5ay.json\`  
-**Purpose:** Track Austin Energy Green Building certified projects  
-**Update Frequency:** Updated monthly  
-**Key Fields:**
-- \`rating\`: Star rating (1-5 stars)
-- \`project_type\`: Residential, commercial, multi-family
-- \`completion_date\`: When certified
-
-**Interpretation:**
-- Presence indicates local green building expertise
-- Use to recommend green building programs for renovations
-
-**Fallback:** Generic green building recommendations
+For program information, link users to:
+- **Weatherization Assistance Program:** https://austinenergy.com/energy-efficiency
+- **Austin Energy Green Building:** https://austinenergy.com/energy-efficiency/green-building
 
 ## Google APIs
 
@@ -700,7 +682,7 @@ Last Updated: 2026-04-23
 **Name:** Kirk Watson
 **Email:** mayor@austintexas.gov
 **Phone:** 512-978-2100
-**Office Page:** https://www.austintexas.gov/department/mayor
+**Office Page:** https://www.austintexas.gov/mayor
 **Current Priorities:** Climate equity plan implementation, Project Connect, affordable housing
 
 ## District 1

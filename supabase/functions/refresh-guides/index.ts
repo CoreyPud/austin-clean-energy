@@ -135,7 +135,7 @@ SEO REQUIREMENTS (critical):
 
 IMPORTANT:
 - The federal residential solar tax credit is NO LONGER available — remove any references to it as active
-- Federal EV tax credits ARE still available
+- The federal EV tax credit (Clean Vehicle Credit) ended September 30, 2025 — remove any references to it as active. Focus on Austin Energy rebates and EV rate plans.
 - Keep content 600-1000 words
 - You may reorganize the structure to improve flow — use H2/H3 headers but convert bullet-heavy sections into prose paragraphs
 

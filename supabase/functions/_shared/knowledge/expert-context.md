@@ -3,10 +3,10 @@ Last Updated: 2025-10-22
 
 ## Current Policy Context
 
-### Federal Incentives (2025)
-- **Solar ITC:** No longer available for residential homeowners
-- **EV Tax Credits:** $7,500 for new EVs, $4,000 for used; income caps and sourcing requirements apply
-- **Energy Efficiency Rebates (HOMES Program):** Up to $8,000 for whole-home retrofits based on energy savings
+### Federal Incentives (current)
+- **Solar ITC (Residential):** No longer available for homeowners
+- **EV Tax Credits:** No longer available — the Clean Vehicle Credit ended for vehicles acquired after September 30, 2025 (Public Law 119-21, the "One Big Beautiful Bill")
+- **Energy Efficiency Rebates (HOMES Program):** State-administered rebates for whole-home retrofits remain active in jurisdictions that have launched the program — verify current Texas status before citing amounts
 
 ### Texas State Context
 - **No state renewable energy tax credits** (unlike many states)
@@ -154,11 +154,11 @@ The recommendation engine can fetch and cache external resources to supplement t
 **Refresh:** Daily  
 **Sections to extract:** Program updates, current rebate amounts, new initiatives
 
-### Federal IRS Tax Credits
-**URL:** https://www.irs.gov/credits-deductions/residential-clean-energy-credit  
-**Purpose:** Current federal tax credit rates and eligibility requirements  
-**Refresh:** Monthly  
-**Sections to extract:** Credit percentages, income limits, qualifying technologies
+### DSIRE Texas Incentives Database (Federal + State)
+**URL:** https://programs.dsireusa.org/system/program?state=TX  
+**Purpose:** Authoritative source for currently active federal, state, and local incentives in Texas. Use this instead of citing specific federal credits, since most federal residential clean energy credits have expired.  
+**Refresh:** Weekly  
+**Sections to extract:** Active programs, rebate amounts, recent policy changes
 
 ### DSIRE Texas Incentives Database
 **URL:** https://programs.dsireusa.org/system/program?state=TX  
@@ -192,7 +192,7 @@ To add a new external resource:
 Example:
 ```markdown
 ### Austin Transportation Electrification Plan
-**URL:** https://www.austintexas.gov/department/electric-vehicle-plan  
+**URL:** https://www.austintexas.gov/department/transportation-public-works  
 **Purpose:** City's EV infrastructure and policy roadmap  
 **Refresh:** Monthly  
 **Sections to extract:** Charging station expansion, fleet electrification timeline

@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import Footer from "./components/Footer";
 import Index from "./pages/Index";
 import CityOverview from "./pages/CityOverview";
-import AreaAnalysis from "./pages/AreaAnalysis";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
 import { Navigate } from "react-router-dom";

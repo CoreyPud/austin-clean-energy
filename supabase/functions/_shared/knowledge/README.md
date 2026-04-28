@@ -40,7 +40,7 @@ When a user requests recommendations, the edge functions:
 ### 1. Transportation Electrification
 **Impact Score:** 9/10  
 **Annual CO₂ Reduction:** 4-6 tons per vehicle  
-**Current Incentives:** Federal EV tax credit up to $7,500, Austin Energy rebates for home charging equipment, NEW: State rebate program launched March 2025
+**Current Incentives:** Austin Energy rebates for home charging equipment, EV time-of-use electricity rates
 ```
 
 ### Updating Resources (resources.md)
@@ -64,7 +64,7 @@ When a user requests recommendations, the edge functions:
 **URL:** https://austinenergy.com/rebates/solar  
 **Incentive:** Up to $3,000 for residential solar installations (increased from $2,500 as of Jan 2025)  
 **Eligibility:** Austin Energy customers installing new solar systems  
-**Notes:** Rebate amounts vary by system size; combine with federal tax credit for maximum savings
+**Notes:** Rebate amounts vary by system size. The federal residential solar tax credit is no longer available, so this rebate is the primary incentive.
 ```
 
 ### Updating Expert Context (expert-context.md)
@@ -85,10 +85,10 @@ When a user requests recommendations, the edge functions:
 
 **Example update:**
 ```markdown
-### Federal Incentives (2025-2026)
-- **Inflation Reduction Act (IRA)** continues through 2030s
-- **Solar ITC:** 30% through 2032
-- **EV Tax Credits:** $7,500 for new EVs, $4,000 for used; NEW: Income caps increased to $200k single / $400k joint as of Jan 2025
+### Federal Incentives (current)
+- **Inflation Reduction Act (IRA):** Most residential clean energy tax credits have been repealed by Public Law 119-21 (July 2025).
+- **Solar ITC (Residential):** No longer available for homeowners.
+- **EV Tax Credits:** No longer available — Clean Vehicle Credit ended for vehicles acquired after Sept 30, 2025.
 ```
 
 ### Updating Data Sources (data-sources.md)
@@ -110,7 +110,7 @@ When a user requests recommendations, the edge functions:
 **Example update:**
 ```markdown
 ### Solar Permits
-**API Endpoint:** `https://data.austintexas.gov/resource/fvet-w56k.json`  
+**API Endpoint:** `https://data.austintexas.gov/resource/3syk-w9eu.json`  
 **Interpretation:**
 - **High activity (>75 permits/ZIP in past year):** "This area has strong solar adoption" (increased from 50 due to overall growth)
 ```

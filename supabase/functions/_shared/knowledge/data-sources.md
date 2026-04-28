@@ -7,20 +7,21 @@ This file defines the external data sources used by the recommendation engine. E
 ## Austin Open Data Portal
 
 ### Solar Permits
-**API Endpoint:** `https://data.austintexas.gov/resource/fvet-w56k.json`  
+**API Endpoint:** `https://data.austintexas.gov/resource/3syk-w9eu.json`  
+**Dataset Page:** https://data.austintexas.gov/Building-and-Development/Issued-Construction-Permits/3syk-w9eu  
 **Purpose:** Track solar installation activity by ZIP code and neighborhood  
-**Update Frequency:** Updated monthly by Austin Energy  
+**Update Frequency:** Updated daily by the City of Austin  
 **Key Fields:**
-- `issue_date`: When permit was issued
+- `issued_date`: When permit was issued
 - `completed_date`: When installation was completed  
-- `zipcode`: Location of installation
+- `original_zip`: Location of installation
 - `work_class`: Type of work (filter for "Auxiliary Power" for solar)
-- `permit_type`: Usually "Solar Photovoltaic System"
+- `permit_type_desc`: Usually "Electrical Permit" with `work_class='Auxiliary Power'`
 - `latitude`, `longitude`: Location coordinates
 
 **Filter Parameters:**
-- `$where=issue_date >= '2020-01-01'` (get recent installations, past 5 years)
-- `work_class='Auxiliary Power'` (isolates solar from other electrical work)
+- `work_class=Auxiliary Power` (isolates solar from other electrical work)
+- `$where=issued_date >= '2020-01-01'` (recent installations, past 5 years)
 
 **Interpretation:**
 - **High activity (>50 permits/ZIP in past year):** "This area has strong solar adoption"
@@ -29,50 +30,32 @@ This file defines the external data sources used by the recommendation engine. E
 
 **Fallback:** If API unavailable, use generic language: "Solar installations are growing across Austin"
 
-### Energy Audits
-**API Endpoint:** `https://data.austintexas.gov/resource/77pk-yxf5.json`  
-**Purpose:** Track participation in free energy audit program  
-**Update Frequency:** Updated quarterly  
+### Energy Audits (Single-Family)
+**API Endpoint:** `https://data.austintexas.gov/resource/tk9p-m8c7.json`  
+**Dataset Page:** https://data.austintexas.gov/Utilities-and-City-Services/Austin-Energy-Single-Family-Audits/tk9p-m8c7/about_data  
+**Purpose:** Track participation in the Austin Energy single-family audit program  
+**Update Frequency:** Updated periodically by Austin Energy  
 **Key Fields:**
 - `zip_code`: Where audit was conducted
 - `year`: Year of audit
-- `number_of_audits`: Count in that ZIP/year
+- Counts of audits and recommended measures
 
 **Interpretation:**
 - **High audit activity:** Indicates community awareness of efficiency programs
-- **Low audit activity:** Opportunity to promote free audit program
+- **Low audit activity:** Opportunity to promote the free audit program
 
-**Fallback:** Always recommend energy audits; API data just adds context
+**Fallback:** Always recommend energy audits; API data just adds context. (Note: this dataset is not currently surfaced as a metric in the UI — it is only used as background context for recommendations.)
 
-### Weatherization Projects
-**API Endpoint:** `https://data.austintexas.gov/resource/4c7y-k5ay.json`  
-**Purpose:** Track low-income weatherization assistance program  
-**Update Frequency:** Updated quarterly  
-**Key Fields:**
-- `zip_code`: Project location
-- `year_of_completion`: When work was completed
-- `project_type`: Type of weatherization work
+### Weatherization & Green Buildings
+The City of Austin previously published separate datasets for weatherization
+projects and Austin Energy Green Building certifications. Those endpoints are
+no longer available on the open data portal, so the recommendation engine no
+longer queries them. When the city republishes these datasets, add them back
+here with the new resource IDs and link to their dataset pages.
 
-**Interpretation:**
-- Indicates areas with older housing stock and energy burden
-- Use to contextualize efficiency recommendations
-
-**Fallback:** Don't penalize missing data; weatherization data is for context only
-
-### Green Buildings
-**API Endpoint:** `https://data.austintexas.gov/resource/4c7y-k5ay.json`  
-**Purpose:** Track Austin Energy Green Building certified projects  
-**Update Frequency:** Updated monthly  
-**Key Fields:**
-- `rating`: Star rating (1-5 stars)
-- `project_type`: Residential, commercial, multi-family
-- `completion_date`: When certified
-
-**Interpretation:**
-- Presence indicates local green building expertise
-- Use to recommend green building programs for renovations
-
-**Fallback:** Generic green building recommendations
+For program information, link users to:
+- **Weatherization Assistance Program:** https://austinenergy.com/energy-efficiency
+- **Austin Energy Green Building:** https://austinenergy.com/energy-efficiency/green-building
 
 ## Google APIs
 

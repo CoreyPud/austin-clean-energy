@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import {
   Printer,
   Sparkles,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
@@ -31,23 +31,33 @@ import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SolarRoofMap from "@/components/assessment/SolarRoofMap";
+import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
+import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 
 const PropertyAssessment = () => {
-  useSeo({
-    title: "My Austin Energy Profile — Property + Neighborhood Insights",
-    description:
-      "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
-  });
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sharedAddress = searchParams.get("address") || "";
   const { toast } = useToast();
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(sharedAddress);
   const [propertyType, setPropertyType] = useState("single-family");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
+
+  useSeo({
+    title: sharedAddress
+      ? `Clean energy options for ${sharedAddress} — Austin Clean Energy`
+      : "My Austin Energy Profile — Property + Neighborhood Insights",
+    description: sharedAddress
+      ? `See solar potential, neighborhood adoption, savings estimates and personalized clean energy actions for ${sharedAddress}.`
+      : "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
+  });
 
   const [showLifestyleForm, setShowLifestyleForm] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
   const [personalizedPlan, setPersonalizedPlan] = useState<string | null>(null);
+  const [councilOutreachScript, setCouncilOutreachScript] = useState<string | null>(null);
   const lifestyleRef = useRef<HTMLDivElement>(null);
   const planRef = useRef<HTMLDivElement>(null);
 
@@ -81,10 +91,18 @@ const PropertyAssessment = () => {
     setLoading(true);
     setShowLifestyleForm(false);
     setPersonalizedPlan(null);
+    setCouncilOutreachScript(null);
+    // Sync the URL so this view is shareable
+    const trimmed = address.trim();
+    if (trimmed && searchParams.get("address") !== trimmed) {
+      const next = new URLSearchParams(searchParams);
+      next.set("address", trimmed);
+      setSearchParams(next, { replace: true });
+    }
     try {
       const data = await callUnified();
       setResults(data);
-      toast({ title: "Profile ready", description: "Scroll down to explore your insights." });
+      
     } catch (e: any) {
       console.error("Assessment error:", e);
       toast({
@@ -97,6 +115,18 @@ const PropertyAssessment = () => {
     }
   };
 
+  // Auto-run when arriving via shared link (?address=...). Defaults propertyType to single-family.
+  useEffect(() => {
+    if (!sharedAddress || autoRanFromUrl || results || loading) return;
+    setAutoRanFromUrl(true);
+    if (!propertyType) setPropertyType("single-family");
+    // Defer to next tick so state settles
+    setTimeout(() => {
+      handleAssess();
+    }, 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedAddress]);
+
   const handleGetPersonalizedPlan = () => {
     setShowLifestyleForm(true);
     setTimeout(() => lifestyleRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -108,6 +138,7 @@ const PropertyAssessment = () => {
       const data = await callUnified(lifestyleData);
       setResults(data);
       setPersonalizedPlan(data.personalizedPlan || null);
+      setCouncilOutreachScript(data.councilOutreachScript || null);
       setShowLifestyleForm(false);
       setTimeout(() => planRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       toast({ title: "Personalized plan ready", description: "Your tailored next steps are below." });
@@ -126,9 +157,15 @@ const PropertyAssessment = () => {
   const handleStartOver = () => {
     setResults(null);
     setPersonalizedPlan(null);
+    setCouncilOutreachScript(null);
     setShowLifestyleForm(false);
     setAddress("");
     setPropertyType("single-family");
+    if (searchParams.get("address")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("address");
+      setSearchParams(next, { replace: true });
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -304,14 +341,7 @@ const PropertyAssessment = () => {
                 </Card>
               </div>
 
-              {/* 🏛️ Your Rep */}
-              <SectionHeading emoji="🏛️" title="Your Rep" subtitle="Local advocacy starts here" />
-              <CouncilMemberCard
-                councilMember={{
-                  ...results.councilMember,
-                  lookupSucceeded: results.dataPoints.councilLookupSource === "arcgis",
-                }}
-              />
+              {/* Your Rep moved into the Personalized Plan section below */}
 
               {/* ✅ Smart Next Moves */}
               <SectionHeading emoji="✅" title="Smart Next Moves" subtitle="Ranked by climate impact for your property" />
@@ -364,11 +394,33 @@ const PropertyAssessment = () => {
                   />
                   <PersonalizedPlanDisplay markdown={personalizedPlan} />
 
+                  {/* Your Rep — surfaced alongside the personalized plan so advocacy feels actionable */}
+                  <SectionHeading
+                    emoji="🏛️"
+                    title="Reach out to your council representative"
+                    subtitle="Local decisions shape Austin's clean energy future"
+                  />
+                  <CouncilMemberCard
+                    councilMember={{
+                      ...results.councilMember,
+                      lookupSucceeded: results.dataPoints.councilLookupSource === "arcgis",
+                    }}
+                  />
+                  {councilOutreachScript && (
+                    <CouncilOutreachCard
+                      script={councilOutreachScript}
+                      councilName={results.councilMember.name}
+                      councilEmail={results.councilMember.email}
+                      district={results.councilMember.district}
+                    />
+                  )}
+
                   <div className="flex justify-center gap-3 flex-wrap">
                     <Button
                       variant="outline"
                       onClick={() => {
                         setPersonalizedPlan(null);
+                        setCouncilOutreachScript(null);
                         setShowLifestyleForm(true);
                         setTimeout(
                           () => lifestyleRef.current?.scrollIntoView({ behavior: "smooth" }),
@@ -385,6 +437,10 @@ const PropertyAssessment = () => {
                   </div>
                 </div>
               )}
+
+
+              {/* Share card — placed after recommendations & plan */}
+              <ShareAssessmentCard address={results.address || address} />
 
               <div className="flex justify-center">
                 <Button variant="ghost" onClick={handleStartOver}>
