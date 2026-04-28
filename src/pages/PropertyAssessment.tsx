@@ -29,6 +29,7 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
+import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 
 
@@ -55,6 +56,7 @@ const PropertyAssessment = () => {
   const [showLifestyleForm, setShowLifestyleForm] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
   const [personalizedPlan, setPersonalizedPlan] = useState<string | null>(null);
+  const [councilOutreachScript, setCouncilOutreachScript] = useState<string | null>(null);
   const lifestyleRef = useRef<HTMLDivElement>(null);
   const planRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +136,7 @@ const PropertyAssessment = () => {
       const data = await callUnified(lifestyleData);
       setResults(data);
       setPersonalizedPlan(data.personalizedPlan || null);
+      setCouncilOutreachScript(data.councilOutreachScript || null);
       setShowLifestyleForm(false);
       setTimeout(() => planRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       toast({ title: "Personalized plan ready", description: "Your tailored next steps are below." });
