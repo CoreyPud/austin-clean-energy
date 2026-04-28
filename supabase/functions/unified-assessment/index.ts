@@ -268,20 +268,32 @@ serve(async (req) => {
       savings,
     });
 
-    // 7. Optional personalized AI plan when lifestyle data is provided
+    // 7. Optional personalized AI plan + council outreach script when lifestyle data is provided
     let personalizedPlan: string | null = null;
+    let councilOutreachScript: string | null = null;
     if (lifestyleData && LOVABLE_API_KEY) {
-      personalizedPlan = await generatePersonalizedPlan({
-        apiKey: LOVABLE_API_KEY,
-        knowledge,
-        standardizedAddress,
-        propertyType,
-        lifestyleData,
-        solarInsights,
-        savings,
-        neighborhoodSnapshot,
-        councilMember,
-      });
+      [personalizedPlan, councilOutreachScript] = await Promise.all([
+        generatePersonalizedPlan({
+          apiKey: LOVABLE_API_KEY,
+          knowledge,
+          standardizedAddress,
+          propertyType,
+          lifestyleData,
+          solarInsights,
+          savings,
+          neighborhoodSnapshot,
+          councilMember,
+        }),
+        generateCouncilOutreachScript({
+          apiKey: LOVABLE_API_KEY,
+          standardizedAddress,
+          lifestyleData,
+          solarInsights,
+          savings,
+          neighborhoodSnapshot,
+          councilMember,
+        }),
+      ]);
     }
 
     return new Response(
@@ -298,6 +310,7 @@ serve(async (req) => {
         councilMember,
         recommendationCards,
         personalizedPlan,
+        councilOutreachScript,
         dataPoints: {
           citySolarPermits: cityPermits.length,
           dbInstallationsInZip: dbInstallations.length,
@@ -580,6 +593,83 @@ Use markdown **bold**. Begin directly with the first heading.`;
     return data.choices?.[0]?.message?.content || null;
   } catch (err) {
     console.error("AI plan exception:", err);
+    return null;
+  }
+}
+
+async function generateCouncilOutreachScript(opts: {
+  apiKey: string;
+  standardizedAddress: string;
+  lifestyleData: any;
+  solarInsights: any;
+  savings: any;
+  neighborhoodSnapshot: any;
+  councilMember: any;
+}): Promise<string | null> {
+  const {
+    apiKey,
+    standardizedAddress,
+    lifestyleData,
+    solarInsights,
+    savings,
+    neighborhoodSnapshot,
+    councilMember,
+  } = opts;
+
+  const interests = (lifestyleData.interests || []).join(", ") || "general clean energy progress";
+
+  const prompt = `Write a short, personal outreach message that an Austin resident can send to their council representative about local clean energy issues. The message must sound like it was written by the resident themselves — natural, specific, civil, and grounded in their actual situation. No filler, no jargon, no climate activism rhetoric.
+
+RESIDENT CONTEXT:
+- Address: ${standardizedAddress}
+- District: ${councilMember.district}
+- Council member: ${councilMember.name}
+- Their stated interests: ${interests}
+- Housing: ${lifestyleData.housingStatus === "own" ? "Homeowner" : "Renter"} in ${lifestyleData.homeType}
+- Current energy: ${lifestyleData.currentEnergy}
+- Transportation: ${lifestyleData.transportation}
+${neighborhoodSnapshot ? `- Their ZIP has ${neighborhoodSnapshot.installationsInZip} solar installs and ${neighborhoodSnapshot.pendingPermitsInZip} pending permits.` : ""}
+${solarInsights ? `- Their roof could fit ${solarInsights.maxPanels} panels (~${solarInsights.annualProductionKwh} kWh/yr).` : ""}
+${savings ? `- A ${savings.recommendedSystemKw} kW system would save ~$${savings.annualSavingsUsd}/yr (${savings.paybackYears}yr payback).` : ""}
+
+REQUIREMENTS:
+- Address ${councilMember.name} by name (use "Councilmember [LastName]" or "Mayor [LastName]" if district is "Mayor").
+- Open with one sentence identifying the resident as a constituent in ${councilMember.district}.
+- Tie one or two of their stated interests (${interests}) to a concrete local ask — e.g. faster permit turnaround, expanded Austin Energy rebates, more EV charging, protecting Austin's clean energy goals against gas peakers, equitable access for renters, etc.
+- Reference their personal situation in one sentence (their roof potential, their housing, their commute — pick what fits).
+- End with a clear, specific ask (a meeting, a vote, a public statement, etc.) and "Thank you for your time."
+- 120-180 words total. Plain prose, no bullets, no markdown headings.
+- Sign as "[Your name]" placeholder so the user fills it in.
+
+Begin the message directly with "Dear ${councilMember.district === "Mayor" ? "Mayor" : "Councilmember"} ${(councilMember.name || "").split(" ").slice(-1)[0] || ""},".`;
+
+  try {
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You write civic outreach messages in the voice of an ordinary Austin resident. Never use meta-phrases, never reference instructions, never preface the message.",
+          },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+    if (!r.ok) {
+      console.error("Outreach script error:", r.status, await r.text());
+      return null;
+    }
+    const data = await r.json();
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (err) {
+    console.error("Outreach script exception:", err);
     return null;
   }
 }

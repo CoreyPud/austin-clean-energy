@@ -29,6 +29,7 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
+import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 
 
@@ -55,6 +56,7 @@ const PropertyAssessment = () => {
   const [showLifestyleForm, setShowLifestyleForm] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
   const [personalizedPlan, setPersonalizedPlan] = useState<string | null>(null);
+  const [councilOutreachScript, setCouncilOutreachScript] = useState<string | null>(null);
   const lifestyleRef = useRef<HTMLDivElement>(null);
   const planRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +90,7 @@ const PropertyAssessment = () => {
     setLoading(true);
     setShowLifestyleForm(false);
     setPersonalizedPlan(null);
+    setCouncilOutreachScript(null);
     // Sync the URL so this view is shareable
     const trimmed = address.trim();
     if (trimmed && searchParams.get("address") !== trimmed) {
@@ -134,6 +137,7 @@ const PropertyAssessment = () => {
       const data = await callUnified(lifestyleData);
       setResults(data);
       setPersonalizedPlan(data.personalizedPlan || null);
+      setCouncilOutreachScript(data.councilOutreachScript || null);
       setShowLifestyleForm(false);
       setTimeout(() => planRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       toast({ title: "Personalized plan ready", description: "Your tailored next steps are below." });
@@ -152,6 +156,7 @@ const PropertyAssessment = () => {
   const handleStartOver = () => {
     setResults(null);
     setPersonalizedPlan(null);
+    setCouncilOutreachScript(null);
     setShowLifestyleForm(false);
     setAddress("");
     setPropertyType("");
@@ -313,14 +318,7 @@ const PropertyAssessment = () => {
                 </Card>
               </MapTokenLoader>
 
-              {/* 🏛️ Your Rep */}
-              <SectionHeading emoji="🏛️" title="Your Rep" subtitle="Local advocacy starts here" />
-              <CouncilMemberCard
-                councilMember={{
-                  ...results.councilMember,
-                  lookupSucceeded: results.dataPoints.councilLookupSource === "arcgis",
-                }}
-              />
+              {/* Your Rep moved into the Personalized Plan section below */}
 
               {/* ✅ Smart Next Moves */}
               <SectionHeading emoji="✅" title="Smart Next Moves" subtitle="Ranked by climate impact for your property" />
@@ -373,11 +371,33 @@ const PropertyAssessment = () => {
                   />
                   <PersonalizedPlanDisplay markdown={personalizedPlan} />
 
+                  {/* Your Rep — surfaced alongside the personalized plan so advocacy feels actionable */}
+                  <SectionHeading
+                    emoji="🏛️"
+                    title="Reach out to your council representative"
+                    subtitle="Local decisions shape Austin's clean energy future"
+                  />
+                  <CouncilMemberCard
+                    councilMember={{
+                      ...results.councilMember,
+                      lookupSucceeded: results.dataPoints.councilLookupSource === "arcgis",
+                    }}
+                  />
+                  {councilOutreachScript && (
+                    <CouncilOutreachCard
+                      script={councilOutreachScript}
+                      councilName={results.councilMember.name}
+                      councilEmail={results.councilMember.email}
+                      district={results.councilMember.district}
+                    />
+                  )}
+
                   <div className="flex justify-center gap-3 flex-wrap">
                     <Button
                       variant="outline"
                       onClick={() => {
                         setPersonalizedPlan(null);
+                        setCouncilOutreachScript(null);
                         setShowLifestyleForm(true);
                         setTimeout(
                           () => lifestyleRef.current?.scrollIntoView({ behavior: "smooth" }),
