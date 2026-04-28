@@ -476,8 +476,8 @@ function buildRecommendationCards(opts: {
       "Push for streamlined residential permitting",
     ],
     cta: {
-      label: "Find Austin Climate Coalitions",
-      url: "https://austinclimateequity.org/",
+      label: "Get involved with Environment Texas",
+      url: "https://environmentamerica.org/texas/",
     },
     icon: "Megaphone",
   });
