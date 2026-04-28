@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { loadGoogleMapsScript } from "@/lib/google-maps-loader";
 
 interface Props {
   id?: string;
@@ -9,42 +10,6 @@ interface Props {
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   placeholder?: string;
   className?: string;
-}
-
-declare global {
-  interface Window {
-    google: any;
-    _initGoogleMaps: () => void;
-  }
-}
-
-// Module-level script state so the SDK is only loaded once across re-renders/mounts
-let gmapsState: "idle" | "loading" | "ready" | "error" = "idle";
-const gmapsCallbacks: Array<() => void> = [];
-
-function loadGoogleMapsScript(apiKey: string, onReady: () => void) {
-  if (gmapsState === "ready") {
-    onReady();
-    return;
-  }
-  gmapsCallbacks.push(onReady);
-  if (gmapsState === "loading") return;
-
-  gmapsState = "loading";
-  window._initGoogleMaps = () => {
-    gmapsState = "ready";
-    gmapsCallbacks.forEach((cb) => cb());
-    gmapsCallbacks.length = 0;
-  };
-
-  const script = document.createElement("script");
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=_initGoogleMaps`;
-  script.async = true;
-  script.defer = true;
-  script.onerror = () => {
-    gmapsState = "error";
-  };
-  document.head.appendChild(script);
 }
 
 const AUSTIN_BOUNDS = {

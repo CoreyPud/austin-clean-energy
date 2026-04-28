@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft,
@@ -29,9 +29,10 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
+import SolarCalculator from "@/components/assessment/SolarCalculator";
+import SolarRoofMap from "@/components/assessment/SolarRoofMap";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
-
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const PropertyAssessment = () => {
   const sharedAddress = searchParams.get("address") || "";
   const { toast } = useToast();
   const [address, setAddress] = useState(sharedAddress);
-  const [propertyType, setPropertyType] = useState("");
+  const [propertyType, setPropertyType] = useState("single-family");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
@@ -159,7 +160,7 @@ const PropertyAssessment = () => {
     setCouncilOutreachScript(null);
     setShowLifestyleForm(false);
     setAddress("");
-    setPropertyType("");
+    setPropertyType("single-family");
     if (searchParams.get("address")) {
       const next = new URLSearchParams(searchParams);
       next.delete("address");
@@ -200,12 +201,10 @@ const PropertyAssessment = () => {
               <div className="grid md:grid-cols-[1fr_220px_auto] gap-3 items-end">
                 <div>
                   <Label htmlFor="address">Address</Label>
-                  <Input
+                  <AddressAutocomplete
                     id="address"
-                    type="text"
-                    placeholder="123 Main St, Austin, TX"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={setAddress}
                     className="mt-1"
                     onKeyDown={(e) => e.key === "Enter" && !loading && handleAssess()}
                   />
@@ -213,8 +212,8 @@ const PropertyAssessment = () => {
                 <div>
                   <Label htmlFor="propertyType">Property type</Label>
                   <Select value={propertyType} onValueChange={setPropertyType}>
-                    <SelectTrigger id="propertyType" className="mt-1">
-                      <SelectValue placeholder="Select" />
+                    <SelectTrigger id="propertyType" className="mt-1 w-full min-w-[180px]">
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="single-family">Single family</SelectItem>
@@ -227,7 +226,7 @@ const PropertyAssessment = () => {
                 <Button
                   onClick={handleAssess}
                   disabled={loading}
-                  className="bg-gradient-to-r from-secondary to-accent hover:opacity-90 h-10"
+                  className="bg-gradient-to-r from-secondary to-accent hover:opacity-90 h-10 w-[164px] justify-center"
                 >
                   {loading ? (
                     <>
@@ -270,10 +269,24 @@ const PropertyAssessment = () => {
               {results.solarInsights && (
                 <>
                   <SectionHeading emoji="☀️" title="Your Roof" subtitle="What the satellite sees up there" />
-                  <SolarPotentialCard
-                    solarInsights={results.solarInsights}
-                    center={results.center}
-                  />
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <SolarPotentialCard
+                      solarInsights={results.solarInsights}
+                      center={results.center}
+                    />
+                    <Card className="border-2 border-primary/20 overflow-hidden">
+                      <CardHeader className="py-3 px-4">
+                        <CardTitle className="text-sm">Solar Roof View</CardTitle>
+                        <p className="text-xs text-muted-foreground">Satellite · annual flux overlay</p>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <SolarRoofMap
+                          center={results.center || [-97.7431, 30.2672]}
+                          solarInsights={results.solarInsights}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </>
               )}
 
@@ -285,38 +298,47 @@ const PropertyAssessment = () => {
                 </>
               )}
 
+              {/* 🔧 Customize your system */}
+              {results.solarInsights && results.savings && (
+                <>
+                  <SectionHeading emoji="🔧" title="Run the Numbers" subtitle="Adjust system size, battery, and financing to see live savings" />
+                  <SolarCalculator
+                    solarInsights={results.solarInsights}
+                    recommendedSystemKw={results.savings.recommendedSystemKw}
+                  />
+                </>
+              )}
+
               {/* 🏘️ Your Block */}
               <SectionHeading emoji="🏘️" title="Your Block" subtitle="How your neighborhood is going clean" />
-              <NeighborhoodSnapshot
-                zipCode={results.zipCode}
-                installationsInZip={results.neighborhoodSnapshot.installationsInZip}
-                pendingPermitsInZip={results.neighborhoodSnapshot.pendingPermitsInZip}
-                averageSystemKw={results.neighborhoodSnapshot.averageSystemKw}
-                newest={results.neighborhoodSnapshot.newest}
-              />
-
-              {/* Map */}
-              <MapTokenLoader>
-                <Card className="border-2 border-primary/20 overflow-hidden">
-                  <CardHeader>
-                    <CardTitle>Property & nearby installations</CardTitle>
-                    <CardDescription>
-                      Red pin = your address • Green pins = nearby solar installations
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <Map
-                      center={results.center || [-97.7431, 30.2672]}
-                      zoom={14}
-                      markers={results.locations || []}
-                      className="h-[400px]"
-                      onMarkerClick={(id) => {
-                        if (id !== "target-property") window.open(`/installation/${id}`, "_blank");
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-              </MapTokenLoader>
+              <div className="grid md:grid-cols-2 gap-4">
+                <NeighborhoodSnapshot
+                  zipCode={results.zipCode}
+                  installationsInZip={results.neighborhoodSnapshot.installationsInZip}
+                  pendingPermitsInZip={results.neighborhoodSnapshot.pendingPermitsInZip}
+                  averageSystemKw={results.neighborhoodSnapshot.averageSystemKw}
+                  newest={results.neighborhoodSnapshot.newest}
+                />
+                <MapTokenLoader>
+                  <Card className="border-2 border-primary/20 overflow-hidden">
+                    <CardHeader className="py-3 px-4">
+                      <CardTitle className="text-sm">Neighborhood solar map</CardTitle>
+                      <p className="text-xs text-muted-foreground">Red = your address · Green = nearby solar installations</p>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Map
+                        center={results.center || [-97.7431, 30.2672]}
+                        zoom={14}
+                        markers={results.locations || []}
+                        className="h-[340px]"
+                        onMarkerClick={(id) => {
+                          if (id !== "target-property") window.open(`/installation/${id}`, "_blank");
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                </MapTokenLoader>
+              </div>
 
               {/* Your Rep moved into the Personalized Plan section below */}
 

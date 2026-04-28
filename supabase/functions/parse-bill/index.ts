@@ -10,8 +10,10 @@ const MODEL = "gpt-4o";
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB decoded limit
 
 function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
+  // Always return 200 so the Supabase JS client puts the body in `data` not `error`,
+  // preserving our detailed error messages. The caller checks data.error.
+  return new Response(JSON.stringify({ ...((body as any) ?? {}), _status: status }), {
+    status: 200,
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json; charset=utf-8",
