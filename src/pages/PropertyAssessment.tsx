@@ -39,11 +39,23 @@ const PropertyAssessment = () => {
       "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
   });
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sharedAddress = searchParams.get("address") || "";
   const { toast } = useToast();
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(sharedAddress);
   const [propertyType, setPropertyType] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
+
+  useSeo({
+    title: sharedAddress
+      ? `Clean energy options for ${sharedAddress} — Austin Clean Energy`
+      : "My Austin Energy Profile — Property + Neighborhood Insights",
+    description: sharedAddress
+      ? `See solar potential, neighborhood adoption, savings estimates and personalized clean energy actions for ${sharedAddress}.`
+      : "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
+  });
 
   const [showLifestyleForm, setShowLifestyleForm] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
