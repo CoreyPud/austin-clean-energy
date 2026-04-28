@@ -33,11 +33,6 @@ import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import CommunityMomentumCard from "@/components/assessment/CommunityMomentumCard";
 
 const PropertyAssessment = () => {
-  useSeo({
-    title: "My Austin Energy Profile — Property + Neighborhood Insights",
-    description:
-      "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
-  });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const sharedAddress = searchParams.get("address") || "";
