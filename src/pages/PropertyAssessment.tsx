@@ -30,7 +30,7 @@ import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
-import CommunityMomentumCard from "@/components/assessment/CommunityMomentumCard";
+
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -98,7 +98,7 @@ const PropertyAssessment = () => {
     try {
       const data = await callUnified();
       setResults(data);
-      toast({ title: "Profile ready", description: "Scroll down to explore your insights." });
+      
     } catch (e: any) {
       console.error("Assessment error:", e);
       toast({
@@ -396,8 +396,7 @@ const PropertyAssessment = () => {
               )}
 
 
-              {/* Community momentum + share — placed after recommendations & plan */}
-              <CommunityMomentumCard district={results.councilMember?.district} />
+              {/* Share card — placed after recommendations & plan */}
               <ShareAssessmentCard address={results.address || address} />
 
               <div className="flex justify-center">
