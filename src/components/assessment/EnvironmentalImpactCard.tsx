@@ -1,6 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Zap } from "lucide-react";
 import { environmentalImpact } from "@/lib/solar-model";
 
 interface Props {
@@ -72,12 +70,6 @@ const EnvironmentalImpactCard = ({ annualSolarKwh }: Props) => {
             value={impact.flightsAvoided.toLocaleString()}
             label="Long haul flights avoided"
           />
-        </div>
-        <div className="mt-4 rounded-lg border bg-muted/30 p-3 text-center">
-          <Badge variant="secondary" className="text-sm">
-            <Zap className="h-3 w-3 mr-1" />
-            {Math.round(annualSolarKwh).toLocaleString()} kWh clean energy per year
-          </Badge>
         </div>
       </CardContent>
     </Card>

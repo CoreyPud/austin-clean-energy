@@ -54,11 +54,11 @@ const ShareAssessmentCard = ({ address }: Props) => {
     typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   return (
-    <Card className="border-2 border-accent/30 bg-gradient-to-r from-accent/5 via-background to-secondary/5">
+    <Card className="border-2 border-border shadow-sm">
       <CardContent className="py-6">
         <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-          <div className="rounded-full bg-accent/10 p-3 shrink-0">
-            <Share2 className="h-6 w-6 text-accent" />
+          <div className="rounded-full bg-primary/10 p-3 shrink-0">
+            <Share2 className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-foreground mb-1">

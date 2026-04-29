@@ -9,7 +9,6 @@ import {
   Home,
   Loader2,
   AlertCircle,
-  ArrowDown,
   Printer,
   Sparkles,
 } from "lucide-react";
@@ -268,17 +267,14 @@ const PropertyAssessment = () => {
               {/* ☀️ Your Roof */}
               {results.solarInsights && (
                 <>
-                  <SectionHeading emoji="☀️" title="Your Roof" subtitle="What the satellite sees up there" />
+                  <SectionHeading emoji="☀️" title="Your Roof" />
                   <div className="grid md:grid-cols-2 gap-4">
                     <SolarPotentialCard
                       solarInsights={results.solarInsights}
                       center={results.center}
+                      recommendedSystemKw={results.savings?.recommendedSystemKw ?? null}
                     />
                     <Card className="border-2 border-primary/20 overflow-hidden">
-                      <CardHeader className="py-3 px-4">
-                        <CardTitle className="text-sm">Solar Roof View</CardTitle>
-                        <p className="text-xs text-muted-foreground">Satellite · annual flux overlay</p>
-                      </CardHeader>
                       <CardContent className="p-0">
                         <SolarRoofMap
                           center={results.center || [-97.7431, 30.2672]}
@@ -290,18 +286,10 @@ const PropertyAssessment = () => {
                 </>
               )}
 
-              {/* 💰 The Money */}
-              {results.savings && (
-                <>
-                  <SectionHeading emoji="💰" title="The Money" subtitle="What going solar would cost and save" />
-                  <SavingsCards savings={results.savings} />
-                </>
-              )}
-
-              {/* 🔧 Customize your system */}
+              {/* 🔧 Run the Numbers */}
               {results.solarInsights && results.savings && (
                 <>
-                  <SectionHeading emoji="🔧" title="Run the Numbers" subtitle="Adjust system size, battery, and financing to see live savings" />
+                  <SectionHeading emoji="🔧" title="Run the Numbers" />
                   <SolarCalculator
                     solarInsights={results.solarInsights}
                     recommendedSystemKw={results.savings.recommendedSystemKw}
@@ -309,8 +297,16 @@ const PropertyAssessment = () => {
                 </>
               )}
 
+              {/* 💰 The Money */}
+              {results.savings && (
+                <>
+                  <SectionHeading emoji="💰" title="The Money" />
+                  <SavingsCards savings={results.savings} />
+                </>
+              )}
+
               {/* 🏘️ Your Block */}
-              <SectionHeading emoji="🏘️" title="Your Block" subtitle="How your neighborhood is going clean" />
+              <SectionHeading emoji="🏘️" title="Your Block" />
               <div className="grid md:grid-cols-2 gap-4">
                 <NeighborhoodSnapshot
                   zipCode={results.zipCode}
@@ -321,10 +317,6 @@ const PropertyAssessment = () => {
                 />
                 <MapTokenLoader>
                   <Card className="border-2 border-primary/20 overflow-hidden">
-                    <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-sm">Neighborhood solar map</CardTitle>
-                      <p className="text-xs text-muted-foreground">Red = your address · Green = nearby solar installations</p>
-                    </CardHeader>
                     <CardContent className="p-0">
                       <Map
                         center={results.center || [-97.7431, 30.2672]}
@@ -343,30 +335,27 @@ const PropertyAssessment = () => {
               {/* Your Rep moved into the Personalized Plan section below */}
 
               {/* ✅ Smart Next Moves */}
-              <SectionHeading emoji="✅" title="Smart Next Moves" subtitle="Ranked by climate impact for your property" />
+              <SectionHeading emoji="✅" title="Next Steps" />
               <RecommendationCards cards={results.recommendationCards || []} />
 
 
               {/* Data caveat moved to bottom of page */}
               {/* Personalized plan CTA */}
               {!showLifestyleForm && !personalizedPlan && (
-                <Card className="border-2 border-primary/40 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 shadow-lg">
-                  <CardContent className="py-8 text-center">
-                    <Sparkles className="h-12 w-12 text-primary mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold mb-2 text-foreground">
-                      Want a personalized action plan?
-                    </h3>
-                    <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                      Answer a few quick lifestyle questions and we'll combine your property data with a
-                      step-by-step plan written for your specific situation.
-                    </p>
+                <Card className="border border-border">
+                  <CardContent className="py-5 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="font-medium text-foreground">Get a tailored next-steps plan</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        A few lifestyle questions let us tailor the recommendations to your situation.
+                      </p>
+                    </div>
                     <Button
-                      size="lg"
                       onClick={handleGetPersonalizedPlan}
-                      className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                      variant="outline"
                     >
-                      <ArrowDown className="mr-2 h-5 w-5" />
-                      Get my personalized plan
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate plan
                     </Button>
                   </CardContent>
                 </Card>
@@ -386,19 +375,11 @@ const PropertyAssessment = () => {
               {/* Personalized plan */}
               {personalizedPlan && (
                 <div ref={planRef} className="space-y-4 animate-slide-up">
-                  <SectionHeading
-                    emoji="🪄"
-                    title="Your Personalized Plan"
-                    subtitle="Tailored from your lifestyle answers"
-                  />
+                  <SectionHeading emoji="🪄" title="Your Plan" />
                   <PersonalizedPlanDisplay markdown={personalizedPlan} />
 
                   {/* Your Rep — surfaced alongside the personalized plan so advocacy feels actionable */}
-                  <SectionHeading
-                    emoji="🏛️"
-                    title="Reach out to your council representative"
-                    subtitle="Local decisions shape Austin's clean energy future"
-                  />
+                  <SectionHeading emoji="🏛️" title="Your council representative" />
                   <CouncilMemberCard
                     councilMember={{
                       ...results.councilMember,

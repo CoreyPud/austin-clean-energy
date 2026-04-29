@@ -26,11 +26,9 @@ const SavingsCards = ({ savings }: SavingsCardsProps) => {
   const paybackPct = Math.min(100, Math.max(0, (paybackYears / 25) * 100));
 
   return (
-    <Card className="relative overflow-hidden border-2 border-accent/30 shadow-md bg-gradient-to-br from-accent/5 via-background to-background">
-      {/* Confetti */}
-      <Coins className="absolute top-4 right-4 h-5 w-5 text-accent/30" aria-hidden />
-      <Coins className="absolute top-12 right-12 h-3 w-3 text-accent/20" aria-hidden />
-      <PiggyBank className="absolute bottom-6 right-6 h-6 w-6 text-accent/15" aria-hidden />
+    <Card className="relative overflow-hidden border-2 border-border shadow-md">
+      <Coins className="absolute top-4 right-4 h-5 w-5 text-muted-foreground/20" aria-hidden />
+      <PiggyBank className="absolute bottom-6 right-6 h-6 w-6 text-muted-foreground/15" aria-hidden />
 
       <CardContent className="relative p-6">
         <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
@@ -38,21 +36,18 @@ const SavingsCards = ({ savings }: SavingsCardsProps) => {
             <Zap className="h-3 w-3 mr-1" />
             {savings.recommendedSystemKw} kW recommended system
           </Badge>
-          <Badge variant="outline" className="text-xs">
-            ~${savings.blendedRateUsdPerKwh.toFixed(3)} / kWh blended rate
-          </Badge>
         </div>
 
         {/* Hero $ */}
         <div className="flex items-baseline gap-3 mb-1">
-          <span className="text-5xl md:text-6xl font-bold text-accent tabular-nums">
+          <span className="text-5xl md:text-6xl font-bold text-primary tabular-nums">
             {fmt(annual)}
           </span>
-          <TrendingUp className="h-7 w-7 text-accent" />
+          <TrendingUp className="h-7 w-7 text-primary" />
           <span className="text-lg text-muted-foreground font-medium">/ year saved</span>
         </div>
         <p className="text-sm text-muted-foreground mb-6">
-          Estimated reduction in your Austin Energy bill once your system is online.
+          Estimated annual reduction in your Austin Energy bill.
         </p>
 
         {/* Payback timeline */}
@@ -72,14 +67,14 @@ const SavingsCards = ({ savings }: SavingsCardsProps) => {
             />
             {/* Payback marker */}
             <div
-              className="absolute inset-y-0 w-1 bg-accent shadow-md"
+              className="absolute inset-y-0 w-1 bg-primary shadow-md"
               style={{ left: `${paybackPct}%` }}
             />
           </div>
           <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
             <span>Year 0</span>
-            <span className="text-accent font-semibold">
-              🏁 ~{savings.paybackYears ?? "—"} yr
+            <span className="text-primary font-semibold">
+              ~{savings.paybackYears ?? "—"} yr break-even
             </span>
             <span>Year 25</span>
           </div>
@@ -106,9 +101,6 @@ const SavingsCards = ({ savings }: SavingsCardsProps) => {
           />
         </div>
 
-        {savings.notes && (
-          <p className="text-xs text-muted-foreground mt-4 italic">{savings.notes}</p>
-        )}
       </CardContent>
     </Card>
   );
