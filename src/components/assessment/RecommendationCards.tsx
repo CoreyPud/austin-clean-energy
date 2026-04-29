@@ -21,11 +21,10 @@ const ICONS: Record<string, any> = {
 
 const IMPACT_STYLES: Record<
   string,
-  { label: string; emoji: string; badge: string; border: string; iconBg: string; iconText: string }
+  { label: string; badge: string; border: string; iconBg: string; iconText: string }
 > = {
   high: {
     label: "High impact",
-    emoji: "🔥",
     badge: "bg-primary/15 text-primary border-primary/30",
     border: "border-l-primary",
     iconBg: "bg-primary/15",
@@ -33,19 +32,17 @@ const IMPACT_STYLES: Record<
   },
   medium: {
     label: "Medium impact",
-    emoji: "✨",
-    badge: "bg-secondary/15 text-secondary border-secondary/30",
-    border: "border-l-secondary",
-    iconBg: "bg-secondary/15",
-    iconText: "text-secondary",
+    badge: "bg-primary/8 text-primary/70 border-primary/20",
+    border: "border-l-primary/50",
+    iconBg: "bg-primary/8",
+    iconText: "text-primary/70",
   },
   low: {
     label: "Quick win",
-    emoji: "💡",
-    badge: "bg-accent/15 text-accent border-accent/30",
-    border: "border-l-accent",
-    iconBg: "bg-accent/15",
-    iconText: "text-accent",
+    badge: "bg-muted text-muted-foreground border-border",
+    border: "border-l-border",
+    iconBg: "bg-muted",
+    iconText: "text-muted-foreground",
   },
 };
 
@@ -97,9 +94,6 @@ const RecommendationCardItem = ({ card }: { card: RecommendationCard }) => {
             </div>
           </div>
           <Badge variant="outline" className={`${impact.badge} shrink-0 text-xs`}>
-            <span className="mr-1" aria-hidden>
-              {impact.emoji}
-            </span>
             {impact.label}
           </Badge>
         </div>

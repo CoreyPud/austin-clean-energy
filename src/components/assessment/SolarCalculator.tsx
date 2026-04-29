@@ -1,6 +1,6 @@
 import { useMemo, useState, Fragment } from "react";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BillUpload from "@/components/assessment/BillUpload";
@@ -8,7 +8,7 @@ import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { Zap, Battery } from "lucide-react";
+import { Battery } from "lucide-react";
 import {
   MONTHS,
   MONTHLY_SOLAR_PROFILE,
@@ -97,16 +97,8 @@ const SolarCalculator = ({ solarInsights, recommendedSystemKw }: Props) => {
 
   return (
     <Fragment>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-primary" />
-          Customize your system
-        </CardTitle>
-        <CardDescription>
-          Adjust the sliders to see how system size, battery, and financing change your savings.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <Card className="border-2 border-primary/20 shadow-md">
+      <CardContent className="pt-6">
         <div className="grid md:grid-cols-[260px_1fr] gap-8">
 
           {/* ── Inputs ── */}

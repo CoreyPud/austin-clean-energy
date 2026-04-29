@@ -1,8 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sun, Camera, ExternalLink, Leaf, Zap } from "lucide-react";
-import { useCountUp } from "@/hooks/useCountUp";
+import { Sun, ExternalLink, Leaf, Zap } from "lucide-react";
 
 interface SolarPotentialCardProps {
   solarInsights: {
@@ -16,13 +14,15 @@ interface SolarPotentialCardProps {
     imageryDate: { year: number; month: number; day: number } | null;
   };
   center: [number, number];
+  recommendedSystemKw: number | null;
 }
 
-const SolarPotentialCard = ({ solarInsights, center }: SolarPotentialCardProps) => {
+const SolarPotentialCard = ({ solarInsights, center, recommendedSystemKw }: SolarPotentialCardProps) => {
   const [lng, lat] = center;
-  const panels = useCountUp(solarInsights.maxPanels || 0);
-  // Roof "fill" is purely visual: scale panels vs typical max for a single-family home (~30 panels = "average")
-  const roofFillPct = Math.min(100, Math.round(((solarInsights.maxPanels || 0) / 60) * 100));
+  const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
+  const roofFillPct = recommendedSystemKw && maxKw > 0
+    ? Math.min(100, Math.round((recommendedSystemKw / maxKw) * 100))
+    : Math.min(100, Math.round(((solarInsights.maxPanels || 0) / 60) * 100));
 
   return (
     <Card className="relative overflow-hidden border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
@@ -37,14 +37,11 @@ const SolarPotentialCard = ({ solarInsights, center }: SolarPotentialCardProps) 
       />
       <CardContent className="relative p-6">
         <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              <Camera className="h-3 w-3 mr-1" />
-              Satellite imagery
-              {solarInsights.imageryDate &&
-                ` • ${new Date(solarInsights.imageryDate.year, solarInsights.imageryDate.month - 1).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
-            </Badge>
-          </div>
+          <span className="text-xs text-muted-foreground">
+            {solarInsights.imageryDate
+              ? `Imagery: ${new Date(solarInsights.imageryDate.year, solarInsights.imageryDate.month - 1).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`
+              : "Google Solar API"}
+          </span>
           <Button
             variant="outline"
             size="sm"
@@ -57,22 +54,21 @@ const SolarPotentialCard = ({ solarInsights, center }: SolarPotentialCardProps) 
           </Button>
         </div>
 
-        {/* Hero panel count */}
+        {/* Hero: recommended system size */}
         <div className="flex items-baseline gap-3 mb-1">
           <Sun className="h-8 w-8 text-primary shrink-0" />
           <span className="text-5xl md:text-6xl font-bold text-primary tabular-nums">
-            {Math.round(panels).toLocaleString()}
+            {recommendedSystemKw != null ? `${recommendedSystemKw.toFixed(1)}` : maxKw.toFixed(1)}
           </span>
-          <span className="text-lg text-muted-foreground font-medium">
-            panels could fit
-          </span>
+          <span className="text-lg text-muted-foreground font-medium">kW recommended</span>
         </div>
         <p className="text-sm text-muted-foreground mb-5">
-          on roughly{" "}
+          Up to{" "}
           <span className="font-semibold text-foreground">
-            {solarInsights.roofAreaM2 ? `${solarInsights.roofAreaM2} m²` : "your roof"}
+            {solarInsights.maxPanels} panels
           </span>{" "}
-          — at {solarInsights.panelCapacityWatts}W per panel.
+          ({maxKw.toFixed(1)} kW max) fit on{" "}
+          {solarInsights.roofAreaM2 ? `${solarInsights.roofAreaM2} m²` : "your roof"}.
         </p>
 
         {/* Roof coverage bar */}

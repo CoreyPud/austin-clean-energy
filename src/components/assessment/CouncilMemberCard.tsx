@@ -40,13 +40,13 @@ const CouncilMemberCard = ({ councilMember }: CouncilMemberCardProps) => {
   const chips = priorityChips(priorities);
 
   return (
-    <Card className="relative overflow-hidden border-2 border-secondary/30 shadow-md bg-gradient-to-br from-secondary/5 via-background to-background">
+    <Card className="relative overflow-hidden border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
       <CardContent className="p-6">
         <div className="flex items-start gap-4 mb-4">
           {/* Avatar */}
           <div className="shrink-0 relative">
-            <div className="absolute inset-0 rounded-full bg-secondary/20 blur-md" aria-hidden />
-            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-secondary to-primary text-primary-foreground flex items-center justify-center text-xl font-bold ring-2 ring-secondary/30">
+            <div className="absolute inset-0 rounded-full bg-primary/20 blur-md" aria-hidden />
+            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary text-primary-foreground flex items-center justify-center text-xl font-bold ring-2 ring-primary/30">
               {initials}
             </div>
           </div>
@@ -54,13 +54,13 @@ const CouncilMemberCard = ({ councilMember }: CouncilMemberCardProps) => {
           {/* Name & district */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <Megaphone className="h-3.5 w-3.5 text-secondary" />
+              <Megaphone className="h-3.5 w-3.5 text-primary" />
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                 Your council representative
               </span>
             </div>
             <h3 className="text-xl font-bold text-foreground leading-tight">{name}</h3>
-            <Badge variant="secondary" className="mt-1.5 text-xs">
+            <Badge variant="primary" className="mt-1.5 text-xs">
               {district}
             </Badge>
           </div>
@@ -70,7 +70,7 @@ const CouncilMemberCard = ({ councilMember }: CouncilMemberCardProps) => {
         {chips.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center gap-1.5 mb-2">
-              <Target className="h-3.5 w-3.5 text-secondary" />
+              <Target className="h-3.5 w-3.5 text-primary" />
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                 Currently focused on
               </span>
@@ -79,7 +79,7 @@ const CouncilMemberCard = ({ councilMember }: CouncilMemberCardProps) => {
               {chips.map((p, i) => (
                 <span
                   key={i}
-                  className="inline-block px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-xs font-medium"
+                  className="inline-block px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-medium"
                 >
                   {p}
                 </span>
@@ -108,7 +108,7 @@ const CouncilMemberCard = ({ councilMember }: CouncilMemberCardProps) => {
           )}
         </div>
 
-        <Button asChild size="sm" className="w-full bg-secondary hover:bg-secondary/90">
+        <Button asChild size="sm" className="w-full bg-primary hover:bg-primary/90">
           <a href={officePage} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="h-4 w-4 mr-2" />
             Visit official office page
