@@ -26,7 +26,6 @@ import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
-import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SolarRoofMap from "@/components/assessment/SolarRoofMap";
 import BillUpload from "@/components/assessment/BillUpload";
@@ -102,7 +101,7 @@ const PropertyAssessment = () => {
   const [personalizedPlan, setPersonalizedPlan] = useState<string | null>(null);
   const [councilOutreachScript, setCouncilOutreachScript] = useState<string | null>(null);
   const lifestyleRef = useRef<HTMLDivElement>(null);
-  const planRef = useRef<HTMLDivElement>(null);
+  const postQuizRef = useRef<HTMLDivElement>(null);
 
   const validateForm = () => {
     const t = address.trim();
@@ -183,7 +182,7 @@ const PropertyAssessment = () => {
       setPersonalizedPlan(data.personalizedPlan || null);
       setCouncilOutreachScript(data.councilOutreachScript || null);
       setShowLifestyleForm(false);
-      setTimeout(() => planRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      setTimeout(() => postQuizRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       toast({ title: "Personalized plan ready", description: "Your tailored next steps are below." });
     } catch (e: any) {
       console.error("Plan error:", e);
@@ -380,53 +379,46 @@ const PropertyAssessment = () => {
                 </MapTokenLoader>
               </div>
 
-              {/* Your Rep moved into the Personalized Plan section below */}
-
-              {/* ✅ Smart Next Moves */}
-              <SectionHeading emoji="✅" title="Next Steps" />
-              <RecommendationCards cards={results.recommendationCards || []} />
-
-
-              {/* Data caveat moved to bottom of page */}
-              {/* Personalized plan CTA */}
-              {!showLifestyleForm && !personalizedPlan && (
-                <Card className="border border-border">
-                  <CardContent className="py-5 flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                      <p className="font-medium text-foreground">Get a tailored next-steps plan</p>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        A few lifestyle questions let us tailor the recommendations to your situation.
-                      </p>
+              {/* Quiz gate → form → post-quiz results */}
+              {!personalizedPlan ? (
+                <>
+                  {!showLifestyleForm ? (
+                    <Card className="border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
+                      <CardContent className="py-6 flex flex-col items-center text-center gap-3">
+                        <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Sparkles className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xl font-bold text-foreground">What else can you do beyond solar?</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            EVs, home electrification, efficiency upgrades, community action — a 1-minute quiz surfaces the highest-impact moves for your specific situation.
+                          </p>
+                        </div>
+                        <Button
+                          onClick={handleGetPersonalizedPlan}
+                          size="lg"
+                          className="bg-gradient-to-r from-secondary to-accent hover:opacity-90"
+                        >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Find out
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div ref={lifestyleRef} className="animate-slide-up">
+                      <LifestyleAssessmentForm
+                        onSubmit={handleGeneratePlan}
+                        loading={planLoading}
+                        initialHomeType={propertyType}
+                      />
                     </div>
-                    <Button
-                      onClick={handleGetPersonalizedPlan}
-                      variant="outline"
-                    >
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Generate plan
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </>
+              ) : (
+                <div ref={postQuizRef} className="space-y-6 animate-slide-up">
+                  <SectionHeading emoji="✅" title="Next Steps" />
+                  <RecommendationCards cards={results.recommendationCards || []} />
 
-              {/* Lifestyle form */}
-              {showLifestyleForm && !personalizedPlan && (
-                <div ref={lifestyleRef} className="animate-slide-up">
-                  <LifestyleAssessmentForm
-                    onSubmit={handleGeneratePlan}
-                    loading={planLoading}
-                    initialHomeType={propertyType}
-                  />
-                </div>
-              )}
-
-              {/* Personalized plan */}
-              {personalizedPlan && (
-                <div ref={planRef} className="space-y-4 animate-slide-up">
-                  <SectionHeading emoji="🪄" title="Your Plan" />
-                  <PersonalizedPlanDisplay markdown={personalizedPlan} />
-
-                  {/* Your Rep — surfaced alongside the personalized plan so advocacy feels actionable */}
                   <SectionHeading emoji="🏛️" title="Your council representative" />
                   <CouncilMemberCard
                     councilMember={{
