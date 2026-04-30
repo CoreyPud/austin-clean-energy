@@ -197,10 +197,10 @@ const PersonalizedPlanDisplay = ({ markdown }: PersonalizedPlanDisplayProps) => 
 
         {/* This Year */}
         {parsed.thisYear.length > 0 && (
-          <Card className="border-2 border-border shadow-sm">
+          <Card className="border-2 border-secondary/30 bg-gradient-to-br from-secondary/5 to-background shadow-sm">
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-primary" />
+                <Calendar className="h-4 w-4 text-secondary" />
                 <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
                   This Year
                 </h3>
@@ -208,7 +208,7 @@ const PersonalizedPlanDisplay = ({ markdown }: PersonalizedPlanDisplayProps) => 
               <ol className="space-y-2.5">
                 {parsed.thisYear.map((item, i) => (
                   <li key={i} className="flex gap-2.5 text-sm text-foreground/90">
-                    <span className="h-5 w-5 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="h-5 w-5 rounded-full bg-secondary/20 text-secondary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <span>

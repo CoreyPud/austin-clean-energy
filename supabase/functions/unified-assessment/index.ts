@@ -52,7 +52,7 @@ function validateAddress(address: string) {
 
 // Austin Energy residential rate (approximate blended $/kWh, 2025)
 const AE_BLENDED_RATE = 0.117;
-// Approximate installed cost per kW after Austin Energy rebate
+// Approximate installed cost per kW
 const COST_PER_KW = 2700;
 const AE_REBATE_FLAT = 2500;
 
@@ -210,8 +210,7 @@ serve(async (req) => {
       };
     }
 
-    // 4. Savings card (deterministic) — based on a recommended system size
-    // For residential: target ~80% of usable roof or 7kW typical, whichever smaller
+    // 4. Savings card (deterministic) — rough initial estimate; frontend recomputes with optimised sizing.
     let savings: any = null;
     if (solarInsights?.maxPanels && solarInsights?.panelCapacityWatts) {
       const maxSystemKw = (solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 1000;

@@ -23,7 +23,7 @@ const HOURLY_LOAD_PROFILE          = normalizeProfile(RAW_HOURLY_LOAD);
 // Austin Energy tiered rates (2025)
 export const AUSTIN_ENERGY_RATES = {
   customerCharge: 16.50,
-  vosRate: 0.0991,
+  vosRate: 0.117,
   citySalesTaxRate: 0.01,
   tierRates: [
     { maxKwh: 300,      rate: 0.04640 },

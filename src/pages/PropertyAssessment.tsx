@@ -22,7 +22,6 @@ import { useSeo } from "@/hooks/use-seo";
 import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import SolarPotentialCard from "@/components/assessment/SolarPotentialCard";
-import SavingsCards from "@/components/assessment/SavingsCards";
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
@@ -30,6 +29,16 @@ import SectionHeading from "@/components/assessment/SectionHeading";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SolarRoofMap from "@/components/assessment/SolarRoofMap";
+import BillUpload from "@/components/assessment/BillUpload";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  billToMonthlyKwh,
+  buildYearModel,
+  buildThirtyYearModel,
+  austinInstallCost,
+  AUSTIN_ENERGY_SOLAR_REBATE,
+} from "@/lib/solar-model";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 
@@ -43,6 +52,41 @@ const PropertyAssessment = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
+  const [monthlyBill, setMonthlyBill] = useState(150);
+  const [uploadedKwh, setUploadedKwh] = useState<number[] | null>(null);
+
+  // Derived solar values — recomputed on every render when bill/results change
+  const si = results?.solarInsights ?? null;
+  const solarMaxKw = si ? Math.round((si.maxPanels * si.panelCapacityWatts) / 100) / 10 : 0;
+  const solarProdPerKw = si && si.annualProductionKwh > 0 && solarMaxKw > 0
+    ? si.annualProductionKwh / solarMaxKw : 1500;
+  const annualUsageKwh = uploadedKwh
+    ? uploadedKwh.reduce((s, v) => s + v, 0)
+    : billToMonthlyKwh(monthlyBill) * 12;
+  const unconstrainedKw = solarProdPerKw > 0 ? annualUsageKwh / solarProdPerKw : 0;
+  const recommendedKw = solarMaxKw > 0
+    ? Math.round(Math.min(Math.max(unconstrainedKw, 2), solarMaxKw) * 2) / 2
+    : null;
+  const liveSummary = (() => {
+    if (!si || !recommendedKw) return null;
+    const inputs = {
+      annualUsageKwh,
+      systemKw: recommendedKw,
+      batteryKwh: 0,
+      loanTermYears: 0,
+      loanInterestRate: 0,
+      productionPerKw: solarProdPerKw,
+    };
+    const cost = Math.max(0, austinInstallCost(recommendedKw, 0) - AUSTIN_ENERGY_SOLAR_REBATE);
+    const yr1 = buildYearModel(inputs, 0);
+    const yr30 = buildThirtyYearModel(inputs, cost);
+    const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
+    return {
+      monthlySavings: yr1.savings / 12,
+      paybackYear: yr30.paybackYear ?? null,
+      roi: cost > 0 ? Math.round((net25 / cost) * 100) : null,
+    };
+  })();
 
   useSeo({
     title: sharedAddress
@@ -240,68 +284,72 @@ const PropertyAssessment = () => {
                   )}
                 </Button>
               </div>
+              <div className="border-t mt-4 pt-4">
+                <Tabs
+                  defaultValue="estimate"
+                  onValueChange={(v) => { if (v === "estimate") setUploadedKwh(null); }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap shrink-0">
+                      Monthly bill
+                    </Label>
+                    <TabsList className="h-7">
+                      <TabsTrigger value="estimate" className="text-xs px-3 h-6">Estimate</TabsTrigger>
+                      <TabsTrigger value="upload" className="text-xs px-3 h-6">Upload PDF</TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <TabsContent value="estimate" className="mt-0">
+                    <div className="flex items-center gap-3">
+                      <Slider
+                        min={50} max={600} step={10}
+                        value={[monthlyBill]}
+                        onValueChange={([v]) => setMonthlyBill(v)}
+                        className="flex-1"
+                      />
+                      <span className="font-semibold text-sm tabular-nums w-12 text-right">${monthlyBill}</span>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="upload" className="mt-0">
+                    <BillUpload onResult={(kwh) => setUploadedKwh(kwh)} />
+                  </TabsContent>
+                </Tabs>
+              </div>
             </CardContent>
           </Card>
 
           {/* Results */}
           {results && (
             <div className="space-y-6 animate-slide-up">
-              {/* Hero score */}
+              {/* Summary tile */}
               <CleanEnergyScoreCard
                 address={results.address}
                 district={results.councilMember.district}
                 zipCode={results.zipCode}
                 propertyType={propertyType}
-                solarViability={
-                  results.solarInsights
-                    ? Math.min(
-                        10,
-                        Math.max(1, Math.round((results.solarInsights.sunshineHours / 2000) * 7)),
-                      )
-                    : null
-                }
-                neighborInstalls={results.neighborhoodSnapshot.installationsInZip}
-                paybackYears={results.savings?.paybackYears ?? null}
+                recommendedKw={recommendedKw}
+                monthlySavings={liveSummary?.monthlySavings ?? null}
+                paybackYears={liveSummary?.paybackYear ?? null}
               />
 
-              {/* ☀️ Your Roof */}
-              {results.solarInsights && (
+              {/* ☀️ Your Roof + 🔧 Run the Numbers */}
+              {si && recommendedKw && (
                 <>
                   <SectionHeading emoji="☀️" title="Your Roof" />
                   <div className="grid md:grid-cols-2 gap-4">
-                    <SolarPotentialCard
-                      solarInsights={results.solarInsights}
-                      center={results.center}
-                      recommendedSystemKw={results.savings?.recommendedSystemKw ?? null}
-                    />
+                    <SolarPotentialCard solarInsights={si} recommendedSystemKw={recommendedKw} />
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
-                        <SolarRoofMap
-                          center={results.center || [-97.7431, 30.2672]}
-                          solarInsights={results.solarInsights}
-                        />
+                        <SolarRoofMap center={results.center || [-97.7431, 30.2672]} solarInsights={si} />
                       </CardContent>
                     </Card>
                   </div>
-                </>
-              )}
 
-              {/* 🔧 Run the Numbers */}
-              {results.solarInsights && results.savings && (
-                <>
                   <SectionHeading emoji="🔧" title="Run the Numbers" />
                   <SolarCalculator
-                    solarInsights={results.solarInsights}
-                    recommendedSystemKw={results.savings.recommendedSystemKw}
+                    solarInsights={si}
+                    annualUsageKwh={annualUsageKwh}
+                    uploadedKwh={uploadedKwh}
                   />
-                </>
-              )}
-
-              {/* 💰 The Money */}
-              {results.savings && (
-                <>
-                  <SectionHeading emoji="💰" title="The Money" />
-                  <SavingsCards savings={results.savings} />
                 </>
               )}
 
