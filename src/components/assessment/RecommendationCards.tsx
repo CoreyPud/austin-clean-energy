@@ -32,10 +32,10 @@ const IMPACT_STYLES: Record<
   },
   medium: {
     label: "Medium impact",
-    badge: "bg-primary/8 text-primary/70 border-primary/20",
-    border: "border-l-primary/50",
-    iconBg: "bg-primary/8",
-    iconText: "text-primary/70",
+    badge: "bg-secondary/15 text-secondary border-secondary/30",
+    border: "border-l-secondary",
+    iconBg: "bg-secondary/15",
+    iconText: "text-secondary",
   },
   low: {
     label: "Quick win",

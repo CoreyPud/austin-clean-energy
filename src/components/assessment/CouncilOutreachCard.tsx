@@ -34,10 +34,10 @@ const CouncilOutreachCard = ({ script, councilName, councilEmail, district }: Pr
     : null;
 
   return (
-    <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-background to-background shadow-md">
+    <Card className="border-2 border-secondary/30 bg-gradient-to-br from-secondary/5 via-background to-background shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-primary" />
+          <MessageSquare className="h-5 w-5 text-secondary" />
           Sample message to {councilName}
         </CardTitle>
         <CardDescription>
@@ -56,7 +56,7 @@ const CouncilOutreachCard = ({ script, councilName, councilEmail, district }: Pr
             {copied ? "Copied" : "Copy message"}
           </Button>
           {mailtoHref && (
-            <Button asChild className="gap-2 bg-primary hover:bg-primary/90">
+            <Button asChild className="gap-2 bg-secondary hover:bg-secondary/90">
               <a href={mailtoHref}>
                 <Mail className="h-4 w-4" />
                 Open in email

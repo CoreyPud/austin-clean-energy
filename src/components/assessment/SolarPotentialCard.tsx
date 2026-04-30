@@ -1,6 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Sun, ExternalLink, Leaf, Zap } from "lucide-react";
+import { Sun, Leaf, Zap } from "lucide-react";
 
 interface SolarPotentialCardProps {
   solarInsights: {
@@ -13,12 +12,10 @@ interface SolarPotentialCardProps {
     panelLifetimeYears: number;
     imageryDate: { year: number; month: number; day: number } | null;
   };
-  center: [number, number];
   recommendedSystemKw: number | null;
 }
 
-const SolarPotentialCard = ({ solarInsights, center, recommendedSystemKw }: SolarPotentialCardProps) => {
-  const [lng, lat] = center;
+const SolarPotentialCard = ({ solarInsights, recommendedSystemKw }: SolarPotentialCardProps) => {
   const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
   const roofFillPct = recommendedSystemKw && maxKw > 0
     ? Math.min(100, Math.round((recommendedSystemKw / maxKw) * 100))
@@ -36,24 +33,6 @@ const SolarPotentialCard = ({ solarInsights, center, recommendedSystemKw }: Sola
         aria-hidden
       />
       <CardContent className="relative p-6">
-        <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-          <span className="text-xs text-muted-foreground">
-            {solarInsights.imageryDate
-              ? `Imagery: ${new Date(solarInsights.imageryDate.year, solarInsights.imageryDate.month - 1).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`
-              : "Google Solar API"}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              window.open(`https://sunroof.withgoogle.com/building/${lat}/${lng}`, "_blank")
-            }
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Google Sunroof
-          </Button>
-        </div>
-
         {/* Hero: recommended system size */}
         <div className="flex items-baseline gap-3 mb-1">
           <Sun className="h-8 w-8 text-primary shrink-0" />
@@ -63,12 +42,9 @@ const SolarPotentialCard = ({ solarInsights, center, recommendedSystemKw }: Sola
           <span className="text-lg text-muted-foreground font-medium">kW recommended</span>
         </div>
         <p className="text-sm text-muted-foreground mb-5">
-          Up to{" "}
-          <span className="font-semibold text-foreground">
-            {solarInsights.maxPanels} panels
-          </span>{" "}
-          ({maxKw.toFixed(1)} kW max) fit on{" "}
-          {solarInsights.roofAreaM2 ? `${solarInsights.roofAreaM2} m²` : "your roof"}.
+          Optimal system for your estimated usage, capped at your roof's{" "}
+          <span className="font-semibold text-foreground">{maxKw.toFixed(1)} kW</span>{" "}
+          maximum capacity.
         </p>
 
         {/* Roof coverage bar */}

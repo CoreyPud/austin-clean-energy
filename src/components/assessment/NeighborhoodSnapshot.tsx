@@ -37,8 +37,8 @@ const NeighborhoodSnapshot = ({
           : "Below the Austin average.";
 
   return (
-    <Card className="relative overflow-hidden border-2 border-border shadow-md">
-      <Home className="absolute top-4 right-4 h-5 w-5 text-muted-foreground/20" aria-hidden />
+    <Card className="relative overflow-hidden border-2 border-secondary/30 shadow-md bg-gradient-to-br from-secondary/5 via-background to-background">
+      <Home className="absolute top-4 right-4 h-5 w-5 text-secondary/20" aria-hidden />
       <CardContent className="relative p-6">
         <div className="mb-4">
           <span className="text-xs text-muted-foreground">ZIP {zipCode || "your area"}</span>
@@ -46,7 +46,7 @@ const NeighborhoodSnapshot = ({
 
         {/* Hero stat */}
         <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-          <span className="text-5xl md:text-6xl font-bold text-primary tabular-nums">
+          <span className="text-5xl md:text-6xl font-bold text-secondary tabular-nums">
             {Math.round(installs).toLocaleString()}
           </span>
           <span className="text-lg text-muted-foreground">
@@ -62,7 +62,7 @@ const NeighborhoodSnapshot = ({
           </div>
           <div className="relative h-4 rounded-full bg-muted overflow-hidden">
             <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary/60 to-primary transition-all duration-700"
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-secondary/70 to-primary transition-all duration-700"
               style={{ width: `${userPct}%` }}
             />
             {/* Austin avg marker */}
@@ -119,7 +119,7 @@ const MiniStat = ({
   label: string;
 }) => (
   <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/70 border">
-    <div className="text-primary">{icon}</div>
+    <div className="text-secondary">{icon}</div>
     <div className="leading-tight">
       <div className="text-sm font-bold text-foreground tabular-nums">{value}</div>
       <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>

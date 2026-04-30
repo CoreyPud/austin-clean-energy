@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Lightweight count-up animation hook. Animates from 0 → target on mount/change.
- * Respects prefers-reduced-motion (returns target instantly).
- */
 export function useCountUp(target: number, durationMs = 700) {
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState(target);
+  const currentRef = useRef(target);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -16,21 +13,28 @@ export function useCountUp(target: number, durationMs = 700) {
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || target === 0) {
+    if (reduced) {
       setValue(target);
+      currentRef.current = target;
       return;
     }
 
+    const from = currentRef.current;
+    if (from === target) return;
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
     const start = performance.now();
-    const from = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / durationMs);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - t, 3);
-      setValue(from + (target - from) * eased);
+      const next = from + (target - from) * eased;
+      currentRef.current = next;
+      setValue(next);
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
+        currentRef.current = target;
         setValue(target);
       }
     };

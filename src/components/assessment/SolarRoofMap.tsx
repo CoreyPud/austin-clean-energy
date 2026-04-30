@@ -251,18 +251,10 @@ const SolarRoofMap = ({ center, solarInsights }: Props) => {
       )}
 
       {status === "ready" && solarInsights && (
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+        <div className="absolute top-3 left-3 z-10">
           <Badge className="bg-black/70 text-white border-0 text-xs backdrop-blur-sm">
             <Sun className="h-3 w-3 mr-1 text-yellow-400" />
             {solarInsights.sunshineHours?.toLocaleString()} sunshine hrs/yr
-          </Badge>
-          {maxKw && (
-            <Badge className="bg-black/70 text-white border-0 text-xs backdrop-blur-sm">
-              ⚡ {maxKw} kW max roof capacity
-            </Badge>
-          )}
-          <Badge className="bg-black/70 text-white border-0 text-xs backdrop-blur-sm">
-            🔲 {solarInsights.maxPanels} panels max
           </Badge>
         </div>
       )}
