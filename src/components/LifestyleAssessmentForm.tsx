@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 
 export interface LifestyleData {
@@ -64,9 +63,9 @@ const LifestyleAssessmentForm = ({ onSubmit, loading = false, initialHomeType }:
   return (
     <Card className="border-2 shadow-lg">
       <CardHeader>
-        <CardTitle>Quick Lifestyle Assessment</CardTitle>
+        <CardTitle>Beyond solar: what's right for you?</CardTitle>
         <CardDescription>
-          Answer a few questions (1-2 mins) to get personalized recommendations based on the highest-impact climate actions
+          A few questions help us surface the highest-impact moves for your home, commute, and lifestyle — EVs, electrification, efficiency, and more.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -175,67 +174,31 @@ const LifestyleAssessmentForm = ({ onSubmit, loading = false, initialHomeType }:
           {/* Interests */}
           <div className="space-y-3">
             <Label className="text-base font-semibold">What interests you most? (Select all that apply)</Label>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="interest-ev"
-                  checked={interests.includes("ev")}
-                  onCheckedChange={() => handleInterestToggle("ev")}
-                />
-                <Label htmlFor="interest-ev" className="font-normal cursor-pointer">
-                  Getting an electric vehicle
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="interest-solar"
-                  checked={interests.includes("solar")}
-                  onCheckedChange={() => handleInterestToggle("solar")}
-                />
-                <Label htmlFor="interest-solar" className="font-normal cursor-pointer">
-                  Installing solar panels
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="interest-efficiency"
-                  checked={interests.includes("efficiency")}
-                  onCheckedChange={() => handleInterestToggle("efficiency")}
-                />
-                <Label htmlFor="interest-efficiency" className="font-normal cursor-pointer">
-                  Home energy efficiency upgrades
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="interest-electrification"
-                  checked={interests.includes("electrification")}
-                  onCheckedChange={() => handleInterestToggle("electrification")}
-                />
-                <Label htmlFor="interest-electrification" className="font-normal cursor-pointer">
-                  Electrifying appliances (heat pumps, induction stoves)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="interest-transit"
-                  checked={interests.includes("transit")}
-                  onCheckedChange={() => handleInterestToggle("transit")}
-                />
-                <Label htmlFor="interest-transit" className="font-normal cursor-pointer">
-                  Biking / walking / public transit options
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="interest-organizing"
-                  checked={interests.includes("organizing")}
-                  onCheckedChange={() => handleInterestToggle("organizing")}
-                />
-                <Label htmlFor="interest-organizing" className="font-normal cursor-pointer">
-                  Community organizing and advocacy
-                </Label>
-              </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: "ev", label: "Electric vehicle" },
+                { value: "solar", label: "Solar panels" },
+                { value: "efficiency", label: "Home efficiency upgrades" },
+                { value: "electrification", label: "Electrify appliances" },
+                { value: "transit", label: "Bike / walk / transit" },
+                { value: "organizing", label: "Community advocacy" },
+              ].map(({ value, label }) => {
+                const selected = interests.includes(value);
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => handleInterestToggle(value)}
+                    className={`rounded-lg border-2 px-3 py-3 text-sm text-left transition-all ${
+                      selected
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

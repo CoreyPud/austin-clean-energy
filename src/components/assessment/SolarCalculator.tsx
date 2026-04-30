@@ -151,6 +151,8 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh }: Props) 
         </CardContent>
       </Card>
 
+      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} />
+
       {/* ── The Money ── */}
       <div className="flex items-end gap-3 pt-2">
         <h2 className="text-xl font-bold text-foreground leading-tight">The Money</h2>
@@ -295,7 +297,6 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh }: Props) 
           </div>
         </CardContent>
       </Card>
-      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} />
     </Fragment>
   );
 };
