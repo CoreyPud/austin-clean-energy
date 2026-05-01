@@ -117,12 +117,31 @@ serve(async (req) => {
     return jsonResponse(502, { error: `OpenAI request failed: ${err.message}` });
   }
 
-  const payload = await oaiRes.json();
-  if (!oaiRes.ok) {
-    return jsonResponse(502, { error: payload.error?.message ?? "OpenAI request failed." });
+  let payload: any;
+  try {
+    const rawText = await oaiRes.text();
+    try {
+      payload = JSON.parse(rawText);
+    } catch {
+      return jsonResponse(502, {
+        error: `OpenAI returned an unparseable response (HTTP ${oaiRes.status}).`,
+      });
+    }
+  } catch (err: any) {
+    return jsonResponse(502, { error: `Failed to read OpenAI response: ${err.message}` });
   }
 
-  const outputText: string = payload.output?.[0]?.content?.[0]?.text ?? "";
+  if (!oaiRes.ok) {
+    const msg = payload?.error?.message ?? payload?.message ?? `OpenAI error ${oaiRes.status}`;
+    return jsonResponse(502, { error: msg });
+  }
+
+  // Responses API: output[0].content[0].text
+  // Fallback: choices[0].message.content (Chat Completions shape, just in case)
+  const outputText: string =
+    payload.output?.[0]?.content?.[0]?.text ??
+    payload.choices?.[0]?.message?.content ??
+    "";
 
   let parsed: any;
   try {
