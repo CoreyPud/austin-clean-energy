@@ -119,7 +119,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh }: Props) 
             {/* Battery */}
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Battery storage</span>
+                <span className="text-muted-foreground">Battery backup capacity</span>
                 <span className="font-semibold">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</span>
               </div>
               <Slider

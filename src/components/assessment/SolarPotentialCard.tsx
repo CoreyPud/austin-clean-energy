@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Sun, Leaf, Zap } from "lucide-react";
+import { Sun, Zap } from "lucide-react";
 
 interface SolarPotentialCardProps {
   solarInsights: {
@@ -64,7 +64,7 @@ const SolarPotentialCard = ({ solarInsights, recommendedSystemKw }: SolarPotenti
         </div>
 
         {/* Secondary stats */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <MiniStat
             icon={<Sun className="h-3.5 w-3.5" />}
             value={`${solarInsights.sunshineHours.toLocaleString()}h`}
@@ -78,15 +78,6 @@ const SolarPotentialCard = ({ solarInsights, recommendedSystemKw }: SolarPotenti
                 : "—"
             }
             label="kWh / yr"
-          />
-          <MiniStat
-            icon={<Leaf className="h-3.5 w-3.5" />}
-            value={
-              solarInsights.annualCarbonOffsetKg
-                ? `${Math.round(solarInsights.annualCarbonOffsetKg).toLocaleString()}`
-                : "—"
-            }
-            label="kg CO₂ / yr"
           />
         </div>
       </CardContent>

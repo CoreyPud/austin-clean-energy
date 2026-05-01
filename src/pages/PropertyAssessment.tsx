@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +11,9 @@ import {
   AlertCircle,
   Printer,
   Sparkles,
+  Upload,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,9 +31,7 @@ import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SolarRoofMap from "@/components/assessment/SolarRoofMap";
-import BillUpload from "@/components/assessment/BillUpload";
 import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   billToMonthlyKwh,
   buildYearModel,
@@ -53,6 +54,10 @@ const PropertyAssessment = () => {
   const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [uploadedKwh, setUploadedKwh] = useState<number[] | null>(null);
+  const billInputRef = useRef<HTMLInputElement>(null);
+  const [billParseState, setBillParseState] = useState<"idle" | "parsing" | "done" | "error">("idle");
+  const [billParseSummary, setBillParseSummary] = useState<{ months: number; avgKwh: number } | null>(null);
+  const [billParseError, setBillParseError] = useState<string | null>(null);
 
   // Derived solar values — recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
@@ -102,6 +107,41 @@ const PropertyAssessment = () => {
   const [councilOutreachScript, setCouncilOutreachScript] = useState<string | null>(null);
   const lifestyleRef = useRef<HTMLDivElement>(null);
   const postQuizRef = useRef<HTMLDivElement>(null);
+
+  const processBillFile = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setBillParseError("Please upload a PDF file.");
+      setBillParseState("error");
+      return;
+    }
+    setBillParseState("parsing");
+    setBillParseError(null);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const { data, error: fnError } = await supabase.functions.invoke("parse-bill", {
+        body: { file: base64, filename: file.name },
+      });
+      if (fnError) throw new Error(fnError.message);
+      if (data?.error) throw new Error(data.error);
+      if (!Array.isArray(data?.months) || data.months.length === 0)
+        throw new Error("No monthly usage data found.");
+      const monthlyKwh = (data.months.slice(-12) as { kwh: number }[]).map((m) => m.kwh);
+      setBillParseSummary({
+        months: monthlyKwh.length,
+        avgKwh: Math.round(monthlyKwh.reduce((s, v) => s + v, 0) / monthlyKwh.length),
+      });
+      setBillParseState("done");
+      setUploadedKwh(monthlyKwh);
+    } catch (err: any) {
+      setBillParseError(err.message || "Failed to parse bill.");
+      setBillParseState("error");
+    }
+  };
 
   const validateForm = () => {
     const t = address.trim();
@@ -230,31 +270,24 @@ const PropertyAssessment = () => {
 
           {/* Address Form */}
           <Card className="mb-8 shadow-lg border-2">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Home className="mr-2 h-5 w-5 text-primary" />
-                Start with your address
-              </CardTitle>
-              <CardDescription>
-                We'll pull live data on your neighborhood, your roof, and your council district.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-[1fr_220px_auto] gap-3 items-end">
+            <CardContent className="pt-6 space-y-4">
+              {/* Address full width */}
+              <div>
+                <Label htmlFor="address" className="text-xs text-muted-foreground mb-1.5 block">Address</Label>
+                <AddressAutocomplete
+                  id="address"
+                  value={address}
+                  onChange={setAddress}
+                  onKeyDown={(e) => e.key === "Enter" && !loading && handleAssess()}
+                />
+              </div>
+
+              {/* Property type + Bill side by side */}
+              <div className="grid md:grid-cols-[200px_1fr] gap-4 items-start">
                 <div>
-                  <Label htmlFor="address">Address</Label>
-                  <AddressAutocomplete
-                    id="address"
-                    value={address}
-                    onChange={setAddress}
-                    className="mt-1"
-                    onKeyDown={(e) => e.key === "Enter" && !loading && handleAssess()}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="propertyType">Property type</Label>
+                  <Label htmlFor="propertyType" className="text-xs text-muted-foreground mb-1.5 block">Property type</Label>
                   <Select value={propertyType} onValueChange={setPropertyType}>
-                    <SelectTrigger id="propertyType" className="mt-1 w-full min-w-[180px]">
+                    <SelectTrigger id="propertyType" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -265,54 +298,94 @@ const PropertyAssessment = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button
-                  onClick={handleAssess}
-                  disabled={loading}
-                  className="bg-gradient-to-r from-secondary to-accent hover:opacity-90 h-10 w-[164px] justify-center"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Building…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Build my profile
-                    </>
-                  )}
-                </Button>
-              </div>
-              <div className="border-t mt-4 pt-4">
-                <Tabs
-                  defaultValue="estimate"
-                  onValueChange={(v) => { if (v === "estimate") setUploadedKwh(null); }}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <Label className="text-sm text-muted-foreground whitespace-nowrap shrink-0">
-                      Monthly bill
-                    </Label>
-                    <TabsList className="h-7">
-                      <TabsTrigger value="estimate" className="text-xs px-3 h-6">Estimate</TabsTrigger>
-                      <TabsTrigger value="upload" className="text-xs px-3 h-6">Upload PDF</TabsTrigger>
-                    </TabsList>
-                  </div>
-                  <TabsContent value="estimate" className="mt-0">
-                    <div className="flex items-center gap-3">
-                      <Slider
-                        min={50} max={600} step={10}
-                        value={[monthlyBill]}
-                        onValueChange={([v]) => setMonthlyBill(v)}
-                        className="flex-1"
-                      />
-                      <span className="font-semibold text-sm tabular-nums w-12 text-right">${monthlyBill}</span>
+
+                <div>
+                  <input
+                    ref={billInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) processBillFile(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <div className="flex justify-between items-center mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        title={billParseState === "done" ? "Upload a different bill" : "Upload your Austin Energy bill PDF"}
+                        onClick={() => {
+                          if (billParseState === "done" || billParseState === "error") {
+                            setBillParseState("idle");
+                            setBillParseSummary(null);
+                            setBillParseError(null);
+                            setUploadedKwh(null);
+                          }
+                          billInputRef.current?.click();
+                        }}
+                        disabled={billParseState === "parsing"}
+                        className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
+                          billParseState === "done"
+                            ? "bg-primary/10 text-primary hover:bg-primary/20"
+                            : billParseState === "error"
+                            ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        }`}
+                      >
+                        {billParseState === "parsing" ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : billParseState === "done" ? (
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        ) : billParseState === "error" ? (
+                          <XCircle className="h-3.5 w-3.5" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      <Label className="text-xs text-muted-foreground">Monthly bill</Label>
                     </div>
-                  </TabsContent>
-                  <TabsContent value="upload" className="mt-0">
-                    <BillUpload onResult={(kwh) => setUploadedKwh(kwh)} />
-                  </TabsContent>
-                </Tabs>
+                    <span className="font-semibold tabular-nums text-sm">
+                      {billParseState === "done" && billParseSummary
+                        ? `avg ${billParseSummary.avgKwh} kWh / mo`
+                        : `$${monthlyBill} / mo`}
+                    </span>
+                  </div>
+                  <Slider
+                    min={50} max={600} step={10}
+                    value={[monthlyBill]}
+                    onValueChange={([v]) => { setMonthlyBill(v); setUploadedKwh(null); setBillParseState("idle"); setBillParseSummary(null); }}
+                    className={billParseState === "done" ? "opacity-40" : ""}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
+                    <span>$50</span>
+                    {billParseState === "error" && (
+                      <span className="text-destructive">{billParseError}</span>
+                    )}
+                    <span>$600</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Build button full width */}
+              <Button
+                onClick={handleAssess}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-secondary to-accent hover:opacity-90"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Building…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Build my profile
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
