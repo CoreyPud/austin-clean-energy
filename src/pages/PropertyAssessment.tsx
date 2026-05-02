@@ -182,19 +182,17 @@ const PropertyAssessment = () => {
 
       // Aggregate by calendar month (Jan–Dec), averaging across years
       const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const buckets = new Map<number, { sum: number; count: number }>();
+      const buckets: { sum: number; count: number }[] = Array.from({ length: 12 }, () => ({ sum: 0, count: 0 }));
       for (const entry of billData) {
         const abbr = entry.label.split(' ')[0];
         const mi = MONTH_NAMES.indexOf(abbr);
         if (mi >= 0) {
-          const b = buckets.get(mi) ?? { sum: 0, count: 0 };
-          b.sum += entry.kwh;
-          b.count += 1;
-          buckets.set(mi, b);
+          buckets[mi].sum += entry.kwh;
+          buckets[mi].count += 1;
         }
       }
       const chartData = MONTH_NAMES
-        .map((m, i) => { const b = buckets.get(i); return b ? { label: m, kwh: Math.round(b.sum / b.count) } : null; })
+        .map((m, i) => buckets[i].count > 0 ? { label: m, kwh: Math.round(buckets[i].sum / buckets[i].count) } : null)
         .filter((d): d is { label: string; kwh: number } => d !== null);
       setMonthlyChartData(chartData);
 

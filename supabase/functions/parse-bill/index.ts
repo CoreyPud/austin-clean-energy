@@ -139,12 +139,7 @@ serve(async (req) => {
     return jsonResponse(502, { error: msg });
   }
 
-  // Responses API: output[0].content[0].text
-  // Fallback: choices[0].message.content (Chat Completions shape, just in case)
-  const outputText: string =
-    payload.output?.[0]?.content?.[0]?.text ??
-    payload.choices?.[0]?.message?.content ??
-    "";
+  const outputText: string = payload.output?.[0]?.content?.[0]?.text ?? "";
 
   let parsed: any;
   try {
