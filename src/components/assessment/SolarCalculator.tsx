@@ -9,11 +9,11 @@ import {
 } from "recharts";
 import { PiggyBank, Coins } from "lucide-react";
 import {
-  AUSTIN_ENERGY_SOLAR_REBATE,
   DEFAULT_PRODUCTION_PER_KW,
   CalcInputs,
   buildYearModel,
   buildThirtyYearModel,
+  austinEnergyRebate,
 } from "@/lib/solar-model";
 
 interface Props {
@@ -25,6 +25,7 @@ interface Props {
   };
   annualUsageKwh: number;
   uploadedKwh?: number[] | null;
+  propertyType: string;
 }
 
 const fmt$ = (n: number) =>
@@ -32,7 +33,7 @@ const fmt$ = (n: number) =>
     ? `-$${Math.abs(Math.round(n)).toLocaleString()}`
     : `$${Math.round(n).toLocaleString()}`;
 
-const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh }: Props) => {
+const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyType }: Props) => {
   const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
   const productionPerKw = solarInsights.annualProductionKwh > 0 && maxKw > 0
     ? Math.round(solarInsights.annualProductionKwh / maxKw)
@@ -67,9 +68,18 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh }: Props) 
     monthlyUsageKwh: uploadedKwh ?? undefined,
   }), [annualUsageKwh, systemKw, batteryKwh, effectiveLoanTerm, loanRate, productionPerKw, uploadedKwh]);
 
+  const rebate = useMemo(() => austinEnergyRebate(systemKw, propertyType), [systemKw, propertyType]);
+  const rebateLabel = propertyType === "commercial"
+    ? "after $0.50/W rebate"
+    : propertyType === "non-profit"
+    ? "after $0.70/W rebate"
+    : propertyType === "multi-family"
+    ? "no rebate (virtual metering)"
+    : "after $2,500 rebate";
+
   const installCost = useMemo(
-    () => Math.max(0, systemKw * costPerKw + batteryKwh * 1000 - AUSTIN_ENERGY_SOLAR_REBATE),
-    [systemKw, batteryKwh, costPerKw],
+    () => Math.max(0, systemKw * costPerKw + batteryKwh * 1000 - rebate),
+    [systemKw, batteryKwh, costPerKw, rebate],
   );
 
   const yearOne = useMemo(() => buildYearModel(inputs, 0), [inputs]);
@@ -288,7 +298,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh }: Props) 
 
           {/* Summary chips */}
           <div className="grid grid-cols-3 gap-2">
-            <MoneyChip label="Install cost" value={fmt$(installCost)} sub="after $2,500 rebate" />
+            <MoneyChip label="Install cost" value={fmt$(installCost)} sub={rebateLabel} />
             <MoneyChip label="25-yr net" value={fmt$(thirtyYear.cumulativeByYear[24]?.cumulative ?? 0)} highlight />
             <MoneyChip
               label="Payback"
