@@ -23,7 +23,7 @@ const HOURLY_LOAD_PROFILE          = normalizeProfile(RAW_HOURLY_LOAD);
 // Austin Energy tiered rates (2025)
 export const AUSTIN_ENERGY_RATES = {
   customerCharge: 16.50,
-  vosRate: 0.117,
+  vosRate: 0.126,
   citySalesTaxRate: 0.01,
   tierRates: [
     { maxKwh: 300,      rate: 0.04640 },
@@ -39,7 +39,21 @@ export const AUSTIN_ENERGY_RATES = {
   },
 };
 
-export const AUSTIN_ENERGY_SOLAR_REBATE = 2500;
+export const AUSTIN_ENERGY_SOLAR_REBATE = 2500; // residential default
+
+export function austinEnergyRebate(systemKw: number, propertyType: string): number {
+  const watts = systemKw * 1000;
+  switch (propertyType) {
+    case "commercial":
+      return watts * 0.50; // $0.50/W, no cap specified
+    case "non-profit":
+      return watts * 0.70; // $0.70/W, no cap specified
+    case "multi-family":
+      return 0; // virtual net metering — separate program, no upfront rebate
+    default: // single-family, condo
+      return 2500;
+  }
+}
 // Berkeley Lab 2024 regression for Austin residential installs
 const AUSTIN_INSTALL_COST_INTERCEPT = 4800;
 const AUSTIN_INSTALL_COST_PER_KW    = 2950;

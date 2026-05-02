@@ -14,6 +14,7 @@ import {
   Upload,
   CheckCircle,
   XCircle,
+  X,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,12 +33,14 @@ import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SolarRoofMap from "@/components/assessment/SolarRoofMap";
 import { Slider } from "@/components/ui/slider";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   billToMonthlyKwh,
+  calculateAustinEnergyUsageBill,
   buildYearModel,
   buildThirtyYearModel,
   austinInstallCost,
-  AUSTIN_ENERGY_SOLAR_REBATE,
+  austinEnergyRebate,
 } from "@/lib/solar-model";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
@@ -54,17 +57,20 @@ const PropertyAssessment = () => {
   const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [uploadedKwh, setUploadedKwh] = useState<number[] | null>(null);
+  const [uploadedBillData, setUploadedBillData] = useState<{ label: string; kwh: number; bill: number }[] | null>(null);
+  const [monthlyChartData, setMonthlyChartData] = useState<{ label: string; kwh: number }[] | null>(null);
   const billInputRef = useRef<HTMLInputElement>(null);
   const [billParseState, setBillParseState] = useState<"idle" | "parsing" | "done" | "error">("idle");
-  const [billParseSummary, setBillParseSummary] = useState<{ months: number; avgKwh: number } | null>(null);
+  const [billParseSummary, setBillParseSummary] = useState<{ months: number; avgBill: number; avgKwh: number } | null>(null);
   const [billParseError, setBillParseError] = useState<string | null>(null);
+  const [billViewMode, setBillViewMode] = useState<"estimate" | "bill">("estimate");
 
   // Derived solar values — recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
   const solarMaxKw = si ? Math.round((si.maxPanels * si.panelCapacityWatts) / 100) / 10 : 0;
   const solarProdPerKw = si && si.annualProductionKwh > 0 && solarMaxKw > 0
     ? si.annualProductionKwh / solarMaxKw : 1500;
-  const annualUsageKwh = uploadedKwh
+  const annualUsageKwh = (billViewMode === "bill" && uploadedKwh)
     ? uploadedKwh.reduce((s, v) => s + v, 0)
     : billToMonthlyKwh(monthlyBill) * 12;
   const unconstrainedKw = solarProdPerKw > 0 ? annualUsageKwh / solarProdPerKw : 0;
@@ -81,7 +87,7 @@ const PropertyAssessment = () => {
       loanInterestRate: 0,
       productionPerKw: solarProdPerKw,
     };
-    const cost = Math.max(0, austinInstallCost(recommendedKw, 0) - AUSTIN_ENERGY_SOLAR_REBATE);
+    const cost = Math.max(0, austinInstallCost(recommendedKw, 0) - austinEnergyRebate(recommendedKw, propertyType));
     const yr1 = buildYearModel(inputs, 0);
     const yr30 = buildThirtyYearModel(inputs, cost);
     const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
@@ -114,28 +120,86 @@ const PropertyAssessment = () => {
       setBillParseState("error");
       return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setBillParseError("File too large — maximum 5 MB.");
+      setBillParseState("error");
+      return;
+    }
     setBillParseState("parsing");
     setBillParseError(null);
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const { data, error: fnError } = await supabase.functions.invoke("parse-bill", {
-        body: { file: base64, filename: file.name },
-      });
-      if (fnError) throw new Error(fnError.message);
-      if (data?.error) throw new Error(data.error);
-      if (!Array.isArray(data?.months) || data.months.length === 0)
-        throw new Error("No monthly usage data found.");
-      const monthlyKwh = (data.months.slice(-12) as { kwh: number }[]).map((m) => m.kwh);
-      setBillParseSummary({
-        months: monthlyKwh.length,
-        avgKwh: Math.round(monthlyKwh.reduce((s, v) => s + v, 0) / monthlyKwh.length),
-      });
+      const arrayBuf = await file.arrayBuffer();
+      const hashBuf = await crypto.subtle.digest("SHA-256", arrayBuf);
+      const hash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      const cacheKey = `bill-parse-v1-${hash}`;
+
+      let months: { label: string; kwh: number }[];
+
+      // Try cache — validate shape before trusting it
+      let fromCache = false;
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0]?.kwh === "number") {
+            months = parsed;
+            fromCache = true;
+          }
+        }
+      } catch {}
+
+      if (!fromCache) {
+        // Chunked base64 — avoids both call-stack overflow and O(n²) string growth
+        const bytes = new Uint8Array(arrayBuf);
+        const CHUNK = 8192;
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += CHUNK) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+        }
+        const base64 = btoa(binary);
+        const { data, error: fnError } = await supabase.functions.invoke("parse-bill", {
+          body: { file: base64, filename: file.name },
+        });
+        if (fnError) throw new Error(fnError.message);
+        if (data?.error) throw new Error(data.error);
+        if (!Array.isArray(data?.months) || data.months.length === 0)
+          throw new Error("No monthly usage data found.");
+        months = data.months;
+        try { localStorage.setItem(cacheKey, JSON.stringify(months)); } catch {}
+      }
+
+      const recentMonths = months.slice(-12) as { label: string; kwh: number }[];
+      const monthlyKwh = recentMonths.map((m) => m.kwh);
+      const billData = recentMonths.map((m) => ({
+        label: m.label,
+        kwh: m.kwh,
+        bill: Math.round(calculateAustinEnergyUsageBill(m.kwh).total),
+      }));
+      const avgBill = Math.round(billData.reduce((s, m) => s + m.bill, 0) / billData.length);
+      const avgKwh = Math.round(monthlyKwh.reduce((s, v) => s + v, 0) / monthlyKwh.length);
+      setBillParseSummary({ months: monthlyKwh.length, avgBill, avgKwh });
+      setUploadedBillData(billData);
+
+      // Aggregate by calendar month (Jan–Dec), averaging across years
+      const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const buckets = new Map<number, { sum: number; count: number }>();
+      for (const entry of billData) {
+        const abbr = entry.label.split(' ')[0];
+        const mi = MONTH_NAMES.indexOf(abbr);
+        if (mi >= 0) {
+          const b = buckets.get(mi) ?? { sum: 0, count: 0 };
+          b.sum += entry.kwh;
+          b.count += 1;
+          buckets.set(mi, b);
+        }
+      }
+      const chartData = MONTH_NAMES
+        .map((m, i) => { const b = buckets.get(i); return b ? { label: m, kwh: Math.round(b.sum / b.count) } : null; })
+        .filter((d): d is { label: string; kwh: number } => d !== null);
+      setMonthlyChartData(chartData);
+
       setBillParseState("done");
+      setBillViewMode("bill");
       setUploadedKwh(monthlyKwh);
     } catch (err: any) {
       setBillParseError(err.message || "Failed to parse bill.");
@@ -283,7 +347,7 @@ const PropertyAssessment = () => {
               </div>
 
               {/* Property type + Bill side by side */}
-              <div className="grid md:grid-cols-[200px_1fr] gap-4 items-start">
+              <div className="grid md:grid-cols-2 gap-4 items-start">
                 <div>
                   <Label htmlFor="propertyType" className="text-xs text-muted-foreground mb-1.5 block">Property type</Label>
                   <Select value={propertyType} onValueChange={setPropertyType}>
@@ -295,6 +359,7 @@ const PropertyAssessment = () => {
                       <SelectItem value="multi-family">Multi-family</SelectItem>
                       <SelectItem value="condo">Condo</SelectItem>
                       <SelectItem value="commercial">Commercial</SelectItem>
+                      <SelectItem value="non-profit">Non-profit</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -315,20 +380,22 @@ const PropertyAssessment = () => {
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        title={billParseState === "done" ? "Upload a different bill" : "Upload your Austin Energy bill PDF"}
+                        title={billParseState === "done"
+                          ? billViewMode === "bill" ? "Switch to estimate" : "Switch to uploaded bill"
+                          : "Upload your Austin Energy bill PDF"}
                         onClick={() => {
-                          if (billParseState === "done" || billParseState === "error") {
-                            setBillParseState("idle");
-                            setBillParseSummary(null);
-                            setBillParseError(null);
-                            setUploadedKwh(null);
+                          if (billParseState === "done") {
+                            setBillViewMode(billViewMode === "bill" ? "estimate" : "bill");
+                          } else {
+                            billInputRef.current?.click();
                           }
-                          billInputRef.current?.click();
                         }}
                         disabled={billParseState === "parsing"}
                         className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
-                          billParseState === "done"
+                          billParseState === "done" && billViewMode === "bill"
                             ? "bg-primary/10 text-primary hover:bg-primary/20"
+                            : billParseState === "done"
+                            ? "text-primary/50 hover:bg-primary/10 hover:text-primary"
                             : billParseState === "error"
                             ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
                             : "text-muted-foreground hover:text-primary hover:bg-primary/10"
@@ -346,25 +413,55 @@ const PropertyAssessment = () => {
                       </button>
                       <Label className="text-xs text-muted-foreground">Monthly bill</Label>
                     </div>
-                    <span className="font-semibold tabular-nums text-sm">
-                      {billParseState === "done" && billParseSummary
-                        ? `avg ${billParseSummary.avgKwh} kWh / mo`
-                        : `$${monthlyBill} / mo`}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold tabular-nums text-sm">
+                        {billViewMode === "bill" && billParseSummary
+                          ? `$${billParseSummary.avgBill} / mo avg`
+                          : `$${monthlyBill} / mo`}
+                      </span>
+                      {billParseState === "done" && billViewMode === "bill" && (
+                        <button
+                          type="button"
+                          title="Clear uploaded bill"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBillParseState("idle");
+                            setBillParseSummary(null);
+                            setBillParseError(null);
+                            setUploadedKwh(null);
+                            setUploadedBillData(null);
+                            setMonthlyChartData(null);
+                            setBillViewMode("estimate");
+                            if (billInputRef.current) billInputRef.current.value = "";
+                          }}
+                          className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <Slider
-                    min={50} max={600} step={10}
-                    value={[monthlyBill]}
-                    onValueChange={([v]) => { setMonthlyBill(v); setUploadedKwh(null); setBillParseState("idle"); setBillParseSummary(null); }}
-                    className={billParseState === "done" ? "opacity-40" : ""}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                    <span>$50</span>
-                    {billParseState === "error" && (
-                      <span className="text-destructive">{billParseError}</span>
-                    )}
-                    <span>$600</span>
-                  </div>
+
+                  {billViewMode === "bill" && billParseState === "done" ? (
+                    <div className="text-xs text-muted-foreground py-1">
+                      {billParseSummary?.months} months of data · using real usage for calculations
+                    </div>
+                  ) : (
+                    <>
+                      <Slider
+                        min={50} max={600} step={10}
+                        value={[monthlyBill]}
+                        onValueChange={([v]) => { setMonthlyBill(v); setBillViewMode("estimate"); }}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
+                        <span>$50</span>
+                        {billParseState === "error" && (
+                          <span className="text-destructive">{billParseError}</span>
+                        )}
+                        <span>$600</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -388,6 +485,26 @@ const PropertyAssessment = () => {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Bill history chart */}
+          {monthlyChartData && (
+            <Card className="mb-8 border-2 border-primary/20">
+              <CardContent className="pt-5 pb-4">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Average monthly usage from your bill (kWh)
+                </p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={monthlyChartData} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 11 }} width={40} />
+                    <Tooltip formatter={(v: number) => [`${v} kWh`, "Usage"]} />
+                    <Bar dataKey="kwh" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Results */}
           {results && (
@@ -421,6 +538,7 @@ const PropertyAssessment = () => {
                     solarInsights={si}
                     annualUsageKwh={annualUsageKwh}
                     uploadedKwh={uploadedKwh}
+                    propertyType={propertyType}
                   />
                 </>
               )}
