@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
-const MODEL = "gpt-4o";
+const MODEL = "o4-mini";
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB decoded limit
 
 function jsonResponse(status: number, body: unknown) {
@@ -39,9 +39,10 @@ const EXTRACTION_PROMPT = [
   "Look for monthly kWh data in this order — stop at the first source that yields per-month values:",
   "1. PRINTED TEXT OR TABLE: Any section listing kWh per month as explicit numbers (usage history tables,",
   "   account summary rows, statement detail lines, etc.). These are exact — use them and set source to 'table'.",
-  "2. BAR OR LINE CHART: Any chart visualising monthly electricity usage. Read each bar/point height against",
-  "   the kWh Y-axis scale. Use any printed current-month kWh or average figures nearby to calibrate your",
-  "   readings. Set source to 'graph' and note values are approximate.",
+  "2. BAR OR LINE CHART: Any chart visualising monthly electricity usage. Read each bar height against the",
+  "   kWh Y-axis scale. Set source to 'graph'. Note: Austin Energy charts use single-letter month",
+  "   abbreviations (A=Apr, M=May, J=Jun, J=Jul, A=Aug, S=Sep, O=Oct, N=Nov, D=Dec, J=Jan, F=Feb,",
+  "   M=Mar, A=Apr), and do not include years",
   "3. DERIVED: If only a single month's kWh and a multi-month average are printed (e.g. 'kWh Used: 390',",
   "   '13 month avg: 433'), return just the months you can confidently assign to specific month/year labels.",
   "",
@@ -53,6 +54,8 @@ const EXTRACTION_PROMPT = [
   "}",
   "",
   "Rules:",
+  '- Return every individual month-year data point you find — do NOT average or deduplicate.',
+  '  If the same calendar month appears more than once, include both. If you dont know the year, assume they are sequential',
   '- "months" sorted oldest-first.',
   '- "kwh" must be a plain whole number.',
   '- "label" like "Jan 2024".',
@@ -113,7 +116,7 @@ serve(async (req) => {
             ],
           },
         ],
-        max_output_tokens: 800,
+        max_output_tokens: 2000,
       }),
     });
   } catch (err: any) {
@@ -152,23 +155,46 @@ serve(async (req) => {
     return jsonResponse(502, { error: "Unexpected response format from model.", raw: outputText });
   }
 
-  const validMonths = parsed.months
+  const rawMonths = parsed.months
     .filter((m: any) => m && typeof m.kwh === "number" && Number.isFinite(m.kwh) && m.kwh >= 0)
     .map((m: any) => ({ label: String(m.label ?? ""), kwh: Math.round(m.kwh) }));
 
-  if (validMonths.length === 0) {
+  if (rawMonths.length === 0) {
     return jsonResponse(422, {
       error: "No monthly usage data found in the bill.",
       note: String(parsed.note ?? ""),
     });
   }
 
+  // Aggregate raw model output into one average value per calendar month (Jan–Dec).
+  // The model may return multiple entries for the same calendar month (e.g. Apr 2023 + Apr 2024).
+  const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const buckets: { sum: number; count: number }[] = Array.from({ length: 12 }, () => ({ sum: 0, count: 0 }));
+  for (const m of rawMonths) {
+    const abbr = m.label.split(" ")[0];
+    const mi = MONTH_NAMES.indexOf(abbr);
+    if (mi >= 0) {
+      buckets[mi].sum += m.kwh;
+      buckets[mi].count += 1;
+    }
+  }
+  const months = MONTH_NAMES
+    .map((name, i) => buckets[i].count > 0 ? { label: name, kwh: Math.round(buckets[i].sum / buckets[i].count) } : null)
+    .filter((m): m is { label: string; kwh: number } => m !== null);
+
+  if (months.length === 0) {
+    return jsonResponse(422, {
+      error: "Could not map usage data to calendar months.",
+      note: String(parsed.note ?? ""),
+    });
+  }
+
   const average_monthly_kwh = Math.round(
-    validMonths.reduce((s: number, m: any) => s + m.kwh, 0) / validMonths.length,
+    months.reduce((s, m) => s + m.kwh, 0) / months.length,
   );
 
   return jsonResponse(200, {
-    months: validMonths,
+    months,
     average_monthly_kwh,
     source: String(parsed.source ?? "unknown"),
     note: String(parsed.note ?? ""),

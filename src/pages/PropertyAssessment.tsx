@@ -131,7 +131,7 @@ const PropertyAssessment = () => {
       const arrayBuf = await file.arrayBuffer();
       const hashBuf = await crypto.subtle.digest("SHA-256", arrayBuf);
       const hash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
-      const cacheKey = `bill-parse-v1-${hash}`;
+      const cacheKey = `bill-parse-v2-${hash}`;
 
       let months: { label: string; kwh: number }[];
 
