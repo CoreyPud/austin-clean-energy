@@ -314,8 +314,7 @@ const PropertyAssessment = () => {
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl font-bold mb-3 text-foreground">My Austin Energy Profile</h1>
             <p className="text-lg text-muted-foreground">
-              One address. Your neighborhood snapshot, roof solar potential, savings estimate, council
-              representative, and concrete next steps — all in one place.
+              Solar potential, estimated savings, neighborhood adoption, and your council representative — based on your Austin address.
             </p>
           </div>
 
@@ -401,11 +400,17 @@ const PropertyAssessment = () => {
                       <Label className="text-xs text-muted-foreground">Monthly bill</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold tabular-nums text-sm">
-                        {billViewMode === "bill" && billParseSummary
-                          ? `$${billParseSummary.avgBill} / mo avg`
-                          : `$${monthlyBill} / mo`}
-                      </span>
+                      {billViewMode === "bill" && billParseSummary ? (
+                        <span className="tabular-nums text-sm">
+                          <span className="font-semibold">${billParseSummary.avgBill}</span>
+                          <span className="text-muted-foreground"> · {billParseSummary.avgKwh} kWh/mo</span>
+                        </span>
+                      ) : (
+                        <span className="tabular-nums text-sm">
+                          <span className="font-semibold">${monthlyBill}</span>
+                          <span className="text-muted-foreground"> · ~{billToMonthlyKwh(monthlyBill).toLocaleString()} kWh/mo</span>
+                        </span>
+                      )}
                       {billParseState === "done" && billViewMode === "bill" && (
                         <button
                           type="button"
@@ -435,7 +440,9 @@ const PropertyAssessment = () => {
                   ) : (
                     <>
                       <Slider
-                        min={50} max={600} step={10}
+                        min={50}
+                        max={propertyType === "commercial" ? 10000 : propertyType === "non-profit" ? 5000 : 600}
+                        step={propertyType === "commercial" ? 100 : propertyType === "non-profit" ? 50 : 10}
                         value={[monthlyBill]}
                         onValueChange={([v]) => { setMonthlyBill(v); setBillViewMode("estimate"); }}
                       />
@@ -444,12 +451,28 @@ const PropertyAssessment = () => {
                         {billParseState === "error" && (
                           <span className="text-destructive">{billParseError}</span>
                         )}
-                        <span>$600</span>
+                        <span>{propertyType === "commercial" ? "$10,000" : propertyType === "non-profit" ? "$5,000" : "$600"}</span>
                       </div>
                     </>
                   )}
                 </div>
               </div>
+
+              {/* Bill history chart — shown inside the card when bill is uploaded */}
+              {uploadedBillData && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Average monthly usage from your bill (kWh)</p>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <BarChart data={uploadedBillData} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="label" tick={{ fontSize: 9 }} />
+                      <YAxis tick={{ fontSize: 10 }} width={36} />
+                      <Tooltip formatter={(v: number) => [`${v} kWh`, "Usage"]} />
+                      <Bar dataKey="kwh" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
 
               {/* Build button full width */}
               <Button
@@ -471,26 +494,6 @@ const PropertyAssessment = () => {
               </Button>
             </CardContent>
           </Card>
-
-          {/* Bill history chart */}
-          {uploadedBillData && (
-            <Card className="mb-8 border-2 border-primary/20">
-              <CardContent className="pt-5 pb-4">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Average monthly usage from your bill (kWh)
-                </p>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={uploadedBillData} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 11 }} width={40} />
-                    <Tooltip formatter={(v: number) => [`${v} kWh`, "Usage"]} />
-                    <Bar dataKey="kwh" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Results */}
           {results && (
@@ -574,7 +577,7 @@ const PropertyAssessment = () => {
                         <Button
                           onClick={handleGetPersonalizedPlan}
                           size="lg"
-                          className="bg-gradient-to-r from-secondary to-accent hover:opacity-90"
+                          className="w-full bg-gradient-to-r from-secondary to-accent hover:opacity-90"
                         >
                           <Sparkles className="mr-2 h-4 w-4" />
                           Find out

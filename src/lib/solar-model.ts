@@ -107,7 +107,7 @@ export function calculateAustinEnergyUsageBill(usageKwh: number, vosSolarCredit 
 
 /** Binary-search inverse of calculateAustinEnergyUsageBill. */
 export function billToMonthlyKwh(monthlyBill: number): number {
-  let lo = 0, hi = 5000;
+  let lo = 0, hi = 100000;
   for (let i = 0; i < 60; i++) {
     const mid = (lo + hi) / 2;
     if (calculateAustinEnergyUsageBill(mid).total < monthlyBill) lo = mid;
