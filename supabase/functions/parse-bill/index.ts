@@ -105,7 +105,11 @@ async function callGemini(base64: string, apiKey: string): Promise<string> {
           { text: EXTRACTION_PROMPT },
         ],
       }],
-      generationConfig: { maxOutputTokens: 2000, responseMimeType: "application/json" },
+      generationConfig: {
+        maxOutputTokens: 1024,
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
   const rawText = await res.text();
