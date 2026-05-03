@@ -10,7 +10,7 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const OPENAI_URL = "https://api.openai.com/v1/responses";
 const OPENAI_MODEL = "gpt-4.1";
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_URL = (key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
 
