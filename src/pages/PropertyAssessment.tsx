@@ -58,7 +58,6 @@ const PropertyAssessment = () => {
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [uploadedKwh, setUploadedKwh] = useState<number[] | null>(null);
   const [uploadedBillData, setUploadedBillData] = useState<{ label: string; kwh: number; bill: number }[] | null>(null);
-  const [monthlyChartData, setMonthlyChartData] = useState<{ label: string; kwh: number }[] | null>(null);
   const billInputRef = useRef<HTMLInputElement>(null);
   const [billParseState, setBillParseState] = useState<"idle" | "parsing" | "done" | "error">("idle");
   const [billParseSummary, setBillParseSummary] = useState<{ months: number; avgBill: number; avgKwh: number } | null>(null);
@@ -168,37 +167,27 @@ const PropertyAssessment = () => {
         try { localStorage.setItem(cacheKey, JSON.stringify(months)); } catch {}
       }
 
-      const recentMonths = months.slice(-12) as { label: string; kwh: number }[];
-      const monthlyKwh = recentMonths.map((m) => m.kwh);
-      const billData = recentMonths.map((m) => ({
+      // months is already Jan-Dec averaged by the edge function
+      const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const billData = months.map((m: { label: string; kwh: number }) => ({
         label: m.label,
         kwh: m.kwh,
         bill: Math.round(calculateAustinEnergyUsageBill(m.kwh).total),
       }));
       const avgBill = Math.round(billData.reduce((s, m) => s + m.bill, 0) / billData.length);
-      const avgKwh = Math.round(monthlyKwh.reduce((s, v) => s + v, 0) / monthlyKwh.length);
-      setBillParseSummary({ months: monthlyKwh.length, avgBill, avgKwh });
+      const avgKwh = Math.round(months.reduce((s: number, m: { kwh: number }) => s + m.kwh, 0) / months.length);
+      setBillParseSummary({ months: months.length, avgBill, avgKwh });
       setUploadedBillData(billData);
 
-      // Aggregate by calendar month (Jan–Dec), averaging across years
-      const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const buckets: { sum: number; count: number }[] = Array.from({ length: 12 }, () => ({ sum: 0, count: 0 }));
-      for (const entry of billData) {
-        const abbr = entry.label.split(' ')[0];
-        const mi = MONTH_NAMES.indexOf(abbr);
-        if (mi >= 0) {
-          buckets[mi].sum += entry.kwh;
-          buckets[mi].count += 1;
-        }
-      }
-      const chartData = MONTH_NAMES
-        .map((m, i) => buckets[i].count > 0 ? { label: m, kwh: Math.round(buckets[i].sum / buckets[i].count) } : null)
-        .filter((d): d is { label: string; kwh: number } => d !== null);
-      setMonthlyChartData(chartData);
+      // Build a 12-element Jan-Dec indexed array for the solar model (missing months use the average)
+      const kwhByMonth: number[] = MONTH_NAMES.map(name => {
+        const found = months.find((m: { label: string; kwh: number }) => m.label === name);
+        return found ? found.kwh : avgKwh;
+      });
 
       setBillParseState("done");
       setBillViewMode("bill");
-      setUploadedKwh(monthlyKwh);
+      setUploadedKwh(kwhByMonth);
     } catch (err: any) {
       setBillParseError(err.message || "Failed to parse bill.");
       setBillParseState("error");
@@ -428,7 +417,6 @@ const PropertyAssessment = () => {
                             setBillParseError(null);
                             setUploadedKwh(null);
                             setUploadedBillData(null);
-                            setMonthlyChartData(null);
                             setBillViewMode("estimate");
                             if (billInputRef.current) billInputRef.current.value = "";
                           }}
@@ -485,14 +473,14 @@ const PropertyAssessment = () => {
           </Card>
 
           {/* Bill history chart */}
-          {monthlyChartData && (
+          {uploadedBillData && (
             <Card className="mb-8 border-2 border-primary/20">
               <CardContent className="pt-5 pb-4">
                 <p className="text-xs text-muted-foreground mb-3">
                   Average monthly usage from your bill (kWh)
                 </p>
                 <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={monthlyChartData} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
+                  <BarChart data={uploadedBillData} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 11 }} width={40} />
