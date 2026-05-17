@@ -17,7 +17,9 @@
       "Bash(cp /tmp/supabase.exe ~/bin/supabase)",
       "Bash(chmod +x ~/bin/supabase)",
       "Bash(export PATH=\"$HOME/bin:$PATH\")",
-      "Bash(~/bin/supabase --version)"
+      "Bash(~/bin/supabase --version)",
+      "Bash(netstat -ano)",
+      "Bash(npm run *)"
     ]
   }
 }

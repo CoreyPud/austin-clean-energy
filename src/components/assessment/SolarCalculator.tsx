@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  AreaChart, Area, BarChart, Bar,
+  BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { PiggyBank, Coins } from "lucide-react";
@@ -40,7 +40,8 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
     : DEFAULT_PRODUCTION_PER_KW;
 
   const [batteryKwh, setBatteryKwh] = useState(0);
-  const [costPerKw, setCostPerKw] = useState(2950);
+  const [costPerW, setCostPerW] = useState(2.95);
+  const costPerKw = costPerW * 1000;
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
   const [loanTermYears, setLoanTermYears] = useState(20);
   const [loanRate, setLoanRate] = useState(6);
@@ -104,12 +105,10 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
 
   return (
     <Fragment>
-      {/* ── Run the Numbers: system size + battery + energy chart ── */}
+      {/* ── Sliders ── */}
       <Card className="border-2 border-primary/20 shadow-md">
         <CardContent className="pt-6 space-y-6">
-          {/* Sliders */}
           <div className="grid md:grid-cols-2 gap-6">
-            {/* System size */}
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">System size</span>
@@ -120,13 +119,8 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                 value={[systemKw]}
                 onValueChange={([v]) => setSystemKw(v)}
               />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>1 kW</span>
-                <span>{maxKw.toFixed(0)} kW max</span>
-              </div>
             </div>
 
-            {/* Battery */}
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Battery backup capacity</span>
@@ -137,31 +131,10 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                 value={[batteryKwh]}
                 onValueChange={([v]) => setBatteryKwh(v)}
               />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>None</span><span>30 kWh</span>
-              </div>
             </div>
-          </div>
-
-          {/* Energy balance chart */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-3">Monthly solar production vs. your consumption (kWh)</p>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={energyBalanceData} barGap={2}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v: number) => `${Math.round(v)} kWh`} />
-                <Legend />
-                <Bar dataKey="Production" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Consumption" fill="hsl(var(--muted-foreground) / 0.4)" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
-
-      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} />
 
       {/* ── The Money ── */}
       <div className="flex items-end gap-3 pt-2">
@@ -190,16 +163,13 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
           <div className="border-t pt-4">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-muted-foreground">Install cost</span>
-              <span className="font-semibold">${costPerKw.toLocaleString()}/kW</span>
+              <span className="font-semibold">${costPerW.toFixed(2)}/W</span>
             </div>
             <Slider
-              min={1500} max={5000} step={50}
-              value={[costPerKw]}
-              onValueChange={([v]) => setCostPerKw(v)}
+              min={1.5} max={5.0} step={0.05}
+              value={[costPerW]}
+              onValueChange={([v]) => setCostPerW(v)}
             />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>$1,500/kW</span><span>$5,000/kW</span>
-            </div>
           </div>
 
           {/* Financing */}
@@ -223,9 +193,6 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                     value={[loanTermYears]}
                     onValueChange={([v]) => setLoanTermYears(v)}
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>5 yr</span><span>30 yr</span>
-                  </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-2">
@@ -237,57 +204,38 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                     value={[loanRate]}
                     onValueChange={([v]) => setLoanRate(v)}
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>3%</span><span>12%</span>
-                  </div>
                 </div>
               </TabsContent>
             </Tabs>
           </div>
 
-          {/* Monthly bill comparison */}
+          {/* Monthly bill comparison — bar chart */}
           <div>
             <p className="text-xs text-muted-foreground mb-2">Monthly bill: with vs. without solar</p>
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={billComparisonData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="fillWithout" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--secondary))" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="hsl(var(--secondary))" stopOpacity={0.03} />
-                  </linearGradient>
-                  <linearGradient id="fillWith" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.03} />
-                  </linearGradient>
-                </defs>
+              <BarChart data={billComparisonData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={48} />
                 <Tooltip formatter={(v: number) => `$${v}`} />
                 <Legend />
-                <Area type="monotone" dataKey="Without solar" stroke="hsl(var(--secondary))" strokeWidth={2} fill="url(#fillWithout)" dot={false} />
-                <Area type="monotone" dataKey="With solar" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#fillWith)" dot={false} />
-              </AreaChart>
+                <Bar dataKey="Without solar" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="With solar" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* 30-year cumulative chart */}
+          {/* 30-year cumulative — bar chart */}
           <div>
             <p className="text-xs text-muted-foreground mb-3">Cumulative net savings over 30 years</p>
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={cumulativeData}>
+              <BarChart data={cumulativeData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="year" tick={{ fontSize: 10 }} interval={4} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => fmt$(v)} />
-                <Area
-                  type="monotone"
-                  dataKey="Net savings"
-                  stroke="hsl(var(--secondary))"
-                  fill="hsl(var(--secondary) / 0.15)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
+                <Bar dataKey="Net savings" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
             {thirtyYear.paybackYear && (
               <p className="text-xs text-center text-muted-foreground mt-2">
@@ -307,6 +255,26 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Solar Production vs. Consumption (kWh) ── */}
+      <Card className="border-2 border-primary/20 shadow-md">
+        <CardContent className="pt-6">
+          <p className="text-xs text-muted-foreground mb-3">Monthly solar production vs. your consumption (kWh)</p>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={energyBalanceData} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v: number) => `${Math.round(v)} kWh`} />
+              <Legend />
+              <Bar dataKey="Production" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Consumption" fill="hsl(var(--muted-foreground) / 0.4)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} />
     </Fragment>
   );
 };

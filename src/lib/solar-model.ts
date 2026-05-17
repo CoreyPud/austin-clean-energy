@@ -55,8 +55,8 @@ export function austinEnergyRebate(systemKw: number, propertyType: string): numb
   }
 }
 // Berkeley Lab 2024 regression for Austin residential installs
-const AUSTIN_INSTALL_COST_INTERCEPT = 4800;
-const AUSTIN_INSTALL_COST_PER_KW    = 2950;
+const AUSTIN_INSTALL_COST_INTERCEPT  = 4800;
+export const AUSTIN_INSTALL_COST_PER_KW = 2950;
 const AUSTIN_BATTERY_COST_PER_KWH   = 1000;
 
 export const DEFAULT_PRODUCTION_PER_KW = 1500; // kWh/kW-year (Austin avg)

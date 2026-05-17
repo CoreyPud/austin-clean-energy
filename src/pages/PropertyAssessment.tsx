@@ -39,7 +39,7 @@ import {
   calculateAustinEnergyUsageBill,
   buildYearModel,
   buildThirtyYearModel,
-  austinInstallCost,
+  AUSTIN_INSTALL_COST_PER_KW,
   austinEnergyRebate,
 } from "@/lib/solar-model";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
@@ -86,7 +86,7 @@ const PropertyAssessment = () => {
       loanInterestRate: 0,
       productionPerKw: solarProdPerKw,
     };
-    const cost = Math.max(0, austinInstallCost(recommendedKw, 0) - austinEnergyRebate(recommendedKw, propertyType));
+    const cost = Math.max(0, (recommendedKw ?? 0) * AUSTIN_INSTALL_COST_PER_KW - austinEnergyRebate(recommendedKw ?? 0, propertyType));
     const yr1 = buildYearModel(inputs, 0);
     const yr30 = buildThirtyYearModel(inputs, cost);
     const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
@@ -446,13 +446,9 @@ const PropertyAssessment = () => {
                         value={[monthlyBill]}
                         onValueChange={([v]) => { setMonthlyBill(v); setBillViewMode("estimate"); }}
                       />
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                        <span>$50</span>
-                        {billParseState === "error" && (
-                          <span className="text-destructive">{billParseError}</span>
-                        )}
-                        <span>{propertyType === "commercial" ? "$10,000" : propertyType === "non-profit" ? "$5,000" : "$600"}</span>
-                      </div>
+                      {billParseState === "error" && (
+                        <p className="text-xs text-destructive mt-1">{billParseError}</p>
+                      )}
                     </>
                   )}
                 </div>
@@ -504,7 +500,6 @@ const PropertyAssessment = () => {
                 district={results.councilMember.district}
                 zipCode={results.zipCode}
                 propertyType={propertyType}
-                recommendedKw={recommendedKw}
                 monthlySavings={liveSummary?.monthlySavings ?? null}
                 paybackYears={liveSummary?.paybackYear ?? null}
               />
@@ -522,7 +517,7 @@ const PropertyAssessment = () => {
                     </Card>
                   </div>
 
-                  <SectionHeading emoji="🔧" title="Run the Numbers" />
+                  <SectionHeading emoji="⚡" title="Solar Production vs. Your Consumption" />
                   <SolarCalculator
                     solarInsights={si}
                     annualUsageKwh={annualUsageKwh}

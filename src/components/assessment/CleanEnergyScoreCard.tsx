@@ -5,7 +5,6 @@ interface Props {
   district: string;
   zipCode: string | null;
   propertyType: string;
-  recommendedKw: number | null;
   monthlySavings: number | null;
   paybackYears: number | null;
 }
@@ -17,7 +16,7 @@ const fmt$ = (n: number) =>
 
 const CleanEnergyScoreCard = ({
   address, district, zipCode, propertyType,
-  recommendedKw, monthlySavings, paybackYears,
+  monthlySavings, paybackYears,
 }: Props) => (
   <Card className="relative overflow-hidden border-2 border-primary/20 shadow-lg bg-gradient-to-br from-primary/5 via-background to-background">
     <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/5 blur-2xl pointer-events-none" aria-hidden />
@@ -26,12 +25,7 @@ const CleanEnergyScoreCard = ({
         {address} · {propertyType.replace("-", " ")} · ZIP {zipCode || "—"} · {district}
       </p>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Stat
-          label="Recommended"
-          value={recommendedKw != null ? `${recommendedKw.toFixed(1)} kW` : "—"}
-          sub="system size"
-        />
+      <div className="grid grid-cols-2 gap-3">
         <Stat
           label="Monthly savings"
           value={monthlySavings != null ? fmt$(monthlySavings) : "—"}
