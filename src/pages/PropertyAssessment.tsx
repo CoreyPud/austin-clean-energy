@@ -28,7 +28,6 @@ import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import SolarPotentialCard from "@/components/assessment/SolarPotentialCard";
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
-import CleanEnergyScoreCard from "@/components/assessment/CleanEnergyScoreCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SolarRoofMap from "@/components/assessment/SolarRoofMap";
@@ -44,6 +43,7 @@ import {
 } from "@/lib/solar-model";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
+import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -76,17 +76,26 @@ const PropertyAssessment = () => {
   const recommendedKw = solarMaxKw > 0
     ? Math.round(Math.min(Math.max(unconstrainedKw, 2), solarMaxKw) * 2) / 2
     : null;
+
+  const [systemKw, setSystemKw] = useState<number>(4);
+  const [batteryKwh, setBatteryKwh] = useState<number>(0);
+  // Reset to recommended only when a fresh assessment result loads
+  useEffect(() => {
+    if (recommendedKw != null) setSystemKw(recommendedKw);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results]);
+
   const liveSummary = (() => {
-    if (!si || !recommendedKw) return null;
+    if (!si || systemKw <= 0) return null;
     const inputs = {
       annualUsageKwh,
-      systemKw: recommendedKw,
-      batteryKwh: 0,
+      systemKw,
+      batteryKwh,
       loanTermYears: 0,
       loanInterestRate: 0,
       productionPerKw: solarProdPerKw,
     };
-    const cost = Math.max(0, (recommendedKw ?? 0) * AUSTIN_INSTALL_COST_PER_KW - austinEnergyRebate(recommendedKw ?? 0, propertyType));
+    const cost = Math.max(0, systemKw * AUSTIN_INSTALL_COST_PER_KW + batteryKwh * 1000 - austinEnergyRebate(systemKw, propertyType));
     const yr1 = buildYearModel(inputs, 0);
     const yr30 = buildThirtyYearModel(inputs, cost);
     const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
@@ -94,6 +103,10 @@ const PropertyAssessment = () => {
       monthlySavings: yr1.savings / 12,
       paybackYear: yr30.paybackYear ?? null,
       roi: cost > 0 ? Math.round((net25 / cost) * 100) : null,
+      billOffsetPct: yr1.billWithoutSolar > 0
+        ? Math.round((yr1.savings / yr1.billWithoutSolar) * 100)
+        : 0,
+      co2TonsPerYear: Math.round(yr1.solarTotal * 0.000386 * 10) / 10,
     };
   })();
 
@@ -494,22 +507,65 @@ const PropertyAssessment = () => {
           {/* Results */}
           {results && (
             <div className="space-y-6 animate-slide-up">
-              {/* Summary tile */}
-              <CleanEnergyScoreCard
-                address={results.address}
-                district={results.councilMember.district}
-                zipCode={results.zipCode}
-                propertyType={propertyType}
-                monthlySavings={liveSummary?.monthlySavings ?? null}
-                paybackYears={liveSummary?.paybackYear ?? null}
-              />
-
-              {/* ☀️ Your Roof + 🔧 Run the Numbers */}
-              {si && recommendedKw && (
+              {/* ☀️ Recommended System */}
+              {si && (
                 <>
-                  <SectionHeading emoji="☀️" title="Your Roof" />
+                  <SectionHeading emoji="☀️" title="Solar Overview" />
+
+                  {/* Control card — recommended + sliders */}
+                  <div className="sticky top-0 z-20 -mx-4 px-4">
+                    <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-6">
+                          {/* System size slider */}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-muted-foreground mb-1">System size</div>
+                            <div className="text-2xl font-bold tabular-nums mb-3">{systemKw.toFixed(1)} kW</div>
+                            <Slider
+                              min={1}
+                              max={Math.max(solarMaxKw, 16)}
+                              step={0.5}
+                              value={[systemKw]}
+                              onValueChange={([v]) => setSystemKw(v)}
+                            />
+                            {recommendedKw != null && (
+                              <div className="flex justify-end text-[10px] text-muted-foreground mt-1.5">
+                                <button
+                                  onClick={() => setSystemKw(recommendedKw)}
+                                  disabled={systemKw === recommendedKw}
+                                  className="tabular-nums transition-colors disabled:cursor-default hover:text-primary disabled:hover:text-muted-foreground"
+                                >
+                                  {recommendedKw.toFixed(1)} kW recommended
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="h-16 w-px bg-border shrink-0" />
+
+                          {/* Battery slider */}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-muted-foreground mb-1">Battery backup</div>
+                            <div className="text-2xl font-bold tabular-nums mb-3">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</div>
+                            <Slider
+                              min={0} max={30} step={1}
+                              value={[batteryKwh]}
+                              onValueChange={([v]) => setBatteryKwh(v)}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Metrics card + map */}
                   <div className="grid md:grid-cols-2 gap-4">
-                    <SolarPotentialCard solarInsights={si} recommendedSystemKw={recommendedKw} />
+                    <SolarPotentialCard
+                      solarInsights={si}
+                      billOffsetPct={liveSummary?.billOffsetPct ?? null}
+                      monthlySavings={liveSummary?.monthlySavings ?? null}
+                      co2TonsPerYear={liveSummary?.co2TonsPerYear ?? null}
+                    />
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
                         <SolarRoofMap center={results.center || [-97.7431, 30.2672]} solarInsights={si} />
@@ -517,12 +573,13 @@ const PropertyAssessment = () => {
                     </Card>
                   </div>
 
-                  <SectionHeading emoji="⚡" title="Solar Production vs. Your Consumption" />
                   <SolarCalculator
                     solarInsights={si}
                     annualUsageKwh={annualUsageKwh}
                     uploadedKwh={uploadedKwh}
                     propertyType={propertyType}
+                    systemKw={systemKw}
+                    batteryKwh={batteryKwh}
                   />
                 </>
               )}
@@ -553,6 +610,9 @@ const PropertyAssessment = () => {
                   </Card>
                 </MapTokenLoader>
               </div>
+
+              {/* Contact CTA */}
+              <ContactCtaCard />
 
               {/* Quiz gate → form → post-quiz results */}
               {!personalizedPlan ? (

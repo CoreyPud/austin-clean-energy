@@ -19,7 +19,10 @@
       "Bash(export PATH=\"$HOME/bin:$PATH\")",
       "Bash(~/bin/supabase --version)",
       "Bash(netstat -ano)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git reset *)",
+      "Bash(git restore *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
