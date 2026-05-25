@@ -37,7 +37,7 @@ const ContactCtaCard = () => {
         {submitted ? (
           <div className="flex flex-col items-center gap-3 py-4 text-center">
             <CheckCircle className="h-8 w-8 text-secondary" />
-            <p className="font-semibold text-foreground">Got it — we'll follow up with honest, no-pressure guidance.</p>
+            <p className="font-semibold text-foreground">Thanks for contacting us — we'll be in touch!</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
