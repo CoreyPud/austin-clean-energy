@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, Fragment } from "react";
+import { useMemo, useState, Fragment } from "react";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -26,6 +26,8 @@ interface Props {
   annualUsageKwh: number;
   uploadedKwh?: number[] | null;
   propertyType: string;
+  systemKw: number;
+  batteryKwh: number;
 }
 
 const fmt$ = (n: number) =>
@@ -33,13 +35,12 @@ const fmt$ = (n: number) =>
     ? `-$${Math.abs(Math.round(n)).toLocaleString()}`
     : `$${Math.round(n).toLocaleString()}`;
 
-const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyType }: Props) => {
+const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyType, systemKw, batteryKwh }: Props) => {
   const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
   const productionPerKw = solarInsights.annualProductionKwh > 0 && maxKw > 0
     ? Math.round(solarInsights.annualProductionKwh / maxKw)
     : DEFAULT_PRODUCTION_PER_KW;
 
-  const [batteryKwh, setBatteryKwh] = useState(0);
   const [costPerW, setCostPerW] = useState(2.95);
   const costPerKw = costPerW * 1000;
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
@@ -47,17 +48,6 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
   const [loanRate, setLoanRate] = useState(6);
 
   const effectiveLoanTerm = financeMode === "cash" ? 0 : loanTermYears;
-
-  const recommendedSystemKw = useMemo(() => productionPerKw > 0
-    ? Math.round(Math.min(Math.max(annualUsageKwh / productionPerKw, 2), maxKw) * 2) / 2
-    : Math.min(4, maxKw),
-  [annualUsageKwh, productionPerKw, maxKw]);
-
-  const [systemKw, setSystemKw] = useState(recommendedSystemKw);
-
-  useEffect(() => {
-    setSystemKw(recommendedSystemKw);
-  }, [recommendedSystemKw]);
 
   const inputs: CalcInputs = useMemo(() => ({
     annualUsageKwh,
@@ -105,37 +95,6 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
 
   return (
     <Fragment>
-      {/* ── Sliders ── */}
-      <Card className="border-2 border-primary/20 shadow-md">
-        <CardContent className="pt-6 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">System size</span>
-                <span className="font-semibold">{systemKw.toFixed(1)} kW</span>
-              </div>
-              <Slider
-                min={1} max={Math.max(maxKw, 16)} step={0.5}
-                value={[systemKw]}
-                onValueChange={([v]) => setSystemKw(v)}
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Battery backup capacity</span>
-                <span className="font-semibold">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</span>
-              </div>
-              <Slider
-                min={0} max={30} step={5}
-                value={[batteryKwh]}
-                onValueChange={([v]) => setBatteryKwh(v)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* ── The Money ── */}
       <div className="flex items-end gap-3 pt-2">
         <h2 className="text-xl font-bold text-foreground leading-tight">The Money</h2>
@@ -146,8 +105,18 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
         <PiggyBank className="absolute bottom-6 right-6 h-6 w-6 text-secondary/15" aria-hidden />
         <CardContent className="relative p-6 space-y-6">
 
+          {/* Summary chips — top KPIs */}
+          <div className="grid grid-cols-3 gap-2">
+            <MoneyChip label="Install cost" value={fmt$(installCost)} sub={rebateLabel} />
+            <MoneyChip label="25-yr net" value={fmt$(thirtyYear.cumulativeByYear[24]?.cumulative ?? 0)} highlight />
+            <MoneyChip
+              label="Payback"
+              value={thirtyYear.paybackYear ? `${thirtyYear.paybackYear} yrs` : "> 30 yrs"}
+            />
+          </div>
+
           {/* Savings hero */}
-          <div>
+          <div className="border-t pt-4">
             <div className="flex items-baseline gap-3 mb-1">
               <span className="text-5xl md:text-6xl font-bold text-secondary tabular-nums">
                 {fmt$(yearOne.savings)}
@@ -244,22 +213,20 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
             )}
           </div>
 
-          {/* Summary chips */}
-          <div className="grid grid-cols-3 gap-2">
-            <MoneyChip label="Install cost" value={fmt$(installCost)} sub={rebateLabel} />
-            <MoneyChip label="25-yr net" value={fmt$(thirtyYear.cumulativeByYear[24]?.cumulative ?? 0)} highlight />
-            <MoneyChip
-              label="Payback"
-              value={thirtyYear.paybackYear ? `${thirtyYear.paybackYear} yrs` : "> 30 yrs"}
-            />
-          </div>
         </CardContent>
       </Card>
 
       {/* ── Solar Production vs. Consumption (kWh) ── */}
       <Card className="border-2 border-primary/20 shadow-md">
         <CardContent className="pt-6">
-          <p className="text-xs text-muted-foreground mb-3">Monthly solar production vs. your consumption (kWh)</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs text-muted-foreground">Monthly solar production vs. your consumption (kWh)</p>
+            <span className="text-xs font-semibold tabular-nums">
+              {yearOne.billWithoutSolar > 0
+                ? `${Math.round((yearOne.savings / yearOne.billWithoutSolar) * 100)}% bill offset`
+                : "—"}
+            </span>
+          </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={energyBalanceData} barGap={2}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Sun, Zap } from "lucide-react";
+import { Leaf } from "lucide-react";
+
+const AUSTIN_AVG_SUNSHINE_HOURS = 1800;
 
 interface SolarPotentialCardProps {
   solarInsights: {
@@ -12,72 +14,84 @@ interface SolarPotentialCardProps {
     panelLifetimeYears: number;
     imageryDate: { year: number; month: number; day: number } | null;
   };
-  recommendedSystemKw: number | null;
+  billOffsetPct: number | null;
+  monthlySavings: number | null;
+  co2TonsPerYear: number | null;
 }
 
-const SolarPotentialCard = ({ solarInsights, recommendedSystemKw }: SolarPotentialCardProps) => {
-  const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
-  const roofFillPct = recommendedSystemKw && maxKw > 0
-    ? Math.min(100, Math.round((recommendedSystemKw / maxKw) * 100))
-    : Math.min(100, Math.round(((solarInsights.maxPanels || 0) / 60) * 100));
+const fmt$ = (n: number) =>
+  n < 0 ? `-$${Math.abs(Math.round(n)).toLocaleString()}` : `$${Math.round(n).toLocaleString()}`;
+
+const SolarPotentialCard = ({
+  solarInsights, billOffsetPct, monthlySavings, co2TonsPerYear,
+}: SolarPotentialCardProps) => {
+  const offsetPct = billOffsetPct ?? 0;
+  const offsetBarPct = Math.min(100, offsetPct);
+  const offsetColor = offsetPct >= 90 ? "from-green-500 to-emerald-400"
+    : offsetPct >= 60 ? "from-primary to-secondary"
+    : "from-amber-500 to-yellow-400";
+
+  const sunshine = solarInsights.sunshineHours;
+  const suitability = sunshine > AUSTIN_AVG_SUNSHINE_HOURS * 1.06
+    ? { barColor: "from-green-500 to-emerald-400" }
+    : sunshine < AUSTIN_AVG_SUNSHINE_HOURS * 0.94
+    ? { barColor: "from-amber-500 to-yellow-400" }
+    : { barColor: "from-primary to-secondary" };
 
   return (
     <Card className="relative overflow-hidden border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
-      {/* Sun-ray decoration */}
       <div
         className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-20 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 60%)",
-        }}
+        style={{ background: "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 60%)" }}
         aria-hidden
       />
       <CardContent className="relative p-6">
-        {/* Hero: recommended system size */}
-        <div className="flex items-baseline gap-3 mb-1">
-          <Sun className="h-8 w-8 text-primary shrink-0" />
-          <span className="text-5xl md:text-6xl font-bold text-primary tabular-nums">
-            {recommendedSystemKw != null ? `${recommendedSystemKw.toFixed(1)}` : maxKw.toFixed(1)}
-          </span>
-          <span className="text-lg text-muted-foreground font-medium">kW recommended</span>
-        </div>
-        <p className="text-sm text-muted-foreground mb-5">
-          Optimal system for your estimated usage, capped at your roof's{" "}
-          <span className="font-semibold text-foreground">{maxKw.toFixed(1)} kW</span>{" "}
-          maximum capacity.
-        </p>
-
-        {/* Roof coverage bar */}
-        <div className="mb-5">
+        {/* Est. bill offset bar */}
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5 text-xs text-muted-foreground">
-            <span>Roof solar capacity</span>
-            <span className="font-semibold text-foreground">
-              {roofFillPct >= 75 ? "Excellent" : roofFillPct >= 40 ? "Good" : "Modest"}
-            </span>
+            <span>Est. bill offset</span>
+            <span className="font-semibold text-foreground">{offsetPct}%</span>
           </div>
-          <div className="h-3 rounded-full bg-muted overflow-hidden relative">
+          <div className="h-3 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-700 ease-out"
-              style={{ width: `${roofFillPct}%` }}
+              className={`h-full bg-gradient-to-r ${offsetColor} transition-all duration-700 ease-out`}
+              style={{ width: `${offsetBarPct}%` }}
             />
           </div>
         </div>
 
-        {/* Secondary stats */}
+        {/* Roof suitability bar */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-1.5 text-xs text-muted-foreground">
+            <span>Roof suitability</span>
+            <span className="font-semibold text-foreground">{sunshine.toLocaleString()} hrs/yr</span>
+          </div>
+          <div className="relative h-3 rounded-full bg-muted overflow-visible">
+            <div
+              className={`h-full rounded-full bg-gradient-to-r ${suitability.barColor} transition-all duration-700 ease-out`}
+              style={{ width: `${Math.min(100, Math.round(((sunshine - 1200) / (2400 - 1200)) * 100))}%` }}
+            />
+            <div
+              className="absolute top-0 h-full w-0.5 bg-foreground/30 rounded-full"
+              style={{ left: `${Math.round(((AUSTIN_AVG_SUNSHINE_HOURS - 1200) / (2400 - 1200)) * 100)}%` }}
+              title="Austin average"
+            />
+          </div>
+          <div className="flex justify-end text-[10px] text-muted-foreground mt-1">
+            <span>Austin avg {AUSTIN_AVG_SUNSHINE_HOURS.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Financial KPIs */}
         <div className="grid grid-cols-2 gap-2">
           <MiniStat
-            icon={<Sun className="h-3.5 w-3.5" />}
-            value={`${solarInsights.sunshineHours.toLocaleString()}h`}
-            label="sunshine / yr"
+            value={monthlySavings != null ? fmt$(monthlySavings) : "—"}
+            label="monthly savings"
+            highlight
           />
           <MiniStat
-            icon={<Zap className="h-3.5 w-3.5" />}
-            value={
-              solarInsights.annualProductionKwh
-                ? `${(solarInsights.annualProductionKwh / 1000).toFixed(1)}k`
-                : "—"
-            }
-            label="kWh / yr"
+            value={co2TonsPerYear != null ? `${co2TonsPerYear} tons` : "—"}
+            label="CO₂ offset / yr"
           />
         </div>
       </CardContent>
@@ -86,20 +100,13 @@ const SolarPotentialCard = ({ solarInsights, recommendedSystemKw }: SolarPotenti
 };
 
 const MiniStat = ({
-  icon,
-  value,
-  label,
+  value, label, highlight,
 }: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
+  value: string; label: string; highlight?: boolean;
 }) => (
-  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/70 border">
-    <div className="text-primary">{icon}</div>
-    <div className="leading-tight">
-      <div className="text-base font-bold text-foreground tabular-nums">{value}</div>
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
-    </div>
+  <div className={`px-3 py-2 rounded-lg border bg-background/70 ${highlight ? "border-primary/40 ring-1 ring-primary/20" : ""}`}>
+    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+    <div className={`text-lg font-bold tabular-nums ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
   </div>
 );
 
