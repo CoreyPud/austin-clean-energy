@@ -1,7 +1,8 @@
-import { useMemo, useState, Fragment } from "react";
+import { useMemo, useState, useEffect, Fragment } from "react";
 import { ChevronDown } from "lucide-react";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -44,7 +45,9 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
     : DEFAULT_PRODUCTION_PER_KW;
 
   const [showMethodology, setShowMethodology] = useState(false);
-  const [costPerW, setCostPerW] = useState(2.95);
+  const defaultCostPerW = propertyType === "commercial" ? 2.00 : 2.95;
+  const [costPerW, setCostPerW] = useState(defaultCostPerW);
+  useEffect(() => { setCostPerW(defaultCostPerW); }, [propertyType]);
   const costPerKw = costPerW * 1000;
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
   const [loanTermYears, setLoanTermYears] = useState(20);
@@ -134,13 +137,30 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
             <div className="flex flex-col justify-center">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Cost per watt</span>
-                <span className="font-semibold">${costPerW.toFixed(2)}/W</span>
+                {propertyType !== "commercial" && <span className="font-semibold">${costPerW.toFixed(2)}/W</span>}
               </div>
-              <Slider
-                min={1.5} max={5.0} step={0.05}
-                value={[costPerW]}
-                onValueChange={([v]) => setCostPerW(v)}
-              />
+              {propertyType === "commercial" ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.05}
+                    value={costPerW}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v) && v >= 0) setCostPerW(v);
+                    }}
+                    className="h-8 w-24 text-sm"
+                  />
+                  <span className="text-sm text-muted-foreground">/W</span>
+                </div>
+              ) : (
+                <Slider
+                  min={1.5} max={5.0} step={0.05}
+                  value={[costPerW]}
+                  onValueChange={([v]) => setCostPerW(v)}
+                />
+              )}
             </div>
           </div>
 
