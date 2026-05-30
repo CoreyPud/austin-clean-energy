@@ -14,10 +14,18 @@ const Footer = () => {
             </p>
             <button
               onClick={() => navigate('/contact')}
-              className="text-white/70 hover:text-white transition-colors text-sm text-left"
+              className="text-white/70 hover:text-white transition-colors text-sm text-left block"
             >
               Contact Us →
             </button>
+            <a
+              href="https://austincleanenergy.substack.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/70 hover:text-white transition-colors text-sm block mt-2"
+            >
+              Substack Newsletter →
+            </a>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-4">Resources</h3>
