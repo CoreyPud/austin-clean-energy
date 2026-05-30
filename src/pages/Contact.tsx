@@ -72,10 +72,6 @@ const Contact = () => {
                 </a>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </section>
-            </div>
 
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -93,6 +89,10 @@ const Contact = () => {
                 </a>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </section>
+    </div>
   );
 };
 
