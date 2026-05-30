@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ChevronDown } from "lucide-react";
 import { environmentalImpact } from "@/lib/solar-model";
 
 interface Props {
   annualSolarKwh: number;
+  carbonOffsetKgPerMwh?: number | null;
 }
 
 const FG = "hsl(var(--foreground))";
@@ -13,18 +16,42 @@ const PRI = "hsl(var(--primary))";
 const PRI20 = "hsl(var(--primary) / 0.2)";
 const SEC = "hsl(var(--secondary))";
 
-const EnvironmentalImpactCard = ({ annualSolarKwh }: Props) => {
-  const impact = environmentalImpact(annualSolarKwh);
+// 0.5% annual panel degradation summed over 25 years
+const lifetimeMultiplier = Array.from({ length: 25 }, (_, i) => Math.pow(0.995, i))
+  .reduce((a, b) => a + b, 0);
+
+const EnvironmentalImpactCard = ({ annualSolarKwh, carbonOffsetKgPerMwh }: Props) => {
+  const [mode, setMode] = useState<"annual" | "lifetime">("annual");
+  const [showMethodology, setShowMethodology] = useState(false);
+  const kwh = mode === "lifetime" ? annualSolarKwh * lifetimeMultiplier : annualSolarKwh;
+  const impact = environmentalImpact(kwh, carbonOffsetKgPerMwh);
+  const co2Factor = carbonOffsetKgPerMwh ?? 400;
 
   return (
-    <Card className="border-2 border-primary/20 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
+    <Card id="section-environmental" className="border-2 border-primary/20 shadow-md bg-gradient-to-br from-primary/5 via-background to-background scroll-mt-52">
       <CardContent className="pt-5 pb-5">
-        <p className="text-xs text-muted-foreground mb-4">
-          By going solar, your system will avoid{" "}
-          <span className="font-semibold text-foreground">{impact.metricTonsCo2}</span> metric tons of
-          CO₂e per year, equivalent to:
-        </p>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <p className="text-sm text-muted-foreground">
+            By going solar, your system will avoid{" "}
+            <span className="font-semibold text-foreground">{impact.metricTonsCo2}</span> metric tons of
+            CO₂e {mode === "annual" ? "per year" : "over 25 years"}, equivalent to:
+          </p>
+          <div className="flex shrink-0 rounded-md border overflow-hidden text-[10px] font-medium">
+            <button
+              onClick={() => setMode("annual")}
+              className={`px-2 py-1 transition-colors ${mode === "annual" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Per year
+            </button>
+            <button
+              onClick={() => setMode("lifetime")}
+              className={`px-2 py-1 transition-colors ${mode === "lifetime" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              25 year
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-6 mb-4">
           <ImpactStat
             icon={
               <svg width="65" height="65" viewBox="0 0 65 65" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto">
@@ -78,6 +105,23 @@ const EnvironmentalImpactCard = ({ annualSolarKwh }: Props) => {
             value={impact.flightsAvoided.toLocaleString()}
             label="Long haul flights avoided"
           />
+        </div>
+
+        {/* How did we calculate this */}
+        <div className="border-t pt-3">
+          <button
+            onClick={() => setShowMethodology(v => !v)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+          >
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showMethodology ? "rotate-180" : ""}`} />
+            How did we calculate this?
+          </button>
+
+          {showMethodology && (
+            <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+              Austin's ERCOT grid produces about {co2Factor} kg of CO₂ per megawatt-hour — roughly a third of grid power already comes from wind and solar, which is why this is lower than a purely fossil fuel grid. Every kWh your panels produce displaces a kWh you'd otherwise draw from that grid. We use this factor{carbonOffsetKgPerMwh ? ", sourced from Google's local data," : " (an ERCOT grid estimate — we use Google's local figure when available)"} to convert your solar production into CO₂ avoided.
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

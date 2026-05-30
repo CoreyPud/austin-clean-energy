@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf } from "lucide-react";
 
 const AUSTIN_AVG_SUNSHINE_HOURS = 1800;
 
@@ -15,15 +14,10 @@ interface SolarPotentialCardProps {
     imageryDate: { year: number; month: number; day: number } | null;
   };
   billOffsetPct: number | null;
-  monthlySavings: number | null;
-  co2TonsPerYear: number | null;
 }
 
-const fmt$ = (n: number) =>
-  n < 0 ? `-$${Math.abs(Math.round(n)).toLocaleString()}` : `$${Math.round(n).toLocaleString()}`;
-
 const SolarPotentialCard = ({
-  solarInsights, billOffsetPct, monthlySavings, co2TonsPerYear,
+  solarInsights, billOffsetPct,
 }: SolarPotentialCardProps) => {
   const offsetPct = billOffsetPct ?? 0;
   const offsetBarPct = Math.min(100, offsetPct);
@@ -61,10 +55,10 @@ const SolarPotentialCard = ({
         </div>
 
         {/* Roof suitability bar */}
-        <div className="mb-5">
+        <div>
           <div className="flex items-center justify-between mb-1.5 text-xs text-muted-foreground">
             <span>Roof suitability</span>
-            <span className="font-semibold text-foreground">{sunshine.toLocaleString()} hrs/yr</span>
+            <span className="font-semibold text-foreground">{sunshine.toLocaleString()} hours/year</span>
           </div>
           <div className="relative h-3 rounded-full bg-muted overflow-visible">
             <div
@@ -82,32 +76,9 @@ const SolarPotentialCard = ({
           </div>
         </div>
 
-        {/* Financial KPIs */}
-        <div className="grid grid-cols-2 gap-2">
-          <MiniStat
-            value={monthlySavings != null ? fmt$(monthlySavings) : "—"}
-            label="monthly savings"
-            highlight
-          />
-          <MiniStat
-            value={co2TonsPerYear != null ? `${co2TonsPerYear} tons` : "—"}
-            label="CO₂ offset / yr"
-          />
-        </div>
       </CardContent>
     </Card>
   );
 };
-
-const MiniStat = ({
-  value, label, highlight,
-}: {
-  value: string; label: string; highlight?: boolean;
-}) => (
-  <div className={`px-3 py-2 rounded-lg border bg-background/70 ${highlight ? "border-primary/40 ring-1 ring-primary/20" : ""}`}>
-    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
-    <div className={`text-lg font-bold tabular-nums ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
-  </div>
-);
 
 export default SolarPotentialCard;

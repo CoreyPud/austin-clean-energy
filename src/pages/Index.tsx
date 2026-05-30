@@ -67,7 +67,7 @@ const Index = () => {
   const modules = [
     {
       icon: Building2,
-      title: "My Austin Energy Profile",
+      title: "Calculate Solar Savings in Austin",
       description: "Enter your address to get neighborhood solar trends, your roof's potential, savings estimates, your council member, and tailored next steps — all in one place.",
       features: ["Neighborhood snapshot + map", "Solar savings + payback", "Your council representative", "Optional personalized plan"],
       gradient: "from-primary to-accent",

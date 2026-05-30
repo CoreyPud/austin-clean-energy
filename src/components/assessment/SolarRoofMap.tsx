@@ -220,7 +220,7 @@ const SolarRoofMap = ({ center, solarInsights }: Props) => {
   }, [lat, lng]);
 
   return (
-    <div className="relative h-[340px] w-full bg-muted rounded-b-lg overflow-hidden">
+    <div className="relative h-[480px] w-full bg-muted rounded-b-lg overflow-hidden">
       <div ref={mapRef} className="absolute inset-0" />
 
       {status === "loading-key" && (
@@ -255,7 +255,7 @@ const SolarRoofMap = ({ center, solarInsights }: Props) => {
         <div className="absolute top-3 left-3 z-10">
           <Badge className="bg-black/70 text-white border-0 text-xs backdrop-blur-sm">
             <Sun className="h-3 w-3 mr-1 text-yellow-400" />
-            {solarInsights.sunshineHours?.toLocaleString()} sunshine hrs/yr
+            {solarInsights.sunshineHours?.toLocaleString()} sunshine hours/year
           </Badge>
         </div>
       )}

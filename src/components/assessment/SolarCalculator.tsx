@@ -1,19 +1,20 @@
 import { useMemo, useState, Fragment } from "react";
+import { ChevronDown } from "lucide-react";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BarChart, Bar,
+  BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { PiggyBank, Coins } from "lucide-react";
 import {
   DEFAULT_PRODUCTION_PER_KW,
   CalcInputs,
   buildYearModel,
   buildThirtyYearModel,
   austinEnergyRebate,
+  AUSTIN_ENERGY_RATES,
 } from "@/lib/solar-model";
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
     panelCapacityWatts: number;
     annualProductionKwh: number;
     sunshineHours: number;
+    carbonOffsetKgPerMwh?: number | null;
   };
   annualUsageKwh: number;
   uploadedKwh?: number[] | null;
@@ -41,6 +43,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
     ? Math.round(solarInsights.annualProductionKwh / maxKw)
     : DEFAULT_PRODUCTION_PER_KW;
 
+  const [showMethodology, setShowMethodology] = useState(false);
   const [costPerW, setCostPerW] = useState(2.95);
   const costPerKw = costPerW * 1000;
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
@@ -68,9 +71,10 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
     ? "no rebate (virtual metering)"
     : "after $2,500 rebate";
 
+  const grossCost = systemKw * costPerKw + batteryKwh * 1000;
   const installCost = useMemo(
-    () => Math.max(0, systemKw * costPerKw + batteryKwh * 1000 - rebate),
-    [systemKw, batteryKwh, costPerKw, rebate],
+    () => Math.max(0, grossCost - rebate),
+    [grossCost, rebate],
   );
 
   const yearOne = useMemo(() => buildYearModel(inputs, 0), [inputs]);
@@ -89,60 +93,96 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
   }));
 
   const cumulativeData = thirtyYear.cumulativeByYear.map(d => ({
-    year: `Yr ${d.year}`,
+    year: `Year ${d.year}`,
     "Net savings": d.cumulative,
   }));
 
   return (
     <Fragment>
       {/* ── The Money ── */}
-      <div className="flex items-end gap-3 pt-2">
+      <div id="section-money" className="flex items-end gap-3 pt-2 scroll-mt-52">
         <h2 className="text-xl font-bold text-foreground leading-tight">The Money</h2>
         <div className="flex-1 h-px bg-gradient-to-r from-secondary/30 via-border to-transparent" />
       </div>
       <Card className="relative overflow-hidden border-2 border-secondary/30 shadow-md bg-gradient-to-br from-secondary/5 via-background to-background">
-        <Coins className="absolute top-4 right-4 h-5 w-5 text-secondary/20" aria-hidden />
-        <PiggyBank className="absolute bottom-6 right-6 h-6 w-6 text-secondary/15" aria-hidden />
         <CardContent className="relative p-6 space-y-6">
 
-          {/* Summary chips — top KPIs */}
-          <div className="grid grid-cols-3 gap-2">
-            <MoneyChip label="Install cost" value={fmt$(installCost)} sub={rebateLabel} />
-            <MoneyChip label="25-yr net" value={fmt$(thirtyYear.cumulativeByYear[24]?.cumulative ?? 0)} highlight />
-            <MoneyChip
-              label="Payback"
-              value={thirtyYear.paybackYear ? `${thirtyYear.paybackYear} yrs` : "> 30 yrs"}
-            />
+          {/* Install cost breakdown + slider */}
+          <div id="section-install" className="grid grid-cols-2 gap-6 border-b pb-6 scroll-mt-52">
+            <div className="pt-2">
+              <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                <span className="text-5xl md:text-6xl font-bold text-foreground tabular-nums">{fmt$(installCost)}</span>
+                <span className="text-base text-muted-foreground font-medium">net install cost</span>
+              </div>
+              {rebate > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground">{fmt$(grossCost)}</span>
+                  <span className="mx-1">gross –</span>
+                  <span className="text-emerald-700">{fmt$(rebate)}</span>
+                  <span className="ml-1">
+                    {propertyType === "commercial" ? "$0.50/W rebate"
+                      : propertyType === "non-profit" ? "$0.70/W rebate"
+                      : "Austin Energy rebate"}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {propertyType === "multi-family" ? "no rebate (virtual metering)" : fmt$(grossCost) + " gross"}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col justify-center">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Cost per watt</span>
+                <span className="font-semibold">${costPerW.toFixed(2)}/W</span>
+              </div>
+              <Slider
+                min={1.5} max={5.0} step={0.05}
+                value={[costPerW]}
+                onValueChange={([v]) => setCostPerW(v)}
+              />
+            </div>
           </div>
 
-          {/* Savings hero */}
-          <div className="border-t pt-4">
-            <div className="flex items-baseline gap-3 mb-1">
-              <span className="text-5xl md:text-6xl font-bold text-secondary tabular-nums">
-                {fmt$(yearOne.savings)}
-              </span>
-              <span className="text-lg text-muted-foreground font-medium">/ year saved</span>
+          {/* Savings heroes */}
+          <div id="section-savings" className="grid grid-cols-2 gap-4 border-b pb-6 scroll-mt-52">
+            <div className="pt-2">
+              <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                <span className={`text-5xl md:text-6xl font-bold tabular-nums ${yearOne.savings >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                  {fmt$(yearOne.savings)}
+                </span>
+                <span className="text-base text-muted-foreground font-medium">yearly savings</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Based on {(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢ Value of Solar rate
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Estimated annual reduction in your Austin Energy bill.
-            </p>
-          </div>
-
-          {/* Install cost */}
-          <div className="border-t pt-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-muted-foreground">Install cost</span>
-              <span className="font-semibold">${costPerW.toFixed(2)}/W</span>
+            <div className="pt-2">
+              {(() => {
+                const net25 = thirtyYear.cumulativeByYear[24]?.cumulative ?? 0;
+                const grossSavings = net25 + installCost;
+                return (
+                  <>
+                    <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                      <span className={`text-5xl md:text-6xl font-bold tabular-nums ${net25 >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                        {fmt$(net25)}
+                      </span>
+                      <span className="text-base text-muted-foreground font-medium">25 year savings</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="text-emerald-700">{fmt$(grossSavings)}</span>
+                      <span className="mx-1">savings –</span>
+                      <span className="text-red-700">{fmt$(installCost)}</span>
+                      <span className="ml-1">install costs</span>
+                    </p>
+                  </>
+                );
+              })()}
             </div>
-            <Slider
-              min={1.5} max={5.0} step={0.05}
-              value={[costPerW]}
-              onValueChange={([v]) => setCostPerW(v)}
-            />
           </div>
 
           {/* Financing */}
-          <div className="border-t pt-4">
+          <div className="pt-4">
             <Tabs value={financeMode} onValueChange={(v) => setFinanceMode(v as "cash" | "finance")}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-sm text-muted-foreground shrink-0">Financing</span>
@@ -155,7 +195,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Loan term</span>
-                    <span className="font-semibold">{loanTermYears} yr</span>
+                    <span className="font-semibold">{loanTermYears} year</span>
                   </div>
                   <Slider
                     min={5} max={30} step={5}
@@ -180,7 +220,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
 
           {/* Monthly bill comparison — bar chart */}
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Monthly bill: with vs. without solar</p>
+            <p className="text-sm text-muted-foreground mb-2">Monthly bill: with vs. without solar</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={billComparisonData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -195,15 +235,22 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
           </div>
 
           {/* 30-year cumulative — bar chart */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-3">Cumulative net savings over 30 years</p>
+          <div id="section-payback" className="scroll-mt-52">
+            <p className="text-sm text-muted-foreground mb-3">Cumulative net savings over 30 years</p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={cumulativeData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="year" tick={{ fontSize: 10 }} interval={4} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => fmt$(v)} />
-                <Bar dataKey="Net savings" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Net savings" radius={[3, 3, 0, 0]}>
+                  {cumulativeData.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={entry["Net savings"] >= 0 ? "#047857" : "#b91c1c"}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
             {thirtyYear.paybackYear && (
@@ -213,14 +260,44 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
             )}
           </div>
 
+          {/* How did we calculate this */}
+          <div className="border-t pt-3">
+            <button
+              onClick={() => setShowMethodology(v => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+            >
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showMethodology ? "rotate-180" : ""}`} />
+              How did we calculate this?
+            </button>
+
+            {showMethodology && (
+              <div className="mt-3 space-y-3 text-xs text-muted-foreground">
+                <div>
+                  <p className="font-medium text-foreground/70 mb-0.5">Your bill model</p>
+                  <p>We calculate your Austin Energy bill using their actual 2025 tiered rate structure, including all per-kWh charges and the $16.50 fixed monthly customer charge. Your solar panels are credited at Austin Energy's Value of Solar rate ($0.126/kWh). Because of this, and because the fixed charge applies regardless of how much solar you produce, your bill won't drop to zero even with a large system.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground/70 mb-0.5">Install cost</p>
+                  <p>The default $2.95/W comes from Berkeley Lab's 2024 Tracking the Sun report for Austin residential installs. Use the slider to match quotes you actually receive — costs vary meaningfully by installer and system design.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
         </CardContent>
       </Card>
 
+      {/* ── Impact heading ── */}
+      <div className="flex items-end gap-3 pt-2 scroll-mt-52">
+        <h2 className="text-xl font-bold text-foreground leading-tight">Impact of going Solar</h2>
+        <div className="flex-1 h-px bg-gradient-to-r from-primary/30 via-border to-transparent" />
+      </div>
+
       {/* ── Solar Production vs. Consumption (kWh) ── */}
-      <Card className="border-2 border-primary/20 shadow-md">
+      <Card id="section-production" className="border-2 border-primary/20 shadow-md scroll-mt-52">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-muted-foreground">Monthly solar production vs. your consumption (kWh)</p>
+            <p className="text-sm text-muted-foreground">Monthly solar production vs. your consumption (kWh)</p>
             <span className="text-xs font-semibold tabular-nums">
               {yearOne.billWithoutSolar > 0
                 ? `${Math.round((yearOne.savings / yearOne.billWithoutSolar) * 100)}% bill offset`
@@ -241,21 +318,9 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
         </CardContent>
       </Card>
 
-      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} />
+      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} carbonOffsetKgPerMwh={solarInsights.carbonOffsetKgPerMwh} />
     </Fragment>
   );
 };
-
-const MoneyChip = ({
-  label, value, sub, highlight,
-}: {
-  label: string; value: string; sub?: string; highlight?: boolean;
-}) => (
-  <div className={`px-3 py-2 rounded-lg border bg-background/70 ${highlight ? "border-secondary/40 ring-1 ring-secondary/20" : ""}`}>
-    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
-    <div className={`text-lg font-bold tabular-nums ${highlight ? "text-secondary" : "text-foreground"}`}>{value}</div>
-    {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
-  </div>
-);
 
 export default SolarCalculator;
