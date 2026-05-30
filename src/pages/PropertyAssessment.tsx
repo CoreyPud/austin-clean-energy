@@ -32,6 +32,7 @@ import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SolarRoofMap from "@/components/assessment/SolarRoofMap";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   billToMonthlyKwh,
@@ -84,6 +85,11 @@ const PropertyAssessment = () => {
     if (recommendedKw != null) setSystemKw(recommendedKw);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
+
+  useEffect(() => {
+    const defaults: Record<string, number> = { commercial: 3000, "non-profit": 800 };
+    setMonthlyBill(defaults[propertyType] ?? 150);
+  }, [propertyType]);
 
   const liveSummary = (() => {
     if (!si || systemKw <= 0) return null;
@@ -364,108 +370,133 @@ const PropertyAssessment = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <input
-                    ref={billInputRef}
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) processBillFile(file);
-                      e.target.value = "";
-                    }}
-                  />
-                  <div className="flex justify-between items-center mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        title={billParseState === "done"
-                          ? billViewMode === "bill" ? "Switch to estimate" : "Switch to uploaded bill"
-                          : "Upload your Austin Energy bill PDF"}
-                        onClick={() => {
-                          if (billParseState === "done") {
-                            setBillViewMode(billViewMode === "bill" ? "estimate" : "bill");
-                          } else {
-                            billInputRef.current?.click();
-                          }
-                        }}
-                        disabled={billParseState === "parsing"}
-                        className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
-                          billParseState === "done" && billViewMode === "bill"
-                            ? "bg-primary/10 text-primary hover:bg-primary/20"
-                            : billParseState === "done"
-                            ? "text-primary/50 hover:bg-primary/10 hover:text-primary"
-                            : billParseState === "error"
-                            ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-                        }`}
-                      >
-                        {billParseState === "parsing" ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : billParseState === "done" ? (
-                          <CheckCircle className="h-3.5 w-3.5" />
-                        ) : billParseState === "error" ? (
-                          <XCircle className="h-3.5 w-3.5" />
-                        ) : (
-                          <Upload className="h-3.5 w-3.5" />
-                        )}
-                      </button>
+                {(propertyType === "commercial" || propertyType === "non-profit") ? (
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
                       <Label className="text-xs text-muted-foreground">Monthly bill</Label>
+                      <span className="text-xs text-muted-foreground">~{billToMonthlyKwh(monthlyBill).toLocaleString()} kWh/mo</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {billViewMode === "bill" && billParseSummary ? (
-                        <span className="tabular-nums text-sm">
-                          <span className="font-semibold">${billParseSummary.avgBill}</span>
-                          <span className="text-muted-foreground"> · {billParseSummary.avgKwh} kWh/mo</span>
-                        </span>
-                      ) : (
-                        <span className="tabular-nums text-sm">
-                          <span className="font-semibold">${monthlyBill}</span>
-                          <span className="text-muted-foreground"> · ~{billToMonthlyKwh(monthlyBill).toLocaleString()} kWh/mo</span>
-                        </span>
-                      )}
-                      {billParseState === "done" && billViewMode === "bill" && (
-                        <button
-                          type="button"
-                          title="Clear uploaded bill"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setBillParseState("idle");
-                            setBillParseSummary(null);
-                            setBillParseError(null);
-                            setUploadedKwh(null);
-                            setUploadedBillData(null);
-                            setBillViewMode("estimate");
-                            if (billInputRef.current) billInputRef.current.value = "";
-                          }}
-                          className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
+                      <span className="text-sm text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={propertyType === "commercial" ? 100 : 50}
+                        value={monthlyBill}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          if (!isNaN(v) && v >= 0) { setMonthlyBill(v); setBillViewMode("estimate"); }
+                        }}
+                        className="h-10 flex-1 text-sm"
+                      />
                     </div>
                   </div>
-
-                  {billViewMode === "bill" && billParseState === "done" ? (
-                    <div className="text-xs text-muted-foreground py-1">
-                      {billParseSummary?.months} months of data · using real usage for calculations
+                ) : (
+                  <div>
+                    <input
+                      ref={billInputRef}
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) processBillFile(file);
+                        e.target.value = "";
+                      }}
+                    />
+                    <div className="flex justify-between items-center mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          title={billParseState === "done"
+                            ? billViewMode === "bill" ? "Switch to estimate" : "Switch to uploaded bill"
+                            : "Upload your Austin Energy bill PDF"}
+                          onClick={() => {
+                            if (billParseState === "done") {
+                              setBillViewMode(billViewMode === "bill" ? "estimate" : "bill");
+                            } else {
+                              billInputRef.current?.click();
+                            }
+                          }}
+                          disabled={billParseState === "parsing"}
+                          className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
+                            billParseState === "done" && billViewMode === "bill"
+                              ? "bg-primary/10 text-primary hover:bg-primary/20"
+                              : billParseState === "done"
+                              ? "text-primary/50 hover:bg-primary/10 hover:text-primary"
+                              : billParseState === "error"
+                              ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                              : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          }`}
+                        >
+                          {billParseState === "parsing" ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : billParseState === "done" ? (
+                            <CheckCircle className="h-3.5 w-3.5" />
+                          ) : billParseState === "error" ? (
+                            <XCircle className="h-3.5 w-3.5" />
+                          ) : (
+                            <Upload className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <Label className="text-xs text-muted-foreground">Monthly bill</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {billViewMode === "bill" && billParseSummary ? (
+                          <span className="tabular-nums text-sm">
+                            <span className="font-semibold">${billParseSummary.avgBill}</span>
+                            <span className="text-muted-foreground"> · {billParseSummary.avgKwh} kWh/mo</span>
+                          </span>
+                        ) : (
+                          <span className="tabular-nums text-sm">
+                            <span className="font-semibold">${monthlyBill}</span>
+                            <span className="text-muted-foreground"> · ~{billToMonthlyKwh(monthlyBill).toLocaleString()} kWh/mo</span>
+                          </span>
+                        )}
+                        {billParseState === "done" && billViewMode === "bill" && (
+                          <button
+                            type="button"
+                            title="Clear uploaded bill"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBillParseState("idle");
+                              setBillParseSummary(null);
+                              setBillParseError(null);
+                              setUploadedKwh(null);
+                              setUploadedBillData(null);
+                              setBillViewMode("estimate");
+                              if (billInputRef.current) billInputRef.current.value = "";
+                            }}
+                            className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <>
-                      <Slider
-                        min={50}
-                        max={propertyType === "commercial" ? 10000 : propertyType === "non-profit" ? 5000 : 600}
-                        step={propertyType === "commercial" ? 100 : propertyType === "non-profit" ? 50 : 10}
-                        value={[monthlyBill]}
-                        onValueChange={([v]) => { setMonthlyBill(v); setBillViewMode("estimate"); }}
-                      />
-                      {billParseState === "error" && (
-                        <p className="text-xs text-destructive mt-1">{billParseError}</p>
-                      )}
-                    </>
-                  )}
-                </div>
+
+                    {billViewMode === "bill" && billParseState === "done" ? (
+                      <div className="text-xs text-muted-foreground py-1">
+                        {billParseSummary?.months} months of data · using real usage for calculations
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center h-10">
+                          <Slider
+                            min={50}
+                            max={600}
+                            step={10}
+                            value={[monthlyBill]}
+                            onValueChange={([v]) => { setMonthlyBill(v); setBillViewMode("estimate"); }}
+                          />
+                        </div>
+                        {billParseState === "error" && (
+                          <p className="text-xs text-destructive mt-1">{billParseError}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Bill history chart — shown inside the card when bill is uploaded */}
