@@ -219,7 +219,7 @@ const SolarRoofMap = ({ center, solarInsights }: Props) => {
   }, [lat, lng]);
 
   return (
-    <div className="relative h-[340px] w-full bg-muted rounded-b-lg overflow-hidden">
+    <div className="relative h-[480px] w-full bg-muted rounded-b-lg overflow-hidden">
       <div ref={mapRef} className="absolute inset-0" />
 
       {status === "loading-key" && (

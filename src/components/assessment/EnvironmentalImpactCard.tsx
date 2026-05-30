@@ -28,7 +28,7 @@ const EnvironmentalImpactCard = ({ annualSolarKwh, carbonOffsetKgPerMwh }: Props
   const co2Factor = carbonOffsetKgPerMwh ?? 400;
 
   return (
-    <Card id="section-environmental" className="border-2 border-primary/20 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
+    <Card id="section-environmental" className="border-2 border-primary/20 shadow-md bg-gradient-to-br from-primary/5 via-background to-background scroll-mt-52">
       <CardContent className="pt-5 pb-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <p className="text-sm text-muted-foreground">

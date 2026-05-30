@@ -15,6 +15,7 @@ import {
   CheckCircle,
   XCircle,
   X,
+  RotateCcw,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +26,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSeo } from "@/hooks/use-seo";
 import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
-import SolarPotentialCard from "@/components/assessment/SolarPotentialCard";
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
@@ -107,6 +107,7 @@ const PropertyAssessment = () => {
         ? Math.round((yr1.savings / yr1.billWithoutSolar) * 100)
         : 0,
       co2TonsPerYear: Math.round(yr1.solarTotal * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10,
+      installCost: cost,
     };
   })();
 
@@ -531,12 +532,12 @@ const PropertyAssessment = () => {
                                 onValueChange={([v]) => setSystemKw(v)}
                               />
                               {recommendedKw != null && (
-                                <div className="flex justify-end text-[10px] text-muted-foreground mt-1.5">
+                                <div className="flex justify-end mt-1.5">
                                   <button
                                     onClick={() => setSystemKw(recommendedKw)}
-                                    disabled={systemKw === recommendedKw}
-                                    className="tabular-nums transition-colors disabled:cursor-default hover:text-primary disabled:hover:text-muted-foreground"
+                                    className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums transition-colors hover:text-primary"
                                   >
+                                    {systemKw !== recommendedKw && <RotateCcw className="h-3 w-3 shrink-0" />}
                                     {recommendedKw.toFixed(1)} kW recommended
                                   </button>
                                 </div>
@@ -556,24 +557,48 @@ const PropertyAssessment = () => {
                               />
                             </div>
                           </div>
+
+                          {/* KPI strip */}
+                          {liveSummary && (
+                            <div className="border-t mt-3 pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5">
+                              <StickyKpi
+                                label="install cost"
+                                value={`$${Math.round(liveSummary.installCost).toLocaleString()}`}
+                                href="#section-install"
+                              />
+                              <StickyKpi
+                                label="monthly savings"
+                                value={`$${Math.round(liveSummary.monthlySavings).toLocaleString()}`}
+                                href="#section-savings"
+                                highlight
+                              />
+                              <StickyKpi
+                                label="payback"
+                                value={liveSummary.paybackYear ? `${liveSummary.paybackYear} years` : "> 30 years"}
+                                href="#section-payback"
+                              />
+                              <StickyKpi
+                                label="bill offset"
+                                value={`${liveSummary.billOffsetPct}%`}
+                                href="#section-production"
+                              />
+                              <StickyKpi
+                                label="yearly CO₂ offset"
+                                value={`${liveSummary.co2TonsPerYear} tons`}
+                                href="#section-environmental"
+                              />
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </div>
 
-                    {/* Metrics card + map */}
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <SolarPotentialCard
-                        solarInsights={si}
-                        billOffsetPct={liveSummary?.billOffsetPct ?? null}
-                        monthlySavings={liveSummary?.monthlySavings ?? null}
-                        co2TonsPerYear={liveSummary?.co2TonsPerYear ?? null}
-                      />
-                      <Card className="border-2 border-primary/20 overflow-hidden">
-                        <CardContent className="p-0">
-                          <SolarRoofMap center={results.center || [-97.7431, 30.2672]} solarInsights={si} />
-                        </CardContent>
-                      </Card>
-                    </div>
+                    {/* Roof map — full width */}
+                    <Card className="border-2 border-primary/20 overflow-hidden">
+                      <CardContent className="p-0">
+                        <SolarRoofMap center={results.center || [-97.7431, 30.2672]} solarInsights={si} />
+                      </CardContent>
+                    </Card>
 
                     <SolarCalculator
                       solarInsights={si}
@@ -731,6 +756,21 @@ const PropertyAssessment = () => {
       </div>
     </div>
   );
+};
+
+const StickyKpi = ({
+  label, value, href, highlight,
+}: {
+  label: string; value: string; href?: string; highlight?: boolean;
+}) => {
+  const cls = `px-2 py-1 rounded border bg-background/50 ${highlight ? "border-primary/40" : ""} ${href ? "hover:border-primary/50 transition-colors cursor-pointer" : ""}`;
+  const inner = (
+    <div className="flex md:flex-col items-center md:items-start justify-between md:justify-start gap-2 md:gap-0">
+      <div className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">{label}</div>
+      <div className={`text-xl font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
+    </div>
+  );
+  return href ? <a href={href} className={cls}>{inner}</a> : <div className={cls}>{inner}</div>;
 };
 
 export default PropertyAssessment;
