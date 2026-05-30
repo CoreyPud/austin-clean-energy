@@ -1,2 +1,2 @@
 /// <reference types="vite/client" />
-/// <reference types="google.maps" />
+import type {} from "google.maps";
