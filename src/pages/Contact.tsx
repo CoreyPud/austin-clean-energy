@@ -75,7 +75,24 @@ const Contact = () => {
           </CardContent>
         </Card>
       </section>
-    </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Newspaper className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Newsletter</p>
+                <a
+                  href="https://austincleanenergy.substack.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                >
+                  Substack Newsletter →
+                </a>
+              </div>
+            </div>
   );
 };
 
