@@ -1,4 +1,4 @@
-import { Mail, Phone, ArrowLeft } from "lucide-react";
+import { Mail, Phone, ArrowLeft, Newspaper } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
