@@ -17,7 +17,7 @@ const publicPages = [
   },
   {
     path: "/property-assessment",
-    title: "My Austin Energy Profile",
+    title: "Calculate Solar Savings in Austin",
     description: "Address-driven profile: neighborhood snapshot, solar potential, savings, council member, and recommendations.",
     icon: Home,
   },

@@ -64,7 +64,7 @@ const SolarPotentialCard = ({
         <div className="mb-5">
           <div className="flex items-center justify-between mb-1.5 text-xs text-muted-foreground">
             <span>Roof suitability</span>
-            <span className="font-semibold text-foreground">{sunshine.toLocaleString()} hrs/yr</span>
+            <span className="font-semibold text-foreground">{sunshine.toLocaleString()} hours/year</span>
           </div>
           <div className="relative h-3 rounded-full bg-muted overflow-visible">
             <div
@@ -88,10 +88,12 @@ const SolarPotentialCard = ({
             value={monthlySavings != null ? fmt$(monthlySavings) : "—"}
             label="monthly savings"
             highlight
+            href="#section-money"
           />
           <MiniStat
             value={co2TonsPerYear != null ? `${co2TonsPerYear} tons` : "—"}
-            label="CO₂ offset / yr"
+            label="CO₂ offset / year"
+            href="#section-environmental"
           />
         </div>
       </CardContent>
@@ -100,14 +102,20 @@ const SolarPotentialCard = ({
 };
 
 const MiniStat = ({
-  value, label, highlight,
+  value, label, highlight, href,
 }: {
-  value: string; label: string; highlight?: boolean;
-}) => (
-  <div className={`px-3 py-2 rounded-lg border bg-background/70 ${highlight ? "border-primary/40 ring-1 ring-primary/20" : ""}`}>
-    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
-    <div className={`text-lg font-bold tabular-nums ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
-  </div>
-);
+  value: string; label: string; highlight?: boolean; href?: string;
+}) => {
+  const inner = (
+    <>
+      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className={`text-lg font-bold tabular-nums ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
+    </>
+  );
+  const cls = `px-3 py-2 rounded-lg border bg-background/70 block ${highlight ? "border-primary/40 ring-1 ring-primary/20" : ""}${href ? " hover:border-primary/60 transition-colors" : ""}`;
+  return href
+    ? <a href={href} className={cls}>{inner}</a>
+    : <div className={cls}>{inner}</div>;
+};
 
 export default SolarPotentialCard;

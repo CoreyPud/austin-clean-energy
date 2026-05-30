@@ -106,14 +106,14 @@ const PropertyAssessment = () => {
       billOffsetPct: yr1.billWithoutSolar > 0
         ? Math.round((yr1.savings / yr1.billWithoutSolar) * 100)
         : 0,
-      co2TonsPerYear: Math.round(yr1.solarTotal * 0.000386 * 10) / 10,
+      co2TonsPerYear: Math.round(yr1.solarTotal * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10,
     };
   })();
 
   useSeo({
     title: sharedAddress
       ? `Clean energy options for ${sharedAddress} — Austin Clean Energy`
-      : "My Austin Energy Profile — Property + Neighborhood Insights",
+      : "Calculate Solar Savings in Austin — Austin Clean Energy",
     description: sharedAddress
       ? `See solar potential, neighborhood adoption, savings estimates and personalized clean energy actions for ${sharedAddress}.`
       : "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
@@ -325,7 +325,7 @@ const PropertyAssessment = () => {
 
         <div className="max-w-5xl mx-auto">
           <div className="mb-8 animate-fade-in">
-            <h1 className="text-4xl font-bold mb-3 text-foreground">My Austin Energy Profile</h1>
+            <h1 className="text-4xl font-bold mb-3 text-foreground">Calculate Solar Savings in Austin</h1>
             <p className="text-lg text-muted-foreground">
               Solar potential, estimated savings, neighborhood adoption, and your council representative — based on your Austin address.
             </p>
@@ -497,7 +497,7 @@ const PropertyAssessment = () => {
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Build my profile
+                    See my solar potential
                   </>
                 )}
               </Button>
@@ -507,117 +507,118 @@ const PropertyAssessment = () => {
           {/* Results */}
           {results && (
             <div className="space-y-6 animate-slide-up">
-              {/* ☀️ Recommended System */}
-              {si && (
-                <>
-                  <SectionHeading emoji="☀️" title="Solar Overview" />
+              {/* Sticky scope — sticky control card is contained within this div and won't persist past it */}
+              <div className="space-y-6">
+                {/* ☀️ Solar Overview */}
+                {si && (
+                  <>
+                    <SectionHeading emoji="☀️" title="Solar Overview" />
 
-                  {/* Control card — recommended + sliders */}
-                  <div className="sticky top-0 z-20 -mx-4 px-4">
-                    <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-6">
-                          {/* System size slider */}
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs text-muted-foreground mb-1">System size</div>
-                            <div className="text-2xl font-bold tabular-nums mb-3">{systemKw.toFixed(1)} kW</div>
-                            <Slider
-                              min={1}
-                              max={Math.max(solarMaxKw, 16)}
-                              step={0.5}
-                              value={[systemKw]}
-                              onValueChange={([v]) => setSystemKw(v)}
-                            />
-                            {recommendedKw != null && (
-                              <div className="flex justify-end text-[10px] text-muted-foreground mt-1.5">
-                                <button
-                                  onClick={() => setSystemKw(recommendedKw)}
-                                  disabled={systemKw === recommendedKw}
-                                  className="tabular-nums transition-colors disabled:cursor-default hover:text-primary disabled:hover:text-muted-foreground"
-                                >
-                                  {recommendedKw.toFixed(1)} kW recommended
-                                </button>
-                              </div>
-                            )}
+                    {/* Control card — recommended + sliders */}
+                    <div className="sticky top-0 z-20 -mx-4 px-4">
+                      <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-6">
+                            {/* System size slider */}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs text-muted-foreground mb-1">System size</div>
+                              <div className="text-2xl font-bold tabular-nums mb-3">{systemKw.toFixed(1)} kW</div>
+                              <Slider
+                                min={1}
+                                max={Math.max(solarMaxKw, 16)}
+                                step={0.5}
+                                value={[systemKw]}
+                                onValueChange={([v]) => setSystemKw(v)}
+                              />
+                              {recommendedKw != null && (
+                                <div className="flex justify-end text-[10px] text-muted-foreground mt-1.5">
+                                  <button
+                                    onClick={() => setSystemKw(recommendedKw)}
+                                    disabled={systemKw === recommendedKw}
+                                    className="tabular-nums transition-colors disabled:cursor-default hover:text-primary disabled:hover:text-muted-foreground"
+                                  >
+                                    {recommendedKw.toFixed(1)} kW recommended
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="h-16 w-px bg-border shrink-0" />
+
+                            {/* Battery slider */}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs text-muted-foreground mb-1">Battery backup</div>
+                              <div className="text-2xl font-bold tabular-nums mb-3">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</div>
+                              <Slider
+                                min={0} max={30} step={1}
+                                value={[batteryKwh]}
+                                onValueChange={([v]) => setBatteryKwh(v)}
+                              />
+                            </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    </div>
 
-                          <div className="h-16 w-px bg-border shrink-0" />
+                    {/* Metrics card + map */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <SolarPotentialCard
+                        solarInsights={si}
+                        billOffsetPct={liveSummary?.billOffsetPct ?? null}
+                        monthlySavings={liveSummary?.monthlySavings ?? null}
+                        co2TonsPerYear={liveSummary?.co2TonsPerYear ?? null}
+                      />
+                      <Card className="border-2 border-primary/20 overflow-hidden">
+                        <CardContent className="p-0">
+                          <SolarRoofMap center={results.center || [-97.7431, 30.2672]} solarInsights={si} />
+                        </CardContent>
+                      </Card>
+                    </div>
 
-                          {/* Battery slider */}
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs text-muted-foreground mb-1">Battery backup</div>
-                            <div className="text-2xl font-bold tabular-nums mb-3">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</div>
-                            <Slider
-                              min={0} max={30} step={1}
-                              value={[batteryKwh]}
-                              onValueChange={([v]) => setBatteryKwh(v)}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Metrics card + map */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <SolarPotentialCard
+                    <SolarCalculator
                       solarInsights={si}
-                      billOffsetPct={liveSummary?.billOffsetPct ?? null}
-                      monthlySavings={liveSummary?.monthlySavings ?? null}
-                      co2TonsPerYear={liveSummary?.co2TonsPerYear ?? null}
+                      annualUsageKwh={annualUsageKwh}
+                      uploadedKwh={uploadedKwh}
+                      propertyType={propertyType}
+                      systemKw={systemKw}
+                      batteryKwh={batteryKwh}
                     />
+                  </>
+                )}
+
+                {/* 🏘️ Your Block */}
+                <SectionHeading emoji="🏘️" title="Solar in your neighborhood" />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <NeighborhoodSnapshot
+                    zipCode={results.zipCode}
+                    installationsInZip={results.neighborhoodSnapshot.installationsInZip}
+                    pendingPermitsInZip={results.neighborhoodSnapshot.pendingPermitsInZip}
+                    averageSystemKw={results.neighborhoodSnapshot.averageSystemKw}
+                    newest={results.neighborhoodSnapshot.newest}
+                  />
+                  <MapTokenLoader>
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
-                        <SolarRoofMap center={results.center || [-97.7431, 30.2672]} solarInsights={si} />
+                        <Map
+                          center={results.center || [-97.7431, 30.2672]}
+                          zoom={14}
+                          markers={results.locations || []}
+                          className="h-[340px]"
+                          onMarkerClick={(id) => {
+                            if (id !== "target-property") window.open(`/installation/${id}`, "_blank");
+                          }}
+                        />
                       </CardContent>
                     </Card>
-                  </div>
+                  </MapTokenLoader>
+                </div>
 
-                  <SolarCalculator
-                    solarInsights={si}
-                    annualUsageKwh={annualUsageKwh}
-                    uploadedKwh={uploadedKwh}
-                    propertyType={propertyType}
-                    systemKw={systemKw}
-                    batteryKwh={batteryKwh}
-                  />
-                </>
-              )}
+                {/* Contact CTA */}
+                <ContactCtaCard />
 
-              {/* 🏘️ Your Block */}
-              <SectionHeading emoji="🏘️" title="Your Block" />
-              <div className="grid md:grid-cols-2 gap-4">
-                <NeighborhoodSnapshot
-                  zipCode={results.zipCode}
-                  installationsInZip={results.neighborhoodSnapshot.installationsInZip}
-                  pendingPermitsInZip={results.neighborhoodSnapshot.pendingPermitsInZip}
-                  averageSystemKw={results.neighborhoodSnapshot.averageSystemKw}
-                  newest={results.neighborhoodSnapshot.newest}
-                />
-                <MapTokenLoader>
-                  <Card className="border-2 border-primary/20 overflow-hidden">
-                    <CardContent className="p-0">
-                      <Map
-                        center={results.center || [-97.7431, 30.2672]}
-                        zoom={14}
-                        markers={results.locations || []}
-                        className="h-[340px]"
-                        onMarkerClick={(id) => {
-                          if (id !== "target-property") window.open(`/installation/${id}`, "_blank");
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
-                </MapTokenLoader>
-              </div>
-
-              {/* Contact CTA */}
-              <ContactCtaCard />
-
-              {/* Quiz gate → form → post-quiz results */}
-              {!personalizedPlan ? (
-                <>
-                  {!showLifestyleForm ? (
+                {/* Quiz gate / lifestyle form — while no personalized plan yet */}
+                {!personalizedPlan && (
+                  !showLifestyleForm ? (
                     <Card className="border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
                       <CardContent className="py-6 flex flex-col items-center text-center gap-3">
                         <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
@@ -647,9 +648,12 @@ const PropertyAssessment = () => {
                         initialHomeType={propertyType}
                       />
                     </div>
-                  )}
-                </>
-              ) : (
+                  )
+                )}
+              </div>
+
+              {/* Next Steps — outside sticky scope so control card scrolls away on arrival */}
+              {personalizedPlan && (
                 <div ref={postQuizRef} className="space-y-6 animate-slide-up">
                   <SectionHeading emoji="✅" title="Next Steps" />
                   <RecommendationCards cards={results.recommendationCards || []} />
@@ -692,7 +696,6 @@ const PropertyAssessment = () => {
                   </div>
                 </div>
               )}
-
 
               {/* Share card — placed after recommendations & plan */}
               <ShareAssessmentCard address={results.address || address} />

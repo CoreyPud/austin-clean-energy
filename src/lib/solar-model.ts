@@ -99,10 +99,13 @@ export function calculateAustinEnergyUsageBill(usageKwh: number, vosSolarCredit 
   }
 
   const perKwh = Object.values(AUSTIN_ENERGY_RATES.perKwhCharges).reduce((s, r) => s + r, 0);
-  const subtotal =
-    AUSTIN_ENERGY_RATES.customerCharge + tierCharge + safe * perKwh - Math.max(0, vosSolarCredit);
+  const kwhCharges = tierCharge + safe * perKwh;
+  // VoS credits offset kWh-based charges only; the fixed customer charge is always owed
+  const creditsApplied = Math.min(Math.max(0, vosSolarCredit), kwhCharges);
+  const unusedCredit = Math.max(0, vosSolarCredit - kwhCharges);
+  const subtotal = AUSTIN_ENERGY_RATES.customerCharge + kwhCharges - creditsApplied;
   const tax = subtotal * AUSTIN_ENERGY_RATES.citySalesTaxRate;
-  return { subtotalBeforeTax: subtotal, citySalesTax: tax, total: subtotal + tax };
+  return { subtotalBeforeTax: subtotal, citySalesTax: tax, total: subtotal + tax, unusedCredit };
 }
 
 /** Binary-search inverse of calculateAustinEnergyUsageBill. */
@@ -238,19 +241,18 @@ export function buildYearModel(
 
     const billWithoutSolar = calculateAustinEnergyUsageBill(usage).total;
     const exportCredits = solar * AUSTIN_ENERGY_RATES.vosRate;
-    const gross = calculateAustinEnergyUsageBill(usage, exportCredits).total;
-
-    const creditApplied = Math.min(creditBalance, Math.max(0, gross));
-    const billWithSolar = Math.max(0, gross - creditApplied);
-    creditBalance = Math.max(0, creditBalance - creditApplied + Math.max(0, -gross));
+    // Combine new export credits with any carryover; unused portion rolls to next month
+    const billedResult = calculateAustinEnergyUsageBill(usage, exportCredits + creditBalance);
+    const billWithSolar = billedResult.total;
+    creditBalance = billedResult.unusedCredit;
 
     return {
       month,
       usage,
       solar,
       billWithoutSolar,
-      billWithSolar: Math.min(billWithSolar, billWithoutSolar),
-      billSavings: billWithoutSolar - Math.min(billWithSolar, billWithoutSolar),
+      billWithSolar,
+      billSavings: billWithoutSolar - billWithSolar,
       exportCredits,
     };
   });
@@ -314,13 +316,16 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
 
 // ── Environmental impact ──────────────────────────────────────────────────────
 
-const CO2_PER_KWH            = 0.000386; // metric tons CO2 / kWh (EPA US avg)
+// Fallback matches Google's carbonOffsetFactorKgPerMwh methodology for ERCOT/Austin (~400 kg/MWh).
+// Use the live Google value when available — pass carbonOffsetKgPerMwh in kg/MWh.
+const CO2_PER_KWH_FALLBACK   = 0.000400; // metric tons CO2 / kWh (ERCOT grid approx)
 const TONS_CO2_PER_CAR_MILE  = 0.000404; // metric tons CO2 / mile
 const TONS_CO2_PER_TREE      = 0.021;    // metric tons CO2 / tree / year
 const TONS_CO2_PER_FLIGHT    = 1.0;      // metric tons CO2 / long-haul flight
 
-export function environmentalImpact(annualSolarKwh: number) {
-  const metricTonsCo2 = annualSolarKwh * CO2_PER_KWH;
+export function environmentalImpact(annualSolarKwh: number, carbonOffsetKgPerMwh?: number | null) {
+  const co2PerKwh = carbonOffsetKgPerMwh ? carbonOffsetKgPerMwh / 1_000_000 : CO2_PER_KWH_FALLBACK;
+  const metricTonsCo2 = annualSolarKwh * co2PerKwh;
   return {
     metricTonsCo2: Math.round(metricTonsCo2 * 10) / 10,
     carMilesAvoided: Math.round(metricTonsCo2 / TONS_CO2_PER_CAR_MILE),
