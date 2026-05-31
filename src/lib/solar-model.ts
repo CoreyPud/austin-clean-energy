@@ -314,6 +314,41 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
   };
 }
 
+// ── Solar Standard Offer (SSO) ───────────────────────────────────────────────
+
+export const SSO_RATE_UNDER_1MW = 0.1124;  // $/kWh, systems < 1 MW-ac
+export const SSO_RATE_OVER_1MW  = 0.0841;  // $/kWh, systems >= 1 MW-ac
+export const SSO_MIN_KW         = 50;       // program minimum
+export const SSO_SHOW_THRESHOLD_KW = 75;   // show option when roof can fit this much
+
+export function ssoRate(systemKw: number): number {
+  return systemKw >= 1000 ? SSO_RATE_OVER_1MW : SSO_RATE_UNDER_1MW;
+}
+
+export function buildSsoModel(systemKw: number, productionPerKw: number, installCost: number) {
+  const rate = ssoRate(systemKw);
+  const annualKwh = systemKw * productionPerKw;
+  const annualRevenue = annualKwh * rate;
+
+  let cumulative = -installCost;
+  let paybackYear: number | null = null;
+  const cumulativeByYear: { year: number; cumulative: number }[] = [];
+
+  for (let y = 0; y < FINANCIAL_HORIZON_YEARS; y++) {
+    const degradedKwh = annualKwh * Math.pow(0.995, y);
+    cumulative += degradedKwh * rate;
+    if (paybackYear === null && cumulative >= 0) paybackYear = y + 1;
+    cumulativeByYear.push({ year: y + 1, cumulative: Math.round(cumulative) });
+  }
+
+  const monthlyRevenue = MONTHS.map((month, mi) => ({
+    month,
+    revenue: Math.round(annualKwh * MONTHLY_SOLAR_PROFILE[mi] * rate),
+  }));
+
+  return { rate, annualKwh, annualRevenue, cumulativeByYear, paybackYear, monthlyRevenue };
+}
+
 // ── Environmental impact ──────────────────────────────────────────────────────
 
 // Fallback matches Google's carbonOffsetFactorKgPerMwh methodology for ERCOT/Austin (~400 kg/MWh).

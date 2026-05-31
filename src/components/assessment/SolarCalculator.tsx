@@ -13,6 +13,7 @@ import {
   CalcInputs,
   buildYearModel,
   buildThirtyYearModel,
+  buildSsoModel,
   austinEnergyRebate,
   AUSTIN_ENERGY_RATES,
 } from "@/lib/solar-model";
@@ -30,6 +31,7 @@ interface Props {
   propertyType: string;
   systemKw: number;
   batteryKwh: number;
+  billingMode?: "vos" | "sso";
 }
 
 const fmt$ = (n: number) =>
@@ -37,7 +39,7 @@ const fmt$ = (n: number) =>
     ? `-$${Math.abs(Math.round(n)).toLocaleString()}`
     : `$${Math.round(n).toLocaleString()}`;
 
-const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyType, systemKw, batteryKwh }: Props) => {
+const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyType, systemKw, batteryKwh, billingMode = "vos" }: Props) => {
   const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
   const productionPerKw = solarInsights.annualProductionKwh > 0 && maxKw > 0
     ? Math.round(solarInsights.annualProductionKwh / maxKw)
@@ -81,6 +83,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
 
   const yearOne = useMemo(() => buildYearModel(inputs, 0), [inputs]);
   const thirtyYear = useMemo(() => buildThirtyYearModel(inputs, installCost), [inputs, installCost]);
+  const sso = useMemo(() => buildSsoModel(systemKw, productionPerKw, installCost), [systemKw, productionPerKw, installCost]);
 
   const billComparisonData = yearOne.monthlyRows.map(r => ({
     month: r.month,
@@ -94,7 +97,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
     "Consumption": Math.round(r.usage),
   }));
 
-  const cumulativeData = thirtyYear.cumulativeByYear.map(d => ({
+  const cumulativeData = (billingMode === "sso" ? sso.cumulativeByYear : thirtyYear.cumulativeByYear).map(d => ({
     year: `Year ${d.year}`,
     "Net savings": d.cumulative,
   }));
@@ -146,99 +149,120 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
             </div>
           </div>
 
-          {/* Savings heroes */}
-          <div id="section-savings" className="grid grid-cols-2 gap-4 border-b pb-6 scroll-mt-52">
-            <div className="pt-2">
-              <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-                <span className={`text-5xl md:text-6xl font-bold tabular-nums ${yearOne.savings >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-                  {fmt$(yearOne.savings)}
-                </span>
-                <span className="text-base text-muted-foreground font-medium">yearly savings</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Based on {(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢ Value of Solar rate
-              </p>
+          {/* Yearly savings / annual revenue hero */}
+          <div id="section-savings" className="border-b pb-6 scroll-mt-52 pt-2">
+            <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+              <span className="text-5xl md:text-6xl font-bold tabular-nums text-emerald-700">
+                {billingMode === "sso" ? fmt$(sso.annualRevenue) : fmt$(yearOne.savings)}
+              </span>
+              <span className="text-base text-muted-foreground font-medium">
+                {billingMode === "sso" ? "annual revenue" : "yearly savings"}
+              </span>
             </div>
-            <div className="pt-2">
-              {(() => {
-                const net25 = thirtyYear.cumulativeByYear[24]?.cumulative ?? 0;
-                const grossSavings = net25 + installCost;
-                return (
-                  <>
-                    <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-                      <span className={`text-5xl md:text-6xl font-bold tabular-nums ${net25 >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-                        {fmt$(net25)}
-                      </span>
-                      <span className="text-base text-muted-foreground font-medium">25 year savings</span>
+            <p className="text-xs text-muted-foreground">
+              {billingMode === "sso"
+                ? `Based on ${(sso.rate * 100).toFixed(2)}¢ Standard Offer rate`
+                : `Based on ${(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢ Value of Solar rate`}
+            </p>
+          </div>
+
+          {/* Financing — VoS only */}
+          {billingMode === "vos" && (
+            <div className="pt-4">
+              <Tabs value={financeMode} onValueChange={(v) => setFinanceMode(v as "cash" | "finance")}>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-sm text-muted-foreground shrink-0">Financing</span>
+                  <TabsList className="h-7">
+                    <TabsTrigger value="cash" className="text-xs px-3 h-6">Cash</TabsTrigger>
+                    <TabsTrigger value="finance" className="text-xs px-3 h-6">Finance</TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="finance" className="mt-0 space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Loan term</span>
+                      <span className="font-semibold">{loanTermYears} year</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="text-emerald-700">{fmt$(grossSavings)}</span>
-                      <span className="mx-1">savings –</span>
-                      <span className="text-red-700">{fmt$(installCost)}</span>
-                      <span className="ml-1">install costs</span>
-                    </p>
-                  </>
-                );
-              })()}
+                    <Slider
+                      min={5} max={30} step={5}
+                      value={[loanTermYears]}
+                      onValueChange={([v]) => setLoanTermYears(v)}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Interest rate</span>
+                      <span className="font-semibold">{loanRate}%</span>
+                    </div>
+                    <Slider
+                      min={3} max={12} step={0.5}
+                      value={[loanRate]}
+                      onValueChange={([v]) => setLoanRate(v)}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
-          </div>
+          )}
 
-          {/* Financing */}
-          <div className="pt-4">
-            <Tabs value={financeMode} onValueChange={(v) => setFinanceMode(v as "cash" | "finance")}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-sm text-muted-foreground shrink-0">Financing</span>
-                <TabsList className="h-7">
-                  <TabsTrigger value="cash" className="text-xs px-3 h-6">Cash</TabsTrigger>
-                  <TabsTrigger value="finance" className="text-xs px-3 h-6">Finance</TabsTrigger>
-                </TabsList>
-              </div>
-              <TabsContent value="finance" className="mt-0 space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Loan term</span>
-                    <span className="font-semibold">{loanTermYears} year</span>
-                  </div>
-                  <Slider
-                    min={5} max={30} step={5}
-                    value={[loanTermYears]}
-                    onValueChange={([v]) => setLoanTermYears(v)}
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Interest rate</span>
-                    <span className="font-semibold">{loanRate}%</span>
-                  </div>
-                  <Slider
-                    min={3} max={12} step={0.5}
-                    value={[loanRate]}
-                    onValueChange={([v]) => setLoanRate(v)}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Monthly bill comparison — bar chart */}
+          {/* Monthly chart — bill comparison (VoS) or monthly revenue (SSO) */}
           <div>
-            <p className="text-sm text-muted-foreground mb-2">Monthly bill: with vs. without solar</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={billComparisonData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={48} />
-                <Tooltip formatter={(v: number) => `$${v}`} />
-                <Legend />
-                <Bar dataKey="Without solar" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="With solar" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {billingMode === "sso" ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-2">Monthly SSO revenue</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={sso.monthlyRevenue} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={48} />
+                    <Tooltip formatter={(v: number) => `$${v}`} />
+                    <Bar dataKey="revenue" name="SSO revenue" fill="#047857" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground mb-2">Monthly bill: with vs. without solar</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={billComparisonData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={48} />
+                    <Tooltip formatter={(v: number) => `$${v}`} />
+                    <Legend />
+                    <Bar dataKey="Without solar" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="With solar" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </>
+            )}
           </div>
 
           {/* 30-year cumulative — bar chart */}
           <div id="section-payback" className="scroll-mt-52">
-            <p className="text-sm text-muted-foreground mb-3">Cumulative net savings over 30 years</p>
+            {(() => {
+              const net25 = billingMode === "sso"
+                ? (sso.cumulativeByYear[24]?.cumulative ?? 0)
+                : (thirtyYear.cumulativeByYear[24]?.cumulative ?? 0);
+              const grossRevenue = net25 + installCost;
+              return (
+                <div className="mb-4 pt-2">
+                  <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                    <span className={`text-5xl md:text-6xl font-bold tabular-nums ${net25 >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                      {fmt$(net25)}
+                    </span>
+                    <span className="text-base text-muted-foreground font-medium">25 year {billingMode === "sso" ? "net" : "savings"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-emerald-700">{fmt$(grossRevenue)}</span>
+                    <span className="mx-1">{billingMode === "sso" ? "revenue –" : "savings –"}</span>
+                    <span className="text-red-700">{fmt$(installCost)}</span>
+                    <span className="ml-1">install costs</span>
+                  </p>
+                </div>
+              );
+            })()}
+            <p className="text-sm text-muted-foreground mb-3">{billingMode === "sso" ? "Cumulative net revenue over 30 years" : "Cumulative net savings over 30 years"}</p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={cumulativeData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -255,9 +279,9 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            {thirtyYear.paybackYear && (
+            {(billingMode === "sso" ? sso.paybackYear : thirtyYear.paybackYear) && (
               <p className="text-xs text-center text-muted-foreground mt-2">
-                System pays for itself in year {thirtyYear.paybackYear}
+                System pays for itself in year {billingMode === "sso" ? sso.paybackYear : thirtyYear.paybackYear}
               </p>
             )}
           </div>
