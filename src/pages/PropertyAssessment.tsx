@@ -39,8 +39,12 @@ import {
   calculateAustinEnergyUsageBill,
   buildYearModel,
   buildThirtyYearModel,
+  buildSsoModel,
   AUSTIN_INSTALL_COST_PER_KW,
   austinEnergyRebate,
+  AUSTIN_ENERGY_RATES,
+  SSO_SHOW_THRESHOLD_KW,
+  ssoRate,
 } from "@/lib/solar-model";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
@@ -80,19 +84,46 @@ const PropertyAssessment = () => {
 
   const [systemKw, setSystemKw] = useState<number>(4);
   const [batteryKwh, setBatteryKwh] = useState<number>(0);
+  const [billingMode, setBillingMode] = useState<"vos" | "sso">("vos");
+  const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_SHOW_THRESHOLD_KW;
+
   // Reset to recommended only when a fresh assessment result loads
   useEffect(() => {
     if (recommendedKw != null) setSystemKw(recommendedKw);
+    setBillingMode("vos");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
+
+  // When switching to SSO, maximize system size; switching back restores VoS recommended
+  useEffect(() => {
+    if (billingMode === "sso" && solarMaxKw > 0) setSystemKw(solarMaxKw);
+    else if (billingMode === "vos" && recommendedKw != null) setSystemKw(recommendedKw);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [billingMode]);
 
   useEffect(() => {
     const defaults: Record<string, number> = { commercial: 3000, "non-profit": 800 };
     setMonthlyBill(defaults[propertyType] ?? 150);
+    if (propertyType !== "commercial") setBillingMode("vos");
   }, [propertyType]);
 
   const liveSummary = (() => {
     if (!si || systemKw <= 0) return null;
+    const cost = Math.max(0, systemKw * AUSTIN_INSTALL_COST_PER_KW + batteryKwh * 1000 - austinEnergyRebate(systemKw, propertyType));
+    const co2TonsPerYear = Math.round(systemKw * solarProdPerKw * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10;
+
+    if (billingMode === "sso") {
+      const sso = buildSsoModel(systemKw, solarProdPerKw, cost);
+      return {
+        monthlySavings: sso.annualRevenue / 12,
+        paybackYear: sso.paybackYear ?? null,
+        roi: null,
+        billOffsetPct: null,
+        co2TonsPerYear,
+        installCost: cost,
+      };
+    }
+
     const inputs = {
       annualUsageKwh,
       systemKw,
@@ -101,7 +132,6 @@ const PropertyAssessment = () => {
       loanInterestRate: 0,
       productionPerKw: solarProdPerKw,
     };
-    const cost = Math.max(0, systemKw * AUSTIN_INSTALL_COST_PER_KW + batteryKwh * 1000 - austinEnergyRebate(systemKw, propertyType));
     const yr1 = buildYearModel(inputs, 0);
     const yr30 = buildThirtyYearModel(inputs, cost);
     const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
@@ -112,7 +142,7 @@ const PropertyAssessment = () => {
       billOffsetPct: yr1.billWithoutSolar > 0
         ? Math.round((yr1.savings / yr1.billWithoutSolar) * 100)
         : 0,
-      co2TonsPerYear: Math.round(yr1.solarTotal * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10,
+      co2TonsPerYear,
       installCost: cost,
     };
   })();
@@ -562,7 +592,7 @@ const PropertyAssessment = () => {
                                 value={[systemKw]}
                                 onValueChange={([v]) => setSystemKw(v)}
                               />
-                              {recommendedKw != null && (
+                              {recommendedKw != null && billingMode === "vos" && (
                                 <div className="flex justify-end mt-1.5">
                                   <button
                                     onClick={() => setSystemKw(recommendedKw)}
@@ -589,16 +619,52 @@ const PropertyAssessment = () => {
                             </div>
                           </div>
 
+                          {/* Billing mode toggle — only when roof qualifies for SSO */}
+                          {ssoEligible && (
+                            <div className="border-t mt-3 pt-3 space-y-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-muted-foreground shrink-0">Billing model</span>
+                                <div className="flex rounded-md border overflow-hidden text-xs font-medium">
+                                  <button
+                                    onClick={() => setBillingMode("vos")}
+                                    className={`px-3 py-1 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                                  >
+                                    Value of Solar
+                                  </button>
+                                  <button
+                                    onClick={() => setBillingMode("sso")}
+                                    className={`px-3 py-1 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                                  >
+                                    Standard Offer
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {billingMode === "vos" ? (
+                                  <>
+                                    Your solar offsets your own electricity bill. Austin Energy credits excess production at {(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢/kWh. Best when you consume most of what you produce.{" "}
+                                    <a href="https://austinenergy.com/rates/residential-rates/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
+                                  </>
+                                ) : (
+                                  <>
+                                    Austin Energy buys all power your system generates at 11.24¢/kWh. Your electricity bill stays unchanged. Best when your roof capacity exceeds your load.{" "}
+                                    <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          )}
+
                           {/* KPI strip */}
                           {liveSummary && (
-                            <div className="border-t mt-3 pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5">
+                            <div className={`${ssoEligible ? "mt-2" : "border-t mt-3"} pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5`}>
                               <StickyKpi
                                 label="install cost"
                                 value={`$${Math.round(liveSummary.installCost).toLocaleString()}`}
                                 href="#section-install"
                               />
                               <StickyKpi
-                                label="monthly savings"
+                                label={billingMode === "sso" ? "monthly revenue" : "monthly savings"}
                                 value={`$${Math.round(liveSummary.monthlySavings).toLocaleString()}`}
                                 href="#section-savings"
                                 highlight
@@ -608,11 +674,19 @@ const PropertyAssessment = () => {
                                 value={liveSummary.paybackYear ? `${liveSummary.paybackYear} years` : "> 30 years"}
                                 href="#section-payback"
                               />
-                              <StickyKpi
-                                label="bill offset"
-                                value={`${liveSummary.billOffsetPct}%`}
-                                href="#section-production"
-                              />
+                              {billingMode === "sso" ? (
+                                <StickyKpi
+                                  label={`SSO rate`}
+                                  value={`${(ssoRate(systemKw) * 100).toFixed(1)}¢/kWh`}
+                                  href="#section-savings"
+                                />
+                              ) : (
+                                <StickyKpi
+                                  label="bill offset"
+                                  value={`${liveSummary.billOffsetPct}%`}
+                                  href="#section-production"
+                                />
+                              )}
                               <StickyKpi
                                 label="yearly CO₂ offset"
                                 value={`${liveSummary.co2TonsPerYear} tons`}
@@ -638,6 +712,7 @@ const PropertyAssessment = () => {
                       propertyType={propertyType}
                       systemKw={systemKw}
                       batteryKwh={batteryKwh}
+                      billingMode={billingMode}
                     />
                   </>
                 )}
