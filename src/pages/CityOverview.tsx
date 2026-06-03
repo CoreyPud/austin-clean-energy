@@ -494,138 +494,141 @@ const CityOverview = () => {
             </p>
           </div>
 
-          {/* Cumulative solar capacity (converted to roof area) vs total roof area */}
+          {/* Cumulative property count vs cumulative solar permits, by install year — split by class */}
           {(() => {
-            // ~17 W/sqft is a typical residential PV power density → 1 kW ≈ 59 sqft
-            const SQFT_PER_KW = 59;
-
-            // Cumulative installed kW from solar permits, keyed by install (completed) year
-            const kwByYear: Record<number, number> = {};
-            yearlyData.forEach((d: any) => {
-              const y = Number(d.year);
-              if (!Number.isNaN(y)) kwByYear[y] = Number(d.totalKW) || 0;
-            });
-            // Cumulative built roof sqft from TCAD, keyed by year_built
-            const sqftByYear: Record<number, number> = {};
-            adoptionData.forEach((d: any) => {
-              sqftByYear[Number(d.year)] = Number(d.cumulative_built_sqft) || 0;
-            });
-            // Highest cumulative_built_sqft seen so far (monotonic safeguard)
-            const sortedAdoptionYears = Object.keys(sqftByYear)
-              .map(Number)
-              .sort((a, b) => a - b);
-            let runningMaxSqft = 0;
-            const monotonicSqft: Record<number, number> = {};
-            sortedAdoptionYears.forEach((y) => {
-              runningMaxSqft = Math.max(runningMaxSqft, sqftByYear[y]);
-              monotonicSqft[y] = runningMaxSqft;
-            });
-
             const currentYear = new Date().getFullYear();
             const years: number[] = [];
             for (let y = 2014; y <= currentYear; y++) years.push(y);
 
-            let runningKW = 0;
-            let lastSqft = runningMaxSqft; // start from total stock
-            // Better: walk forward
-            lastSqft = 0;
-            for (const y of sortedAdoptionYears) {
-              if (y <= 2013) lastSqft = monotonicSqft[y];
-            }
+            // TCAD cumulative built counts by year, monotonic safeguard per category
+            const buildSeries = (key: 'cumulative_built_residential' | 'cumulative_built_commercial') => {
+              const byYear: Record<number, number> = {};
+              adoptionData.forEach((d: any) => {
+                byYear[Number(d.year)] = Number(d[key]) || 0;
+              });
+              const sorted = Object.keys(byYear).map(Number).sort((a, b) => a - b);
+              let runningMax = 0;
+              const out: Record<number, number> = {};
+              sorted.forEach((y) => {
+                runningMax = Math.max(runningMax, byYear[y]);
+                out[y] = runningMax;
+              });
+              return out;
+            };
+            const resTotalByYear = buildSeries('cumulative_built_residential');
+            const comTotalByYear = buildSeries('cumulative_built_commercial');
 
-            const chartData = years.map((y) => {
-              runningKW += kwByYear[y] || 0;
-              if (monotonicSqft[y] !== undefined) lastSqft = monotonicSqft[y];
-              const totalSqft = lastSqft;
-              const solarEquivSqft = Math.min(Math.round(runningKW * SQFT_PER_KW), totalSqft);
-              const remainingSqft = Math.max(0, totalSqft - solarEquivSqft);
-              return {
-                year: y,
-                solar_equiv_sqft: solarEquivSqft,
-                remaining_sqft: remainingSqft,
-                total_sqft: totalSqft,
-                cumulative_kw: Math.round(runningKW),
-              };
-            });
+            const buildChart = (
+              totalByYear: Record<number, number>,
+              permitsByYear: Record<number, number>,
+            ) => {
+              let runningPermits = 0;
+              let lastTotal = 0;
+              // initialize lastTotal from latest year <= 2013
+              const presetYears = Object.keys(totalByYear).map(Number).filter((y) => y <= 2013).sort((a, b) => a - b);
+              if (presetYears.length) lastTotal = totalByYear[presetYears[presetYears.length - 1]];
+              return years.map((y) => {
+                runningPermits += permitsByYear[y] || 0;
+                if (totalByYear[y] !== undefined) lastTotal = totalByYear[y];
+                const solar = Math.min(runningPermits, lastTotal);
+                const remaining = Math.max(0, lastTotal - solar);
+                return {
+                  year: y,
+                  solar_count: solar,
+                  remaining_count: remaining,
+                  total_count: lastTotal,
+                };
+              });
+            };
 
-            const isLoading = isLoadingAdoption || isLoadingYearly;
+            const residentialChart = buildChart(resTotalByYear, solarByClassByYear.residential);
+            const commercialChart = buildChart(comTotalByYear, solarByClassByYear.commercial);
+
+            const isLoading = isLoadingAdoption || isLoadingSolarByClass;
             const fmtCompact = (v: number) => {
               if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
               if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
               return `${v}`;
             };
+
+            const renderChart = (data: any[], label: string) => (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" />
+                  <YAxis tickFormatter={fmtCompact} />
+                  <RechartsTooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0].payload;
+                        const pct = d.total_count > 0 ? (d.solar_count / d.total_count) * 100 : 0;
+                        return (
+                          <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                            <p className="font-medium text-sm mb-1">Through {d.year} — {label}</p>
+                            <p className="text-sm">
+                              <span style={{ color: 'hsl(142 71% 45%)' }}>With solar:</span>{' '}
+                              {Number(d.solar_count).toLocaleString()}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Total properties: {Number(d.total_count).toLocaleString()}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {pct.toFixed(2)}% adoption
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="solar_count" stackId="a" fill="hsl(142 71% 45%)" name="With solar" />
+                  <Bar dataKey="remaining_count" stackId="a" fill="hsl(var(--muted-foreground) / 0.3)" name="Without solar" />
+                </BarChart>
+              </ResponsiveContainer>
+            );
+
             return (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="text-2xl">Cumulative Solar Capacity vs Building Stock</CardTitle>
-                  <CardDescription>
-                    Total roof square footage of Travis County properties (grey) with the equivalent roof area
-                    of installed solar capacity overlaid in green. Solar kW is converted to sq ft assuming
-                    ~17 W/sqft (≈59 sqft per kW of installed capacity).
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <Skeleton className="h-[300px] w-full" />
-                  ) : chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis tickFormatter={fmtCompact} />
-                        <RechartsTooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const d = payload[0].payload;
-                              const pct = d.total_sqft > 0 ? (d.solar_equiv_sqft / d.total_sqft) * 100 : 0;
-                              return (
-                                <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                                  <p className="font-medium text-sm mb-1">Through {d.year}</p>
-                                  <p className="text-sm">
-                                    <span style={{ color: 'hsl(142 71% 45%)' }}>Solar equivalent:</span>{' '}
-                                    {Number(d.solar_equiv_sqft).toLocaleString()} sq ft
-                                    {' '}({Number(d.cumulative_kw).toLocaleString()} kW)
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Total roof area: {Number(d.total_sqft).toLocaleString()} sq ft
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {pct.toFixed(3)}% of roof area covered
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Legend />
-                        <Bar
-                          dataKey="solar_equiv_sqft"
-                          stackId="a"
-                          fill="hsl(142 71% 45%)"
-                          name="Solar capacity (sq ft equivalent)"
-                        />
-                        <Bar
-                          dataKey="remaining_sqft"
-                          stackId="a"
-                          fill="hsl(var(--muted-foreground) / 0.3)"
-                          name="Remaining roof area"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      No adoption data available
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Note: Solar is keyed by permit completion year (City of Austin records begin in 2014).
-                    Building stock is cumulative roof sq ft from TCAD by year built. The kW→sq ft conversion
-                    uses ~17 W/sqft, a typical residential PV power density — actual coverage varies by panel.
-                    Some permits are missing installed_kw, so capacity may be undercounted.
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-2xl">Residential Solar Adoption</CardTitle>
+                    <CardDescription>
+                      Cumulative residential properties (single-family, condo, multifamily) vs. those with a
+                      solar permit issued that year or earlier.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <Skeleton className="h-[300px] w-full" />
+                    ) : (
+                      renderChart(residentialChart, 'Residential')
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-2xl">Commercial Solar Adoption</CardTitle>
+                    <CardDescription>
+                      Cumulative commercial properties vs. those with a solar permit issued that year or earlier.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <Skeleton className="h-[300px] w-full" />
+                    ) : (
+                      renderChart(commercialChart, 'Commercial')
+                    )}
+                  </CardContent>
+                </Card>
+
+                <p className="text-xs text-muted-foreground lg:col-span-2 -mt-3">
+                  Note: Solar permits are keyed by completion year (City of Austin records begin in 2014).
+                  Property totals are from TCAD by year built. Permit-class (Residential/Commercial) comes from
+                  the City permit record, while TCAD category is derived from property_type.
+                </p>
+              </div>
             );
           })()}
 
