@@ -387,6 +387,51 @@ export type Database = {
         }
         Relationships: []
       }
+      tcad_properties: {
+        Row: {
+          estimated_roof_sqft: number | null
+          has_solar: boolean | null
+          in_ae: boolean | null
+          land_type_desc: string | null
+          market_value: number | null
+          pid: number
+          property_type: string | null
+          py_owner_name: string | null
+          situs_address: string | null
+          situs_zip: string | null
+          stat_cd: string | null
+          year_built: number | null
+        }
+        Insert: {
+          estimated_roof_sqft?: number | null
+          has_solar?: boolean | null
+          in_ae?: boolean | null
+          land_type_desc?: string | null
+          market_value?: number | null
+          pid: number
+          property_type?: string | null
+          py_owner_name?: string | null
+          situs_address?: string | null
+          situs_zip?: string | null
+          stat_cd?: string | null
+          year_built?: number | null
+        }
+        Update: {
+          estimated_roof_sqft?: number | null
+          has_solar?: boolean | null
+          in_ae?: boolean | null
+          land_type_desc?: string | null
+          market_value?: number | null
+          pid?: number
+          property_type?: string | null
+          py_owner_name?: string | null
+          situs_address?: string | null
+          situs_zip?: string | null
+          stat_cd?: string | null
+          year_built?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       solar_installations_view: {
