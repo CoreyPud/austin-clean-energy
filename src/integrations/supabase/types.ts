@@ -466,6 +466,17 @@ export type Database = {
         }
         Relationships: []
       }
+      tcad_solar_adoption_by_year: {
+        Row: {
+          built_count: number | null
+          cumulative_adoption_pct: number | null
+          cumulative_built: number | null
+          cumulative_solar: number | null
+          solar_count: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
