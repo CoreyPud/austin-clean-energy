@@ -594,8 +594,7 @@ const CityOverview = () => {
                   <CardHeader>
                     <CardTitle className="text-2xl">Residential Solar Adoption</CardTitle>
                     <CardDescription>
-                      Cumulative residential properties (single-family, condo, multifamily) vs. those with a
-                      solar permit issued that year or earlier.
+                      Portion of residential properties with rooftop solar over time.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
