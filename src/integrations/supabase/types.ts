@@ -469,10 +469,14 @@ export type Database = {
       tcad_solar_adoption_by_year: {
         Row: {
           built_count: number | null
+          built_sqft: number | null
           cumulative_adoption_pct: number | null
           cumulative_built: number | null
+          cumulative_built_sqft: number | null
           cumulative_solar: number | null
+          cumulative_solar_sqft: number | null
           solar_count: number | null
+          solar_sqft: number | null
           year: number | null
         }
         Relationships: []
