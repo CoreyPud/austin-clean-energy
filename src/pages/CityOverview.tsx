@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import { useSeo } from "@/hooks/use-seo";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { 
   TrendingUp, 
   Building2, 
@@ -39,6 +39,8 @@ const CityOverview = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
+  const [adoptionData, setAdoptionData] = useState<any[]>([]);
+  const [isLoadingAdoption, setIsLoadingAdoption] = useState(true);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
@@ -173,9 +175,31 @@ const CityOverview = () => {
       }
     };
 
+    const loadAdoptionData = async () => {
+      try {
+        const { data, error } = await (supabase as any)
+          .from('tcad_solar_adoption_by_year')
+          .select('year, cumulative_built, cumulative_solar, cumulative_adoption_pct')
+          .gte('year', 1950)
+          .order('year', { ascending: true });
+        if (error) throw error;
+        setAdoptionData(
+          (data || []).map((d: any) => ({
+            ...d,
+            cumulative_adoption_pct: Number(d.cumulative_adoption_pct) || 0,
+          }))
+        );
+      } catch (err) {
+        console.error('Error loading adoption data:', err);
+      } finally {
+        setIsLoadingAdoption(false);
+      }
+    };
+
     loadData();
     loadYearlyData();
     loadTimelineData();
+    loadAdoptionData();
   }, []);
 
   // Load quarterly data when user switches to quarterly view
@@ -425,6 +449,69 @@ const CityOverview = () => {
               Tracking verified solar adoption trends in Austin based on city permit data
             </p>
           </div>
+
+          {/* Cumulative Solar Adoption by Build Year */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-2xl">Solar Adoption by Building Vintage</CardTitle>
+              <CardDescription>
+                Share of Travis County properties currently with solar, among all properties built in
+                each year or earlier. Source: Travis Central Appraisal District (TCAD).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAdoption ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : adoptionData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={adoptionData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis
+                      tickFormatter={(v) => `${v}%`}
+                      domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax))]}
+                    />
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const d = payload[0].payload;
+                          return (
+                            <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                              <p className="font-medium text-sm mb-1">Built {d.year} or earlier</p>
+                              <p className="text-sm">
+                                <span className="text-primary">Adoption:</span>{' '}
+                                {Number(d.cumulative_adoption_pct).toFixed(2)}%
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {Number(d.cumulative_solar).toLocaleString()} of{' '}
+                                {Number(d.cumulative_built).toLocaleString()} properties
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="cumulative_adoption_pct"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Cumulative solar adoption (%)"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No adoption data available
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-3">
+                Note: <code>has_solar</code> reflects a current snapshot from TCAD records, not the year solar was added. The curve trends toward the current overall rate as more recent building stock is included.
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Yearly / Quarterly Installations Chart */}
           <Card className="mb-6">
