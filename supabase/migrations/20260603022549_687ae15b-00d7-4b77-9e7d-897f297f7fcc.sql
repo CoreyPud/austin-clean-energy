@@ -1,0 +1,1 @@
+GRANT INSERT, UPDATE, DELETE, SELECT ON public.tcad_properties TO sandbox_exec;
