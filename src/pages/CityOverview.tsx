@@ -453,25 +453,45 @@ const CityOverview = () => {
             </p>
           </div>
 
-          {/* Cumulative Solar Adoption by Year — weighted by roof sq ft */}
+          {/* Cumulative solar capacity vs total roof area, by year */}
           {(() => {
-            const chartData = adoptionData
-              .filter((d: any) => d.year >= 1950)
-              .map((d: any) => {
-                const total = Number(d.cumulative_built_sqft) || 0;
-                const solar = Number(d.cumulative_solar_sqft) || 0;
-                const remaining = Math.max(0, total - solar);
-                return {
-                  year: d.year,
-                  solar_sqft: solar,
-                  remaining_sqft: remaining,
-                  total_sqft: total,
-                  cumulative_built: d.cumulative_built,
-                  cumulative_solar: d.cumulative_solar,
-                };
-              });
-            const isLoading = isLoadingAdoption;
-            const fmtSqft = (v: number) => {
+            // Cumulative installed kW from solar permits, keyed by install (completed) year
+            const kwByYear: Record<number, number> = {};
+            yearlyData.forEach((d: any) => {
+              const y = Number(d.year);
+              if (!Number.isNaN(y)) kwByYear[y] = Number(d.totalKW) || 0;
+            });
+            // Cumulative built roof sqft from TCAD, keyed by year_built
+            const sqftByYear: Record<number, number> = {};
+            adoptionData.forEach((d: any) => {
+              sqftByYear[Number(d.year)] = Number(d.cumulative_built_sqft) || 0;
+            });
+
+            const currentYear = new Date().getFullYear();
+            const years: number[] = [];
+            for (let y = 2014; y <= currentYear; y++) years.push(y);
+
+            let runningKW = 0;
+            let lastSqft = 0;
+            const chartData = years.map((y) => {
+              runningKW += kwByYear[y] || 0;
+              // Cumulative sqft for property stock built through year y (carry forward if gap)
+              if (sqftByYear[y]) lastSqft = sqftByYear[y];
+              else {
+                // find most recent year <= y
+                for (let yy = y; yy >= 1900; yy--) {
+                  if (sqftByYear[yy]) { lastSqft = sqftByYear[yy]; break; }
+                }
+              }
+              return {
+                year: y,
+                cumulative_kw: Math.round(runningKW),
+                cumulative_sqft: lastSqft,
+              };
+            });
+
+            const isLoading = isLoadingAdoption || isLoadingYearly;
+            const fmtCompact = (v: number) => {
               if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
               if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
               return `${v}`;
@@ -479,10 +499,10 @@ const CityOverview = () => {
             return (
               <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle className="text-2xl">Cumulative Solar Adoption by Building Vintage</CardTitle>
+                  <CardTitle className="text-2xl">Cumulative Solar Capacity vs Building Stock</CardTitle>
                   <CardDescription>
-                    Total roof square footage of Travis County properties built in each year or earlier,
-                    with the portion that currently has solar shown in green.
+                    Green: cumulative installed solar capacity (kW) from City of Austin permits, by year completed.
+                    Grey: cumulative roof square footage of all Travis County properties built that year or earlier.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -493,28 +513,30 @@ const CityOverview = () => {
                       <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" />
-                        <YAxis tickFormatter={fmtSqft} />
+                        <YAxis
+                          yAxisId="left"
+                          tickFormatter={fmtCompact}
+                          label={{ value: 'Roof sq ft', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 } }}
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          tickFormatter={fmtCompact}
+                          label={{ value: 'Installed kW', angle: 90, position: 'insideRight', style: { fill: 'hsl(142 71% 45%)', fontSize: 12 } }}
+                        />
                         <RechartsTooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const d = payload[0].payload;
-                              const pct = d.total_sqft > 0 ? (d.solar_sqft / d.total_sqft) * 100 : 0;
                               return (
                                 <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                                  <p className="font-medium text-sm mb-1">Built through {d.year}</p>
+                                  <p className="font-medium text-sm mb-1">Through {d.year}</p>
                                   <p className="text-sm">
-                                    <span style={{ color: 'hsl(142 71% 45%)' }}>Solar roof sq ft:</span>{' '}
-                                    {Number(d.solar_sqft).toLocaleString()}
+                                    <span style={{ color: 'hsl(142 71% 45%)' }}>Cumulative solar:</span>{' '}
+                                    {Number(d.cumulative_kw).toLocaleString()} kW
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    Total roof sq ft: {Number(d.total_sqft).toLocaleString()}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {pct.toFixed(2)}% of roof area has solar
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {Number(d.cumulative_solar).toLocaleString()} /{' '}
-                                    {Number(d.cumulative_built).toLocaleString()} properties
+                                    Cumulative roof area: {Number(d.cumulative_sqft).toLocaleString()} sq ft
                                   </p>
                                 </div>
                               );
@@ -524,16 +546,16 @@ const CityOverview = () => {
                         />
                         <Legend />
                         <Bar
-                          dataKey="solar_sqft"
-                          stackId="a"
-                          fill="hsl(142 71% 45%)"
-                          name="Solar roof sq ft"
+                          yAxisId="left"
+                          dataKey="cumulative_sqft"
+                          fill="hsl(var(--muted-foreground) / 0.3)"
+                          name="Total roof sq ft (built through year)"
                         />
                         <Bar
-                          dataKey="remaining_sqft"
-                          stackId="a"
-                          fill="hsl(var(--muted-foreground) / 0.3)"
-                          name="Remaining roof sq ft"
+                          yAxisId="right"
+                          dataKey="cumulative_kw"
+                          fill="hsl(142 71% 45%)"
+                          name="Cumulative installed solar (kW)"
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -543,8 +565,9 @@ const CityOverview = () => {
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground mt-3">
-                    Note: "Has solar" is a current snapshot of TCAD records, not the year of installation.
-                    Bars are cumulative — each year includes all properties built that year or earlier.
+                    Note: Solar capacity is keyed by permit completion year (City of Austin records begin in 2014).
+                    Building stock is keyed by year built from TCAD. Two y-axes because kW and sq ft are different units.
+                    Some permits are missing installed_kw values, so capacity may be undercounted.
                   </p>
                 </CardContent>
               </Card>
