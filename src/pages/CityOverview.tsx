@@ -179,14 +179,17 @@ const CityOverview = () => {
       try {
         const { data, error } = await (supabase as any)
           .from('tcad_solar_adoption_by_year')
-          .select('year, cumulative_built, cumulative_solar, cumulative_adoption_pct')
+          .select('year, cumulative_built, cumulative_solar, cumulative_built_sqft, cumulative_solar_sqft')
           .gte('year', 1950)
           .order('year', { ascending: true });
         if (error) throw error;
         setAdoptionData(
           (data || []).map((d: any) => ({
-            ...d,
-            cumulative_adoption_pct: Number(d.cumulative_adoption_pct) || 0,
+            year: Number(d.year),
+            cumulative_built: Number(d.cumulative_built) || 0,
+            cumulative_solar: Number(d.cumulative_solar) || 0,
+            cumulative_built_sqft: Number(d.cumulative_built_sqft) || 0,
+            cumulative_solar_sqft: Number(d.cumulative_solar_sqft) || 0,
           }))
         );
       } catch (err) {
