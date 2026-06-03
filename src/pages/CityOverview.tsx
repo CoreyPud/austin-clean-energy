@@ -203,10 +203,47 @@ const CityOverview = () => {
       }
     };
 
+    const loadSolarByClass = async () => {
+      try {
+        // Page through solar_installations to avoid 1000-row default cap
+        const pageSize = 1000;
+        let from = 0;
+        const residential: Record<number, number> = {};
+        const commercial: Record<number, number> = {};
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data, error } = await supabase
+            .from('solar_installations')
+            .select('completed_date, issued_date, calendar_year_issued, permit_class')
+            .range(from, from + pageSize - 1);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          for (const row of data as any[]) {
+            const dateStr = row.completed_date || row.issued_date;
+            let year: number | null = null;
+            if (dateStr) year = new Date(dateStr).getUTCFullYear();
+            else if (row.calendar_year_issued) year = Number(row.calendar_year_issued);
+            if (!year || Number.isNaN(year)) continue;
+            const cls = (row.permit_class || '').toLowerCase();
+            if (cls === 'residential') residential[year] = (residential[year] || 0) + 1;
+            else if (cls === 'commercial') commercial[year] = (commercial[year] || 0) + 1;
+          }
+          if (data.length < pageSize) break;
+          from += pageSize;
+        }
+        setSolarByClassByYear({ residential, commercial });
+      } catch (err) {
+        console.error('Error loading solar permits by class:', err);
+      } finally {
+        setIsLoadingSolarByClass(false);
+      }
+    };
+
     loadData();
     loadYearlyData();
     loadTimelineData();
     loadAdoptionData();
+    loadSolarByClass();
   }, []);
 
   // Load quarterly data when user switches to quarterly view
