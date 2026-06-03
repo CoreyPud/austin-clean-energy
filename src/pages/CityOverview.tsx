@@ -450,68 +450,101 @@ const CityOverview = () => {
             </p>
           </div>
 
-          {/* Cumulative Solar Adoption by Build Year */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-2xl">Solar Adoption by Building Vintage</CardTitle>
-              <CardDescription>
-                Share of Travis County properties currently with solar, among all properties built in
-                each year or earlier. Source: Travis Central Appraisal District (TCAD).
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingAdoption ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : adoptionData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={adoptionData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis
-                      tickFormatter={(v) => `${v}%`}
-                      domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax))]}
-                    />
-                    <RechartsTooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const d = payload[0].payload;
-                          return (
-                            <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                              <p className="font-medium text-sm mb-1">Built {d.year} or earlier</p>
-                              <p className="text-sm">
-                                <span className="text-primary">Adoption:</span>{' '}
-                                {Number(d.cumulative_adoption_pct).toFixed(2)}%
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {Number(d.cumulative_solar).toLocaleString()} of{' '}
-                                {Number(d.cumulative_built).toLocaleString()} properties
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="cumulative_adoption_pct"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      dot={false}
-                      name="Cumulative solar adoption (%)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No adoption data available
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground mt-3">
-                Note: <code>has_solar</code> reflects a current snapshot from TCAD records, not the year solar was added. The curve trends toward the current overall rate as more recent building stock is included.
-              </p>
-            </CardContent>
-          </Card>
+          {/* Cumulative Solar Adoption by Year */}
+          {(() => {
+            // Build cumulative permits per year from existing yearly dataset, then
+            // divide by cumulative TCAD building stock built that year or earlier.
+            const builtByYear: Record<number, number> = {};
+            adoptionData.forEach((d: any) => {
+              builtByYear[Number(d.year)] = Number(d.cumulative_built) || 0;
+            });
+            const permitsByYear: Record<number, number> = {};
+            yearlyData.forEach((d: any) => {
+              const y = Number(d.year);
+              if (!Number.isNaN(y)) permitsByYear[y] = Number(d.count) || 0;
+            });
+            const permitYears = Object.keys(permitsByYear)
+              .map((y) => Number(y))
+              .filter((y) => y >= 2014 && y <= new Date().getFullYear())
+              .sort((a, b) => a - b);
+            let runningPermits = 0;
+            const combined = permitYears.map((y) => {
+              runningPermits += permitsByYear[y] || 0;
+              const built = builtByYear[y] || 0;
+              const pct = built > 0 ? (runningPermits / built) * 100 : 0;
+              return {
+                year: y,
+                cumulative_solar: runningPermits,
+                cumulative_built: built,
+                cumulative_adoption_pct: Number(pct.toFixed(3)),
+              };
+            });
+            const isLoading = isLoadingAdoption || isLoadingYearly;
+            return (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Cumulative Solar Adoption by Year</CardTitle>
+                  <CardDescription>
+                    Share of Travis County properties with a solar permit issued in each year or earlier,
+                    among all properties built in that year or earlier. Numerator: City of Austin solar
+                    permits. Denominator: TCAD property records.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <Skeleton className="h-[300px] w-full" />
+                  ) : combined.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={combined} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis
+                          tickFormatter={(v) => `${v}%`}
+                          domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax))]}
+                        />
+                        <RechartsTooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const d = payload[0].payload;
+                              return (
+                                <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                                  <p className="font-medium text-sm mb-1">Through {d.year}</p>
+                                  <p className="text-sm">
+                                    <span className="text-primary">Adoption:</span>{' '}
+                                    {Number(d.cumulative_adoption_pct).toFixed(2)}%
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {Number(d.cumulative_solar).toLocaleString()} permits /{' '}
+                                    {Number(d.cumulative_built).toLocaleString()} properties built
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="cumulative_adoption_pct"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          dot={false}
+                          name="Cumulative solar adoption (%)"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                      No adoption data available
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Note: City of Austin solar permit records begin in 2014, so earlier years are excluded.
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Yearly / Quarterly Installations Chart */}
           <Card className="mb-6">
