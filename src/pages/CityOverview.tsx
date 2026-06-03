@@ -453,8 +453,11 @@ const CityOverview = () => {
             </p>
           </div>
 
-          {/* Cumulative solar capacity vs total roof area, by year */}
+          {/* Cumulative solar capacity (converted to roof area) vs total roof area */}
           {(() => {
+            // ~17 W/sqft is a typical residential PV power density → 1 kW ≈ 59 sqft
+            const SQFT_PER_KW = 59;
+
             // Cumulative installed kW from solar permits, keyed by install (completed) year
             const kwByYear: Record<number, number> = {};
             yearlyData.forEach((d: any) => {
@@ -466,27 +469,41 @@ const CityOverview = () => {
             adoptionData.forEach((d: any) => {
               sqftByYear[Number(d.year)] = Number(d.cumulative_built_sqft) || 0;
             });
+            // Highest cumulative_built_sqft seen so far (monotonic safeguard)
+            const sortedAdoptionYears = Object.keys(sqftByYear)
+              .map(Number)
+              .sort((a, b) => a - b);
+            let runningMaxSqft = 0;
+            const monotonicSqft: Record<number, number> = {};
+            sortedAdoptionYears.forEach((y) => {
+              runningMaxSqft = Math.max(runningMaxSqft, sqftByYear[y]);
+              monotonicSqft[y] = runningMaxSqft;
+            });
 
             const currentYear = new Date().getFullYear();
             const years: number[] = [];
             for (let y = 2014; y <= currentYear; y++) years.push(y);
 
             let runningKW = 0;
-            let lastSqft = 0;
+            let lastSqft = runningMaxSqft; // start from total stock
+            // Better: walk forward
+            lastSqft = 0;
+            for (const y of sortedAdoptionYears) {
+              if (y <= 2013) lastSqft = monotonicSqft[y];
+            }
+
             const chartData = years.map((y) => {
               runningKW += kwByYear[y] || 0;
-              // Cumulative sqft for property stock built through year y (carry forward if gap)
-              if (sqftByYear[y]) lastSqft = sqftByYear[y];
-              else {
-                // find most recent year <= y
-                for (let yy = y; yy >= 1900; yy--) {
-                  if (sqftByYear[yy]) { lastSqft = sqftByYear[yy]; break; }
-                }
-              }
+              if (monotonicSqft[y] !== undefined) lastSqft = monotonicSqft[y];
+              const totalSqft = lastSqft;
+              const solarEquivSqft = Math.min(Math.round(runningKW * SQFT_PER_KW), totalSqft);
+              const remainingSqft = Math.max(0, totalSqft - solarEquivSqft);
               return {
                 year: y,
+                solar_equiv_sqft: solarEquivSqft,
+                remaining_sqft: remainingSqft,
+                total_sqft: totalSqft,
                 cumulative_kw: Math.round(runningKW),
-                cumulative_sqft: lastSqft,
               };
             });
 
@@ -501,8 +518,9 @@ const CityOverview = () => {
                 <CardHeader>
                   <CardTitle className="text-2xl">Cumulative Solar Capacity vs Building Stock</CardTitle>
                   <CardDescription>
-                    Green: cumulative installed solar capacity (kW) from City of Austin permits, by year completed.
-                    Grey: cumulative roof square footage of all Travis County properties built that year or earlier.
+                    Total roof square footage of Travis County properties (grey) with the equivalent roof area
+                    of installed solar capacity overlaid in green. Solar kW is converted to sq ft assuming
+                    ~17 W/sqft (≈59 sqft per kW of installed capacity).
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -513,30 +531,25 @@ const CityOverview = () => {
                       <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" />
-                        <YAxis
-                          yAxisId="left"
-                          tickFormatter={fmtCompact}
-                          label={{ value: 'Roof sq ft', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 } }}
-                        />
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          tickFormatter={fmtCompact}
-                          label={{ value: 'Installed kW', angle: 90, position: 'insideRight', style: { fill: 'hsl(142 71% 45%)', fontSize: 12 } }}
-                        />
+                        <YAxis tickFormatter={fmtCompact} />
                         <RechartsTooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const d = payload[0].payload;
+                              const pct = d.total_sqft > 0 ? (d.solar_equiv_sqft / d.total_sqft) * 100 : 0;
                               return (
                                 <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                                   <p className="font-medium text-sm mb-1">Through {d.year}</p>
                                   <p className="text-sm">
-                                    <span style={{ color: 'hsl(142 71% 45%)' }}>Cumulative solar:</span>{' '}
-                                    {Number(d.cumulative_kw).toLocaleString()} kW
+                                    <span style={{ color: 'hsl(142 71% 45%)' }}>Solar equivalent:</span>{' '}
+                                    {Number(d.solar_equiv_sqft).toLocaleString()} sq ft
+                                    {' '}({Number(d.cumulative_kw).toLocaleString()} kW)
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    Cumulative roof area: {Number(d.cumulative_sqft).toLocaleString()} sq ft
+                                    Total roof area: {Number(d.total_sqft).toLocaleString()} sq ft
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {pct.toFixed(3)}% of roof area covered
                                   </p>
                                 </div>
                               );
@@ -546,16 +559,16 @@ const CityOverview = () => {
                         />
                         <Legend />
                         <Bar
-                          yAxisId="left"
-                          dataKey="cumulative_sqft"
-                          fill="hsl(var(--muted-foreground) / 0.3)"
-                          name="Total roof sq ft (built through year)"
+                          dataKey="solar_equiv_sqft"
+                          stackId="a"
+                          fill="hsl(142 71% 45%)"
+                          name="Solar capacity (sq ft equivalent)"
                         />
                         <Bar
-                          yAxisId="right"
-                          dataKey="cumulative_kw"
-                          fill="hsl(142 71% 45%)"
-                          name="Cumulative installed solar (kW)"
+                          dataKey="remaining_sqft"
+                          stackId="a"
+                          fill="hsl(var(--muted-foreground) / 0.3)"
+                          name="Remaining roof area"
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -565,9 +578,10 @@ const CityOverview = () => {
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground mt-3">
-                    Note: Solar capacity is keyed by permit completion year (City of Austin records begin in 2014).
-                    Building stock is keyed by year built from TCAD. Two y-axes because kW and sq ft are different units.
-                    Some permits are missing installed_kw values, so capacity may be undercounted.
+                    Note: Solar is keyed by permit completion year (City of Austin records begin in 2014).
+                    Building stock is cumulative roof sq ft from TCAD by year built. The kW→sq ft conversion
+                    uses ~17 W/sqft, a typical residential PV power density — actual coverage varies by panel.
+                    Some permits are missing installed_kw, so capacity may be undercounted.
                   </p>
                 </CardContent>
               </Card>
