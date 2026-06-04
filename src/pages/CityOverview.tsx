@@ -41,7 +41,10 @@ const CityOverview = () => {
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
   const [adoptionData, setAdoptionData] = useState<any[]>([]);
   const [isLoadingAdoption, setIsLoadingAdoption] = useState(true);
-  const [solarByClassByYear, setSolarByClassByYear] = useState<{ residential: Record<number, number>; commercial: Record<number, number> }>({ residential: {}, commercial: {} });
+  const [solarByClassByYear, setSolarByClassByYear] = useState<{
+    residential: Record<number, { count: number; kw: number }>;
+    commercial: Record<number, { count: number; kw: number }>;
+  }>({ residential: {}, commercial: {} });
   const [isLoadingSolarByClass, setIsLoadingSolarByClass] = useState(true);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
