@@ -466,6 +466,24 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_permits_by_year_class_zip: {
+        Row: {
+          permit_class: string | null
+          solar_count: number | null
+          year: number | null
+          zip: string | null
+        }
+        Relationships: []
+      }
+      tcad_built_by_year_type_zip: {
+        Row: {
+          built_count: number | null
+          property_type: string | null
+          year: number | null
+          zip: string | null
+        }
+        Relationships: []
+      }
       tcad_solar_adoption_by_year: {
         Row: {
           built_commercial_count: number | null
