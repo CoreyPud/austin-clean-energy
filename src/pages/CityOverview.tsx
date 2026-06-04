@@ -40,13 +40,11 @@ const CityOverview = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
-  const [adoptionData, setAdoptionData] = useState<any[]>([]);
+  const [builtRows, setBuiltRows] = useState<Array<{ year: number; property_type: string; zip: string; built_count: number }>>([]);
+  const [solarRows, setSolarRows] = useState<Array<{ year: number; permit_class: string; zip: string; solar_count: number }>>([]);
   const [isLoadingAdoption, setIsLoadingAdoption] = useState(true);
-  const [solarByClassByYear, setSolarByClassByYear] = useState<{
-    residential: Record<number, { count: number; kw: number }>;
-    commercial: Record<number, { count: number; kw: number }>;
-  }>({ residential: {}, commercial: {} });
-  const [isLoadingSolarByClass, setIsLoadingSolarByClass] = useState(true);
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'residential' | 'commercial'>('all');
+  const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
