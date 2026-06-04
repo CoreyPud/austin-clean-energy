@@ -212,16 +212,15 @@ const CityOverview = () => {
 
     const loadSolarByClass = async () => {
       try {
-        // Page through solar_installations to avoid 1000-row default cap
         const pageSize = 1000;
         let from = 0;
-        const residential: Record<number, number> = {};
-        const commercial: Record<number, number> = {};
+        const residential: Record<number, { count: number; kw: number }> = {};
+        const commercial: Record<number, { count: number; kw: number }> = {};
         // eslint-disable-next-line no-constant-condition
         while (true) {
           const { data, error } = await supabase
             .from('solar_installations')
-            .select('completed_date, issued_date, calendar_year_issued, permit_class')
+            .select('completed_date, issued_date, calendar_year_issued, permit_class, installed_kw')
             .range(from, from + pageSize - 1);
           if (error) throw error;
           if (!data || data.length === 0) break;
@@ -232,8 +231,12 @@ const CityOverview = () => {
             else if (row.calendar_year_issued) year = Number(row.calendar_year_issued);
             if (!year || Number.isNaN(year)) continue;
             const cls = (row.permit_class || '').toLowerCase();
-            if (cls === 'residential') residential[year] = (residential[year] || 0) + 1;
-            else if (cls === 'commercial') commercial[year] = (commercial[year] || 0) + 1;
+            const kw = Number(row.installed_kw) || 0;
+            const bucket = cls === 'residential' ? residential : cls === 'commercial' ? commercial : null;
+            if (!bucket) continue;
+            if (!bucket[year]) bucket[year] = { count: 0, kw: 0 };
+            bucket[year].count += 1;
+            bucket[year].kw += kw;
           }
           if (data.length < pageSize) break;
           from += pageSize;
