@@ -181,26 +181,50 @@ const CityOverview = () => {
 
     const loadAdoptionData = async () => {
       try {
-        const { data, error } = await (supabase as any)
-          .from('tcad_solar_adoption_by_year')
-          .select('year, cumulative_built, cumulative_solar, cumulative_built_sqft, cumulative_solar_sqft, cumulative_built_residential, cumulative_built_commercial, cumulative_built_residential_sqft, cumulative_built_commercial_sqft, cumulative_solar_residential_sqft, cumulative_solar_commercial_sqft')
-          .gte('year', 1950)
-          .order('year', { ascending: true });
-        if (error) throw error;
-        setAdoptionData(
-          (data || []).map((d: any) => ({
-            year: Number(d.year),
-            cumulative_built: Number(d.cumulative_built) || 0,
-            cumulative_solar: Number(d.cumulative_solar) || 0,
-            cumulative_built_sqft: Number(d.cumulative_built_sqft) || 0,
-            cumulative_solar_sqft: Number(d.cumulative_solar_sqft) || 0,
-            cumulative_built_residential: Number(d.cumulative_built_residential) || 0,
-            cumulative_built_commercial: Number(d.cumulative_built_commercial) || 0,
-            cumulative_built_residential_sqft: Number(d.cumulative_built_residential_sqft) || 0,
-            cumulative_built_commercial_sqft: Number(d.cumulative_built_commercial_sqft) || 0,
-            cumulative_solar_residential_sqft: Number(d.cumulative_solar_residential_sqft) || 0,
-            cumulative_solar_commercial_sqft: Number(d.cumulative_solar_commercial_sqft) || 0,
-          }))
+        // Paginate both aggregated views
+        const fetchAll = async <T,>(table: string, columns: string): Promise<T[]> => {
+          const pageSize = 1000;
+          let from = 0;
+          const out: T[] = [];
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { data, error } = await (supabase as any)
+              .from(table)
+              .select(columns)
+              .range(from, from + pageSize - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            out.push(...(data as T[]));
+            if (data.length < pageSize) break;
+            from += pageSize;
+          }
+          return out;
+        };
+
+        const [built, solar] = await Promise.all([
+          fetchAll<any>('tcad_built_by_year_type_zip', 'year, property_type, zip, built_count'),
+          fetchAll<any>('solar_permits_by_year_class_zip', 'year, permit_class, zip, solar_count'),
+        ]);
+
+        setBuiltRows(
+          built
+            .filter((r) => r.year != null)
+            .map((r) => ({
+              year: Number(r.year),
+              property_type: String(r.property_type || 'unknown'),
+              zip: String(r.zip || 'unknown'),
+              built_count: Number(r.built_count) || 0,
+            }))
+        );
+        setSolarRows(
+          solar
+            .filter((r) => r.year != null)
+            .map((r) => ({
+              year: Number(r.year),
+              permit_class: String(r.permit_class || 'unknown').toLowerCase(),
+              zip: String(r.zip || 'unknown'),
+              solar_count: Number(r.solar_count) || 0,
+            }))
         );
       } catch (err) {
         console.error('Error loading adoption data:', err);
@@ -209,50 +233,10 @@ const CityOverview = () => {
       }
     };
 
-    const loadSolarByClass = async () => {
-      try {
-        const pageSize = 1000;
-        let from = 0;
-        const residential: Record<number, { count: number; kw: number }> = {};
-        const commercial: Record<number, { count: number; kw: number }> = {};
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { data, error } = await supabase
-            .from('solar_installations')
-            .select('completed_date, issued_date, calendar_year_issued, permit_class, installed_kw')
-            .range(from, from + pageSize - 1);
-          if (error) throw error;
-          if (!data || data.length === 0) break;
-          for (const row of data as any[]) {
-            const dateStr = row.completed_date || row.issued_date;
-            let year: number | null = null;
-            if (dateStr) year = new Date(dateStr).getUTCFullYear();
-            else if (row.calendar_year_issued) year = Number(row.calendar_year_issued);
-            if (!year || Number.isNaN(year)) continue;
-            const cls = (row.permit_class || '').toLowerCase();
-            const kw = Number(row.installed_kw) || 0;
-            const bucket = cls === 'residential' ? residential : cls === 'commercial' ? commercial : null;
-            if (!bucket) continue;
-            if (!bucket[year]) bucket[year] = { count: 0, kw: 0 };
-            bucket[year].count += 1;
-            bucket[year].kw += kw;
-          }
-          if (data.length < pageSize) break;
-          from += pageSize;
-        }
-        setSolarByClassByYear({ residential, commercial });
-      } catch (err) {
-        console.error('Error loading solar permits by class:', err);
-      } finally {
-        setIsLoadingSolarByClass(false);
-      }
-    };
-
     loadData();
     loadYearlyData();
     loadTimelineData();
     loadAdoptionData();
-    loadSolarByClass();
   }, []);
 
   // Load quarterly data when user switches to quarterly view
