@@ -41,7 +41,10 @@ const CityOverview = () => {
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
   const [adoptionData, setAdoptionData] = useState<any[]>([]);
   const [isLoadingAdoption, setIsLoadingAdoption] = useState(true);
-  const [solarByClassByYear, setSolarByClassByYear] = useState<{ residential: Record<number, number>; commercial: Record<number, number> }>({ residential: {}, commercial: {} });
+  const [solarByClassByYear, setSolarByClassByYear] = useState<{
+    residential: Record<number, { count: number; kw: number }>;
+    commercial: Record<number, { count: number; kw: number }>;
+  }>({ residential: {}, commercial: {} });
   const [isLoadingSolarByClass, setIsLoadingSolarByClass] = useState(true);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
@@ -181,7 +184,7 @@ const CityOverview = () => {
       try {
         const { data, error } = await (supabase as any)
           .from('tcad_solar_adoption_by_year')
-          .select('year, cumulative_built, cumulative_solar, cumulative_built_sqft, cumulative_solar_sqft, cumulative_built_residential, cumulative_built_commercial')
+          .select('year, cumulative_built, cumulative_solar, cumulative_built_sqft, cumulative_solar_sqft, cumulative_built_residential, cumulative_built_commercial, cumulative_built_residential_sqft, cumulative_built_commercial_sqft, cumulative_solar_residential_sqft, cumulative_solar_commercial_sqft')
           .gte('year', 1950)
           .order('year', { ascending: true });
         if (error) throw error;
@@ -194,6 +197,10 @@ const CityOverview = () => {
             cumulative_solar_sqft: Number(d.cumulative_solar_sqft) || 0,
             cumulative_built_residential: Number(d.cumulative_built_residential) || 0,
             cumulative_built_commercial: Number(d.cumulative_built_commercial) || 0,
+            cumulative_built_residential_sqft: Number(d.cumulative_built_residential_sqft) || 0,
+            cumulative_built_commercial_sqft: Number(d.cumulative_built_commercial_sqft) || 0,
+            cumulative_solar_residential_sqft: Number(d.cumulative_solar_residential_sqft) || 0,
+            cumulative_solar_commercial_sqft: Number(d.cumulative_solar_commercial_sqft) || 0,
           }))
         );
       } catch (err) {
@@ -205,16 +212,15 @@ const CityOverview = () => {
 
     const loadSolarByClass = async () => {
       try {
-        // Page through solar_installations to avoid 1000-row default cap
         const pageSize = 1000;
         let from = 0;
-        const residential: Record<number, number> = {};
-        const commercial: Record<number, number> = {};
+        const residential: Record<number, { count: number; kw: number }> = {};
+        const commercial: Record<number, { count: number; kw: number }> = {};
         // eslint-disable-next-line no-constant-condition
         while (true) {
           const { data, error } = await supabase
             .from('solar_installations')
-            .select('completed_date, issued_date, calendar_year_issued, permit_class')
+            .select('completed_date, issued_date, calendar_year_issued, permit_class, installed_kw')
             .range(from, from + pageSize - 1);
           if (error) throw error;
           if (!data || data.length === 0) break;
@@ -225,8 +231,12 @@ const CityOverview = () => {
             else if (row.calendar_year_issued) year = Number(row.calendar_year_issued);
             if (!year || Number.isNaN(year)) continue;
             const cls = (row.permit_class || '').toLowerCase();
-            if (cls === 'residential') residential[year] = (residential[year] || 0) + 1;
-            else if (cls === 'commercial') commercial[year] = (commercial[year] || 0) + 1;
+            const kw = Number(row.installed_kw) || 0;
+            const bucket = cls === 'residential' ? residential : cls === 'commercial' ? commercial : null;
+            if (!bucket) continue;
+            if (!bucket[year]) bucket[year] = { count: 0, kw: 0 };
+            bucket[year].count += 1;
+            bucket[year].kw += kw;
           }
           if (data.length < pageSize) break;
           from += pageSize;
@@ -494,14 +504,14 @@ const CityOverview = () => {
             </p>
           </div>
 
-          {/* Cumulative property count vs cumulative solar permits, by install year — split by class */}
+          {/* Cumulative installed kW vs potential kW by class (potential = factor * total roof sqft) */}
           {(() => {
             const currentYear = new Date().getFullYear();
             const years: number[] = [];
             for (let y = 2014; y <= currentYear; y++) years.push(y);
 
-            // TCAD cumulative built counts by year, monotonic safeguard per category
-            const buildSeries = (key: 'cumulative_built_residential' | 'cumulative_built_commercial') => {
+            // Build a monotonic cumulative-sqft series per class from the view
+            const buildSqftSeries = (key: 'cumulative_built_residential_sqft' | 'cumulative_built_commercial_sqft') => {
               const byYear: Record<number, number> = {};
               adoptionData.forEach((d: any) => {
                 byYear[Number(d.year)] = Number(d[key]) || 0;
@@ -515,43 +525,53 @@ const CityOverview = () => {
               });
               return out;
             };
-            const resTotalByYear = buildSeries('cumulative_built_residential');
-            const comTotalByYear = buildSeries('cumulative_built_commercial');
+            const resSqftByYear = buildSqftSeries('cumulative_built_residential_sqft');
+            const comSqftByYear = buildSqftSeries('cumulative_built_commercial_sqft');
+
+            // Derive kW-per-sqft factor per class from existing solar properties
+            const latest = adoptionData.length ? adoptionData[adoptionData.length - 1] : null;
+            const resSolarSqftTotal = latest ? Number(latest.cumulative_solar_residential_sqft) || 0 : 0;
+            const comSolarSqftTotal = latest ? Number(latest.cumulative_solar_commercial_sqft) || 0 : 0;
+            const resKwTotal = Object.values(solarByClassByYear.residential).reduce((s, v) => s + v.kw, 0);
+            const comKwTotal = Object.values(solarByClassByYear.commercial).reduce((s, v) => s + v.kw, 0);
+            const resFactor = resSolarSqftTotal > 0 ? resKwTotal / resSolarSqftTotal : 0;
+            const comFactor = comSolarSqftTotal > 0 ? comKwTotal / comSolarSqftTotal : 0;
 
             const buildChart = (
-              totalByYear: Record<number, number>,
-              permitsByYear: Record<number, number>,
+              sqftByYear: Record<number, number>,
+              permitsByYear: Record<number, { count: number; kw: number }>,
+              factor: number,
             ) => {
-              let runningPermits = 0;
-              let lastTotal = 0;
-              // initialize lastTotal from latest year <= 2013
-              const presetYears = Object.keys(totalByYear).map(Number).filter((y) => y <= 2013).sort((a, b) => a - b);
-              if (presetYears.length) lastTotal = totalByYear[presetYears[presetYears.length - 1]];
+              let runningKw = 0;
+              let lastSqft = 0;
+              const presetYears = Object.keys(sqftByYear).map(Number).filter((y) => y <= 2013).sort((a, b) => a - b);
+              if (presetYears.length) lastSqft = sqftByYear[presetYears[presetYears.length - 1]];
               return years.map((y) => {
-                runningPermits += permitsByYear[y] || 0;
-                if (totalByYear[y] !== undefined) lastTotal = totalByYear[y];
-                const solar = Math.min(runningPermits, lastTotal);
-                const remaining = Math.max(0, lastTotal - solar);
+                runningKw += (permitsByYear[y]?.kw || 0);
+                if (sqftByYear[y] !== undefined) lastSqft = sqftByYear[y];
+                const potentialKw = factor * lastSqft;
+                const installedKw = Math.min(runningKw, potentialKw || runningKw);
+                const remainingKw = Math.max(0, (potentialKw || 0) - installedKw);
                 return {
                   year: y,
-                  solar_count: solar,
-                  remaining_count: remaining,
-                  total_count: lastTotal,
+                  installed_kw: installedKw,
+                  remaining_kw: remainingKw,
+                  potential_kw: potentialKw,
                 };
               });
             };
 
-            const residentialChart = buildChart(resTotalByYear, solarByClassByYear.residential);
-            const commercialChart = buildChart(comTotalByYear, solarByClassByYear.commercial);
+            const residentialChart = buildChart(resSqftByYear, solarByClassByYear.residential, resFactor);
+            const commercialChart = buildChart(comSqftByYear, solarByClassByYear.commercial, comFactor);
 
             const isLoading = isLoadingAdoption || isLoadingSolarByClass;
             const fmtCompact = (v: number) => {
               if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
               if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
-              return `${v}`;
+              return `${Math.round(v)}`;
             };
 
-            const renderChart = (data: any[], label: string) => (
+            const renderChart = (data: any[], label: string, factor: number) => (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -561,19 +581,19 @@ const CityOverview = () => {
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const d = payload[0].payload;
-                        const pct = d.total_count > 0 ? (d.solar_count / d.total_count) * 100 : 0;
+                        const pct = d.potential_kw > 0 ? (d.installed_kw / d.potential_kw) * 100 : 0;
                         return (
                           <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                             <p className="font-medium text-sm mb-1">Through {d.year} — {label}</p>
                             <p className="text-sm">
-                              <span style={{ color: 'hsl(142 71% 45%)' }}>With solar:</span>{' '}
-                              {Number(d.solar_count).toLocaleString()}
+                              <span style={{ color: 'hsl(142 71% 45%)' }}>Installed:</span>{' '}
+                              {Math.round(d.installed_kw).toLocaleString()} kW
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Total properties: {Number(d.total_count).toLocaleString()}
+                              Potential: {Math.round(d.potential_kw).toLocaleString()} kW
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {pct.toFixed(2)}% adoption
+                              {pct.toFixed(2)}% of rooftop potential
                             </p>
                           </div>
                         );
@@ -582,8 +602,8 @@ const CityOverview = () => {
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="solar_count" stackId="a" fill="hsl(142 71% 45%)" name="With solar" />
-                  <Bar dataKey="remaining_count" stackId="a" fill="hsl(var(--muted-foreground) / 0.3)" name="Without solar" />
+                  <Bar dataKey="installed_kw" stackId="a" fill="hsl(142 71% 45%)" name="Installed kW" />
+                  <Bar dataKey="remaining_kw" stackId="a" fill="hsl(var(--muted-foreground) / 0.3)" name="Untapped kW" />
                 </BarChart>
               </ResponsiveContainer>
             );
@@ -592,40 +612,51 @@ const CityOverview = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-2xl">Residential Solar Adoption</CardTitle>
+                    <CardTitle className="text-2xl">Residential Solar: Installed vs Potential</CardTitle>
                     <CardDescription>
-                      Portion of residential properties with rooftop solar over time.
+                      Cumulative installed kW vs estimated rooftop potential for single-family homes.
+                      {resFactor > 0 && (
+                        <span className="block mt-1 text-xs">
+                          Factor: {(resFactor * 1000).toFixed(2)} W per sqft (derived from existing residential solar installs).
+                        </span>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
                       <Skeleton className="h-[300px] w-full" />
                     ) : (
-                      renderChart(residentialChart, 'Residential')
+                      renderChart(residentialChart, 'Residential', resFactor)
                     )}
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-2xl">Commercial Solar Adoption</CardTitle>
+                    <CardTitle className="text-2xl">Commercial Solar: Installed vs Potential</CardTitle>
                     <CardDescription>
-                      Portion of commercial properties with rooftop solar over time.
+                      Cumulative installed kW vs estimated rooftop potential for commercial properties.
+                      {comFactor > 0 && (
+                        <span className="block mt-1 text-xs">
+                          Factor: {(comFactor * 1000).toFixed(2)} W per sqft (derived from existing commercial solar installs).
+                        </span>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
                       <Skeleton className="h-[300px] w-full" />
                     ) : (
-                      renderChart(commercialChart, 'Commercial')
+                      renderChart(commercialChart, 'Commercial', comFactor)
                     )}
                   </CardContent>
                 </Card>
 
                 <p className="text-xs text-muted-foreground lg:col-span-2 -mt-3">
-                  Note: Solar permits are keyed by completion year (City of Austin records begin in 2014).
-                  Property totals are from TCAD by year built. Permit-class (Residential/Commercial) comes from
-                  the City permit record, while TCAD category is derived from property_type.
+                  Note: Potential kW is estimated by taking the kW-per-sqft factor of properties that already have solar
+                  (total installed kW ÷ total roof sqft of solar properties, per class) and applying it to all rooftops in
+                  that class. Installed kW is cumulative by permit completion year (City of Austin records begin in 2014).
+                  Many permits are missing kW values, so installed totals are a lower bound.
                 </p>
               </div>
             );
