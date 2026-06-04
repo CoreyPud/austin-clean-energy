@@ -184,7 +184,7 @@ const CityOverview = () => {
       try {
         const { data, error } = await (supabase as any)
           .from('tcad_solar_adoption_by_year')
-          .select('year, cumulative_built, cumulative_solar, cumulative_built_sqft, cumulative_solar_sqft, cumulative_built_residential, cumulative_built_commercial')
+          .select('year, cumulative_built, cumulative_solar, cumulative_built_sqft, cumulative_solar_sqft, cumulative_built_residential, cumulative_built_commercial, cumulative_built_residential_sqft, cumulative_built_commercial_sqft, cumulative_solar_residential_sqft, cumulative_solar_commercial_sqft')
           .gte('year', 1950)
           .order('year', { ascending: true });
         if (error) throw error;
@@ -197,6 +197,10 @@ const CityOverview = () => {
             cumulative_solar_sqft: Number(d.cumulative_solar_sqft) || 0,
             cumulative_built_residential: Number(d.cumulative_built_residential) || 0,
             cumulative_built_commercial: Number(d.cumulative_built_commercial) || 0,
+            cumulative_built_residential_sqft: Number(d.cumulative_built_residential_sqft) || 0,
+            cumulative_built_commercial_sqft: Number(d.cumulative_built_commercial_sqft) || 0,
+            cumulative_solar_residential_sqft: Number(d.cumulative_solar_residential_sqft) || 0,
+            cumulative_solar_commercial_sqft: Number(d.cumulative_solar_commercial_sqft) || 0,
           }))
         );
       } catch (err) {
