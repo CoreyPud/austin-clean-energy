@@ -469,17 +469,25 @@ export type Database = {
       tcad_solar_adoption_by_year: {
         Row: {
           built_commercial_count: number | null
+          built_commercial_sqft: number | null
           built_count: number | null
           built_residential_count: number | null
+          built_residential_sqft: number | null
           built_sqft: number | null
           cumulative_adoption_pct: number | null
           cumulative_built: number | null
           cumulative_built_commercial: number | null
+          cumulative_built_commercial_sqft: number | null
           cumulative_built_residential: number | null
+          cumulative_built_residential_sqft: number | null
           cumulative_built_sqft: number | null
           cumulative_solar: number | null
+          cumulative_solar_commercial_sqft: number | null
+          cumulative_solar_residential_sqft: number | null
           cumulative_solar_sqft: number | null
+          solar_commercial_sqft: number | null
           solar_count: number | null
+          solar_residential_sqft: number | null
           solar_sqft: number | null
           year: number | null
         }
