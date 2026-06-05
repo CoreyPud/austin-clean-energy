@@ -609,7 +609,7 @@ const CityOverview = () => {
                         <SelectContent className="max-h-[300px]">
                           <SelectItem value="all">All ZIP codes</SelectItem>
                           {zipOptions.map((z) => (
-                            <SelectItem key={z} value={z}>{z}</SelectItem>
+                            <SelectItem key={z.value} value={z.value}>{z.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
