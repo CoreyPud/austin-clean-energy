@@ -126,7 +126,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
 
   // Carry forward total built across quarters of the year
   let lastTotal = 0;
-  const presetYears = builtYearsSorted.filter((y) => y <= 2013);
+  const presetYears = builtYearsSorted.filter((y) => y <= 2009);
   if (presetYears.length) lastTotal = cumulativeBuiltByYear[presetYears[presetYears.length - 1]];
 
   const chartData: Array<{
