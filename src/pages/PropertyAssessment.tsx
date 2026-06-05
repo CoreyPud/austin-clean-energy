@@ -745,6 +745,10 @@ const PropertyAssessment = () => {
                   </MapTokenLoader>
                 </div>
 
+                <ZipSolarAdoptionTrend zipCode={results.zipCode} />
+
+
+
                 {/* Contact CTA */}
                 <ContactCtaCard />
 
