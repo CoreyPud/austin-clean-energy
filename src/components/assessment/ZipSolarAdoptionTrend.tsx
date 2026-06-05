@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
   XAxis,
@@ -18,23 +20,21 @@ interface Props {
 
 const RES_TCAD_TYPES = new Set(["single_family", "condo", "multifamily"]);
 const COM_TCAD_TYPES = new Set(["commercial"]);
+const RES_COM_PERMIT_CLASSES = new Set(["residential", "commercial"]);
 
-const fetchAllByZip = async <T,>(
+const fetchAll = async <T,>(
   table: string,
   columns: string,
-  zip: string,
-  zipCol = "zip",
+  eq?: { col: string; val: string },
 ): Promise<T[]> => {
   const pageSize = 1000;
   let from = 0;
   const out: T[] = [];
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const { data, error } = await (supabase as any)
-      .from(table)
-      .select(columns)
-      .eq(zipCol, zip)
-      .range(from, from + pageSize - 1);
+    let q = (supabase as any).from(table).select(columns).range(from, from + pageSize - 1);
+    if (eq) q = q.eq(eq.col, eq.val);
+    const { data, error } = await q;
     if (error) throw error;
     if (!data || data.length === 0) break;
     out.push(...(data as T[]));
@@ -48,6 +48,8 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
   const [isLoading, setIsLoading] = useState(true);
   const [builtRows, setBuiltRows] = useState<Array<{ year: number; property_type: string; built_count: number }>>([]);
   const [solarDates, setSolarDates] = useState<string[]>([]);
+  const [austinBuiltRows, setAustinBuiltRows] = useState<Array<{ year: number; property_type: string; built_count: number }>>([]);
+  const [austinSolarRows, setAustinSolarRows] = useState<Array<{ year: number; permit_class: string; solar_count: number }>>([]);
 
   useEffect(() => {
     if (!zipCode) return;
@@ -55,14 +57,17 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
     (async () => {
       try {
         setIsLoading(true);
-        const [built, installs] = await Promise.all([
-          fetchAllByZip<any>("tcad_built_by_year_type_zip", "year, property_type, built_count", zipCode),
-          fetchAllByZip<any>(
-            "solar_installations",
-            "completed_date, issued_date",
-            zipCode,
-            "original_zip",
-          ),
+        const [built, installs, austinBuilt, austinSolar] = await Promise.all([
+          fetchAll<any>("tcad_built_by_year_type_zip", "year, property_type, built_count", {
+            col: "zip",
+            val: zipCode,
+          }),
+          fetchAll<any>("solar_installations", "completed_date, issued_date", {
+            col: "original_zip",
+            val: zipCode,
+          }),
+          fetchAll<any>("tcad_built_by_year_type_zip", "year, property_type, built_count"),
+          fetchAll<any>("solar_permits_by_year_class_zip", "year, permit_class, solar_count"),
         ]);
         if (cancelled) return;
         setBuiltRows(
@@ -78,6 +83,24 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
           installs
             .map((r: any) => r.completed_date || r.issued_date)
             .filter((d: string | null) => !!d) as string[],
+        );
+        setAustinBuiltRows(
+          austinBuilt
+            .filter((r) => r.year != null)
+            .map((r) => ({
+              year: Number(r.year),
+              property_type: String(r.property_type || "unknown"),
+              built_count: Number(r.built_count) || 0,
+            })),
+        );
+        setAustinSolarRows(
+          austinSolar
+            .filter((r) => r.year != null)
+            .map((r) => ({
+              year: Number(r.year),
+              permit_class: String(r.permit_class || "unknown").toLowerCase(),
+              solar_count: Number(r.solar_count) || 0,
+            })),
         );
       } catch (err) {
         console.error("ZipSolarAdoptionTrend load error:", err);
@@ -98,7 +121,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
 
   const tcadTypeMatches = (pt: string) => RES_TCAD_TYPES.has(pt) || COM_TCAD_TYPES.has(pt);
 
-  // Annual building totals (denominator step function)
+  // ----- ZIP: quarterly bars -----
   const builtByYear: Record<number, number> = {};
   builtRows.forEach((r) => {
     if (!tcadTypeMatches(r.property_type)) return;
@@ -112,7 +135,6 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
     cumulativeBuiltByYear[y] = runningBuilt;
   });
 
-  // Quarterly solar permits
   const solarByYQ: Record<string, number> = {};
   solarDates.forEach((d) => {
     const dt = new Date(d);
@@ -120,14 +142,35 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
     const y = dt.getUTCFullYear();
     const q = Math.floor(dt.getUTCMonth() / 3) + 1;
     if (y < 2014) return;
-    const k = `${y}-Q${q}`;
-    solarByYQ[k] = (solarByYQ[k] || 0) + 1;
+    solarByYQ[`${y}-Q${q}`] = (solarByYQ[`${y}-Q${q}`] || 0) + 1;
   });
 
-  // Carry forward total built across quarters of the year
+  // ----- Austin: annual cumulative % (line) -----
+  const austinBuiltByYear: Record<number, number> = {};
+  austinBuiltRows.forEach((r) => {
+    if (!tcadTypeMatches(r.property_type)) return;
+    austinBuiltByYear[r.year] = (austinBuiltByYear[r.year] || 0) + r.built_count;
+  });
+  const austinBuiltYearsSorted = Object.keys(austinBuiltByYear).map(Number).sort((a, b) => a - b);
+  const austinCumulativeBuilt: Record<number, number> = {};
+  let runA = 0;
+  austinBuiltYearsSorted.forEach((y) => {
+    runA += austinBuiltByYear[y];
+    austinCumulativeBuilt[y] = runA;
+  });
+  const austinSolarByYear: Record<number, number> = {};
+  austinSolarRows.forEach((r) => {
+    if (!RES_COM_PERMIT_CLASSES.has(r.permit_class)) return;
+    austinSolarByYear[r.year] = (austinSolarByYear[r.year] || 0) + r.solar_count;
+  });
+
   let lastTotal = 0;
   const presetYears = builtYearsSorted.filter((y) => y <= 2013);
   if (presetYears.length) lastTotal = cumulativeBuiltByYear[presetYears[presetYears.length - 1]];
+
+  let lastAustinTotal = 0;
+  const austinPresetYears = austinBuiltYearsSorted.filter((y) => y <= 2013);
+  if (austinPresetYears.length) lastAustinTotal = austinCumulativeBuilt[austinPresetYears[austinPresetYears.length - 1]];
 
   const chartData: Array<{
     label: string;
@@ -136,11 +179,19 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
     solar_count: number;
     total_count: number;
     solar_pct: number;
+    austin_pct: number;
   }> = [];
 
   let runningPermits = 0;
+  let runningAustinPermits = 0;
   for (let y = 2014; y <= currentYear; y++) {
     if (cumulativeBuiltByYear[y] !== undefined) lastTotal = cumulativeBuiltByYear[y];
+    if (austinCumulativeBuilt[y] !== undefined) lastAustinTotal = austinCumulativeBuilt[y];
+    // Austin: annual data — increment full year at Q1 so the line steps once a year
+    runningAustinPermits += austinSolarByYear[y] || 0;
+    const austinSolar = Math.min(runningAustinPermits, lastAustinTotal);
+    const austinPct = lastAustinTotal > 0 ? +(austinSolar / lastAustinTotal * 100).toFixed(2) : 0;
+
     const lastQ = y === currentYear ? currentQuarter : 4;
     for (let q = 1; q <= lastQ; q++) {
       runningPermits += solarByYQ[`${y}-Q${q}`] || 0;
@@ -153,6 +204,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
         solar_count: solar,
         total_count: lastTotal,
         solar_pct: +pct.toFixed(2),
+        austin_pct: austinPct,
       });
     }
   }
@@ -167,7 +219,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
           <Skeleton className="h-[280px] w-full" />
         ) : (
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
@@ -185,12 +237,16 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
                           Through {d.year} Q{d.quarter} · ZIP {zipCode}
                         </p>
                         <p className="text-sm">
-                          <span style={{ color: "hsl(var(--primary))" }}>Solar coverage:</span>{" "}
+                          <span style={{ color: "hsl(var(--primary))" }}>Your ZIP:</span>{" "}
                           {d.solar_pct.toFixed(2)}%
+                        </p>
+                        <p className="text-sm">
+                          <span style={{ color: "hsl(var(--foreground))" }}>Austin avg:</span>{" "}
+                          {d.austin_pct.toFixed(2)}%
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {Number(d.solar_count).toLocaleString()} of{" "}
-                          {Number(d.total_count).toLocaleString()} properties
+                          {Number(d.total_count).toLocaleString()} properties in ZIP
                         </p>
                       </div>
                     );
@@ -198,12 +254,22 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
                   return null;
                 }}
               />
-              <Bar dataKey="solar_pct" fill="hsl(var(--primary))" name="% with solar" />
-            </BarChart>
+              <Legend />
+              <Bar dataKey="solar_pct" fill="hsl(var(--primary))" name="Your ZIP" />
+              <Line
+                type="stepAfter"
+                dataKey="austin_pct"
+                stroke="hsl(var(--foreground))"
+                strokeWidth={2}
+                strokeDasharray="4 4"
+                dot={false}
+                name="Austin average"
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         )}
         <p className="text-xs text-muted-foreground mt-3">
-          Sources: City of Austin solar permits (2014–present, by completion quarter) and TCAD property records (annual).
+          Sources: City of Austin solar permits (2014–present, ZIP bars by completion quarter; Austin line annual) and TCAD property records.
         </p>
       </CardContent>
     </Card>
