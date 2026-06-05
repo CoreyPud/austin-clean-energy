@@ -330,6 +330,7 @@ const CityOverview = () => {
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
         if (zipFilter !== 'all') query = query.eq('original_zip', zipFilter);
+        if (propertyTypeFilter !== 'all') query = query.eq('permit_class', propertyTypeFilter);
         const { data: boundedInstallations, error } = await query
           .order('completed_date', { ascending: false })
           .limit(200);
@@ -350,7 +351,7 @@ const CityOverview = () => {
             capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
             installDate: install.completed_date || install.issued_date,
             id: install.id,
-            color: '#22c55e'
+            color: install.permit_class === 'commercial' ? '#2563eb' : '#22c55e'
           }));
           console.log('Updating map with new markers:', newMarkers.length);
           setMapMarkers(newMarkers);
