@@ -467,7 +467,13 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
             {markers.some(m => m.source === 'existing' || m.color === '#22c55e') && (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#22c55e] border-2 border-white shadow-sm"></div>
-                <span className="text-xs text-muted-foreground">Existing Installations</span>
+                <span className="text-xs text-muted-foreground">Residential Installations</span>
+              </div>
+            )}
+            {markers.some(m => m.color === '#2563eb') && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#2563eb] border-2 border-white shadow-sm"></div>
+                <span className="text-xs text-muted-foreground">Commercial Installations</span>
               </div>
             )}
             {markers.some(m => m.source === 'api' || m.color === '#f59e0b') && (
