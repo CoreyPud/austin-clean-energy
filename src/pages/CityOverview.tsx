@@ -359,8 +359,6 @@ const CityOverview = () => {
         }
       } catch (error) {
         console.error('Error loading installations for bounds:', error);
-      } finally {
-        setIsLoadingMapData(false);
       }
     }, 500); // 500ms debounce
   };
