@@ -130,7 +130,7 @@ const CityOverview = () => {
         });
 
         setRecentInstallations(installations || []);
-        // Set initial map markers
+        // Set initial map markers (commercial = blue, residential/other = green)
         const initialMarkers = (installations || []).slice(0, 100).map(install => ({
           coordinates: [install.longitude, install.latitude] as [number, number],
           title: install.address,
@@ -138,7 +138,7 @@ const CityOverview = () => {
           capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
           installDate: install.completed_date || install.issued_date,
           id: install.id,
-          color: '#22c55e'
+          color: install.permit_class === 'commercial' ? '#2563eb' : '#22c55e'
         }));
         console.log('Setting initial map markers:', initialMarkers.length);
         setMapMarkers(initialMarkers);
