@@ -119,14 +119,14 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
     if (isNaN(dt.getTime())) return;
     const y = dt.getUTCFullYear();
     const q = Math.floor(dt.getUTCMonth() / 3) + 1;
-    if (y < 2010) return;
+    if (y < 2014) return;
     const k = `${y}-Q${q}`;
     solarByYQ[k] = (solarByYQ[k] || 0) + 1;
   });
 
   // Carry forward total built across quarters of the year
   let lastTotal = 0;
-  const presetYears = builtYearsSorted.filter((y) => y <= 2009);
+  const presetYears = builtYearsSorted.filter((y) => y <= 2013);
   if (presetYears.length) lastTotal = cumulativeBuiltByYear[presetYears[presetYears.length - 1]];
 
   const chartData: Array<{
@@ -139,7 +139,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
   }> = [];
 
   let runningPermits = 0;
-  for (let y = 2010; y <= currentYear; y++) {
+  for (let y = 2014; y <= currentYear; y++) {
     if (cumulativeBuiltByYear[y] !== undefined) lastTotal = cumulativeBuiltByYear[y];
     const lastQ = y === currentYear ? currentQuarter : 4;
     for (let q = 1; q <= lastQ; q++) {
