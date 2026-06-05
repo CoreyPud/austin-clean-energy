@@ -140,10 +140,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
   return (
     <Card className="border-2 border-primary/20">
       <CardHeader>
-        <CardTitle className="text-xl">Solar adoption over time — ZIP {zipCode}</CardTitle>
-        <CardDescription>
-          Cumulative share of properties with rooftop solar in your ZIP, by year.
-        </CardDescription>
+        <CardTitle className="text-xl">Solar adoption over time in your area</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
