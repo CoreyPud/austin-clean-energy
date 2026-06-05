@@ -701,7 +701,7 @@ const CityOverview = () => {
                           }}
                         />
                         <Legend />
-                        <Bar dataKey="solar_count" stackId="a" fill="hsl(142 71% 45%)" name="With solar" />
+                        <Bar dataKey="solar_count" stackId="a" fill="hsl(var(--primary))" name="With solar" />
                         <Bar dataKey="remaining_count" stackId="a" fill="hsl(var(--muted-foreground) / 0.3)" name="Without solar" />
                       </BarChart>
                     </ResponsiveContainer>
