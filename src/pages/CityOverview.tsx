@@ -262,12 +262,15 @@ const CityOverview = () => {
     loadQuarterlyData();
   }, [chartView, quarterlyData.length]);
 
-  // When the ZIP filter changes, refresh map markers to show up to 100 most-recent
-  // installations within that ZIP (or the default recent set when 'all').
+  // Refresh map markers when filters change (silently — no loading spinner after initial load).
+  const didMountFiltersRef = useRef(false);
   useEffect(() => {
+    if (!didMountFiltersRef.current) {
+      didMountFiltersRef.current = true;
+      return;
+    }
     let cancelled = false;
-    const loadZipMarkers = async () => {
-      setIsLoadingMapData(true);
+    const loadFilteredMarkers = async () => {
       try {
         let query = supabase
           .from('solar_installations_view')
@@ -296,14 +299,10 @@ const CityOverview = () => {
         }
       } catch (err) {
         console.error('Error loading filtered installations:', err);
-      } finally {
-        if (!cancelled) setIsLoadingMapData(false);
       }
     };
-    // Skip on initial mount when no filters are set — the main loader already populated markers.
-    if (zipFilter !== 'all' || propertyTypeFilter !== 'all' || mapMarkers.length > 0) loadZipMarkers();
+    loadFilteredMarkers();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zipFilter, propertyTypeFilter]);
 
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
@@ -315,7 +314,7 @@ const CityOverview = () => {
     setCurrentZoom(bounds.zoom);
 
     loadingTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingMapData(true);
+      // Silent reload — no loading overlay after initial map load
       console.log('Fetching installations for bounds:', bounds);
 
       try {
@@ -360,8 +359,6 @@ const CityOverview = () => {
         }
       } catch (error) {
         console.error('Error loading installations for bounds:', error);
-      } finally {
-        setIsLoadingMapData(false);
       }
     }, 500); // 500ms debounce
   };
