@@ -255,9 +255,9 @@ serve(async (req) => {
     // 5. Neighborhood snapshot (deterministic counts)
     const neighborhoodSnapshot = {
       zipCode,
-      installationsInZip: dbInstallations.length,
+      installationsInZip: zipInstallationsTotal,
       pendingPermitsInZip: cityPermits.length,
-      totalSolarActivity: dbInstallations.length + cityPermits.length,
+      totalSolarActivity: zipInstallationsTotal + cityPermits.length,
       averageSystemKw:
         dbInstallations.length > 0
           ? +(
