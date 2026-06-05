@@ -147,9 +147,11 @@ const NeighborhoodSnapshot = ({
             />
           </div>
           <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-            <span>0</span>
-            <span className="font-semibold">↑ Austin avg ({AUSTIN_AVG_PER_ZIP})</span>
-            <span>{AUSTIN_AVG_PER_ZIP * 2}+</span>
+            <span>0%</span>
+            <span className="font-semibold">
+              ↑ Austin avg{austinPct !== null ? ` (${austinPct.toFixed(1)}%)` : ""}
+            </span>
+            <span>{austinPct !== null ? `${(austinPct * 2).toFixed(1)}%+` : ""}</span>
           </div>
         </div>
 
