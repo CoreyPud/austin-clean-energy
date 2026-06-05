@@ -261,6 +261,46 @@ const CityOverview = () => {
     loadQuarterlyData();
   }, [chartView, quarterlyData.length]);
 
+  // When the ZIP filter changes, refresh map markers to show up to 100 most-recent
+  // installations within that ZIP (or the default recent set when 'all').
+  useEffect(() => {
+    let cancelled = false;
+    const loadZipMarkers = async () => {
+      setIsLoadingMapData(true);
+      try {
+        let query = supabase
+          .from('solar_installations_view')
+          .select('*')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null);
+        if (zipFilter !== 'all') query = query.eq('original_zip', zipFilter);
+        const { data, error } = await query
+          .order('completed_date', { ascending: false })
+          .limit(100);
+        if (error) throw error;
+        if (cancelled) return;
+        const newMarkers = (data || []).map((install: any) => ({
+          coordinates: [install.longitude, install.latitude] as [number, number],
+          title: install.address,
+          address: install.address,
+          capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
+          installDate: install.completed_date || install.issued_date,
+          id: install.id,
+          color: '#22c55e',
+        }));
+        setMapMarkers(newMarkers);
+      } catch (err) {
+        console.error('Error loading ZIP-filtered installations:', err);
+      } finally {
+        if (!cancelled) setIsLoadingMapData(false);
+      }
+    };
+    // Skip on initial mount for 'all' — the main loader already populated markers.
+    if (zipFilter !== 'all' || mapMarkers.length > 0) loadZipMarkers();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zipFilter]);
+
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     // Debounce to prevent rapid repeated calls
     if (loadingTimeoutRef.current) {
