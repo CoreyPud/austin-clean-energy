@@ -507,7 +507,7 @@ const CityOverview = () => {
                   <Map 
                     className="h-[500px] rounded-lg overflow-hidden"
                     center={[-97.7431, 30.2672]}
-                    zoom={10}
+                    zoom={9}
                     markers={mapMarkers}
                     fitMarkersKey={mapFitKey}
                     enableDynamicLoading={true}
@@ -566,14 +566,19 @@ const CityOverview = () => {
               if (!permitClassMatches(r.permit_class)) return;
               solarByZip[r.zip] = (solarByZip[r.zip] || 0) + r.solar_count;
             });
+            const fmtInt = (n: number) => n.toLocaleString('en-US');
             const zipOptions = Object.keys(builtByZip)
-              .sort((a, b) => (builtByZip[b] || 0) - (builtByZip[a] || 0))
               .map((z) => {
                 const built = builtByZip[z] || 0;
                 const solar = Math.min(solarByZip[z] || 0, built);
                 const pct = built > 0 ? (100 * solar) / built : 0;
-                return { value: z, label: pct > 0 ? `${z} — ${pct.toFixed(1)}%` : z };
-              });
+                return { value: z, built, pct };
+              })
+              .sort((a, b) => b.pct - a.pct || b.built - a.built)
+              .map(({ value, built, pct }) => ({
+                value,
+                label: `${value} — ${fmtInt(built)} buildings, ${pct.toFixed(1)}% solar coverage`,
+              }));
 
             // Aggregate filtered built-counts and solar-counts by year
             const builtByYear: Record<number, number> = {};
@@ -649,7 +654,7 @@ const CityOverview = () => {
                         </SelectContent>
                       </Select>
                       <Select value={zipFilter} onValueChange={setZipFilter}>
-                        <SelectTrigger className="w-full sm:w-[160px]">
+                        <SelectTrigger className="w-full sm:w-[340px]">
                           <SelectValue placeholder="ZIP code" />
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
