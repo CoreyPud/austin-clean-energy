@@ -513,6 +513,7 @@ const CityOverview = () => {
                     enableDynamicLoading={true}
                     onBoundsChange={handleMapBoundsChange}
                     isLoadingMapData={isLoadingMapData}
+                    showLegend={true}
                   />
                 </MapTokenLoader>
               )}
