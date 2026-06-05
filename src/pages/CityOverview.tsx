@@ -275,7 +275,7 @@ const CityOverview = () => {
 
       try {
         // Query installations within the visible bounds (using view for corrections)
-        const { data: boundedInstallations, error } = await supabase
+        let query = supabase
           .from('solar_installations_view')
           .select('*')
           .gte('latitude', bounds.south)
@@ -283,9 +283,11 @@ const CityOverview = () => {
           .gte('longitude', bounds.west)
           .lte('longitude', bounds.east)
           .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
+          .not('longitude', 'is', null);
+        if (zipFilter !== 'all') query = query.eq('original_zip', zipFilter);
+        const { data: boundedInstallations, error } = await query
           .order('completed_date', { ascending: false })
-          .limit(200); // Load up to 200 installations in the zoomed area
+          .limit(200);
 
         if (error) {
           console.error('Error querying installations:', error);
