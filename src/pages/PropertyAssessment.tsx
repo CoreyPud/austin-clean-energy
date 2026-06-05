@@ -365,7 +365,7 @@ const PropertyAssessment = () => {
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl font-bold mb-3 text-foreground">Calculate Solar Savings in Austin</h1>
             <p className="text-lg text-muted-foreground">
-              Solar potential, estimated savings, neighborhood adoption, and your council representative — based on your Austin address.
+              Find out your solar potential and estimated savings based on Austin's energy and solar buyback policies
             </p>
           </div>
 
