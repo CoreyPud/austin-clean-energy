@@ -150,32 +150,28 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
             <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="year" />
-              <YAxis tickFormatter={fmtCompact} />
+              <YAxis tickFormatter={(v) => `${v}%`} />
               <RechartsTooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const d: any = payload[0].payload;
-                    const pct = d.total_count > 0 ? (d.solar_count / d.total_count) * 100 : 0;
                     return (
                       <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                         <p className="font-medium text-sm mb-1">Through {d.year} · ZIP {zipCode}</p>
                         <p className="text-sm">
-                          <span style={{ color: "hsl(var(--primary))" }}>With solar:</span>{" "}
-                          {Number(d.solar_count).toLocaleString()}
+                          <span style={{ color: "hsl(var(--primary))" }}>Solar coverage:</span>{" "}
+                          {d.solar_pct.toFixed(2)}%
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Total properties: {Number(d.total_count).toLocaleString()}
+                          {Number(d.solar_count).toLocaleString()} of {Number(d.total_count).toLocaleString()} properties
                         </p>
-                        <p className="text-sm text-muted-foreground">{pct.toFixed(2)}% adoption</p>
                       </div>
                     );
                   }
                   return null;
                 }}
               />
-              <Legend />
-              <Bar dataKey="solar_count" stackId="a" fill="hsl(var(--primary))" name="With solar" />
-              <Bar dataKey="remaining_count" stackId="a" fill="hsl(var(--muted-foreground) / 0.3)" name="Without solar" />
+              <Bar dataKey="solar_pct" fill="hsl(var(--primary))" name="% with solar" />
             </BarChart>
           </ResponsiveContainer>
         )}
