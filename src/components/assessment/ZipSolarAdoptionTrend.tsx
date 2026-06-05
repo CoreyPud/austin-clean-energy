@@ -139,7 +139,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
   }> = [];
 
   let runningPermits = 0;
-  for (let y = 2010; y <= currentYear; y++) {
+  for (let y = 2014; y <= currentYear; y++) {
     if (cumulativeBuiltByYear[y] !== undefined) lastTotal = cumulativeBuiltByYear[y];
     const lastQ = y === currentYear ? currentQuarter : 4;
     for (let q = 1; q <= lastQ; q++) {
