@@ -106,8 +106,9 @@ const NeighborhoodSnapshot = ({
         : zipPct <= austinPct * 0.9
           ? "less than"
           : "on pace with";
-    return `Your area has ${z}% solar coverage, ${cmp} the Austin average of ${a}%.`;
+    return `${z}% of buildings in your area have solar, ${cmp} the Austin average of ${a}%.`;
   })();
+
 
 
   return (
