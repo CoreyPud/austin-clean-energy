@@ -119,7 +119,7 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
     if (isNaN(dt.getTime())) return;
     const y = dt.getUTCFullYear();
     const q = Math.floor(dt.getUTCMonth() / 3) + 1;
-    if (y < 2010) return;
+    if (y < 2014) return;
     const k = `${y}-Q${q}`;
     solarByYQ[k] = (solarByYQ[k] || 0) + 1;
   });
