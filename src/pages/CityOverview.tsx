@@ -46,6 +46,7 @@ const CityOverview = () => {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'residential' | 'commercial'>('all');
   const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
+  const [mapFitKey, setMapFitKey] = useState<string | undefined>(undefined);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
   const loadingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -289,6 +290,9 @@ const CityOverview = () => {
           color: '#22c55e',
         }));
         setMapMarkers(newMarkers);
+        if (zipFilter !== 'all' && newMarkers.length > 0) {
+          setMapFitKey(`${zipFilter}-${Date.now()}`);
+        }
       } catch (err) {
         console.error('Error loading ZIP-filtered installations:', err);
       } finally {
@@ -506,6 +510,7 @@ const CityOverview = () => {
                     center={[-97.7431, 30.2672]}
                     zoom={10}
                     markers={mapMarkers}
+                    fitMarkersKey={mapFitKey}
                     enableDynamicLoading={true}
                     onBoundsChange={handleMapBoundsChange}
                     isLoadingMapData={isLoadingMapData}

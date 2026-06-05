@@ -30,12 +30,15 @@ interface MapProps {
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => void;
   enableDynamicLoading?: boolean;
   isLoadingMapData?: boolean;
+  /** When this string changes, the map refits its view to the current markers (overrides enableDynamicLoading). */
+  fitMarkersKey?: string;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const lastFitKeyRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -428,16 +431,23 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
 
   // Auto-fit bounds to markers (disabled when dynamic loading is enabled)
   useEffect(() => {
-    if (!map.current || !markers || markers.length === 0 || enableDynamicLoading) return;
+    if (!map.current || !markers || markers.length === 0) return;
+
+    // When dynamic loading is on, only fit if the caller explicitly bumped fitMarkersKey
+    // (and only once per key change — don't refit on every marker reload).
+    if (enableDynamicLoading) {
+      if (fitMarkersKey === undefined || lastFitKeyRef.current === fitMarkersKey) return;
+      lastFitKeyRef.current = fitMarkersKey;
+    }
 
     if (markers.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
       markers.forEach(({ coordinates }) => bounds.extend(coordinates));
-      map.current.fitBounds(bounds, { padding: 50 });
+      map.current.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 800 });
     } else if (markers.length === 1) {
       map.current.flyTo({ center: markers[0].coordinates, zoom: 14 });
     }
-  }, [markers, enableDynamicLoading]);
+  }, [markers, enableDynamicLoading, fitMarkersKey]);
 
   return (
     <div className={`relative ${className}`}>
