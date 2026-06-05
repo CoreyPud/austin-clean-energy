@@ -140,7 +140,9 @@ serve(async (req) => {
             .then((r) => r.json())
             .catch(() => [])
         : Promise.resolve([]),
-      // ZIP-level adoption count from our DB (deduped, complete view)
+      // ZIP-level adoption count from our DB (deduped, complete view).
+      // NOTE: PostgREST caps row results at 1000, so we fetch a sample for markers/avg
+      // but use a separate head+count query below for the true total.
       zipCode
         ? supabase
             .from("solar_installations")
@@ -148,9 +150,22 @@ serve(async (req) => {
             .eq("original_zip", zipCode)
             .not("latitude", "is", null)
             .not("longitude", "is", null)
+            .order("completed_date", { ascending: false, nullsFirst: false })
+            .limit(1000)
         : Promise.resolve({ data: [] as any[] }),
       resolveCouncilMember(lat, lng, councilOverride),
     ]);
+
+    // True total installations in ZIP (exact count, not capped by row limit)
+    const zipCountResp = zipCode
+      ? await supabase
+          .from("solar_installations")
+          .select("id", { count: "exact", head: true })
+          .eq("original_zip", zipCode)
+          .not("latitude", "is", null)
+          .not("longitude", "is", null)
+      : { count: 0 };
+    const zipInstallationsTotal = (zipCountResp as any).count ?? 0;
 
     const dbInstallations = (zipDbResp as any).data || [];
     const cityPermits = Array.isArray(nearbyDbResp) ? nearbyDbResp : [];
