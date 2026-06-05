@@ -183,20 +183,27 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
   }> = [];
 
   let runningPermits = 0;
-  let runningAustinPermits = 0;
+  let austinPrevPct = 0;
   for (let y = 2014; y <= currentYear; y++) {
     if (cumulativeBuiltByYear[y] !== undefined) lastTotal = cumulativeBuiltByYear[y];
     if (austinCumulativeBuilt[y] !== undefined) lastAustinTotal = austinCumulativeBuilt[y];
-    // Austin: annual data — increment full year at Q1 so the line steps once a year
-    runningAustinPermits += austinSolarByYear[y] || 0;
-    const austinSolar = Math.min(runningAustinPermits, lastAustinTotal);
-    const austinPct = lastAustinTotal > 0 ? +(austinSolar / lastAustinTotal * 100).toFixed(2) : 0;
+
+    // Compute Austin end-of-year cumulative pct, then interpolate across quarters
+    const austinYearAdd = austinSolarByYear[y] || 0;
+    const austinEndCum = (chartData.length > 0
+      ? (austinPrevPct / 100) * lastAustinTotal
+      : 0) + austinYearAdd;
+    const austinEndPct = lastAustinTotal > 0
+      ? Math.min(austinEndCum, lastAustinTotal) / lastAustinTotal * 100
+      : 0;
 
     const lastQ = y === currentYear ? currentQuarter : 4;
     for (let q = 1; q <= lastQ; q++) {
       runningPermits += solarByYQ[`${y}-Q${q}`] || 0;
       const solar = Math.min(runningPermits, lastTotal);
       const pct = lastTotal > 0 ? (solar / lastTotal) * 100 : 0;
+      // Linear interpolation between prior year-end pct and this year-end pct
+      const austinPct = austinPrevPct + (austinEndPct - austinPrevPct) * (q / 4);
       chartData.push({
         label: `${y}-Q${q}`,
         year: y,
@@ -204,10 +211,12 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
         solar_count: solar,
         total_count: lastTotal,
         solar_pct: +pct.toFixed(2),
-        austin_pct: austinPct,
+        austin_pct: +austinPct.toFixed(3),
       });
     }
+    austinPrevPct = austinEndPct;
   }
+
 
   return (
     <Card className="border-2 border-primary/20">
