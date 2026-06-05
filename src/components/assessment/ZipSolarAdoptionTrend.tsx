@@ -257,11 +257,10 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
               <Legend />
               <Bar dataKey="solar_pct" fill="hsl(var(--primary))" name="Your ZIP" />
               <Line
-                type="stepAfter"
+                type="monotone"
                 dataKey="austin_pct"
-                stroke="hsl(var(--foreground))"
-                strokeWidth={2}
-                strokeDasharray="4 4"
+                stroke="#86efac"
+                strokeWidth={3}
                 dot={false}
                 name="Austin average"
               />
