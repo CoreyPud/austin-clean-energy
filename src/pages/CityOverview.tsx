@@ -685,7 +685,7 @@ const CityOverview = () => {
                                 <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                                   <p className="font-medium text-sm mb-1">Through {d.year} — {label}{zipFilter !== 'all' ? ` · ${zipFilter}` : ''}</p>
                                   <p className="text-sm">
-                                    <span style={{ color: 'hsl(142 71% 45%)' }}>With solar:</span>{' '}
+                                    <span style={{ color: 'hsl(var(--primary))' }}>With solar:</span>{' '}
                                     {Number(d.solar_count).toLocaleString()}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
