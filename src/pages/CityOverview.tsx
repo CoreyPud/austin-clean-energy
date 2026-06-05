@@ -138,7 +138,7 @@ const CityOverview = () => {
           capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
           installDate: install.completed_date || install.issued_date,
           id: install.id,
-          color: install.permit_class === 'commercial' ? '#2563eb' : '#22c55e'
+          color: String(install.permit_class || '').toLowerCase() === 'commercial' ? '#2563eb' : '#22c55e'
         }));
         console.log('Setting initial map markers:', initialMarkers.length);
         setMapMarkers(initialMarkers);
@@ -291,7 +291,7 @@ const CityOverview = () => {
           capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
           installDate: install.completed_date || install.issued_date,
           id: install.id,
-          color: install.permit_class === 'commercial' ? '#2563eb' : '#22c55e',
+          color: String(install.permit_class || '').toLowerCase() === 'commercial' ? '#2563eb' : '#22c55e',
         }));
         setMapMarkers(newMarkers);
         if ((zipFilter !== 'all' || propertyTypeFilter !== 'all') && newMarkers.length > 0) {
@@ -350,7 +350,7 @@ const CityOverview = () => {
             capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
             installDate: install.completed_date || install.issued_date,
             id: install.id,
-            color: install.permit_class === 'commercial' ? '#2563eb' : '#22c55e'
+            color: String(install.permit_class || '').toLowerCase() === 'commercial' ? '#2563eb' : '#22c55e'
           }));
           console.log('Updating map with new markers:', newMarkers.length);
           setMapMarkers(newMarkers);
