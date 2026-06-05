@@ -510,7 +510,7 @@ const CityOverview = () => {
                     center={[-97.7431, 30.2672]}
                     zoom={10}
                     markers={mapMarkers}
-                    fitMarkersKey={zipFilter !== 'all' ? zipFilter : undefined}
+                    fitMarkersKey={mapFitKey}
                     enableDynamicLoading={true}
                     onBoundsChange={handleMapBoundsChange}
                     isLoadingMapData={isLoadingMapData}
