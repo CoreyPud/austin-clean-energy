@@ -171,8 +171,8 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
-                interval={0}
-                tickFormatter={(v: string) => (v.endsWith("Q1") ? v.slice(0, 4) : "")}
+                ticks={chartData.filter((d) => d.quarter === 1).map((d) => d.label)}
+                tickFormatter={(v: string) => v.slice(0, 4)}
               />
               <YAxis tickFormatter={(v) => `${v}%`} />
               <RechartsTooltip
