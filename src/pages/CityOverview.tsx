@@ -507,11 +507,27 @@ const CityOverview = () => {
             };
             const zipMatches = (z: string) => zipFilter === 'all' || z === zipFilter;
 
-            // ZIP options: union of zips that appear in either dataset (excluding unknown)
-            const zipSet = new Set<string>();
-            builtRows.forEach((r) => { if (r.zip && r.zip !== 'unknown') zipSet.add(r.zip); });
-            solarRows.forEach((r) => { if (r.zip && r.zip !== 'unknown') zipSet.add(r.zip); });
-            const zipOptions = Array.from(zipSet).sort();
+            // ZIP options: rank by total built (filtered by current property type), include current solar % when non-zero
+            const builtByZip: Record<string, number> = {};
+            const solarByZip: Record<string, number> = {};
+            builtRows.forEach((r) => {
+              if (!r.zip || r.zip === 'unknown') return;
+              if (!tcadTypeMatches(r.property_type)) return;
+              builtByZip[r.zip] = (builtByZip[r.zip] || 0) + r.built_count;
+            });
+            solarRows.forEach((r) => {
+              if (!r.zip || r.zip === 'unknown') return;
+              if (!permitClassMatches(r.permit_class)) return;
+              solarByZip[r.zip] = (solarByZip[r.zip] || 0) + r.solar_count;
+            });
+            const zipOptions = Object.keys(builtByZip)
+              .sort((a, b) => (builtByZip[b] || 0) - (builtByZip[a] || 0))
+              .map((z) => {
+                const built = builtByZip[z] || 0;
+                const solar = Math.min(solarByZip[z] || 0, built);
+                const pct = built > 0 ? (100 * solar) / built : 0;
+                return { value: z, label: pct > 0 ? `${z} — ${pct.toFixed(1)}%` : z };
+              });
 
             // Aggregate filtered built-counts and solar-counts by year
             const builtByYear: Record<number, number> = {};
