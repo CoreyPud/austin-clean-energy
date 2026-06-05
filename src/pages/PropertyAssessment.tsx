@@ -26,6 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSeo } from "@/hooks/use-seo";
 import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
+import ZipSolarAdoptionTrend from "@/components/assessment/ZipSolarAdoptionTrend";
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
@@ -743,6 +744,10 @@ const PropertyAssessment = () => {
                     </Card>
                   </MapTokenLoader>
                 </div>
+
+                <ZipSolarAdoptionTrend zipCode={results.zipCode} />
+
+
 
                 {/* Contact CTA */}
                 <ContactCtaCard />
