@@ -654,7 +654,7 @@ const CityOverview = () => {
                         </SelectContent>
                       </Select>
                       <Select value={zipFilter} onValueChange={setZipFilter}>
-                        <SelectTrigger className="w-full sm:w-[160px]">
+                        <SelectTrigger className="w-full sm:w-[340px]">
                           <SelectValue placeholder="ZIP code" />
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
