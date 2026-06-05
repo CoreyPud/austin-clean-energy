@@ -278,7 +278,7 @@ const CityOverview = () => {
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
         if (zipFilter !== 'all') query = query.eq('original_zip', zipFilter);
-        if (propertyTypeFilter !== 'all') query = query.eq('permit_class', propertyTypeFilter);
+        if (propertyTypeFilter !== 'all') query = query.ilike('permit_class', propertyTypeFilter);
         const { data, error } = await query
           .order('completed_date', { ascending: false })
           .limit(100);
@@ -329,7 +329,7 @@ const CityOverview = () => {
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
         if (zipFilter !== 'all') query = query.eq('original_zip', zipFilter);
-        if (propertyTypeFilter !== 'all') query = query.eq('permit_class', propertyTypeFilter);
+        if (propertyTypeFilter !== 'all') query = query.ilike('permit_class', propertyTypeFilter);
         const { data: boundedInstallations, error } = await query
           .order('completed_date', { ascending: false })
           .limit(200);
