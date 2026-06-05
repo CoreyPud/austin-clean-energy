@@ -38,6 +38,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const lastFitKeyRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!mapContainer.current) return;
