@@ -430,16 +430,17 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
 
   // Auto-fit bounds to markers (disabled when dynamic loading is enabled)
   useEffect(() => {
-    if (!map.current || !markers || markers.length === 0 || enableDynamicLoading) return;
+    if (!map.current || !markers || markers.length === 0) return;
+    if (enableDynamicLoading && fitMarkersKey === undefined) return;
 
     if (markers.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
       markers.forEach(({ coordinates }) => bounds.extend(coordinates));
-      map.current.fitBounds(bounds, { padding: 50 });
+      map.current.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 800 });
     } else if (markers.length === 1) {
       map.current.flyTo({ center: markers[0].coordinates, zoom: 14 });
     }
-  }, [markers, enableDynamicLoading]);
+  }, [markers, enableDynamicLoading, fitMarkersKey]);
 
   return (
     <div className={`relative ${className}`}>
