@@ -290,6 +290,9 @@ const CityOverview = () => {
           color: '#22c55e',
         }));
         setMapMarkers(newMarkers);
+        if (zipFilter !== 'all' && newMarkers.length > 0) {
+          setMapFitKey(`${zipFilter}-${Date.now()}`);
+        }
       } catch (err) {
         console.error('Error loading ZIP-filtered installations:', err);
       } finally {
