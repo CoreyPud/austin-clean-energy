@@ -432,7 +432,13 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
   // Auto-fit bounds to markers (disabled when dynamic loading is enabled)
   useEffect(() => {
     if (!map.current || !markers || markers.length === 0) return;
-    if (enableDynamicLoading && fitMarkersKey === undefined) return;
+
+    // When dynamic loading is on, only fit if the caller explicitly bumped fitMarkersKey
+    // (and only once per key change — don't refit on every marker reload).
+    if (enableDynamicLoading) {
+      if (fitMarkersKey === undefined || lastFitKeyRef.current === fitMarkersKey) return;
+      lastFitKeyRef.current = fitMarkersKey;
+    }
 
     if (markers.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
