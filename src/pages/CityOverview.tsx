@@ -275,6 +275,7 @@ const CityOverview = () => {
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
         if (zipFilter !== 'all') query = query.eq('original_zip', zipFilter);
+        if (propertyTypeFilter !== 'all') query = query.eq('permit_class', propertyTypeFilter);
         const { data, error } = await query
           .order('completed_date', { ascending: false })
           .limit(100);
@@ -287,23 +288,23 @@ const CityOverview = () => {
           capacity: install.installed_kw ? `${install.installed_kw} kW` : 'Capacity unknown',
           installDate: install.completed_date || install.issued_date,
           id: install.id,
-          color: '#22c55e',
+          color: install.permit_class === 'commercial' ? '#2563eb' : '#22c55e',
         }));
         setMapMarkers(newMarkers);
-        if (zipFilter !== 'all' && newMarkers.length > 0) {
-          setMapFitKey(`${zipFilter}-${Date.now()}`);
+        if ((zipFilter !== 'all' || propertyTypeFilter !== 'all') && newMarkers.length > 0) {
+          setMapFitKey(`${zipFilter}-${propertyTypeFilter}-${Date.now()}`);
         }
       } catch (err) {
-        console.error('Error loading ZIP-filtered installations:', err);
+        console.error('Error loading filtered installations:', err);
       } finally {
         if (!cancelled) setIsLoadingMapData(false);
       }
     };
-    // Skip on initial mount for 'all' — the main loader already populated markers.
-    if (zipFilter !== 'all' || mapMarkers.length > 0) loadZipMarkers();
+    // Skip on initial mount when no filters are set — the main loader already populated markers.
+    if (zipFilter !== 'all' || propertyTypeFilter !== 'all' || mapMarkers.length > 0) loadZipMarkers();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zipFilter]);
+  }, [zipFilter, propertyTypeFilter]);
 
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     // Debounce to prevent rapid repeated calls
