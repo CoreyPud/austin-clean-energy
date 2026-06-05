@@ -30,9 +30,11 @@ interface MapProps {
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => void;
   enableDynamicLoading?: boolean;
   isLoadingMapData?: boolean;
+  /** When this string changes, the map refits its view to the current markers (overrides enableDynamicLoading). */
+  fitMarkersKey?: string;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
