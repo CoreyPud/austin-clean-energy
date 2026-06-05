@@ -707,10 +707,7 @@ const CityOverview = () => {
                     </ResponsiveContainer>
                   )}
                   <p className="text-xs text-muted-foreground mt-3">
-                    Note: Solar permits are keyed by completion year (City of Austin records begin in 2014). Property
-                    totals are from TCAD by year built. Property-type filter maps Residential to single-family / condo /
-                    multifamily on the TCAD side and to the residential permit class on the permit side. ZIP filtering
-                    uses TCAD situs ZIP for property counts and the permit's original ZIP for solar counts.
+                    Sources: City of Austin solar permits (2014–present) and TCAD property records.
                   </p>
                 </CardContent>
               </Card>
