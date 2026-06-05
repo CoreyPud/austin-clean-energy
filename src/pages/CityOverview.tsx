@@ -314,7 +314,7 @@ const CityOverview = () => {
     setCurrentZoom(bounds.zoom);
 
     loadingTimeoutRef.current = setTimeout(async () => {
-      setIsLoadingMapData(true);
+      // Silent reload — no loading overlay after initial map load
       console.log('Fetching installations for bounds:', bounds);
 
       try {
