@@ -685,7 +685,7 @@ const CityOverview = () => {
                                 <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                                   <p className="font-medium text-sm mb-1">Through {d.year} — {label}{zipFilter !== 'all' ? ` · ${zipFilter}` : ''}</p>
                                   <p className="text-sm">
-                                    <span style={{ color: 'hsl(142 71% 45%)' }}>With solar:</span>{' '}
+                                    <span style={{ color: 'hsl(var(--primary))' }}>With solar:</span>{' '}
                                     {Number(d.solar_count).toLocaleString()}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
@@ -701,7 +701,7 @@ const CityOverview = () => {
                           }}
                         />
                         <Legend />
-                        <Bar dataKey="solar_count" stackId="a" fill="hsl(142 71% 45%)" name="With solar" />
+                        <Bar dataKey="solar_count" stackId="a" fill="hsl(var(--primary))" name="With solar" />
                         <Bar dataKey="remaining_count" stackId="a" fill="hsl(var(--muted-foreground) / 0.3)" name="Without solar" />
                       </BarChart>
                     </ResponsiveContainer>
