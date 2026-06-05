@@ -507,7 +507,7 @@ const CityOverview = () => {
                   <Map 
                     className="h-[500px] rounded-lg overflow-hidden"
                     center={[-97.7431, 30.2672]}
-                    zoom={10}
+                    zoom={9}
                     markers={mapMarkers}
                     fitMarkersKey={mapFitKey}
                     enableDynamicLoading={true}
