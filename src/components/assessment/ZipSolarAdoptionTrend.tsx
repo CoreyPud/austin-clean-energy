@@ -128,12 +128,12 @@ const ZipSolarAdoptionTrend = ({ zipCode }: Props) => {
     runningPermits += solarByYear[y] || 0;
     if (cumulativeBuiltByYear[y] !== undefined) lastTotal = cumulativeBuiltByYear[y];
     const solar = Math.min(runningPermits, lastTotal);
-    const remaining = Math.max(0, lastTotal - solar);
+    const pct = lastTotal > 0 ? (solar / lastTotal) * 100 : 0;
     return {
       year: y,
       solar_count: solar,
-      remaining_count: remaining,
       total_count: lastTotal,
+      solar_pct: +pct.toFixed(2),
     };
   });
 
