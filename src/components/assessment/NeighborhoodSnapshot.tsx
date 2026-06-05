@@ -127,7 +127,7 @@ const NeighborhoodSnapshot = ({
             solar installations in {zipCode || "your ZIP"}
           </span>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">{adoptionLabel}.</p>
+        <p className="text-sm text-muted-foreground mb-6">{adoptionLabel}</p>
 
         {/* Adoption comparison bar */}
         <div className="mb-6">
