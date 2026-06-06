@@ -330,6 +330,7 @@ export type Database = {
           permit_number: string | null
           project_id: string | null
           status_current: string | null
+          tcad_pid: number | null
           total_job_valuation: number | null
           updated_at: string | null
         }
@@ -356,6 +357,7 @@ export type Database = {
           permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
         }
@@ -382,6 +384,7 @@ export type Database = {
           permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
         }
