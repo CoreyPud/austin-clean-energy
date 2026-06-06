@@ -568,11 +568,6 @@ const CityOverview = () => {
               solarByZip[r.zip] = (solarByZip[r.zip] || 0) + r.solar_count;
             });
             const fmtInt = (n: number) => n.toLocaleString('en-US');
-            // Filter out ZIPs where TCAD coverage is too sparse to produce reliable %.
-            // (e.g. 78729 only has ~400 properties recorded in TCAD vs. ~13k in reality,
-            // which inflates the solar % to implausible values.)
-            const MIN_BUILT_FOR_ZIP = 1500;
-            const MAX_PLAUSIBLE_PCT = 30;
             const zipOptions = Object.keys(builtByZip)
               .map((z) => {
                 const built = builtByZip[z] || 0;
@@ -580,12 +575,12 @@ const CityOverview = () => {
                 const pct = built > 0 ? (100 * solar) / built : 0;
                 return { value: z, built, pct };
               })
-              .filter(({ built, pct }) => built >= MIN_BUILT_FOR_ZIP && pct <= MAX_PLAUSIBLE_PCT)
               .sort((a, b) => b.pct - a.pct || b.built - a.built)
               .map(({ value, built, pct }) => ({
                 value,
                 label: `${value} — ${fmtInt(built)} buildings, ${pct.toFixed(1)}% solar coverage`,
               }));
+
 
             // Aggregate filtered built-counts and solar-counts by year
             const builtByYear: Record<number, number> = {};
