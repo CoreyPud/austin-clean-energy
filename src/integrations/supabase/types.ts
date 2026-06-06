@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      _tcad_pid_staging: {
+        Row: {
+          id: string
+          pid: number | null
+        }
+        Insert: {
+          id: string
+          pid?: number | null
+        }
+        Update: {
+          id?: string
+          pid?: number | null
+        }
+        Relationships: []
+      }
       admin_sessions: {
         Row: {
           created_at: string
@@ -330,6 +345,7 @@ export type Database = {
           permit_number: string | null
           project_id: string | null
           status_current: string | null
+          tcad_pid: number | null
           total_job_valuation: number | null
           updated_at: string | null
         }
@@ -356,6 +372,7 @@ export type Database = {
           permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
         }
@@ -382,6 +399,7 @@ export type Database = {
           permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
         }
