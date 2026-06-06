@@ -14,21 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _tcad_pid_staging: {
-        Row: {
-          id: string
-          pid: number | null
-        }
-        Insert: {
-          id: string
-          pid?: number | null
-        }
-        Update: {
-          id?: string
-          pid?: number | null
-        }
-        Relationships: []
-      }
       admin_sessions: {
         Row: {
           created_at: string
