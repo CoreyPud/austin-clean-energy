@@ -546,7 +546,7 @@ const CityOverview = () => {
               )}
               <div className="mt-6 px-2">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Installations completed on or before</span>
+                  <span className="text-sm font-medium">Historical trend</span>
                   <span className="text-sm font-semibold text-primary">{mapYear}</span>
                 </div>
                 <Slider
