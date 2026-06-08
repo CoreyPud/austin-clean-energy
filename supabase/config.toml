@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.parse-bill]
 verify_jwt = false
+
+[functions.installations-geojson]
+verify_jwt = false
