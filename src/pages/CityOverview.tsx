@@ -34,7 +34,7 @@ const CityOverview = () => {
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [timelineData, setTimelineData] = useState<any[]>([]);
-  const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('perPeriod');
+  const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('cumulative');
   const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
   const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -765,7 +765,7 @@ const CityOverview = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <CardTitle className="text-2xl">
-                    Solar Installations by Quarter
+                    Solar Installations Over Time
                   </CardTitle>
                   <CardDescription>
                     {chartMode === 'perPeriod'
@@ -786,10 +786,16 @@ const CityOverview = () => {
                 <Skeleton className="h-[320px] w-full" />
               ) : quarterlyData.length > 0 ? (
                 (() => {
+                  const now = new Date();
+                  const currentYear = now.getFullYear();
+                  const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+                  const completed = quarterlyData.filter((d: any) =>
+                    d.year < currentYear || (d.year === currentYear && d.quarter < currentQuarter)
+                  );
                   let runSolar = 0;
                   let runBattery = 0;
                   let runKW = 0;
-                  const chartData = quarterlyData.map((d: any) => {
+                  const chartData = completed.map((d: any) => {
                     if (chartMode === 'cumulative') {
                       runSolar += d.solarOnly;
                       runBattery += d.batteryCount;
