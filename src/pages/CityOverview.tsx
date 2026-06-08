@@ -619,7 +619,12 @@ const CityOverview = () => {
                 const pct = built > 0 ? (100 * solar) / built : 0;
                 return { value: z, built, pct };
               })
-              .sort((a, b) => b.pct - a.pct || b.built - a.built)
+              .sort((a, b) => {
+                const aSmall = a.built < 100 ? 1 : 0;
+                const bSmall = b.built < 100 ? 1 : 0;
+                if (aSmall !== bSmall) return aSmall - bSmall;
+                return b.pct - a.pct || b.built - a.built;
+              })
               .map(({ value, built, pct }) => ({
                 value,
                 label: `${value} — ${fmtInt(built)} buildings, ${pct.toFixed(1)}% solar coverage`,
