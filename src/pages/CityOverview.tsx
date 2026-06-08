@@ -34,10 +34,9 @@ const CityOverview = () => {
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [timelineData, setTimelineData] = useState<any[]>([]);
-  const [chartView, setChartView] = useState<'yearly' | 'quarterly'>('yearly');
+  const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('perPeriod');
   const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
-  const [quarterlyYears, setQuarterlyYears] = useState<number[]>([]);
-  const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(false);
+  const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingYearly, setIsLoadingYearly] = useState(true);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(true);
@@ -243,27 +242,22 @@ const CityOverview = () => {
     loadAdoptionData();
   }, []);
 
-  // Load quarterly data when user switches to quarterly view
+  // Load quarterly data on mount
   useEffect(() => {
-    if (chartView !== 'quarterly' || quarterlyData.length > 0) return;
-    
     const loadQuarterlyData = async () => {
       setIsLoadingQuarterly(true);
       try {
         const { data: result, error } = await supabase.functions.invoke('quarterly-stats');
         if (error) throw error;
-        
         setQuarterlyData(result.data || []);
-        setQuarterlyYears(result.years || []);
       } catch (error) {
         console.error('Error loading quarterly data:', error);
       } finally {
         setIsLoadingQuarterly(false);
       }
     };
-
     loadQuarterlyData();
-  }, [chartView, quarterlyData.length]);
+  }, []);
 
   // Refresh map markers when filters change (silently — no loading spinner after initial load).
   const didMountFiltersRef = useRef(false);
