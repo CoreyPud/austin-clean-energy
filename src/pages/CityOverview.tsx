@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
+import { Slider } from "@/components/ui/slider";
 import { useSeo } from "@/hooks/use-seo";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { 
@@ -327,11 +328,12 @@ const CityOverview = () => {
   const filteredClusterPoints = (() => {
     const pt = propertyTypeFilter;
     const zf = zipFilter;
-    if (pt === 'all' && zf === 'all') return allPoints;
-    return allPoints.filter(([, , , c, zip]) => {
+    const yr = mapYear;
+    return allPoints.filter(([, , , c, zip, year]) => {
       if (pt === 'commercial' && c !== 1) return false;
       if (pt === 'residential' && c !== 0) return false;
       if (zf !== 'all' && zip !== zf) return false;
+      if (year != null && year > yr) return false;
       return true;
     });
   })();
@@ -542,6 +544,23 @@ const CityOverview = () => {
                   />
                 </MapTokenLoader>
               )}
+              <div className="mt-6 px-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Installations completed on or before</span>
+                  <span className="text-sm font-semibold text-primary">{mapYear}</span>
+                </div>
+                <Slider
+                  min={2014}
+                  max={new Date().getFullYear()}
+                  step={1}
+                  value={[mapYear]}
+                  onValueChange={(v) => setMapYear(v[0])}
+                />
+                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                  <span>2014</span>
+                  <span>{new Date().getFullYear()}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
