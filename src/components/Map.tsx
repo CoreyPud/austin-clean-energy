@@ -59,6 +59,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       style: 'mapbox://styles/mapbox/light-v11',
       center,
       zoom,
+      cooperativeGestures: true,
     });
 
     map.current.addControl(
