@@ -35,6 +35,7 @@ const CityOverview = () => {
   const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [timelineData, setTimelineData] = useState<any[]>([]);
   const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('cumulative');
+  const [chartMetric, setChartMetric] = useState<'count' | 'capacity'>('count');
   const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
   const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
