@@ -774,12 +774,20 @@ const CityOverview = () => {
                       : 'Cumulative solar projects completed through each quarter (2014–present)'}
                   </CardDescription>
                 </div>
-                <Tabs value={chartMode} onValueChange={(v) => setChartMode(v as 'perPeriod' | 'cumulative')}>
-                  <TabsList>
-                    <TabsTrigger value="perPeriod">Per Quarter</TabsTrigger>
-                    <TabsTrigger value="cumulative">Cumulative</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Tabs value={chartMetric} onValueChange={(v) => setChartMetric(v as 'count' | 'capacity')}>
+                    <TabsList>
+                      <TabsTrigger value="count">Properties</TabsTrigger>
+                      <TabsTrigger value="capacity">Capacity (kW)</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <Tabs value={chartMode} onValueChange={(v) => setChartMode(v as 'perPeriod' | 'cumulative')}>
+                    <TabsList>
+                      <TabsTrigger value="perPeriod">Per Quarter</TabsTrigger>
+                      <TabsTrigger value="cumulative">Cumulative</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -833,17 +841,29 @@ const CityOverview = () => {
                               return (
                                 <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                                   <p className="font-medium text-sm mb-1">{label}</p>
-                                  <p className="text-sm"><span className="text-primary">Solar Only:</span> {data.solarOnly?.toLocaleString()}</p>
-                                  <p className="text-sm"><span className="text-secondary">With Battery:</span> {data.batteryCount?.toLocaleString()}</p>
-                                  <p className="text-sm font-semibold mt-1"><span className="text-muted-foreground">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                  {chartMetric === 'count' ? (
+                                    <>
+                                      <p className="text-sm"><span className="text-primary">Solar Only:</span> {data.solarOnly?.toLocaleString()}</p>
+                                      <p className="text-sm"><span className="text-secondary">With Battery:</span> {data.batteryCount?.toLocaleString()}</p>
+                                      <p className="text-sm font-semibold mt-1"><span className="text-muted-foreground">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                    </>
+                                  ) : (
+                                    <p className="text-sm"><span className="text-primary">Total kW:</span> {data.totalKW?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                  )}
                                 </div>
                               );
                             }
                             return null;
                           }}
                         />
-                        <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
-                        <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
+                        {chartMetric === 'count' ? (
+                          <>
+                            <Bar dataKey="batteryCount" stackId="a" fill="hsl(var(--secondary))" name="With Battery" />
+                            <Bar dataKey="solarOnly" stackId="a" fill="hsl(var(--primary))" name="Solar Only" />
+                          </>
+                        ) : (
+                          <Bar dataKey="totalKW" fill="hsl(var(--primary))" name="Total kW" />
+                        )}
                       </BarChart>
                     </ResponsiveContainer>
                   );
