@@ -303,73 +303,35 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         })),
       };
 
+      // No clustering — render every point individually. Mapbox handles ~20k points on GPU.
       map.current.addSource('installations', {
         type: 'geojson',
         data: geojson,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 45,
-      });
-
-      map.current.addLayer({
-        id: 'inst-clusters',
-        type: 'circle',
-        source: 'installations',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-color': [
-            'step', ['get', 'point_count'],
-            '#86efac', 25, '#4ade80', 100, '#22c55e', 500, '#16a34a',
-          ],
-          'circle-radius': [
-            'step', ['get', 'point_count'],
-            12, 25, 16, 100, 20, 500, 26,
-          ],
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 1.5,
-          'circle-opacity': 0.9,
-        },
-      });
-
-      map.current.addLayer({
-        id: 'inst-cluster-count',
-        type: 'symbol',
-        source: 'installations',
-        filter: ['has', 'point_count'],
-        layout: {
-          'text-field': ['get', 'point_count_abbreviated'],
-          'text-size': 11,
-          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-        },
-        paint: { 'text-color': '#0f172a' },
       });
 
       map.current.addLayer({
         id: 'inst-point',
         type: 'circle',
         source: 'installations',
-        filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
-          'circle-radius': 3,
+          // Tiny at city zoom, growing as you zoom in
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            8, 1.2,
+            11, 2,
+            14, 3.5,
+            17, 6,
+          ],
           'circle-stroke-color': '#fff',
-          'circle-stroke-width': 0.8,
-          'circle-opacity': 0.9,
+          'circle-stroke-width': [
+            'interpolate', ['linear'], ['zoom'],
+            8, 0,
+            12, 0.5,
+            15, 1,
+          ],
+          'circle-opacity': 0.85,
         },
-      });
-
-      map.current.on('click', 'inst-clusters', (e) => {
-        if (!map.current || !e.features?.[0]) return;
-        const feature = e.features[0];
-        const clusterId = feature.properties?.cluster_id;
-        const src = map.current.getSource('installations') as any;
-        src.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
-          if (err || !map.current) return;
-          map.current.easeTo({
-            center: (feature.geometry as any).coordinates,
-            zoom,
-          });
-        });
       });
 
       map.current.on('click', 'inst-point', (e) => {
@@ -379,8 +341,6 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
       const setPointer = () => { if (map.current) map.current.getCanvas().style.cursor = 'pointer'; };
       const clearPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
-      map.current.on('mouseenter', 'inst-clusters', setPointer);
-      map.current.on('mouseleave', 'inst-clusters', clearPointer);
       map.current.on('mouseenter', 'inst-point', setPointer);
       map.current.on('mouseleave', 'inst-point', clearPointer);
     };
@@ -586,10 +546,6 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] border border-white shadow-sm"></div>
               <span className="text-xs text-muted-foreground">Commercial</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#4ade80] border border-white shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Cluster (zoom to expand)</span>
             </div>
           </div>
         </div>
