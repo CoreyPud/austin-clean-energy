@@ -114,8 +114,11 @@ const DataSources = () => {
                   sorted by completion date or issue date.
                 </div>
                 <div>
-                  <strong>Yearly Trends:</strong> Installations grouped by the calendar year the permit was issued, 
-                  showing adoption momentum over time.
+                  <strong>Solar Installations Over Time:</strong> Installations are grouped by the calendar 
+                  quarter the permit was issued. The chart offers two toggles — <em>Cumulative vs. Per-Quarter</em> 
+                  and <em>Property Count vs. Capacity (kW)</em> — and defaults to a cumulative property-count view. 
+                  Incomplete quarters (the current quarter and any future quarters) are excluded so trend lines 
+                  are not skewed by partial data.
                 </div>
                 <div>
                   <strong>Permit Processing Time:</strong> Average number of days between the Applied Date 
