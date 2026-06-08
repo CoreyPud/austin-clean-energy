@@ -24,7 +24,7 @@ interface MapProps {
     source?: 'existing' | 'api' | 'target';
   }>;
   /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null] */
-  clusterPoints?: Array<[string, number, number, number, string | null]>;
+  clusterPoints?: Array<[string, number, number, number, string | null, number?]>;
   onClusterPointClick?: (id: string) => void;
   heatmapData?: HeatmapPoint[];
   showLegend?: boolean;

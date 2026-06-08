@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-token",
 };
 
-const CACHE_KEY = "installations_geojson_v1";
+const CACHE_KEY = "installations_geojson_v2";
 const MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 async function rebuild(supabase: any): Promise<string> {
@@ -17,7 +17,7 @@ async function rebuild(supabase: any): Promise<string> {
   const requests = Array.from({ length: MAX_PAGES }, (_, i) =>
     supabase
       .from("solar_installations_view")
-      .select("id, latitude, longitude, permit_class, original_zip")
+      .select("id, latitude, longitude, permit_class, original_zip, completed_date, issued_date")
       .not("latitude", "is", null)
       .not("longitude", "is", null)
       .range(i * PAGE, i * PAGE + PAGE - 1),
@@ -28,13 +28,18 @@ async function rebuild(supabase: any): Promise<string> {
     if (error) throw error;
     if (data) all.push(...data);
   }
-  const compact = all.map((r: any) => [
-    r.id,
-    Math.round(r.longitude * 1e5) / 1e5,
-    Math.round(r.latitude * 1e5) / 1e5,
-    String(r.permit_class || "").toLowerCase() === "commercial" ? 1 : 0,
-    r.original_zip || null,
-  ]);
+  const compact = all.map((r: any) => {
+    const dateStr = r.completed_date || r.issued_date;
+    const year = dateStr ? Number(String(dateStr).slice(0, 4)) || 0 : 0;
+    return [
+      r.id,
+      Math.round(r.longitude * 1e5) / 1e5,
+      Math.round(r.latitude * 1e5) / 1e5,
+      String(r.permit_class || "").toLowerCase() === "commercial" ? 1 : 0,
+      r.original_zip || null,
+      year,
+    ];
+  });
   const payload = JSON.stringify({ points: compact, generated_at: new Date().toISOString() });
   await supabase
     .from("cached_stats")
