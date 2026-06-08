@@ -851,11 +851,6 @@ const CityOverview = () => {
               </div>
             </CardContent>
           </Card>
-              <div className="mt-4 text-xs text-muted-foreground italic px-2">
-                Note: kW capacity values are based on permit records and may not represent total installed capacity in all cases.
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Permit Timeline Chart */}
           <Card>
