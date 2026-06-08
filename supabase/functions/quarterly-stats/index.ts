@@ -16,7 +16,6 @@ async function fetchAllRows(
   const pageSize = 1000;
   let offset = 0;
   let hasMore = true;
-
   while (hasMore) {
     const { data, error } = await client
       .from('solar_installations_view')
@@ -24,7 +23,6 @@ async function fetchAllRows(
       .gte(dateColumn, startDate)
       .lte(dateColumn, endDate)
       .range(offset, offset + pageSize - 1);
-
     if (error) throw error;
     if (data && data.length > 0) {
       allRows.push(...data);
@@ -37,87 +35,79 @@ async function fetchAllRows(
   return allRows;
 }
 
+const BATTERY_TERMS = ['bess', 'battery', 'batteries', 'energy storage', 'powerwall', 'backup'];
+
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    console.log('Fetching quarterly installation statistics');
-
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!SUPABASE_URL || !SERVICE_ROLE) {
-      throw new Error('Missing backend environment configuration');
-    }
+    if (!SUPABASE_URL || !SERVICE_ROLE) throw new Error('Missing backend environment configuration');
     const client = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     const currentYear = new Date().getFullYear();
     const startYear = 2014;
 
-    // Fetch all records from startYear to now in one paginated sweep
-    const allInstalls = await fetchAllRows(
+    const rows = await fetchAllRows(
       client,
-      'completed_date, issued_date, installed_kw, project_id',
+      'project_id, completed_date, issued_date, installed_kw, description',
       'completed_date',
       `${startYear}-01-01`,
       `${currentYear}-12-31`
     );
 
     // Deduplicate by project_id
-    const seenProjectIds = new Set<string>();
-    const dedupedInstalls = allInstalls.filter((install: any) => {
-      if (!install.project_id) return true;
-      if (seenProjectIds.has(install.project_id)) return false;
-      seenProjectIds.add(install.project_id);
+    const seen = new Set<string>();
+    const deduped = rows.filter((r: any) => {
+      if (!r.project_id) return true;
+      if (seen.has(r.project_id)) return false;
+      seen.add(r.project_id);
       return true;
     });
 
-    // Aggregate by year and quarter
-    const yearQuarterMap: Record<string, { count: number; kw: number }> = {};
-    const years = new Set<number>();
+    type Bucket = { count: number; batteryCount: number; totalKW: number };
+    const buckets: Record<string, Bucket> = {};
 
-    dedupedInstalls.forEach((inst: any) => {
-      const dateStr = inst.completed_date || inst.issued_date;
+    deduped.forEach((r: any) => {
+      const dateStr = r.completed_date || r.issued_date;
       if (!dateStr) return;
-      const date = new Date(dateStr);
-      const year = date.getFullYear();
+      const d = new Date(dateStr);
+      const year = d.getFullYear();
       if (year < startYear) return;
-      const quarter = Math.floor(date.getMonth() / 3) + 1;
-      years.add(year);
-      const key = `${year}-Q${quarter}`;
-      if (!yearQuarterMap[key]) yearQuarterMap[key] = { count: 0, kw: 0 };
-      yearQuarterMap[key].count += 1;
-      yearQuarterMap[key].kw += Number(inst.installed_kw) || 0;
+      const quarter = Math.floor(d.getMonth() / 3) + 1;
+      const key = `${year}-${quarter}`;
+      if (!buckets[key]) buckets[key] = { count: 0, batteryCount: 0, totalKW: 0 };
+      buckets[key].count += 1;
+      buckets[key].totalKW += Number(r.installed_kw) || 0;
+      const desc = (r.description || '').toLowerCase();
+      if (BATTERY_TERMS.some((t) => desc.includes(t))) buckets[key].batteryCount += 1;
     });
 
-    const sortedYears = Array.from(years).sort();
-    const quarterLabels = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
-
-    const quarterlyData = [1, 2, 3, 4].map((q, idx) => {
-      const row: Record<string, any> = { quarter: quarterLabels[idx] };
-      sortedYears.forEach(year => {
-        const key = `${year}-Q${q}`;
-        row[`y${year}`] = yearQuarterMap[key]?.count || 0;
-        row[`kw${year}`] = yearQuarterMap[key]?.kw || 0;
-      });
-      return row;
-    });
-
-    console.log(`Returning quarterly data for ${sortedYears.length} years, ${dedupedInstalls.length} records`);
+    const data: any[] = [];
+    for (let y = startYear; y <= currentYear; y++) {
+      for (let q = 1; q <= 4; q++) {
+        const b = buckets[`${y}-${q}`] || { count: 0, batteryCount: 0, totalKW: 0 };
+        data.push({
+          period: `${y} Q${q}`,
+          year: y,
+          quarter: q,
+          count: b.count,
+          batteryCount: b.batteryCount,
+          solarOnly: b.count - b.batteryCount,
+          totalKW: Math.round(b.totalKW),
+        });
+      }
+    }
 
     return new Response(
-      JSON.stringify({ data: quarterlyData, years: sortedYears }),
+      JSON.stringify({ data }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
     console.error('Error fetching quarterly stats:', error);
     return new Response(
-      JSON.stringify({
-        error: 'An internal error occurred. Please try again.',
-        data: [],
-        years: [],
-      }),
+      JSON.stringify({ error: 'An internal error occurred. Please try again.', data: [] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
