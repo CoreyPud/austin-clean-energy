@@ -521,6 +521,24 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     }
   }, [markers, enableDynamicLoading, fitMarkersKey]);
 
+  // Auto-fit bounds to cluster points (once on first load)
+  const didFitClusterRef = useRef(false);
+  useEffect(() => {
+    if (!map.current || !clusterPoints || clusterPoints.length === 0) return;
+    if (didFitClusterRef.current) return;
+
+    const doFit = () => {
+      if (!map.current || !clusterPoints || clusterPoints.length === 0) return;
+      const bounds = new mapboxgl.LngLatBounds();
+      clusterPoints.forEach(([, lng, lat]) => bounds.extend([lng, lat]));
+      map.current.fitBounds(bounds, { padding: 20, duration: 0 });
+      didFitClusterRef.current = true;
+    };
+
+    if (map.current.loaded()) doFit();
+    else map.current.once('load', doFit);
+  }, [clusterPoints]);
+
   return (
     <div className={`relative ${className}`}>
       <div ref={mapContainer} className="absolute inset-0 rounded-lg shadow-lg" />
