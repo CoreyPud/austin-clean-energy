@@ -23,6 +23,9 @@ interface MapProps {
     color?: string;
     source?: 'existing' | 'api' | 'target';
   }>;
+  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null] */
+  clusterPoints?: Array<[string, number, number, number, string | null]>;
+  onClusterPointClick?: (id: string) => void;
   heatmapData?: HeatmapPoint[];
   showLegend?: boolean;
   className?: string;
@@ -34,7 +37,7 @@ interface MapProps {
   fitMarkersKey?: string;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -278,6 +281,118 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
     }
   }, [heatmapData]);
 
+  // Handle clustered points rendering (high-density mode)
+  useEffect(() => {
+    if (!map.current || !clusterPoints) return;
+
+    const addClusterLayers = () => {
+      if (!map.current) return;
+
+      // Clean up existing
+      if (map.current.getLayer('inst-point')) map.current.removeLayer('inst-point');
+      if (map.current.getLayer('inst-cluster-count')) map.current.removeLayer('inst-cluster-count');
+      if (map.current.getLayer('inst-clusters')) map.current.removeLayer('inst-clusters');
+      if (map.current.getSource('installations')) map.current.removeSource('installations');
+
+      const geojson: any = {
+        type: 'FeatureCollection',
+        features: clusterPoints.map(([id, lng, lat, c, zip]) => ({
+          type: 'Feature',
+          properties: { id, c, zip: zip || '' },
+          geometry: { type: 'Point', coordinates: [lng, lat] },
+        })),
+      };
+
+      map.current.addSource('installations', {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 45,
+      });
+
+      map.current.addLayer({
+        id: 'inst-clusters',
+        type: 'circle',
+        source: 'installations',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step', ['get', 'point_count'],
+            '#86efac', 25, '#4ade80', 100, '#22c55e', 500, '#16a34a',
+          ],
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            12, 25, 16, 100, 20, 500, 26,
+          ],
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': 1.5,
+          'circle-opacity': 0.9,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'inst-cluster-count',
+        type: 'symbol',
+        source: 'installations',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-size': 11,
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        },
+        paint: { 'text-color': '#0f172a' },
+      });
+
+      map.current.addLayer({
+        id: 'inst-point',
+        type: 'circle',
+        source: 'installations',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
+          'circle-radius': 3,
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': 0.8,
+          'circle-opacity': 0.9,
+        },
+      });
+
+      map.current.on('click', 'inst-clusters', (e) => {
+        if (!map.current || !e.features?.[0]) return;
+        const feature = e.features[0];
+        const clusterId = feature.properties?.cluster_id;
+        const src = map.current.getSource('installations') as any;
+        src.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+          if (err || !map.current) return;
+          map.current.easeTo({
+            center: (feature.geometry as any).coordinates,
+            zoom,
+          });
+        });
+      });
+
+      map.current.on('click', 'inst-point', (e) => {
+        const id = e.features?.[0]?.properties?.id;
+        if (id && onClusterPointClick) onClusterPointClick(String(id));
+      });
+
+      const setPointer = () => { if (map.current) map.current.getCanvas().style.cursor = 'pointer'; };
+      const clearPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
+      map.current.on('mouseenter', 'inst-clusters', setPointer);
+      map.current.on('mouseleave', 'inst-clusters', clearPointer);
+      map.current.on('mouseenter', 'inst-point', setPointer);
+      map.current.on('mouseleave', 'inst-point', clearPointer);
+    };
+
+    if (map.current.loaded()) {
+      addClusterLayers();
+    } else {
+      map.current.on('load', addClusterLayers);
+    }
+  }, [clusterPoints, onClusterPointClick]);
+
+
   // Handle marker rendering
   useEffect(() => {
     if (!markers || markers.length === 0) return;
@@ -460,7 +575,26 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
           </div>
         </div>
       )}
-      {showLegend && markers.length > 0 && (
+      {showLegend && (clusterPoints && clusterPoints.length > 0) && (
+        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
+          <h3 className="text-sm font-semibold mb-2 text-foreground">Map Legend</h3>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border border-white shadow-sm"></div>
+              <span className="text-xs text-muted-foreground">Residential</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] border border-white shadow-sm"></div>
+              <span className="text-xs text-muted-foreground">Commercial</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#4ade80] border border-white shadow-sm"></div>
+              <span className="text-xs text-muted-foreground">Cluster (zoom to expand)</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLegend && !clusterPoints && markers.length > 0 && (
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
           <h3 className="text-sm font-semibold mb-3 text-foreground">Map Legend</h3>
           <div className="space-y-2">

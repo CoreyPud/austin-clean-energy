@@ -46,6 +46,7 @@ const CityOverview = () => {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'residential' | 'commercial'>('all');
   const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
+  const [allPoints, setAllPoints] = useState<Array<[string, number, number, number, string | null]>>([]);
   const [mapFitKey, setMapFitKey] = useState<string | undefined>(undefined);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
@@ -305,6 +306,35 @@ const CityOverview = () => {
     return () => { cancelled = true; };
   }, [zipFilter, propertyTypeFilter]);
 
+  // Load ALL geocoded installations once for the clustered map.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('installations-geojson');
+        if (error) throw error;
+        if (cancelled) return;
+        setAllPoints((data?.points || []) as Array<[string, number, number, number, string | null]>);
+      } catch (err) {
+        console.error('Error loading clustered installations:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Filter clustered points client-side based on selected filters.
+  const filteredClusterPoints = (() => {
+    const pt = propertyTypeFilter;
+    const zf = zipFilter;
+    if (pt === 'all' && zf === 'all') return allPoints;
+    return allPoints.filter(([, , , c, zip]) => {
+      if (pt === 'commercial' && c !== 1) return false;
+      if (pt === 'residential' && c !== 0) return false;
+      if (zf !== 'all' && zip !== zf) return false;
+      return true;
+    });
+  })();
+
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     // Debounce to prevent rapid repeated calls
     if (loadingTimeoutRef.current) {
@@ -488,10 +518,9 @@ const CityOverview = () => {
             <CardHeader>
               <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
               <CardDescription>
-                {currentZoom <= 11 
-                  ? "Interactive map showing 100 recent solar installations. Zoom in to see more installations in specific areas."
-                  : `Showing ${mapMarkers.length} installations in the zoomed area${isLoadingMapData ? ' (loading...)' : ''}`
-                }
+                {filteredClusterPoints.length > 0
+                  ? `Showing all ${filteredClusterPoints.length.toLocaleString()} geocoded solar installations. Click clusters to zoom in, click a dot for details.`
+                  : 'Loading installations…'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -508,11 +537,8 @@ const CityOverview = () => {
                     className="h-[500px] rounded-lg overflow-hidden"
                     center={[-97.7431, 30.2672]}
                     zoom={9}
-                    markers={mapMarkers}
-                    fitMarkersKey={mapFitKey}
-                    enableDynamicLoading={true}
-                    onBoundsChange={handleMapBoundsChange}
-                    isLoadingMapData={isLoadingMapData}
+                    clusterPoints={filteredClusterPoints}
+                    onClusterPointClick={(id) => navigate(`/installation/${id}`)}
                     showLegend={true}
                   />
                 </MapTokenLoader>
