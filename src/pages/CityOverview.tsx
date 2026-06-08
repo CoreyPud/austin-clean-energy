@@ -306,6 +306,35 @@ const CityOverview = () => {
     return () => { cancelled = true; };
   }, [zipFilter, propertyTypeFilter]);
 
+  // Load ALL geocoded installations once for the clustered map.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('installations-geojson');
+        if (error) throw error;
+        if (cancelled) return;
+        setAllPoints((data?.points || []) as Array<[string, number, number, number, string | null]>);
+      } catch (err) {
+        console.error('Error loading clustered installations:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Filter clustered points client-side based on selected filters.
+  const filteredClusterPoints = (() => {
+    const pt = propertyTypeFilter;
+    const zf = zipFilter;
+    if (pt === 'all' && zf === 'all') return allPoints;
+    return allPoints.filter(([, , , c, zip]) => {
+      if (pt === 'commercial' && c !== 1) return false;
+      if (pt === 'residential' && c !== 0) return false;
+      if (zf !== 'all' && zip !== zf) return false;
+      return true;
+    });
+  })();
+
   const handleMapBoundsChange = async (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     // Debounce to prevent rapid repeated calls
     if (loadingTimeoutRef.current) {
