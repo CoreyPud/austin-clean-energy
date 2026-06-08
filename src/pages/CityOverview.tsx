@@ -531,7 +531,12 @@ const CityOverview = () => {
                 <MapTokenLoader>
                   <Map 
                     className="h-[500px] rounded-lg overflow-hidden"
-                    center={[-97.7431, 30.2672]}
+                    center={(() => {
+                      if (!allPoints.length) return [-97.7431, 30.2672];
+                      let sx = 0, sy = 0;
+                      for (const p of allPoints) { sx += p[1]; sy += p[2]; }
+                      return [sx / allPoints.length, sy / allPoints.length] as [number, number];
+                    })()}
                     zoom={9}
                     clusterPoints={filteredClusterPoints}
                     onClusterPointClick={(id) => navigate(`/installation/${id}`)}
