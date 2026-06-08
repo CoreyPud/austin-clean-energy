@@ -518,10 +518,9 @@ const CityOverview = () => {
             <CardHeader>
               <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
               <CardDescription>
-                {currentZoom <= 11 
-                  ? "Interactive map showing 100 recent solar installations. Zoom in to see more installations in specific areas."
-                  : `Showing ${mapMarkers.length} installations in the zoomed area${isLoadingMapData ? ' (loading...)' : ''}`
-                }
+                {filteredClusterPoints.length > 0
+                  ? `Showing all ${filteredClusterPoints.length.toLocaleString()} geocoded solar installations. Click clusters to zoom in, click a dot for details.`
+                  : 'Loading installations…'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -538,11 +537,8 @@ const CityOverview = () => {
                     className="h-[500px] rounded-lg overflow-hidden"
                     center={[-97.7431, 30.2672]}
                     zoom={9}
-                    markers={mapMarkers}
-                    fitMarkersKey={mapFitKey}
-                    enableDynamicLoading={true}
-                    onBoundsChange={handleMapBoundsChange}
-                    isLoadingMapData={isLoadingMapData}
+                    clusterPoints={filteredClusterPoints}
+                    onClusterPointClick={(id) => navigate(`/installation/${id}`)}
                     showLegend={true}
                   />
                 </MapTokenLoader>
