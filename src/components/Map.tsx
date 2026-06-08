@@ -23,6 +23,9 @@ interface MapProps {
     color?: string;
     source?: 'existing' | 'api' | 'target';
   }>;
+  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null] */
+  clusterPoints?: Array<[string, number, number, number, string | null]>;
+  onClusterPointClick?: (id: string) => void;
   heatmapData?: HeatmapPoint[];
   showLegend?: boolean;
   className?: string;
@@ -34,7 +37,7 @@ interface MapProps {
   fitMarkersKey?: string;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
