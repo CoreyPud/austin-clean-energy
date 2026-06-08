@@ -281,32 +281,30 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     }
   }, [heatmapData]);
 
-  // Handle clustered points rendering (high-density mode)
   useEffect(() => {
     if (!map.current || !clusterPoints) return;
 
-    const addClusterLayers = () => {
+    const buildGeoJSON = () => ({
+      type: 'FeatureCollection' as const,
+      features: clusterPoints.map(([id, lng, lat, c, zip]) => ({
+        type: 'Feature' as const,
+        properties: { id, c, zip: zip || '' },
+        geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+      })),
+    });
+
+    const ensureLayers = () => {
       if (!map.current) return;
+      const existingSource: any = map.current.getSource('installations');
+      if (existingSource && existingSource.setData) {
+        // Fast path: just update data, no layer teardown → no flicker
+        existingSource.setData(buildGeoJSON());
+        return;
+      }
 
-      // Clean up existing
-      if (map.current.getLayer('inst-point')) map.current.removeLayer('inst-point');
-      if (map.current.getLayer('inst-cluster-count')) map.current.removeLayer('inst-cluster-count');
-      if (map.current.getLayer('inst-clusters')) map.current.removeLayer('inst-clusters');
-      if (map.current.getSource('installations')) map.current.removeSource('installations');
-
-      const geojson: any = {
-        type: 'FeatureCollection',
-        features: clusterPoints.map(([id, lng, lat, c, zip]) => ({
-          type: 'Feature',
-          properties: { id, c, zip: zip || '' },
-          geometry: { type: 'Point', coordinates: [lng, lat] },
-        })),
-      };
-
-      // No clustering — render every point individually. Mapbox handles ~20k points on GPU.
       map.current.addSource('installations', {
         type: 'geojson',
-        data: geojson,
+        data: buildGeoJSON(),
       });
 
       map.current.addLayer({
@@ -315,7 +313,6 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         source: 'installations',
         paint: {
           'circle-color': ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
-          // Tiny at city zoom, growing as you zoom in
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
             8, 1.2,
@@ -346,9 +343,9 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     };
 
     if (map.current.loaded()) {
-      addClusterLayers();
+      ensureLayers();
     } else {
-      map.current.on('load', addClusterLayers);
+      map.current.on('load', ensureLayers);
     }
   }, [clusterPoints, onClusterPointClick]);
 
