@@ -392,12 +392,13 @@ export type Database = {
       }
       tcad_properties: {
         Row: {
+          county: string | null
           estimated_roof_sqft: number | null
           has_solar: boolean | null
           in_ae: boolean | null
           land_type_desc: string | null
           market_value: number | null
-          pid: number
+          pid: string
           property_type: string | null
           py_owner_name: string | null
           situs_address: string | null
@@ -406,12 +407,13 @@ export type Database = {
           year_built: number | null
         }
         Insert: {
+          county?: string | null
           estimated_roof_sqft?: number | null
           has_solar?: boolean | null
           in_ae?: boolean | null
           land_type_desc?: string | null
           market_value?: number | null
-          pid: number
+          pid: string
           property_type?: string | null
           py_owner_name?: string | null
           situs_address?: string | null
@@ -420,12 +422,13 @@ export type Database = {
           year_built?: number | null
         }
         Update: {
+          county?: string | null
           estimated_roof_sqft?: number | null
           has_solar?: boolean | null
           in_ae?: boolean | null
           land_type_desc?: string | null
           market_value?: number | null
-          pid?: number
+          pid?: string
           property_type?: string | null
           py_owner_name?: string | null
           situs_address?: string | null
