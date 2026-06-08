@@ -46,6 +46,7 @@ const CityOverview = () => {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'residential' | 'commercial'>('all');
   const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
+  const [allPoints, setAllPoints] = useState<Array<[string, number, number, number, string | null]>>([]);
   const [mapFitKey, setMapFitKey] = useState<string | undefined>(undefined);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
