@@ -518,11 +518,9 @@ const CityOverview = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
-              <CardDescription>
-                {filteredClusterPoints.length > 0
-                  ? `Showing all ${filteredClusterPoints.length.toLocaleString()} geocoded solar installations. Click clusters to zoom in, click a dot for details.`
-                  : 'Loading installations…'}
-              </CardDescription>
+              {filteredClusterPoints.length === 0 && (
+                <CardDescription>Loading installations…</CardDescription>
+              )}
             </CardHeader>
             <CardContent>
               {isLoading ? (
