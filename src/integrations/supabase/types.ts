@@ -261,24 +261,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pid_staging: {
-        Row: {
-          id: string
-          tcad_pid: number | null
-          wcad_pid: number | null
-        }
-        Insert: {
-          id: string
-          tcad_pid?: number | null
-          wcad_pid?: number | null
-        }
-        Update: {
-          id?: string
-          tcad_pid?: number | null
-          wcad_pid?: number | null
-        }
-        Relationships: []
-      }
       pir_installations: {
         Row: {
           address: string
