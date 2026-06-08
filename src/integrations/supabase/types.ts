@@ -326,7 +326,7 @@ export type Database = {
           link: string | null
           longitude: number | null
           original_zip: string | null
-          parcel_id: number | null
+          parcel_id: string | null
           permit_class: string | null
           permit_number: string | null
           project_id: string | null
@@ -355,7 +355,7 @@ export type Database = {
           link?: string | null
           longitude?: number | null
           original_zip?: string | null
-          parcel_id?: number | null
+          parcel_id?: string | null
           permit_class?: string | null
           permit_number?: string | null
           project_id?: string | null
@@ -384,7 +384,7 @@ export type Database = {
           link?: string | null
           longitude?: number | null
           original_zip?: string | null
-          parcel_id?: number | null
+          parcel_id?: string | null
           permit_class?: string | null
           permit_number?: string | null
           project_id?: string | null
