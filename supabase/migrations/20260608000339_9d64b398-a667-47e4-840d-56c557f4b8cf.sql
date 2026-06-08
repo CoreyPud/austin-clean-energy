@@ -1,0 +1,1 @@
+ALTER TABLE public.solar_installations ADD COLUMN IF NOT EXISTS wcad_pid bigint;

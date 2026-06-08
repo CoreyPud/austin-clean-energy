@@ -333,6 +333,7 @@ export type Database = {
           tcad_pid: number | null
           total_job_valuation: number | null
           updated_at: string | null
+          wcad_pid: number | null
         }
         Insert: {
           address: string
@@ -360,6 +361,7 @@ export type Database = {
           tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
+          wcad_pid?: number | null
         }
         Update: {
           address?: string
@@ -387,6 +389,7 @@ export type Database = {
           tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
+          wcad_pid?: number | null
         }
         Relationships: []
       }
