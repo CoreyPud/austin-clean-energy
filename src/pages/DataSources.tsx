@@ -183,19 +183,20 @@ const DataSources = () => {
                 Map Data Loading
               </h3>
               <p className="text-muted-foreground mb-2">
-                <strong>Initial View:</strong> When you first load the map, it displays approximately 100 
-                recent solar installations across Austin to show city-wide distribution.
+                <strong>Full Dataset Rendering:</strong> The map loads every geocoded solar installation in our 
+                database at once and renders them as a clustered point layer. Clusters expand into individual 
+                pins as you zoom in, so you can browse city-wide patterns and drill down to a single block 
+                without additional loading steps.
               </p>
               <p className="text-muted-foreground mb-2">
-                <strong>Zoom-Based Loading:</strong> When you zoom into a specific neighborhood (zoom level &gt; 11), 
-                the map dynamically queries the Austin Open Data API to load installations relevant to that 
-                geographic area. This can retrieve up to 200 installations per zoom action to show detailed 
-                local adoption patterns.
+                <strong>Auto-Fit Viewport:</strong> On first load, the map automatically centers on the 
+                centroid of all installations and zooms so the full bounding box fits within ~20px of padding. 
+                This keeps the initial view tightly framed around real data rather than a hardcoded city center.
               </p>
               <p className="text-muted-foreground">
-                <strong>Update Frequency:</strong> Map pins reflect live data from our database, which syncs 
-                regularly with the City's permit system. Zooming triggers fresh API queries for the most current 
-                data in that specific area.
+                <strong>Update Frequency:</strong> Map pins reflect data from our database, which syncs 
+                regularly with the City of Austin's permit system. Manually corrected records (see Data 
+                Verification below) are shown in place of the raw values.
               </p>
             </div>
 
