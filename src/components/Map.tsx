@@ -547,10 +547,6 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
               <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] border border-white shadow-sm"></div>
               <span className="text-xs text-muted-foreground">Commercial</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#4ade80] border border-white shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Cluster (zoom to expand)</span>
-            </div>
           </div>
         </div>
       )}
