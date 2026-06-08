@@ -281,6 +281,118 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     }
   }, [heatmapData]);
 
+  // Handle clustered points rendering (high-density mode)
+  useEffect(() => {
+    if (!map.current || !clusterPoints) return;
+
+    const addClusterLayers = () => {
+      if (!map.current) return;
+
+      // Clean up existing
+      if (map.current.getLayer('inst-point')) map.current.removeLayer('inst-point');
+      if (map.current.getLayer('inst-cluster-count')) map.current.removeLayer('inst-cluster-count');
+      if (map.current.getLayer('inst-clusters')) map.current.removeLayer('inst-clusters');
+      if (map.current.getSource('installations')) map.current.removeSource('installations');
+
+      const geojson: any = {
+        type: 'FeatureCollection',
+        features: clusterPoints.map(([id, lng, lat, c, zip]) => ({
+          type: 'Feature',
+          properties: { id, c, zip: zip || '' },
+          geometry: { type: 'Point', coordinates: [lng, lat] },
+        })),
+      };
+
+      map.current.addSource('installations', {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 45,
+      });
+
+      map.current.addLayer({
+        id: 'inst-clusters',
+        type: 'circle',
+        source: 'installations',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step', ['get', 'point_count'],
+            '#86efac', 25, '#4ade80', 100, '#22c55e', 500, '#16a34a',
+          ],
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            12, 25, 16, 100, 20, 500, 26,
+          ],
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': 1.5,
+          'circle-opacity': 0.9,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'inst-cluster-count',
+        type: 'symbol',
+        source: 'installations',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-size': 11,
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        },
+        paint: { 'text-color': '#0f172a' },
+      });
+
+      map.current.addLayer({
+        id: 'inst-point',
+        type: 'circle',
+        source: 'installations',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
+          'circle-radius': 3,
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': 0.8,
+          'circle-opacity': 0.9,
+        },
+      });
+
+      map.current.on('click', 'inst-clusters', (e) => {
+        if (!map.current || !e.features?.[0]) return;
+        const feature = e.features[0];
+        const clusterId = feature.properties?.cluster_id;
+        const src = map.current.getSource('installations') as any;
+        src.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+          if (err || !map.current) return;
+          map.current.easeTo({
+            center: (feature.geometry as any).coordinates,
+            zoom,
+          });
+        });
+      });
+
+      map.current.on('click', 'inst-point', (e) => {
+        const id = e.features?.[0]?.properties?.id;
+        if (id && onClusterPointClick) onClusterPointClick(String(id));
+      });
+
+      const setPointer = () => { if (map.current) map.current.getCanvas().style.cursor = 'pointer'; };
+      const clearPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
+      map.current.on('mouseenter', 'inst-clusters', setPointer);
+      map.current.on('mouseleave', 'inst-clusters', clearPointer);
+      map.current.on('mouseenter', 'inst-point', setPointer);
+      map.current.on('mouseleave', 'inst-point', clearPointer);
+    };
+
+    if (map.current.loaded()) {
+      addClusterLayers();
+    } else {
+      map.current.on('load', addClusterLayers);
+    }
+  }, [clusterPoints, onClusterPointClick]);
+
+
   // Handle marker rendering
   useEffect(() => {
     if (!markers || markers.length === 0) return;
