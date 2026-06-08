@@ -444,21 +444,6 @@ export type Database = {
         }
         Relationships: []
       }
-      wcad_year_built_staging: {
-        Row: {
-          pid: string
-          year_built: number | null
-        }
-        Insert: {
-          pid: string
-          year_built?: number | null
-        }
-        Update: {
-          pid?: string
-          year_built?: number | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       solar_installations_view: {
