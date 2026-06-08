@@ -552,7 +552,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       )}
       {showLegend && (clusterPoints && clusterPoints.length > 0) && (
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
-          <h3 className="text-sm font-semibold mb-2 text-foreground">Map Legend</h3>
+          
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border border-white shadow-sm"></div>
@@ -567,7 +567,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       )}
       {showLegend && !clusterPoints && markers.length > 0 && (
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
-          <h3 className="text-sm font-semibold mb-3 text-foreground">Map Legend</h3>
+          
           <div className="space-y-2">
             {markers.some(m => m.source === 'existing' || m.color === '#22c55e') && (
               <div className="flex items-center gap-2">
