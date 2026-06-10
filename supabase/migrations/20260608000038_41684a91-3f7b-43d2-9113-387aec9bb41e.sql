@@ -1,0 +1,1 @@
+REFRESH MATERIALIZED VIEW public.tcad_built_by_year_type_zip;

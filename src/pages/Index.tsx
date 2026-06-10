@@ -35,8 +35,9 @@ const Index = () => {
             'solar_permits': Leaf,
           };
 
+          const allowedTypes = new Set(Object.keys(iconMap));
           const displayStats = cachedStats
-            .filter(stat => stat.stat_type !== 'energy_audits')
+            .filter(stat => allowedTypes.has(stat.stat_type))
             .map(stat => ({
             value: stat.value,
             label: stat.label,

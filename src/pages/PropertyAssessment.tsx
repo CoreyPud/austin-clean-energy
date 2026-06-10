@@ -26,6 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSeo } from "@/hooks/use-seo";
 import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
+import ZipSolarAdoptionTrend from "@/components/assessment/ZipSolarAdoptionTrend";
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
@@ -364,7 +365,7 @@ const PropertyAssessment = () => {
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl font-bold mb-3 text-foreground">Calculate Solar Savings in Austin</h1>
             <p className="text-lg text-muted-foreground">
-              Solar potential, estimated savings, neighborhood adoption, and your council representative — based on your Austin address.
+              Find out your solar potential and estimated savings based on Austin's energy and solar buyback policies
             </p>
           </div>
 
@@ -743,6 +744,10 @@ const PropertyAssessment = () => {
                     </Card>
                   </MapTokenLoader>
                 </div>
+
+                <ZipSolarAdoptionTrend zipCode={results.zipCode} />
+
+
 
                 {/* Contact CTA */}
                 <ContactCtaCard />

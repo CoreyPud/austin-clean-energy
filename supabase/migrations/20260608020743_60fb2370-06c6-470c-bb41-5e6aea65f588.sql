@@ -1,0 +1,2 @@
+ALTER TABLE public.wcad_year_built_staging DROP CONSTRAINT wcad_year_built_staging_pkey;
+TRUNCATE public.wcad_year_built_staging;

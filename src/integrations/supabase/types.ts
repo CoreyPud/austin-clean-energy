@@ -326,12 +326,15 @@ export type Database = {
           link: string | null
           longitude: number | null
           original_zip: string | null
+          parcel_id: string | null
           permit_class: string | null
           permit_number: string | null
           project_id: string | null
           status_current: string | null
+          tcad_pid: number | null
           total_job_valuation: number | null
           updated_at: string | null
+          wcad_pid: number | null
         }
         Insert: {
           address: string
@@ -352,12 +355,15 @@ export type Database = {
           link?: string | null
           longitude?: number | null
           original_zip?: string | null
+          parcel_id?: string | null
           permit_class?: string | null
           permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
+          wcad_pid?: number | null
         }
         Update: {
           address?: string
@@ -378,12 +384,63 @@ export type Database = {
           link?: string | null
           longitude?: number | null
           original_zip?: string | null
+          parcel_id?: string | null
           permit_class?: string | null
           permit_number?: string | null
           project_id?: string | null
           status_current?: string | null
+          tcad_pid?: number | null
           total_job_valuation?: number | null
           updated_at?: string | null
+          wcad_pid?: number | null
+        }
+        Relationships: []
+      }
+      tcad_properties: {
+        Row: {
+          county: string | null
+          estimated_roof_sqft: number | null
+          has_solar: boolean | null
+          in_ae: boolean | null
+          land_type_desc: string | null
+          market_value: number | null
+          pid: string
+          property_type: string | null
+          py_owner_name: string | null
+          situs_address: string | null
+          situs_zip: string | null
+          stat_cd: string | null
+          year_built: number | null
+        }
+        Insert: {
+          county?: string | null
+          estimated_roof_sqft?: number | null
+          has_solar?: boolean | null
+          in_ae?: boolean | null
+          land_type_desc?: string | null
+          market_value?: number | null
+          pid: string
+          property_type?: string | null
+          py_owner_name?: string | null
+          situs_address?: string | null
+          situs_zip?: string | null
+          stat_cd?: string | null
+          year_built?: number | null
+        }
+        Update: {
+          county?: string | null
+          estimated_roof_sqft?: number | null
+          has_solar?: boolean | null
+          in_ae?: boolean | null
+          land_type_desc?: string | null
+          market_value?: number | null
+          pid?: string
+          property_type?: string | null
+          py_owner_name?: string | null
+          situs_address?: string | null
+          situs_zip?: string | null
+          stat_cd?: string | null
+          year_built?: number | null
         }
         Relationships: []
       }
@@ -418,6 +475,51 @@ export type Database = {
           status_current: string | null
           total_job_valuation: number | null
           updated_at: string | null
+        }
+        Relationships: []
+      }
+      solar_permits_by_year_class_zip: {
+        Row: {
+          permit_class: string | null
+          solar_count: number | null
+          year: number | null
+          zip: string | null
+        }
+        Relationships: []
+      }
+      tcad_built_by_year_type_zip: {
+        Row: {
+          built_count: number | null
+          property_type: string | null
+          year: number | null
+          zip: string | null
+        }
+        Relationships: []
+      }
+      tcad_solar_adoption_by_year: {
+        Row: {
+          built_commercial_count: number | null
+          built_commercial_sqft: number | null
+          built_count: number | null
+          built_residential_count: number | null
+          built_residential_sqft: number | null
+          built_sqft: number | null
+          cumulative_adoption_pct: number | null
+          cumulative_built: number | null
+          cumulative_built_commercial: number | null
+          cumulative_built_commercial_sqft: number | null
+          cumulative_built_residential: number | null
+          cumulative_built_residential_sqft: number | null
+          cumulative_built_sqft: number | null
+          cumulative_solar: number | null
+          cumulative_solar_commercial_sqft: number | null
+          cumulative_solar_residential_sqft: number | null
+          cumulative_solar_sqft: number | null
+          solar_commercial_sqft: number | null
+          solar_count: number | null
+          solar_residential_sqft: number | null
+          solar_sqft: number | null
+          year: number | null
         }
         Relationships: []
       }

@@ -23,6 +23,9 @@ interface MapProps {
     color?: string;
     source?: 'existing' | 'api' | 'target';
   }>;
+  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null] */
+  clusterPoints?: Array<[string, number, number, number, string | null, number?]>;
+  onClusterPointClick?: (id: string) => void;
   heatmapData?: HeatmapPoint[];
   showLegend?: boolean;
   className?: string;
@@ -30,12 +33,15 @@ interface MapProps {
   onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => void;
   enableDynamicLoading?: boolean;
   isLoadingMapData?: boolean;
+  /** When this string changes, the map refits its view to the current markers (overrides enableDynamicLoading). */
+  fitMarkersKey?: string;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const lastFitKeyRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -53,6 +59,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
       style: 'mapbox://styles/mapbox/light-v11',
       center,
       zoom,
+      cooperativeGestures: true,
     });
 
     map.current.addControl(
@@ -275,6 +282,75 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
     }
   }, [heatmapData]);
 
+  useEffect(() => {
+    if (!map.current || !clusterPoints) return;
+
+    const buildGeoJSON = () => ({
+      type: 'FeatureCollection' as const,
+      features: clusterPoints.map(([id, lng, lat, c, zip]) => ({
+        type: 'Feature' as const,
+        properties: { id, c, zip: zip || '' },
+        geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+      })),
+    });
+
+    const ensureLayers = () => {
+      if (!map.current) return;
+      const existingSource: any = map.current.getSource('installations');
+      if (existingSource && existingSource.setData) {
+        // Fast path: just update data, no layer teardown → no flicker
+        existingSource.setData(buildGeoJSON());
+        return;
+      }
+
+      map.current.addSource('installations', {
+        type: 'geojson',
+        data: buildGeoJSON(),
+      });
+
+      map.current.addLayer({
+        id: 'inst-point',
+        type: 'circle',
+        source: 'installations',
+        paint: {
+          'circle-color': ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            8, 1.2,
+            11, 2,
+            14, 3.5,
+            17, 6,
+          ],
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': [
+            'interpolate', ['linear'], ['zoom'],
+            8, 0,
+            12, 0.5,
+            15, 1,
+          ],
+          'circle-opacity': 0.85,
+        },
+      });
+
+      map.current.on('click', 'inst-point', (e) => {
+        const id = e.features?.[0]?.properties?.id;
+        if (id && onClusterPointClick) onClusterPointClick(String(id));
+      });
+
+      const setPointer = () => { if (map.current) map.current.getCanvas().style.cursor = 'pointer'; };
+      const clearPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
+      map.current.on('mouseenter', 'inst-point', setPointer);
+      map.current.on('mouseleave', 'inst-point', clearPointer);
+    };
+
+    if (map.current.loaded()) {
+      ensureLayers();
+    } else {
+      map.current.on('load', ensureLayers);
+    }
+  }, [clusterPoints, onClusterPointClick]);
+
+
   // Handle marker rendering
   useEffect(() => {
     if (!markers || markers.length === 0) return;
@@ -428,16 +504,41 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
 
   // Auto-fit bounds to markers (disabled when dynamic loading is enabled)
   useEffect(() => {
-    if (!map.current || !markers || markers.length === 0 || enableDynamicLoading) return;
+    if (!map.current || !markers || markers.length === 0) return;
+
+    // When dynamic loading is on, only fit if the caller explicitly bumped fitMarkersKey
+    // (and only once per key change — don't refit on every marker reload).
+    if (enableDynamicLoading) {
+      if (fitMarkersKey === undefined || lastFitKeyRef.current === fitMarkersKey) return;
+      lastFitKeyRef.current = fitMarkersKey;
+    }
 
     if (markers.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
       markers.forEach(({ coordinates }) => bounds.extend(coordinates));
-      map.current.fitBounds(bounds, { padding: 50 });
+      map.current.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 800 });
     } else if (markers.length === 1) {
       map.current.flyTo({ center: markers[0].coordinates, zoom: 14 });
     }
-  }, [markers, enableDynamicLoading]);
+  }, [markers, enableDynamicLoading, fitMarkersKey]);
+
+  // Auto-fit bounds to cluster points (once on first load)
+  const didFitClusterRef = useRef(false);
+  useEffect(() => {
+    if (!map.current || !clusterPoints || clusterPoints.length === 0) return;
+    if (didFitClusterRef.current) return;
+
+    const doFit = () => {
+      if (!map.current || !clusterPoints || clusterPoints.length === 0) return;
+      const bounds = new mapboxgl.LngLatBounds();
+      clusterPoints.forEach(([, lng, lat]) => bounds.extend([lng, lat]));
+      map.current.fitBounds(bounds, { padding: 20, duration: 0 });
+      didFitClusterRef.current = true;
+    };
+
+    if (map.current.loaded()) doFit();
+    else map.current.once('load', doFit);
+  }, [clusterPoints]);
 
   return (
     <div className={`relative ${className}`}>
@@ -450,14 +551,35 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], heatmapDat
           </div>
         </div>
       )}
-      {showLegend && markers.length > 0 && (
+      {showLegend && (clusterPoints && clusterPoints.length > 0) && (
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
-          <h3 className="text-sm font-semibold mb-3 text-foreground">Map Legend</h3>
+          
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border border-white shadow-sm"></div>
+              <span className="text-xs text-muted-foreground">Residential</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] border border-white shadow-sm"></div>
+              <span className="text-xs text-muted-foreground">Commercial</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLegend && !clusterPoints && markers.length > 0 && (
+        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
+          
           <div className="space-y-2">
             {markers.some(m => m.source === 'existing' || m.color === '#22c55e') && (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#22c55e] border-2 border-white shadow-sm"></div>
-                <span className="text-xs text-muted-foreground">Existing Installations</span>
+                <span className="text-xs text-muted-foreground">Residential Installations</span>
+              </div>
+            )}
+            {markers.some(m => m.color === '#2563eb') && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#2563eb] border-2 border-white shadow-sm"></div>
+                <span className="text-xs text-muted-foreground">Commercial Installations</span>
               </div>
             )}
             {markers.some(m => m.source === 'api' || m.color === '#f59e0b') && (
