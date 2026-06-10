@@ -1,16 +1,17 @@
 # Downloads WCAD improvement detail from Socrata open data portal and joins
 # year_built and building area onto wcad_enriched.csv for matched parcels.
-# Input:  C:/Users/altbi/Downloads/wcad_enriched.csv
-# Output: C:/Users/altbi/Downloads/wcad_enriched.csv  (updated in place)
+# Input:  ~/Downloads/wcad_enriched.csv
+# Output: ~/Downloads/wcad_enriched.csv  (updated in place)
 
 import pandas as pd
 import requests
 import time
 from pathlib import Path
 
+DOWNLOADS = Path.home() / "Downloads"
 SOCRATA_URL = "https://data.wcad.org/resource/2huh-jk3y.json"
-IMPROVEMENT_CACHE = r"C:\Users\altbi\Downloads\wcad_improvement_cache.csv"
-ENRICHED_FILE = r"C:\Users\altbi\Downloads\wcad_enriched.csv"
+IMPROVEMENT_CACHE = DOWNLOADS / "wcad_improvement_cache.csv"
+ENRICHED_FILE = DOWNLOADS / "wcad_enriched.csv"
 PAGE_SIZE = 50000
 
 

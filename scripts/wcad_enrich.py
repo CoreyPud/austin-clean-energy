@@ -1,7 +1,7 @@
 # Fetches Williamson County parcel data for AE-territory ZIPs and produces an
 # enriched CSV analogous to tcad_enriched.csv.
 # Input:  AE ZIPs from Supabase solar_installations.original_zip
-# Output: C:/Users/altbi/Downloads/wcad_enriched.csv
+# Output: ~/Downloads/wcad_enriched.csv
 #         columns: pID, situs_address, situs_zip, market_value, land_type_desc,
 #                  py_owner_name, TotgrossArea, max_stories, year_built,
 #                  estimated_roof_sqft, property_type, in_ae, has_solar
@@ -16,11 +16,12 @@ from pathlib import Path
 SUPABASE_URL = "https://tnalryxoxswjofmtdtaf.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuYWxyeXhveHN3am9mbXRkdGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTM2MTYsImV4cCI6MjA3NDk2OTYxNn0.xleoaIYfIh_lFPvD_BnsWgy7F1Z4n5q2MeotyNAsbh0"
 
+DOWNLOADS = Path.home() / "Downloads"
 WCAD_API = "https://gis.wilco.org/arcgis/rest/services/public/county_wcad_parcels/MapServer/0/query"
-PARCELS_CACHE = r"C:\Users\altbi\Downloads\wcad_parcels_cache.csv"
-OUTPUT_FILE = r"C:\Users\altbi\Downloads\wcad_enriched.csv"
-SOLAR_PARCEL_MATCHES = r"C:\Users\altbi\Downloads\solar_parcel_matches.csv"
-WCAD_PARCEL_MATCHES = r"C:\Users\altbi\Downloads\wcad_parcel_matches.csv"
+PARCELS_CACHE = DOWNLOADS / "wcad_parcels_cache.csv"
+OUTPUT_FILE = DOWNLOADS / "wcad_enriched.csv"
+SOLAR_PARCEL_MATCHES = DOWNLOADS / "solar_parcel_matches.csv"
+WCAD_PARCEL_MATCHES = DOWNLOADS / "wcad_parcel_matches.csv"
 BATCH_SIZE = 2000
 
 # Williamson CAD USECD codes

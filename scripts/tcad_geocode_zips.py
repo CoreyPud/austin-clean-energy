@@ -1,6 +1,6 @@
 # Uses Census Bureau bulk geocoder to get USPS ZIP codes for TCAD situs addresses.
-# Input:  C:/Users/altbi/Downloads/tcad_enriched.csv
-# Output: C:/Users/altbi/Downloads/tcad_usps_zips.csv  (pID, usps_zip)
+# Input:  ~/Downloads/tcad_enriched.csv
+# Output: ~/Downloads/tcad_usps_zips.csv  (pID, usps_zip)
 
 import pandas as pd
 import requests
@@ -9,9 +9,10 @@ import time
 import io
 from pathlib import Path
 
-INPUT_FILE = r"C:\Users\altbi\Downloads\tcad_enriched.csv"
-OUTPUT_FILE = r"C:\Users\altbi\Downloads\tcad_usps_zips.csv"
-CHECKPOINT = r"C:\Users\altbi\Downloads\tcad_usps_zips.partial.csv"
+DOWNLOADS = Path.home() / "Downloads"
+INPUT_FILE = DOWNLOADS / "tcad_enriched.csv"
+OUTPUT_FILE = DOWNLOADS / "tcad_usps_zips.csv"
+CHECKPOINT = DOWNLOADS / "tcad_usps_zips.partial.csv"
 CENSUS_URL = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
 BATCH_SIZE = 10000
 

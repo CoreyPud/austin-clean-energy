@@ -1,6 +1,6 @@
 # Enriches TCAD improvement detail data with situs addresses from Travis County parcel API.
-# Input:  C:/Users/altbi/Downloads/improvement_detail_2026/*.csv
-# Output: C:/Users/altbi/Downloads/tcad_enriched.csv
+# Input:  ~/Downloads/improvement_detail_2026/*.csv
+# Output: ~/Downloads/tcad_enriched.csv
 
 import pandas as pd
 import requests
@@ -10,10 +10,11 @@ import urllib.request
 import json
 from pathlib import Path
 
-IMPROVEMENT_DETAIL_DIR = r"C:\Users\altbi\Downloads\improvement_detail_2026"
-OUTPUT_FILE = r"C:\Users\altbi\Downloads\tcad_enriched.csv"
-OUTPUT_SOLAR_JOINED = r"C:\Users\altbi\Downloads\tcad_solar_joined.csv"
-PARCELS_CACHE = r"C:\Users\altbi\Downloads\tcad_parcels_cache.csv"
+DOWNLOADS = Path.home() / "Downloads"
+IMPROVEMENT_DETAIL_DIR = DOWNLOADS / "improvement_detail_2026"
+OUTPUT_FILE = DOWNLOADS / "tcad_enriched.csv"
+OUTPUT_SOLAR_JOINED = DOWNLOADS / "tcad_solar_joined.csv"
+PARCELS_CACHE = DOWNLOADS / "tcad_parcels_cache.csv"
 PARCEL_API = "https://taxmaps.traviscountytx.gov/arcgis/rest/services/Parcels/MapServer/0/query"
 BATCH_SIZE = 2000
 

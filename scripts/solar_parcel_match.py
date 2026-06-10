@@ -1,7 +1,7 @@
 # Matches solar installations to TCAD parcel IDs via spatial (lat/lon) lookup.
 # Falls back to address matching for records without coordinates.
 # Input:  Supabase solar_installations table
-# Output: C:/Users/altbi/Downloads/solar_parcel_matches.csv
+# Output: ~/Downloads/solar_parcel_matches.csv
 #         columns: id, address, lat, lon, pid, match_method
 
 import pandas as pd
@@ -17,10 +17,11 @@ from threading import Lock
 SUPABASE_URL = "https://tnalryxoxswjofmtdtaf.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuYWxyeXhveHN3am9mbXRkdGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTM2MTYsImV4cCI6MjA3NDk2OTYxNn0.xleoaIYfIh_lFPvD_BnsWgy7F1Z4n5q2MeotyNAsbh0"
 
+DOWNLOADS = Path.home() / "Downloads"
 PARCEL_API = "https://taxmaps.traviscountytx.gov/arcgis/rest/services/Parcels/MapServer/0/query"
-PARCELS_CACHE = r"C:\Users\altbi\Downloads\tcad_parcels_cache.csv"
-OUTPUT_FILE = r"C:\Users\altbi\Downloads\solar_parcel_matches.csv"
-CHECKPOINT = r"C:\Users\altbi\Downloads\solar_parcel_matches.partial.csv"
+PARCELS_CACHE = DOWNLOADS / "tcad_parcels_cache.csv"
+OUTPUT_FILE = DOWNLOADS / "solar_parcel_matches.csv"
+CHECKPOINT = DOWNLOADS / "solar_parcel_matches.partial.csv"
 WORKERS = 15
 CHECKPOINT_EVERY = 500
 

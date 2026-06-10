@@ -1,8 +1,8 @@
 # Spatial lookup of unmatched solar installations against Williamson County parcel API.
 # Takes the 2,213 records from solar_parcel_matches.csv where pid is null and queries
 # the WCAD GIS API by lat/lon to find their Williamson County property IDs.
-# Input:  C:/Users/altbi/Downloads/solar_parcel_matches.csv  (pid=null rows)
-# Output: C:/Users/altbi/Downloads/wcad_parcel_matches.csv
+# Input:  ~/Downloads/solar_parcel_matches.csv  (pid=null rows)
+# Output: ~/Downloads/wcad_parcel_matches.csv
 #         columns: id, address, lat, lon, pid, match_method
 # After running, re-run wcad_enrich.py to populate has_solar from these matches.
 
@@ -14,9 +14,10 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 
-TCAD_MATCHES = r"C:\Users\altbi\Downloads\solar_parcel_matches.csv"
-OUTPUT_FILE = r"C:\Users\altbi\Downloads\wcad_parcel_matches.csv"
-CHECKPOINT = r"C:\Users\altbi\Downloads\wcad_parcel_matches.partial.csv"
+DOWNLOADS = Path.home() / "Downloads"
+TCAD_MATCHES = DOWNLOADS / "solar_parcel_matches.csv"
+OUTPUT_FILE = DOWNLOADS / "wcad_parcel_matches.csv"
+CHECKPOINT = DOWNLOADS / "wcad_parcel_matches.partial.csv"
 WCAD_API = "https://gis.wilco.org/arcgis/rest/services/public/county_wcad_parcels/MapServer/0/query"
 WORKERS = 15
 CHECKPOINT_EVERY = 200
