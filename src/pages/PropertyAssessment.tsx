@@ -110,18 +110,20 @@ const PropertyAssessment = () => {
 
   const liveSummary = (() => {
     if (!si || systemKw <= 0) return null;
-    const cost = Math.max(0, systemKw * AUSTIN_INSTALL_COST_PER_KW + batteryKwh * 1000 - austinEnergyRebate(systemKw, propertyType));
+    const grossCost = systemKw * AUSTIN_INSTALL_COST_PER_KW + batteryKwh * 1000;
+    const cost = Math.max(0, grossCost - austinEnergyRebate(systemKw, propertyType));
     const co2TonsPerYear = Math.round(systemKw * solarProdPerKw * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10;
 
     if (billingMode === "sso") {
-      const sso = buildSsoModel(systemKw, solarProdPerKw, cost);
+      // SSO doesn't qualify for the AE Solar PV rebate — use gross cost
+      const sso = buildSsoModel(systemKw, solarProdPerKw, grossCost);
       return {
         monthlySavings: sso.annualRevenue / 12,
         paybackYear: sso.paybackYear ?? null,
         roi: null,
         billOffsetPct: null,
         co2TonsPerYear,
-        installCost: cost,
+        installCost: grossCost,
       };
     }
 
