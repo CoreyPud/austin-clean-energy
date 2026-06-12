@@ -665,7 +665,7 @@ const DataSources = () => {
               <CardTitle className="text-2xl">Property & Parcel Data (TCAD / WCAD)</CardTitle>
             </div>
             <CardDescription>
-              County appraisal district records used to enrich property-level context
+              County appraisal district records used to size opportunity and compute solar adoption rates
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -675,49 +675,68 @@ const DataSources = () => {
                 Primary Data Sources
               </h3>
               <p className="text-muted-foreground mb-3">
-                We maintain a snapshot of parcel records from the two appraisal districts that cover the
-                Austin metro:
+                We maintain a normalized snapshot of parcel records from the two county appraisal districts
+                that cover the Austin Energy service territory:
               </p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4 mb-3">
                 <li>
-                  <strong>Travis Central Appraisal District (TCAD)</strong> — ~390,000 properties.{" "}
-                  <a href="https://traviscad.org/property-data" target="_blank" rel="noopener noreferrer"
-                     className="text-primary underline hover:text-primary/80">traviscad.org</a>
+                  <strong>Travis Central Appraisal District (TCAD)</strong> — 391,385 parcels, pulled from
+                  the{" "}
+                  <a href="https://taxmaps.traviscountytx.gov/arcgis/rest/services/Parcels/MapServer/0/query"
+                     target="_blank" rel="noopener noreferrer"
+                     className="text-primary underline hover:text-primary/80">Travis County Parcel GIS API</a>{" "}
+                  and enriched with building details (gross area, stories, year built) from the{" "}
+                  <a href="https://www.tcad.org" target="_blank" rel="noopener noreferrer"
+                     className="text-primary underline hover:text-primary/80">TCAD Improvement Detail bulk CSVs</a>.
                 </li>
                 <li>
-                  <strong>Williamson Central Appraisal District (WCAD)</strong> — ~61,000 properties in the
-                  portion of Williamson County served by Austin Energy.{" "}
-                  <a href="https://www.wcad.org/data-downloads/" target="_blank" rel="noopener noreferrer"
-                     className="text-primary underline hover:text-primary/80">wcad.org</a>
+                  <strong>Williamson Central Appraisal District (WCAD)</strong> — 60,981 parcels in the
+                  AE-territory ZIPs, pulled from the{" "}
+                  <a href="https://gis.wilco.org/arcgis/rest/services/public/county_wcad_parcels/MapServer/0/query"
+                     target="_blank" rel="noopener noreferrer"
+                     className="text-primary underline hover:text-primary/80">Williamson County Parcel GIS API</a>{" "}
+                  and enriched with year-built data from the{" "}
+                  <a href="https://data.wcad.org/resource/2huh-jk3y.json" target="_blank" rel="noopener noreferrer"
+                     className="text-primary underline hover:text-primary/80">WCAD Socrata Improvement dataset</a>.
                 </li>
               </ul>
               <Alert className="mb-3">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Source format:</strong> Public bulk data files published by each appraisal district.
-                  We download, normalize, and load them into a single parcel table keyed by the county
-                  Property ID (PID).
+                  <strong>Update cadence:</strong> Appraisal data is refreshed <strong>annually</strong>, tied
+                  to the CAD tax appraisal cycle (certified May–June each year). Solar permit data updates
+                  continuously and is handled separately.
                 </AlertDescription>
               </Alert>
             </div>
 
             <div>
               <h3 className="text-lg font-semibold mb-3">Fields We Retain</h3>
-              <p className="text-muted-foreground mb-2">
-                For each parcel we keep a deliberately small set of fields relevant to clean-energy analysis:
-              </p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-                <li><strong>Situs address &amp; ZIP</strong> — the physical property location</li>
-                <li><strong>County</strong> — Travis or Williamson</li>
-                <li><strong>Property type &amp; land use description</strong> — e.g. single family, condo, commercial</li>
-                <li><strong>Year built</strong></li>
-                <li><strong>Estimated roof square footage</strong> — derived from improvement records</li>
-                <li><strong>Market value</strong> — current appraised market value</li>
-                <li><strong>Owner name (prior year)</strong> — as published by the district</li>
-                <li><strong>State property classification code</strong> (<code>stat_cd</code>)</li>
-                <li><strong>In Austin Energy service area</strong> — boolean flag computed from ZIP / territory</li>
-                <li><strong>Has solar</strong> — boolean derived by matching the parcel address against our solar permit dataset</li>
+                <li><strong>Parcel ID (pID)</strong> — TCAD integer or WCAD <code>R######</code> string</li>
+                <li><strong>Situs address &amp; ZIP</strong>, <strong>county</strong></li>
+                <li><strong>Property type</strong> — normalized to single_family, multifamily, condo, commercial, other (mapped from TCAD <em>land_type_desc</em> or WCAD <em>USECD</em>)</li>
+                <li><strong>Market value</strong>, <strong>owner name</strong>, <strong>year built</strong></li>
+                <li><strong>Total gross building area</strong> and (TCAD only) <strong>stories</strong></li>
+                <li><strong>Estimated roof sqft</strong> — derived as <code>TotgrossArea / max_stories</code> for TCAD; equal to total sqft for WCAD (stories not exposed)</li>
+                <li><strong>in_ae</strong> — true if the parcel ZIP is in the Austin Energy territory list</li>
+                <li><strong>has_solar</strong> — true if the parcel matches a record in <code>solar_installations</code></li>
               </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">How Solar Records Are Matched to Parcels</h3>
+              <p className="text-muted-foreground mb-2">
+                Each of the ~19,400 solar installation records is matched to a parcel ID via a two-pass process:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4 mb-2">
+                <li><strong>Pass 1 — TCAD:</strong> Spatial query by lat/lon against the Travis parcel API, with an address-string fallback for records missing coordinates. <strong>17,206 of 19,419 matched (88.6%)</strong> — 17,130 spatial, 76 address.</li>
+                <li><strong>Pass 2 — WCAD:</strong> The 2,213 unmatched records are re-queried against the Williamson parcel API. <strong>643 additional matches (29.1% of remainder)</strong>; the rest fall outside both counties.</li>
+              </ul>
+              <p className="text-muted-foreground">
+                Matched parcel IDs are written back to <code>solar_installations.parcel_id</code> so that
+                downstream queries can join permits to parcel characteristics directly.
+              </p>
             </div>
 
             <div>
@@ -725,14 +744,10 @@ const DataSources = () => {
                 <RefreshCw className="h-5 w-5 text-primary" />
                 How We Use It
               </h3>
-              <p className="text-muted-foreground mb-2">
-                Parcel data is used as a denominator and enrichment layer rather than a standalone metric.
-                Specifically it powers:
-              </p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-                <li>Solar adoption rates by ZIP (solar permits ÷ eligible parcels)</li>
-                <li>Rough roof-area and system-size sanity checks on property assessments</li>
-                <li>Filtering analyses to the Austin Energy service territory</li>
+                <li>Solar adoption rates by ZIP (solar permits ÷ eligible single-family parcels)</li>
+                <li>Roof-area and system-size sanity checks on property assessments</li>
+                <li>Scoping analyses to the Austin Energy service territory</li>
                 <li>Identifying properties that do <em>not</em> yet have solar for opportunity sizing</li>
               </ul>
             </div>
@@ -740,20 +755,22 @@ const DataSources = () => {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Limitations:</strong> Appraisal data is a point-in-time snapshot and can lag real-world
-                changes by months. Estimated roof square footage is derived from improvement records and is
-                approximate — it does not account for roof pitch, shading, obstructions, or non-usable area.
-                Market values reflect the appraisal district's methodology, not sale prices. The{" "}
-                <em>has_solar</em> flag depends on successful address matching to permit records and will
-                under-count installations where the parcel address and permit address differ.
+                <strong>Known limitations:</strong>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>ZIP 78729</strong> straddles the Travis/Williamson line — Travis contains only ~400 parcels there while Williamson contains ~7,400. Before WCAD was added, this ZIP showed an inflated ~77% solar adoption rate.</li>
+                  <li><strong>WCAD year_built</strong> coverage from the Socrata improvement dataset is only ~20%. Missing values are filled with <code>2010</code> as a pre-2014 placeholder (our charts only go back to 2014).</li>
+                  <li><strong>WCAD stories</strong> are not exposed by the API, so estimated roof sqft for Williamson parcels does not divide by story count and will overstate single-story-equivalent roof area on multi-story homes.</li>
+                  <li><strong>Estimated roof sqft</strong> is a footprint approximation — it does not account for roof pitch, shading, obstructions, or non-usable area.</li>
+                  <li><strong>Market values</strong> reflect the appraisal district's methodology, not sale prices.</li>
+                  <li><strong>has_solar</strong> depends on successful spatial or address matching and will under-count installations on parcels that failed to match (~11% of permits).</li>
+                </ul>
               </AlertDescription>
             </Alert>
           </CardContent>
         </Card>
 
-
-
         {/* General Notes Section */}
+
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-2xl">General Data Practices</CardTitle>
