@@ -83,7 +83,8 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
 
   const yearOne = useMemo(() => buildYearModel(inputs, 0), [inputs]);
   const thirtyYear = useMemo(() => buildThirtyYearModel(inputs, installCost), [inputs, installCost]);
-  const sso = useMemo(() => buildSsoModel(systemKw, productionPerKw, installCost), [systemKw, productionPerKw, installCost]);
+  // SSO installs don't qualify for the AE Solar PV rebate (separate programs)
+  const sso = useMemo(() => buildSsoModel(systemKw, productionPerKw, grossCost), [systemKw, productionPerKw, grossCost]);
 
   const billComparisonData = yearOne.monthlyRows.map(r => ({
     month: r.month,
@@ -116,10 +117,16 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
           <div id="section-install" className="grid grid-cols-2 gap-6 border-b pb-6 scroll-mt-52">
             <div className="pt-2">
               <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-                <span className="text-5xl md:text-6xl font-bold text-foreground tabular-nums">{fmt$(installCost)}</span>
-                <span className="text-base text-muted-foreground font-medium">net install cost</span>
+                <span className="text-5xl md:text-6xl font-bold text-foreground tabular-nums">
+                  {fmt$(billingMode === "sso" ? grossCost : installCost)}
+                </span>
+                <span className="text-base text-muted-foreground font-medium">
+                  {billingMode === "sso" ? "gross install cost" : "net install cost"}
+                </span>
               </div>
-              {rebate > 0 ? (
+              {billingMode === "sso" ? (
+                <p className="text-xs text-muted-foreground">AE Solar PV rebate does not apply to Standard Offer installs</p>
+              ) : rebate > 0 ? (
                 <p className="text-xs text-muted-foreground">
                   <span className="text-muted-foreground">{fmt$(grossCost)}</span>
                   <span className="mx-1">gross –</span>
