@@ -757,7 +757,7 @@ const DataSources = () => {
               <AlertDescription>
                 <strong>Known limitations:</strong>
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li><strong>ZIP 78729</strong> straddles the Travis/Williamson line — Travis contains only ~400 parcels there while Williamson contains ~7,400. Before WCAD was added, this ZIP showed an inflated ~77% solar adoption rate.</li>
+                  
                   <li><strong>WCAD year_built</strong> coverage from the Socrata improvement dataset is only ~20%. Missing values are filled with <code>2010</code> as a pre-2014 placeholder (our charts only go back to 2014).</li>
                   <li><strong>WCAD stories</strong> are not exposed by the API, so estimated roof sqft for Williamson parcels does not divide by story count and will overstate single-story-equivalent roof area on multi-story homes.</li>
                   <li><strong>Estimated roof sqft</strong> is a footprint approximation — it does not account for roof pitch, shading, obstructions, or non-usable area.</li>
