@@ -657,6 +657,102 @@ const DataSources = () => {
           </CardContent>
         </Card>
 
+        {/* TCAD / WCAD Parcel Data Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <Building2 className="h-6 w-6 text-primary" />
+              <CardTitle className="text-2xl">Property & Parcel Data (TCAD / WCAD)</CardTitle>
+            </div>
+            <CardDescription>
+              County appraisal district records used to enrich property-level context
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                Primary Data Sources
+              </h3>
+              <p className="text-muted-foreground mb-3">
+                We maintain a snapshot of parcel records from the two appraisal districts that cover the
+                Austin metro:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4 mb-3">
+                <li>
+                  <strong>Travis Central Appraisal District (TCAD)</strong> — ~390,000 properties.{" "}
+                  <a href="https://traviscad.org/property-data" target="_blank" rel="noopener noreferrer"
+                     className="text-primary underline hover:text-primary/80">traviscad.org</a>
+                </li>
+                <li>
+                  <strong>Williamson Central Appraisal District (WCAD)</strong> — ~61,000 properties in the
+                  portion of Williamson County served by Austin Energy.{" "}
+                  <a href="https://www.wcad.org/data-downloads/" target="_blank" rel="noopener noreferrer"
+                     className="text-primary underline hover:text-primary/80">wcad.org</a>
+                </li>
+              </ul>
+              <Alert className="mb-3">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Source format:</strong> Public bulk data files published by each appraisal district.
+                  We download, normalize, and load them into a single parcel table keyed by the county
+                  Property ID (PID).
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Fields We Retain</h3>
+              <p className="text-muted-foreground mb-2">
+                For each parcel we keep a deliberately small set of fields relevant to clean-energy analysis:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
+                <li><strong>Situs address &amp; ZIP</strong> — the physical property location</li>
+                <li><strong>County</strong> — Travis or Williamson</li>
+                <li><strong>Property type &amp; land use description</strong> — e.g. single family, condo, commercial</li>
+                <li><strong>Year built</strong></li>
+                <li><strong>Estimated roof square footage</strong> — derived from improvement records</li>
+                <li><strong>Market value</strong> — current appraised market value</li>
+                <li><strong>Owner name (prior year)</strong> — as published by the district</li>
+                <li><strong>State property classification code</strong> (<code>stat_cd</code>)</li>
+                <li><strong>In Austin Energy service area</strong> — boolean flag computed from ZIP / territory</li>
+                <li><strong>Has solar</strong> — boolean derived by matching the parcel address against our solar permit dataset</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-primary" />
+                How We Use It
+              </h3>
+              <p className="text-muted-foreground mb-2">
+                Parcel data is used as a denominator and enrichment layer rather than a standalone metric.
+                Specifically it powers:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
+                <li>Solar adoption rates by ZIP (solar permits ÷ eligible parcels)</li>
+                <li>Rough roof-area and system-size sanity checks on property assessments</li>
+                <li>Filtering analyses to the Austin Energy service territory</li>
+                <li>Identifying properties that do <em>not</em> yet have solar for opportunity sizing</li>
+              </ul>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Limitations:</strong> Appraisal data is a point-in-time snapshot and can lag real-world
+                changes by months. Estimated roof square footage is derived from improvement records and is
+                approximate — it does not account for roof pitch, shading, obstructions, or non-usable area.
+                Market values reflect the appraisal district's methodology, not sale prices. The{" "}
+                <em>has_solar</em> flag depends on successful address matching to permit records and will
+                under-count installations where the parcel address and permit address differ.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
+
+
         {/* General Notes Section */}
         <Card className="mb-8">
           <CardHeader>
