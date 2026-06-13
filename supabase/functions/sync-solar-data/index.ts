@@ -183,12 +183,106 @@ async function syncDataInBackground() {
     }
 
     console.log(`Sync completed. Processed: ${totalProcessed}, Errors: ${totalErrors}`);
-    
-    return { success: true, processed: totalProcessed, errors: totalErrors, total: installations.length };
+
+    // Enrich rows missing tcad_pid via Travis County ArcGIS spatial lookup.
+    // Non-fatal: if ArcGIS is unreachable, the sync still succeeds.
+    let enrichmentResult = { attempted: 0, matched: 0, errors: 0 };
+    try {
+      enrichmentResult = await enrichParcelIds(supabase);
+      console.log(`Parcel enrichment: attempted=${enrichmentResult.attempted}, matched=${enrichmentResult.matched}, errors=${enrichmentResult.errors}`);
+    } catch (e) {
+      console.error('Parcel enrichment failed (non-fatal):', e);
+    }
+
+    return {
+      success: true,
+      processed: totalProcessed,
+      errors: totalErrors,
+      total: installations.length,
+      enrichment: enrichmentResult,
+    };
   } catch (error) {
     console.error('Error in background sync:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
+}
+
+// ---- Parcel enrichment (lat/lon -> TCAD PROP_ID via Travis County ArcGIS) ----
+const ARCGIS_PARCEL_URL =
+  'https://taxmaps.traviscountytx.gov/arcgis/rest/services/Parcels/MapServer/0/query';
+const ENRICH_CONCURRENCY = 8;
+const ENRICH_TIMEOUT_MS = 12_000;
+const ENRICH_MAX_ROWS = 500;
+
+async function lookupPid(lat: number, lon: number): Promise<string | null> {
+  const geometry = encodeURIComponent(
+    JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } }),
+  );
+  const url =
+    `${ARCGIS_PARCEL_URL}?geometry=${geometry}` +
+    `&geometryType=esriGeometryPoint&spatialRel=esriSpatialRelIntersects` +
+    `&outFields=PROP_ID&returnGeometry=false&f=json`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ENRICH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const features = json?.features;
+    if (Array.isArray(features) && features.length > 0) {
+      const pid = features[0]?.attributes?.PROP_ID;
+      return pid != null ? String(pid) : null;
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function enrichParcelIds(supabase: any) {
+  const { data: rows, error } = await supabase
+    .from('solar_installations')
+    .select('id, latitude, longitude')
+    .is('tcad_pid', null)
+    .not('latitude', 'is', null)
+    .not('longitude', 'is', null)
+    .limit(ENRICH_MAX_ROWS);
+
+  if (error) throw error;
+  if (!rows || rows.length === 0) return { attempted: 0, matched: 0, errors: 0 };
+
+  let matched = 0;
+  let errors = 0;
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < rows.length) {
+      const idx = cursor++;
+      const r = rows[idx];
+      try {
+        const pid = await lookupPid(Number(r.latitude), Number(r.longitude));
+        if (pid) {
+          const { error: updErr } = await supabase
+            .from('solar_installations')
+            .update({ tcad_pid: pid })
+            .eq('id', r.id);
+          if (updErr) errors++;
+          else matched++;
+        }
+      } catch {
+        errors++;
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(ENRICH_CONCURRENCY, rows.length) }, () => worker()),
+  );
+
+  return { attempted: rows.length, matched, errors };
 }
 
 Deno.serve(async (req) => {
