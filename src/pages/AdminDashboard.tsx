@@ -58,6 +58,7 @@ export default function AdminDashboard() {
     }
     
     setIsAuthenticated(true);
+    loadSyncStatus();
   }, [navigate]);
 
   const handleLogout = () => {
