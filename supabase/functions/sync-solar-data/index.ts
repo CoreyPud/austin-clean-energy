@@ -2,8 +2,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token, x-cron-secret',
 };
+
+// Validates a cron secret against the value stored in Postgres vault.
+// Returns true only when both are present and match exactly.
+async function validateCronSecret(provided: string | null): Promise<boolean> {
+  if (!provided) return false;
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const { data, error } = await supabase
+      .schema('vault')
+      .from('decrypted_secrets')
+      .select('decrypted_secret')
+      .eq('name', 'sync_solar_cron_secret')
+      .maybeSingle();
+    if (error || !data?.decrypted_secret) return false;
+    return data.decrypted_secret === provided;
+  } catch {
+    return false;
+  }
+}
 
 // Admin token validation
 async function validateToken(token: string | null): Promise<boolean> {
@@ -53,7 +75,7 @@ interface AustinSolarRecord {
   project_id?: string;
   permit_number?: string;
   total_job_valuation?: string;
-  electrical_valuation?: string;
+  electrical_valuation_remodel?: string;
 }
 
 // Transform Austin API record to database schema
@@ -89,7 +111,7 @@ function transformRecord(record: AustinSolarRecord) {
     contractor_city: record.contractor_city || null,
     link: record.link ? (typeof record.link === 'string' ? record.link : record.link.url) : null,
     total_job_valuation: record.total_job_valuation ? parseFloat(record.total_job_valuation) : null,
-    electrical_valuation: record.electrical_valuation ? parseFloat(record.electrical_valuation) : null,
+    electrical_valuation: record.electrical_valuation_remodel ? parseFloat(record.electrical_valuation_remodel) : null,
   };
 }
 
@@ -172,16 +194,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate admin token
+    // Allow either a valid admin token (UI/manual) or a matching cron secret (scheduled)
     const adminToken = req.headers.get('x-admin-token');
-    if (!(await validateToken(adminToken))) {
+    const cronSecret = req.headers.get('x-cron-secret');
+    const authorized =
+      (await validateCronSecret(cronSecret)) || (await validateToken(adminToken));
+    if (!authorized) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Solar data sync initiated');
+    console.log('Solar data sync initiated', { source: cronSecret ? 'cron' : 'admin' });
 
     // Run the sync - it processes in batches so it should complete within timeout limits
     const result = await syncDataInBackground();
