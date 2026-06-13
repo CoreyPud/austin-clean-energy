@@ -210,9 +210,9 @@ async function syncDataInBackground() {
 // ---- Parcel enrichment (lat/lon -> TCAD PROP_ID via Travis County ArcGIS) ----
 const ARCGIS_PARCEL_URL =
   'https://taxmaps.traviscountytx.gov/arcgis/rest/services/Parcels/MapServer/0/query';
-const ENRICH_CONCURRENCY = 8;
-const ENRICH_TIMEOUT_MS = 12_000;
-const ENRICH_MAX_ROWS = 500;
+const ENRICH_CONCURRENCY = 3;
+const ENRICH_TIMEOUT_MS = 8_000;
+const ENRICH_MAX_ROWS = 5; // diagnostic mode
 
 async function lookupPid(lat: number, lon: number): Promise<string | null> {
   const geometry = encodeURIComponent(
