@@ -304,6 +304,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Debug mode: ?debug=lat,lon — returns raw ArcGIS response, no sync.
+    const url = new URL(req.url);
+    const debug = url.searchParams.get('debug');
+    if (debug) {
+      const [latStr, lonStr] = debug.split(',');
+      const lat = Number(latStr), lon = Number(lonStr);
+      const geometry = encodeURIComponent(JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } }));
+      const arcUrl = `${ARCGIS_PARCEL_URL}?geometry=${geometry}&geometryType=esriGeometryPoint&spatialRel=esriSpatialRelIntersects&outFields=PROP_ID&returnGeometry=false&f=json`;
+      const t0 = Date.now();
+      try {
+        const r = await fetch(arcUrl, { signal: AbortSignal.timeout(10_000) });
+        const body = await r.text();
+        return new Response(JSON.stringify({ ms: Date.now()-t0, status: r.status, url: arcUrl, body }, null, 2),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (e) {
+        return new Response(JSON.stringify({ ms: Date.now()-t0, error: String(e), url: arcUrl }, null, 2),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
     console.log('Solar data sync initiated', { source: isCron ? 'cron' : 'admin' });
 
     // Run the sync - it processes in batches so it should complete within timeout limits
