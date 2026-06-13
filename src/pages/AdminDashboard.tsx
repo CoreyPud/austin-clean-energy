@@ -8,7 +8,37 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{
+    latestIssued: string | null;
+    latestCompleted: string | null;
+    lastUpdated: string | null;
+    total: number | null;
+    loading: boolean;
+    error: string | null;
+  }>({ latestIssued: null, latestCompleted: null, lastUpdated: null, total: null, loading: true, error: null });
   const navigate = useNavigate();
+
+  const loadSyncStatus = async () => {
+    setSyncStatus((s) => ({ ...s, loading: true, error: null }));
+    try {
+      const [issuedRes, completedRes, updatedRes, countRes] = await Promise.all([
+        supabase.from("solar_installations").select("issued_date").not("issued_date", "is", null).order("issued_date", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("solar_installations").select("completed_date").not("completed_date", "is", null).order("completed_date", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("solar_installations").select("updated_at").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("solar_installations").select("*", { count: "exact", head: true }),
+      ]);
+      setSyncStatus({
+        latestIssued: issuedRes.data?.issued_date ?? null,
+        latestCompleted: completedRes.data?.completed_date ?? null,
+        lastUpdated: updatedRes.data?.updated_at ?? null,
+        total: countRes.count ?? null,
+        loading: false,
+        error: null,
+      });
+    } catch (e: any) {
+      setSyncStatus((s) => ({ ...s, loading: false, error: e?.message || "Failed to load sync status" }));
+    }
+  };
 
   useEffect(() => {
     const token = sessionStorage.getItem('admin_token');
