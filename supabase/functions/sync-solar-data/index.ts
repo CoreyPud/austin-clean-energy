@@ -197,11 +197,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Allow either a valid admin token (UI/manual) or service-role bearer (scheduled/internal)
+    // Allow either a valid admin token (UI/manual) or a matching cron secret (scheduled)
     const adminToken = req.headers.get('x-admin-token');
-    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization');
-    const isServiceRole = validateServiceRole(authHeader);
-    const authorized = isServiceRole || (await validateToken(adminToken));
+    const cronSecret = req.headers.get('x-cron-secret');
+    const isCron = await validateCronSecret(cronSecret);
+    const authorized = isCron || (await validateToken(adminToken));
     if (!authorized) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Solar data sync initiated', { source: isServiceRole ? 'cron' : 'admin' });
+    console.log('Solar data sync initiated', { source: isCron ? 'cron' : 'admin' });
 
     // Run the sync - it processes in batches so it should complete within timeout limits
     const result = await syncDataInBackground();
