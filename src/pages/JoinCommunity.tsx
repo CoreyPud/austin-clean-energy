@@ -22,10 +22,10 @@ const SLACK_INVITE_URL =
   "https://join.slack.com/t/solaraustingroup/shared_invite/zt-40tsu7gxh-8exWmLou1xHM2l3NmfM9hQ";
 
 const INVOLVEMENT_OPTIONS = [
-  { value: "outreach_community", label: "Outreach & community building" },
-  { value: "data_validation", label: "Data validation" },
-  { value: "technical_work", label: "Technical work" },
-  { value: "engineering_events", label: "Engineering / volunteering at events" },
+  { value: "outreach_community", label: "Outreach & Community Building" },
+  { value: "data_validation", label: "Data Validation & Research" },
+  { value: "technical_work", label: "Technical & Code Engineering Work" },
+  { value: "engineering_events", label: "Volunteering at Events & Projects" },
 ] as const;
 
 const schema = z.object({

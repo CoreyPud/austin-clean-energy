@@ -31,10 +31,10 @@ async function validateToken(token: string | null): Promise<boolean> {
 }
 
 const AREA_LABELS: Record<string, string> = {
-  outreach_community: "Outreach & community building",
-  data_validation: "Data validation",
-  technical_work: "Technical work",
-  engineering_events: "Engineering / volunteering at events",
+  outreach_community: "Outreach & Community Building",
+  data_validation: "Data Validation & Research",
+  technical_work: "Technical & Code Engineering Work",
+  engineering_events: "Volunteering at Events & Projects",
 };
 
 function csvEscape(value: unknown): string {
