@@ -2,8 +2,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token, x-cron-secret',
 };
+
+// Validates a cron secret against the value stored in Postgres vault.
+// Returns true only when both are present and match exactly.
+async function validateCronSecret(provided: string | null): Promise<boolean> {
+  if (!provided) return false;
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const { data, error } = await supabase
+      .schema('vault')
+      .from('decrypted_secrets')
+      .select('decrypted_secret')
+      .eq('name', 'sync_solar_cron_secret')
+      .maybeSingle();
+    if (error || !data?.decrypted_secret) return false;
+    return data.decrypted_secret === provided;
+  } catch {
+    return false;
+  }
+}
 
 // Admin token validation
 async function validateToken(token: string | null): Promise<boolean> {
