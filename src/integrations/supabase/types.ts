@@ -398,6 +398,8 @@ export type Database = {
       }
       tcad_properties: {
         Row: {
+          centroid_lat: number | null
+          centroid_lon: number | null
           county: string | null
           estimated_roof_sqft: number | null
           has_solar: boolean | null
@@ -413,6 +415,8 @@ export type Database = {
           year_built: number | null
         }
         Insert: {
+          centroid_lat?: number | null
+          centroid_lon?: number | null
           county?: string | null
           estimated_roof_sqft?: number | null
           has_solar?: boolean | null
@@ -428,6 +432,8 @@ export type Database = {
           year_built?: number | null
         }
         Update: {
+          centroid_lat?: number | null
+          centroid_lon?: number | null
           county?: string | null
           estimated_roof_sqft?: number | null
           has_solar?: boolean | null
@@ -555,6 +561,14 @@ export type Database = {
       }
     }
     Functions: {
+      enrich_solar_tcad_pids: {
+        Args: { _limit?: number; _radius_deg?: number }
+        Returns: number
+      }
+      find_parcel_pid_by_point: {
+        Args: { _lat: number; _lon: number; _radius_deg?: number }
+        Returns: string
+      }
       get_sync_solar_cron_secret: { Args: never; Returns: string }
     }
     Enums: {
