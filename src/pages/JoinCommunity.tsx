@@ -136,7 +136,7 @@ const JoinCommunity = () => {
                 </h2>
                 <p className="text-muted-foreground">
                   Click below to join our Slack community. Introduce yourself in{" "}
-                  <code className="text-foreground">#introductions</code> when
+                  <code className="text-foreground">#all-solar-austin</code> when
                   you arrive — we're glad to have you.
                 </p>
               </div>
