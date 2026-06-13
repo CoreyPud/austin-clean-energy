@@ -444,6 +444,36 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          involvement_area: string
+          name: string
+          notes: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          involvement_area: string
+          name: string
+          notes?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          involvement_area?: string
+          name?: string
+          notes?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       solar_installations_view: {

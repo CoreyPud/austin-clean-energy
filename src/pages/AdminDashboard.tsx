@@ -107,6 +107,13 @@ export default function AdminDashboard() {
       icon: BarChart3,
       path: "/fiscal-year-stats",
       color: "text-orange-600"
+    },
+    {
+      title: "Volunteer Signups",
+      description: "Review submissions from the Join the Community form and download the list as a CSV.",
+      icon: Users,
+      path: "/admin/volunteer-signups",
+      color: "text-pink-600"
     }
   ];
 
