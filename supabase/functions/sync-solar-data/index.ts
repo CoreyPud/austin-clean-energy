@@ -111,7 +111,7 @@ function transformRecord(record: AustinSolarRecord) {
     contractor_city: record.contractor_city || null,
     link: record.link ? (typeof record.link === 'string' ? record.link : record.link.url) : null,
     total_job_valuation: record.total_job_valuation ? parseFloat(record.total_job_valuation) : null,
-    electrical_valuation: record.electrical_valuation ? parseFloat(record.electrical_valuation) : null,
+    electrical_valuation: record.electrical_valuation_remodel ? parseFloat(record.electrical_valuation_remodel) : null,
   };
 }
 
