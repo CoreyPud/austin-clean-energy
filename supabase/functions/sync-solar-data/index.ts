@@ -5,8 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token, x-cron-secret',
 };
 
-// Validates a cron secret against the value stored in Postgres vault.
-// Returns true only when both are present and match exactly.
+// Validates a cron-supplied secret by comparing it (constant-time) to the
+// value stored in Postgres vault. We read the vault value via a
+// SECURITY DEFINER SQL function (`public.get_sync_solar_cron_secret`)
+// because the Data API does not expose the `vault` schema directly.
 async function validateCronSecret(provided: string | null): Promise<boolean> {
   if (!provided) return false;
   try {
@@ -14,14 +16,15 @@ async function validateCronSecret(provided: string | null): Promise<boolean> {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
-    const { data, error } = await supabase
-      .schema('vault')
-      .from('decrypted_secrets')
-      .select('decrypted_secret')
-      .eq('name', 'sync_solar_cron_secret')
-      .maybeSingle();
-    if (error || !data?.decrypted_secret) return false;
-    return data.decrypted_secret === provided;
+    const { data, error } = await supabase.rpc('get_sync_solar_cron_secret');
+    const expected = typeof data === 'string' ? data : null;
+    if (error || !expected) return false;
+    if (provided.length !== expected.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < provided.length; i++) {
+      mismatch |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+    }
+    return mismatch === 0;
   } catch {
     return false;
   }
@@ -197,8 +200,8 @@ Deno.serve(async (req) => {
     // Allow either a valid admin token (UI/manual) or a matching cron secret (scheduled)
     const adminToken = req.headers.get('x-admin-token');
     const cronSecret = req.headers.get('x-cron-secret');
-    const authorized =
-      (await validateCronSecret(cronSecret)) || (await validateToken(adminToken));
+    const isCron = await validateCronSecret(cronSecret);
+    const authorized = isCron || (await validateToken(adminToken));
     if (!authorized) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
@@ -206,7 +209,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Solar data sync initiated', { source: cronSecret ? 'cron' : 'admin' });
+    console.log('Solar data sync initiated', { source: isCron ? 'cron' : 'admin' });
 
     // Run the sync - it processes in batches so it should complete within timeout limits
     const result = await syncDataInBackground();

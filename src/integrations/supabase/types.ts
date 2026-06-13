@@ -525,7 +525,7 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_sync_solar_cron_secret: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
