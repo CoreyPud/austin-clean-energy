@@ -5,18 +5,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token, x-cron-secret',
 };
 
-// Validates an internal/cron caller by comparing the provided bearer token
-// to the project's service role key. Constant-time compare to avoid timing leaks.
-function validateServiceRole(authHeader: string | null): boolean {
-  if (!authHeader) return false;
-  const expected = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''}`;
-  if (!expected || expected === 'Bearer ') return false;
-  if (authHeader.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < authHeader.length; i++) {
-    mismatch |= authHeader.charCodeAt(i) ^ expected.charCodeAt(i);
+// Validates a cron-supplied secret by comparing it (constant-time) to the
+// value stored in Postgres vault. We read the vault value via a
+// SECURITY DEFINER SQL function (`public.get_sync_solar_cron_secret`)
+// because the Data API does not expose the `vault` schema directly.
+async function validateCronSecret(provided: string | null): Promise<boolean> {
+  if (!provided) return false;
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const { data, error } = await supabase.rpc('get_sync_solar_cron_secret');
+    const expected = typeof data === 'string' ? data : null;
+    if (error || !expected) return false;
+    if (provided.length !== expected.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < provided.length; i++) {
+      mismatch |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+    }
+    return mismatch === 0;
+  } catch {
+    return false;
   }
-  return mismatch === 0;
 }
 
 // Admin token validation
