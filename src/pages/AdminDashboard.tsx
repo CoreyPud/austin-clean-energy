@@ -2,12 +2,43 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3 } from "lucide-react";
+import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{
+    latestIssued: string | null;
+    latestCompleted: string | null;
+    lastUpdated: string | null;
+    total: number | null;
+    loading: boolean;
+    error: string | null;
+  }>({ latestIssued: null, latestCompleted: null, lastUpdated: null, total: null, loading: true, error: null });
   const navigate = useNavigate();
+
+  const loadSyncStatus = async () => {
+    setSyncStatus((s) => ({ ...s, loading: true, error: null }));
+    try {
+      const [issuedRes, completedRes, updatedRes, countRes] = await Promise.all([
+        supabase.from("solar_installations").select("issued_date").not("issued_date", "is", null).order("issued_date", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("solar_installations").select("completed_date").not("completed_date", "is", null).order("completed_date", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("solar_installations").select("updated_at").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("solar_installations").select("*", { count: "exact", head: true }),
+      ]);
+      setSyncStatus({
+        latestIssued: issuedRes.data?.issued_date ?? null,
+        latestCompleted: completedRes.data?.completed_date ?? null,
+        lastUpdated: updatedRes.data?.updated_at ?? null,
+        total: countRes.count ?? null,
+        loading: false,
+        error: null,
+      });
+    } catch (e: any) {
+      setSyncStatus((s) => ({ ...s, loading: false, error: e?.message || "Failed to load sync status" }));
+    }
+  };
 
   useEffect(() => {
     const token = sessionStorage.getItem('admin_token');
@@ -27,6 +58,7 @@ export default function AdminDashboard() {
     }
     
     setIsAuthenticated(true);
+    loadSyncStatus();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -119,6 +151,55 @@ export default function AdminDashboard() {
             Manage data quality, import records, and maintain the Austin Clean Energy platform.
           </p>
         </div>
+
+        {/* City Permit Sync Status */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              City Permit Sync Status
+            </h2>
+            <Button variant="ghost" size="sm" onClick={loadSyncStatus} disabled={syncStatus.loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncStatus.loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
+          <Card>
+            <CardContent className="pt-6">
+              {syncStatus.error ? (
+                <p className="text-sm text-destructive">Failed to load: {syncStatus.error}</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Latest Issued Date</p>
+                    <p className="text-lg font-semibold">{syncStatus.loading ? "…" : (syncStatus.latestIssued ?? "—")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Most recent permit issue date in our DB</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Latest Completed Date</p>
+                    <p className="text-lg font-semibold">{syncStatus.loading ? "…" : (syncStatus.latestCompleted ?? "—")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Most recent permit completion date</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Last Sync (row updated_at)</p>
+                    <p className="text-lg font-semibold">
+                      {syncStatus.loading ? "…" : (syncStatus.lastUpdated ? new Date(syncStatus.lastUpdated).toLocaleString() : "—")}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">When sync-solar-data last touched a row</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Total Permits</p>
+                    <p className="text-lg font-semibold">{syncStatus.loading ? "…" : (syncStatus.total?.toLocaleString() ?? "—")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Rows in solar_installations</p>
+                  </div>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-4 pt-4 border-t">
+                Automated daily sync runs at 06:00 UTC via pg_cron (<code>sync-solar-daily</code>). If the "Last Sync" timestamp is more than ~26 hours old, the cron job may have failed — check edge function logs.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
 
         {/* Admin Tools */}
         <section className="mb-12">
