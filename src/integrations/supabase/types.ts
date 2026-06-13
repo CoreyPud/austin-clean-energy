@@ -561,6 +561,10 @@ export type Database = {
       }
     }
     Functions: {
+      enrich_solar_tcad_pids: {
+        Args: { _limit?: number; _radius_deg?: number }
+        Returns: number
+      }
       find_parcel_pid_by_point: {
         Args: { _lat: number; _lon: number; _radius_deg?: number }
         Returns: string
