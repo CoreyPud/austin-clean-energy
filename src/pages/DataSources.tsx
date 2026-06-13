@@ -82,13 +82,16 @@ const DataSources = () => {
                 Data Updates & Caching
               </h3>
               <p className="text-muted-foreground mb-2">
-                <strong>Update Frequency:</strong> City data is updated by Austin's building department 
-                as permits are issued and projects are completed. Our system syncs this data regularly.
+                <strong>Update Frequency:</strong> Austin's building department updates the underlying
+                permit dataset daily as permits are issued and projects are completed. Our copy of that
+                data is refreshed manually by an administrator rather than on an automated schedule, so
+                it can lag the city's portal by days or weeks between syncs.
               </p>
               <p className="text-muted-foreground mb-2">
-                <strong>Caching Strategy:</strong> Statistics shown on the City Overview page are cached 
-                in our database for performance. When you visit the page, you see cached stats immediately, 
-                and the system refreshes them in the background.
+                <strong>Caching Strategy:</strong> Headline statistics on the City Overview page are
+                read from a cached snapshot in our database for performance; that snapshot is also
+                refreshed manually when an admin runs a sync. Map pins use a separate cache that
+                automatically rebuilds in the background when it's more than ~6 hours old.
               </p>
             </div>
 
