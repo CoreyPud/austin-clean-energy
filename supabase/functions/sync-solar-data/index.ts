@@ -227,6 +227,7 @@ async function lookupPid(lat: number, lon: number): Promise<string | null> {
   const timer = setTimeout(() => controller.abort(), ENRICH_TIMEOUT_MS);
   try {
     const res = await fetch(url, { signal: controller.signal });
+    console.log(`[arcgis] lat=${lat} lon=${lon} status=${res.status}`);
     if (!res.ok) return null;
     const json = await res.json();
     const features = json?.features;
