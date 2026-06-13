@@ -75,7 +75,7 @@ interface AustinSolarRecord {
   project_id?: string;
   permit_number?: string;
   total_job_valuation?: string;
-  electrical_valuation?: string;
+  electrical_valuation_remodel?: string;
 }
 
 // Transform Austin API record to database schema
