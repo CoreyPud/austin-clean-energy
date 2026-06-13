@@ -251,6 +251,29 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
+
+    // Enrich-only mode: ?enrich_only=1 — runs centroid-based parcel matching without hitting Austin API.
+    if (url.searchParams.get('enrich_only')) {
+      const sb = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      );
+      const radius = Number(url.searchParams.get('radius_deg')) || 0.0005;
+      const t0 = Date.now();
+      const { data, error } = await sb.rpc('enrich_solar_tcad_pids', { _radius_deg: radius });
+      return new Response(
+        JSON.stringify({
+          success: !error,
+          mode: 'enrich_only',
+          radius_deg: radius,
+          matched: Number(data) || 0,
+          ms: Date.now() - t0,
+          error: error?.message ?? null,
+        }, null, 2),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     console.log('Solar data sync initiated', { source: isCron ? 'cron' : 'admin' });
 
     // Run the sync - it processes in batches so it should complete within timeout limits
