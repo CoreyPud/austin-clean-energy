@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3 } from "lucide-react";
+import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
