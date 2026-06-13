@@ -24,6 +24,8 @@ import Sitemap from "./pages/Sitemap";
 import Guides from "./pages/Guides";
 import GuideDetail from "./pages/GuideDetail";
 import Contact from "./pages/Contact";
+import JoinCommunity from "./pages/JoinCommunity";
+import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 
@@ -60,6 +62,7 @@ const App = () => (
             <Route path="/guides/:slug" element={<GuideDetail />} />
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/join-the-community" element={<JoinCommunity />} />
           </Route>
 
           {/* Pages without footer */}
@@ -71,6 +74,7 @@ const App = () => (
           <Route path="/admin/knowledge-base" element={<AdminKnowledgeBase />} />
           <Route path="/admin/pir-import" element={<PIRImport />} />
           <Route path="/admin/data-comparison" element={<DataComparison />} />
+          <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

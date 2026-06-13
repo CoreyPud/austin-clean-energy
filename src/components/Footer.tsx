@@ -26,6 +26,12 @@ const Footer = () => {
             >
               Substack Newsletter →
             </a>
+            <button
+              onClick={() => navigate('/join-the-community')}
+              className="text-white/70 hover:text-white transition-colors text-sm text-left block mt-2"
+            >
+              Join the Community →
+            </button>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-4">Resources</h3>
