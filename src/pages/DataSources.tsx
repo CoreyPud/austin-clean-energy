@@ -730,15 +730,41 @@ const DataSources = () => {
             <div>
               <h3 className="text-lg font-semibold mb-3">How Solar Records Are Matched to Parcels</h3>
               <p className="text-muted-foreground mb-2">
-                Each of the ~19,400 solar installation records is matched to a parcel ID via a two-pass process:
+                Each solar installation record is matched to a TCAD parcel ID using a local
+                spatial lookup against pre-loaded parcel centroids (659,303 Travis County parcels
+                stored in our database with lat/lon centroids and B-tree indexes for fast range queries).
+                For each permit's lat/lon, we run a bounding-box prefilter (~55m / 0.0005°) and pick
+                the nearest centroid by squared planar distance.
               </p>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4 mb-2">
-                <li><strong>Pass 1 — TCAD:</strong> Spatial query by lat/lon against the Travis parcel API, with an address-string fallback for records missing coordinates. <strong>17,206 of 19,419 matched (88.6%)</strong> — 17,130 spatial, 76 address.</li>
-                <li><strong>Pass 2 — WCAD:</strong> The 2,213 unmatched records are re-queried against the Williamson parcel API. <strong>643 additional matches (29.1% of remainder)</strong>; the rest fall outside both counties.</li>
-              </ul>
+              <p className="text-muted-foreground mb-2">
+                This replaced an earlier approach that called the live Travis County ArcGIS API,
+                which became unreliable due to upstream rate-limiting and outages. The local
+                approach is faster, deterministic, and runs as part of every nightly sync.
+              </p>
+              <p className="text-muted-foreground mb-2">
+                <strong>Current match rate:</strong> 18,532 of 19,498 installations (95%) are matched
+                to a TCAD parcel. The remaining ~760 sit outside Travis County (Williamson and Hays
+                jurisdictions like Bee Cave, Lakeway, and Round Rock ETJ), where TCAD centroids
+                legitimately don't apply.
+              </p>
               <p className="text-muted-foreground">
-                Matched parcel IDs are written back to <code>solar_installations.parcel_id</code> so that
+                Matched parcel IDs are written back to <code>solar_installations.tcad_pid</code> so
                 downstream queries can join permits to parcel characteristics directly.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-primary" />
+                Sync Schedule
+              </h3>
+              <p className="text-muted-foreground">
+                The <code>sync-solar-data</code> edge function runs <strong>daily at 06:00 UTC</strong>{" "}
+                (01:00 Austin) via pg_cron. It pulls the latest permits from the Austin Open Data Portal,
+                upserts them into <code>solar_installations</code>, and then automatically runs the
+                centroid-based parcel enrichment to fill <code>tcad_pid</code> on any new or
+                previously-unmatched rows. Enrichment is non-fatal — an Austin API outage won't break
+                the rest of the pipeline.
               </p>
             </div>
 
