@@ -791,7 +791,7 @@ const DataSources = () => {
                   <li><strong>WCAD stories</strong> are not exposed by the API, so estimated roof sqft for Williamson parcels does not divide by story count and will overstate single-story-equivalent roof area on multi-story homes.</li>
                   <li><strong>Estimated roof sqft</strong> is a footprint approximation — it does not account for roof pitch, shading, obstructions, or non-usable area.</li>
                   <li><strong>Market values</strong> reflect the appraisal district's methodology, not sale prices.</li>
-                  <li><strong>has_solar</strong> depends on successful spatial or address matching and will under-count installations on parcels that failed to match (~11% of permits).</li>
+                  <li><strong>has_solar</strong> depends on successful centroid matching to a TCAD parcel; permits outside Travis County (~5%, mostly Williamson/Hays jurisdictions) will not match and are excluded from parcel-level joins.</li>
                 </ul>
               </AlertDescription>
             </Alert>
