@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, Fragment } from "react";
+import { useMemo, useState, Fragment } from "react";
 import { ChevronDown } from "lucide-react";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +32,8 @@ interface Props {
   systemKw: number;
   batteryKwh: number;
   billingMode?: "vos" | "sso";
+  costPerW: number;
+  onCostPerWChange: (v: number) => void;
 }
 
 const fmt$ = (n: number) =>
@@ -39,16 +41,13 @@ const fmt$ = (n: number) =>
     ? `-$${Math.abs(Math.round(n)).toLocaleString()}`
     : `$${Math.round(n).toLocaleString()}`;
 
-const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyType, systemKw, batteryKwh, billingMode = "vos" }: Props) => {
+const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyType, systemKw, batteryKwh, billingMode = "vos", costPerW, onCostPerWChange }: Props) => {
   const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
   const productionPerKw = solarInsights.annualProductionKwh > 0 && maxKw > 0
     ? Math.round(solarInsights.annualProductionKwh / maxKw)
     : DEFAULT_PRODUCTION_PER_KW;
 
   const [showMethodology, setShowMethodology] = useState(false);
-  const defaultCostPerW = propertyType === "commercial" ? 2.00 : 2.95;
-  const [costPerW, setCostPerW] = useState(defaultCostPerW);
-  useEffect(() => { setCostPerW(defaultCostPerW); }, [propertyType]);
   const costPerKw = costPerW * 1000;
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
   const [loanTermYears, setLoanTermYears] = useState(20);
@@ -151,7 +150,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
               <Slider
                 min={1.5} max={5.0} step={0.05}
                 value={[costPerW]}
-                onValueChange={([v]) => setCostPerW(v)}
+                onValueChange={([v]) => onCostPerWChange(v)}
               />
             </div>
           </div>

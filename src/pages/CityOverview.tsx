@@ -36,6 +36,7 @@ const CityOverview = () => {
   const [timelineData, setTimelineData] = useState<any[]>([]);
   const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('cumulative');
   const [chartMetric, setChartMetric] = useState<'count' | 'capacity'>('count');
+  const [chartPeriod, setChartPeriod] = useState<'quarter' | 'year'>('quarter');
   const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
   const [isLoadingQuarterly, setIsLoadingQuarterly] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -765,7 +766,7 @@ const CityOverview = () => {
             );
           })()}
 
-          {/* Quarterly Installations Chart */}
+          {/* Quarterly/Yearly Installations Chart */}
           <Card className="mb-6">
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -775,8 +776,8 @@ const CityOverview = () => {
                   </CardTitle>
                   <CardDescription>
                     {chartMode === 'perPeriod'
-                      ? 'New solar projects completed each quarter (2014–present)'
-                      : 'Cumulative solar projects completed through each quarter (2014–present)'}
+                      ? `New solar projects completed each ${chartPeriod} (2014–present)`
+                      : `Cumulative solar projects through each ${chartPeriod} (2014–present)`}
                   </CardDescription>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -786,9 +787,15 @@ const CityOverview = () => {
                       <TabsTrigger value="capacity">Capacity (kW)</TabsTrigger>
                     </TabsList>
                   </Tabs>
+                  <Tabs value={chartPeriod} onValueChange={(v) => setChartPeriod(v as 'quarter' | 'year')}>
+                    <TabsList>
+                      <TabsTrigger value="quarter">Quarter</TabsTrigger>
+                      <TabsTrigger value="year">Year</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                   <Tabs value={chartMode} onValueChange={(v) => setChartMode(v as 'perPeriod' | 'cumulative')}>
                     <TabsList>
-                      <TabsTrigger value="perPeriod">Per Quarter</TabsTrigger>
+                      <TabsTrigger value="perPeriod">Per Period</TabsTrigger>
                       <TabsTrigger value="cumulative">Cumulative</TabsTrigger>
                     </TabsList>
                   </Tabs>
@@ -803,13 +810,25 @@ const CityOverview = () => {
                   const now = new Date();
                   const currentYear = now.getFullYear();
                   const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
-                  const completed = quarterlyData.filter((d: any) =>
+                  const completedQ = quarterlyData.filter((d: any) =>
                     d.year < currentYear || (d.year === currentYear && d.quarter < currentQuarter)
                   );
+
+                  const baseData = chartPeriod === 'year' ? (() => {
+                    const map: Record<number, any> = {};
+                    completedQ.forEach((d: any) => {
+                      if (!map[d.year]) map[d.year] = { year: d.year, period: String(d.year), solarOnly: 0, batteryCount: 0, totalKW: 0 };
+                      map[d.year].solarOnly += d.solarOnly || 0;
+                      map[d.year].batteryCount += d.batteryCount || 0;
+                      map[d.year].totalKW += d.totalKW || 0;
+                    });
+                    return Object.values(map).sort((a: any, b: any) => a.year - b.year);
+                  })() : completedQ;
+
                   let runSolar = 0;
                   let runBattery = 0;
                   let runKW = 0;
-                  const chartData = completed.map((d: any) => {
+                  const chartData = baseData.map((d: any) => {
                     if (chartMode === 'cumulative') {
                       runSolar += d.solarOnly;
                       runBattery += d.batteryCount;
@@ -829,8 +848,8 @@ const CityOverview = () => {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
                           dataKey="period"
-                          interval={3}
-                          tickFormatter={(v: string) => v.split(' ')[0]}
+                          interval={chartPeriod === 'quarter' ? 3 : 0}
+                          tickFormatter={chartPeriod === 'quarter' ? ((v: string) => v.split(' ')[0]) : undefined}
                         />
                         <YAxis />
                         <Legend

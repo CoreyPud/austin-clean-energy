@@ -41,7 +41,6 @@ import {
   buildYearModel,
   buildThirtyYearModel,
   buildSsoModel,
-  AUSTIN_INSTALL_COST_PER_KW,
   austinEnergyRebate,
   AUSTIN_ENERGY_RATES,
   SSO_SHOW_THRESHOLD_KW,
@@ -69,6 +68,7 @@ const PropertyAssessment = () => {
   const [billParseSummary, setBillParseSummary] = useState<{ months: number; avgBill: number; avgKwh: number } | null>(null);
   const [billParseError, setBillParseError] = useState<string | null>(null);
   const [billViewMode, setBillViewMode] = useState<"estimate" | "bill">("estimate");
+  const [costPerW, setCostPerW] = useState<number>(2.95);
 
   // Derived solar values — recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
@@ -106,11 +106,12 @@ const PropertyAssessment = () => {
     const defaults: Record<string, number> = { commercial: 3000, "non-profit": 800 };
     setMonthlyBill(defaults[propertyType] ?? 150);
     if (propertyType !== "commercial") setBillingMode("vos");
+    setCostPerW(propertyType === "commercial" ? 2.00 : 2.95);
   }, [propertyType]);
 
   const liveSummary = (() => {
     if (!si || systemKw <= 0) return null;
-    const grossCost = systemKw * AUSTIN_INSTALL_COST_PER_KW + batteryKwh * 1000;
+    const grossCost = systemKw * (costPerW * 1000) + batteryKwh * 1000;
     const cost = Math.max(0, grossCost - austinEnergyRebate(systemKw, propertyType));
     const co2TonsPerYear = Math.round(systemKw * solarProdPerKw * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10;
 
@@ -586,7 +587,7 @@ const PropertyAssessment = () => {
                           <div className="flex items-start gap-6">
                             {/* System size slider */}
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs text-muted-foreground mb-1">System size</div>
+                              <div className="text-xs text-muted-foreground mb-1">Solar system size</div>
                               <div className="text-2xl font-bold tabular-nums mb-3">{systemKw.toFixed(1)} kW</div>
                               <Slider
                                 min={1}
@@ -612,7 +613,7 @@ const PropertyAssessment = () => {
 
                             {/* Battery slider */}
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs text-muted-foreground mb-1">Battery backup</div>
+                              <div className="text-xs text-muted-foreground mb-1">Battery system size</div>
                               <div className="text-2xl font-bold tabular-nums mb-3">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</div>
                               <Slider
                                 min={0} max={30} step={1}
@@ -716,6 +717,8 @@ const PropertyAssessment = () => {
                       systemKw={systemKw}
                       batteryKwh={batteryKwh}
                       billingMode={billingMode}
+                      costPerW={costPerW}
+                      onCostPerWChange={setCostPerW}
                     />
                   </>
                 )}
