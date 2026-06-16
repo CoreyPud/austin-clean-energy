@@ -48,6 +48,68 @@ function validateZipCode(zipCode: string): { valid: boolean; error?: string } {
 
 const getExternalContext = (_: any) => '';
 
+function generateAreaInsights(opts: {
+  zipCode: string;
+  existingCount: number;
+  pendingCount: number;
+  auditCount: number;
+  weatherCount: number;
+}): string {
+  const { zipCode, existingCount, pendingCount, auditCount } = opts;
+
+  const activityLevel =
+    existingCount > 200 ? "high" :
+    existingCount > 75  ? "moderate" :
+    existingCount > 20  ? "growing" : "early-stage";
+
+  const activityDesc: Record<string, string> = {
+    high: `ZIP ${zipCode} is one of Austin's most active solar neighborhoods`,
+    moderate: `ZIP ${zipCode} has solid solar momentum`,
+    growing: `ZIP ${zipCode} has a growing solar community`,
+    "early-stage": `ZIP ${zipCode} is in the early stages of solar adoption`,
+  };
+
+  const pipelineDesc =
+    pendingCount > 10 ? `with ${pendingCount} additional permits filed in the last 180 days` :
+    pendingCount > 0  ? `with ${pendingCount} new permit${pendingCount > 1 ? "s" : ""} recently filed` :
+    "with no new permits filed recently";
+
+  const sections: string[] = [];
+
+  sections.push(
+    `**Quick Take**\n${activityDesc[activityLevel]} — ${existingCount.toLocaleString()} installations on record, ${pipelineDesc}.`
+  );
+
+  let solarBody = `There are ${existingCount.toLocaleString()} completed solar installations in ZIP ${zipCode}`;
+  if (pendingCount > 0) solarBody += `, with ${pendingCount} more permitted in the last six months`;
+  solarBody += ".";
+  if (existingCount > 100) {
+    solarBody += ` That level of adoption means local installers and inspectors are experienced here, which typically translates to faster permitting and more competitive pricing.`;
+  } else if (existingCount < 30) {
+    solarBody += ` Lower adoption can mean fewer nearby installer references — worth asking for local project examples when getting quotes.`;
+  }
+  sections.push(`**Solar Adoption**\n${solarBody}`);
+
+  const efficiencyBody = auditCount > 0
+    ? `Austin Energy has completed ${auditCount} energy audits in this area recently. In Austin's climate, attic insulation and AC efficiency improvements typically yield the highest ROI — a free audit identifies exactly where your home is losing energy.`
+    : `Home energy audits are available at no cost to Austin Energy customers and are one of the fastest ways to reduce your bill. In Austin's heat, attic insulation and AC efficiency are usually the highest-ROI fixes.`;
+  sections.push(`**Efficiency Gap**\n${efficiencyBody}`);
+
+  sections.push(
+    `**Battery Storage**\nBattery storage pairs well with solar in Austin, where summer grid stress can cause outages. A 10–13 kWh battery keeps critical loads running and lets you shift usage off-peak. Austin Energy offers a storage rebate, and costs are lowest when installed alongside a new solar system.`
+  );
+
+  const resources = [
+    `- [Get a solar savings estimate](https://austincleanenergy.org/property-assessment) — see your roof's potential in minutes`,
+    `- [Austin Energy Solar Rebate](https://austinenergy.com/green-power/solar-solutions/for-your-home) — up to $2,500 for residential installs`,
+    `- [Free Home Energy Audit](https://austinenergy.com/energy-efficiency/rebates-incentives/residential/home-improvements/home-energy-savings) — required before some rebates`,
+    `- [Battery Storage Incentive](https://austinenergy.com/green-power/solar-solutions/for-your-home/battery-storage-incentive) — Austin Energy rebate for paired systems`,
+  ];
+  sections.push(`**Take Action**\n${resources.join("\n")}`);
+
+  return sections.join("\n\n");
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -308,73 +370,13 @@ serve(async (req) => {
     const locations = [...dbLocations, ...apiLocations];
     console.log(`Created ${locations.length} markers: ${dbLocations.length} existing, ${apiLocations.length} recent`);
 
-    // Use Lovable AI to analyze the data
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
-
-    const aiPrompt = `Analyze this Austin energy data for ZIP code ${zipCode}.
-
-📊 DATA SUMMARY:
-Total Solar Installations: ${(dbInstallations?.length || 0) + apiLocations.length}
-- Existing Installations: ${dbInstallations?.length || 0}
-- Pending Permits (180 days): ${apiLocations.length}
-Energy Audits: ${audits.length} completed
-Weatherization Projects: ${weather.length} in progress
-
-📋 PRIORITY FRAMEWORK & CONTEXT:
-${knowledge.priorities}
-
-💡 EXPERT KNOWLEDGE & BEST PRACTICES:
-${knowledge.expertContext}
-
-🔗 AVAILABLE RESOURCES (use specific links in your Take Action section):
-${knowledge.resources}
-${getExternalContext(knowledge)}
-
-Provide a punchy, scannable analysis using this structure:
-
-**Quick Take**
-One sentence summarizing the area's clean energy status.
-
-**Solar Adoption**
-2-3 short sentences on solar trends and growth potential.
-
-**Efficiency Gap**
-2-3 short sentences on energy audit and weatherization opportunities.
-
-**Battery Storage**
-2-3 short sentences on storage recommendations and grid resilience.
-
-**Take Action**
-Include 3-4 specific Austin resources with actual links from the AVAILABLE RESOURCES section above.
-
-Format with markdown: Use **bold** for section headers, keep sentences short and punchy. Use bullet points for resources.`;
-
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are a clean energy expert. Write in a punchy, scannable style with short sentences. Use markdown formatting for readability.' },
-          { role: 'user', content: aiPrompt }
-        ],
-      }),
+    const insights = generateAreaInsights({
+      zipCode,
+      existingCount: dbInstallations?.length || 0,
+      pendingCount: apiLocations.length,
+      auditCount: audits.length,
+      weatherCount: weather.length,
     });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI API error:', aiResponse.status, errorText);
-      throw new Error('Failed to generate AI analysis');
-    }
-
-    const aiData = await aiResponse.json();
-    const insights = aiData.choices[0].message.content;
 
     return new Response(
       JSON.stringify({

@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-token",
 };
 
-const CACHE_KEY = "installations_geojson_v2";
+const CACHE_KEY = "installations_geojson_v3";
 const MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 async function rebuild(supabase: any): Promise<string> {
@@ -30,14 +30,17 @@ async function rebuild(supabase: any): Promise<string> {
   }
   const compact = all.map((r: any) => {
     const dateStr = r.completed_date || r.issued_date;
-    const year = dateStr ? Number(String(dateStr).slice(0, 4)) || 0 : 0;
+    // Store as YYYYMM integer (e.g. 202306) for monthly slider comparison
+    const yearMonth = dateStr
+      ? Number(String(dateStr).slice(0, 4)) * 100 + Number(String(dateStr).slice(5, 7)) || 0
+      : 0;
     return [
       r.id,
       Math.round(r.longitude * 1e5) / 1e5,
       Math.round(r.latitude * 1e5) / 1e5,
       String(r.permit_class || "").toLowerCase() === "commercial" ? 1 : 0,
       r.original_zip || null,
-      year,
+      yearMonth,
     ];
   });
   const payload = JSON.stringify({ points: compact, generated_at: new Date().toISOString() });
