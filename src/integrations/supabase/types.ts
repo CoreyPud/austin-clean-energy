@@ -120,11 +120,15 @@ export type Database = {
       ev_charging_stations: {
         Row: {
           access_code: string | null
+          access_days_time: string | null
           city: string | null
+          ev_connector_types: string | null
           ev_dc_fast_num: number
           ev_level1_evse_num: number
           ev_level2_evse_num: number
           ev_network: string | null
+          ev_pricing: string | null
+          facility_type: string | null
           id: number
           latitude: number
           longitude: number
@@ -139,11 +143,15 @@ export type Database = {
         }
         Insert: {
           access_code?: string | null
+          access_days_time?: string | null
           city?: string | null
+          ev_connector_types?: string | null
           ev_dc_fast_num?: number
           ev_level1_evse_num?: number
           ev_level2_evse_num?: number
           ev_network?: string | null
+          ev_pricing?: string | null
+          facility_type?: string | null
           id: number
           latitude: number
           longitude: number
@@ -158,11 +166,15 @@ export type Database = {
         }
         Update: {
           access_code?: string | null
+          access_days_time?: string | null
           city?: string | null
+          ev_connector_types?: string | null
           ev_dc_fast_num?: number
           ev_level1_evse_num?: number
           ev_level2_evse_num?: number
           ev_network?: string | null
+          ev_pricing?: string | null
+          facility_type?: string | null
           id?: number
           latitude?: number
           longitude?: number
