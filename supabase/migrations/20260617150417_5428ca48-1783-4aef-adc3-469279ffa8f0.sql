@@ -1,0 +1,1 @@
+GRANT INSERT, SELECT, UPDATE ON public.ev_charging_stations TO sandbox_exec;

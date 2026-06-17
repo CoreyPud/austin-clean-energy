@@ -117,6 +117,66 @@ export type Database = {
           },
         ]
       }
+      ev_charging_stations: {
+        Row: {
+          access_code: string | null
+          city: string | null
+          ev_dc_fast_num: number
+          ev_level1_evse_num: number
+          ev_level2_evse_num: number
+          ev_network: string | null
+          id: number
+          latitude: number
+          longitude: number
+          open_date: string | null
+          open_year: number | null
+          state: string | null
+          station_name: string
+          status_code: string | null
+          street_address: string | null
+          synced_at: string | null
+          zip: string | null
+        }
+        Insert: {
+          access_code?: string | null
+          city?: string | null
+          ev_dc_fast_num?: number
+          ev_level1_evse_num?: number
+          ev_level2_evse_num?: number
+          ev_network?: string | null
+          id: number
+          latitude: number
+          longitude: number
+          open_date?: string | null
+          open_year?: number | null
+          state?: string | null
+          station_name: string
+          status_code?: string | null
+          street_address?: string | null
+          synced_at?: string | null
+          zip?: string | null
+        }
+        Update: {
+          access_code?: string | null
+          city?: string | null
+          ev_dc_fast_num?: number
+          ev_level1_evse_num?: number
+          ev_level2_evse_num?: number
+          ev_network?: string | null
+          id?: number
+          latitude?: number
+          longitude?: number
+          open_date?: string | null
+          open_year?: number | null
+          state?: string | null
+          station_name?: string
+          status_code?: string | null
+          street_address?: string | null
+          synced_at?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
       guide_pages: {
         Row: {
           category: string
