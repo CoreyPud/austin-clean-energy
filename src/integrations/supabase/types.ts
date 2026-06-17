@@ -306,6 +306,80 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_monthly_gen: {
+        Row: {
+          avg_mw: number | null
+          period: string
+          plantid: number
+        }
+        Insert: {
+          avg_mw?: number | null
+          period: string
+          plantid: number
+        }
+        Update: {
+          avg_mw?: number | null
+          period?: string
+          plantid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_monthly_gen_plantid_fkey"
+            columns: ["plantid"]
+            isOneToOne: false
+            referencedRelation: "power_plants"
+            referencedColumns: ["plantid"]
+          },
+        ]
+      }
+      power_plants: {
+        Row: {
+          ae_pct: number | null
+          avg_output_mw: number | null
+          capacity_mw: number | null
+          co2_tons: number | null
+          commission_period: string | null
+          county: string | null
+          fuel: string | null
+          latitude: number | null
+          longitude: number | null
+          owner: string | null
+          plant_name: string | null
+          plantid: number
+          retirement_year: number | null
+        }
+        Insert: {
+          ae_pct?: number | null
+          avg_output_mw?: number | null
+          capacity_mw?: number | null
+          co2_tons?: number | null
+          commission_period?: string | null
+          county?: string | null
+          fuel?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          owner?: string | null
+          plant_name?: string | null
+          plantid: number
+          retirement_year?: number | null
+        }
+        Update: {
+          ae_pct?: number | null
+          avg_output_mw?: number | null
+          capacity_mw?: number | null
+          co2_tons?: number | null
+          commission_period?: string | null
+          county?: string | null
+          fuel?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          owner?: string | null
+          plant_name?: string | null
+          plantid?: number
+          retirement_year?: number | null
+        }
+        Relationships: []
+      }
       solar_installations: {
         Row: {
           address: string
