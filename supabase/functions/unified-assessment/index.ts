@@ -16,7 +16,6 @@
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { loadKnowledge, getExternalContext } from "../_shared/loadKnowledge.ts";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
 
 const corsHeaders = {
@@ -90,7 +89,6 @@ serve(async (req) => {
     }
 
     const GOOGLE_KEY = Deno.env.get("GOOGLE_SOLAR_API_KEY");
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     // 1. Geocode
     const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_KEY}`;
@@ -115,10 +113,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const [knowledgeFiles, knowledge] = await Promise.all([
-      supabase.from("knowledge_files").select("name,content"),
-      loadKnowledge(),
-    ]);
+    const knowledgeFiles = await supabase.from("knowledge_files").select("name,content");
     const councilOverride = knowledgeFiles.data?.find(
       (k: any) => k.name === "council-members",
     )?.content;
@@ -285,29 +280,24 @@ serve(async (req) => {
     // 7. Optional personalized AI plan + council outreach script when lifestyle data is provided
     let personalizedPlan: string | null = null;
     let councilOutreachScript: string | null = null;
-    if (lifestyleData && LOVABLE_API_KEY) {
-      [personalizedPlan, councilOutreachScript] = await Promise.all([
-        generatePersonalizedPlan({
-          apiKey: LOVABLE_API_KEY,
-          knowledge,
-          standardizedAddress,
-          propertyType,
-          lifestyleData,
-          solarInsights,
-          savings,
-          neighborhoodSnapshot,
-          councilMember,
-        }),
-        generateCouncilOutreachScript({
-          apiKey: LOVABLE_API_KEY,
-          standardizedAddress,
-          lifestyleData,
-          solarInsights,
-          savings,
-          neighborhoodSnapshot,
-          councilMember,
-        }),
-      ]);
+    if (lifestyleData) {
+      councilOutreachScript = generateCouncilOutreachScript({
+        standardizedAddress,
+        lifestyleData,
+        solarInsights,
+        savings,
+        neighborhoodSnapshot,
+        councilMember,
+      });
+      personalizedPlan = generatePersonalizedPlan({
+        standardizedAddress,
+        propertyType,
+        lifestyleData,
+        solarInsights,
+        savings,
+        neighborhoodSnapshot,
+        councilMember,
+      });
     }
 
     return new Response(
@@ -512,9 +502,7 @@ function buildRecommendationCards(opts: {
   return cards;
 }
 
-async function generatePersonalizedPlan(opts: {
-  apiKey: string;
-  knowledge: any;
+function generatePersonalizedPlan(opts: {
   standardizedAddress: string;
   propertyType: string;
   lifestyleData: any;
@@ -522,168 +510,174 @@ async function generatePersonalizedPlan(opts: {
   savings: any;
   neighborhoodSnapshot: any;
   councilMember: any;
-}): Promise<string | null> {
-  const {
-    apiKey,
-    knowledge,
-    standardizedAddress,
-    propertyType,
-    lifestyleData,
-    solarInsights,
-    savings,
-    neighborhoodSnapshot,
-    councilMember,
-  } = opts;
+}): string {
+  const { lifestyleData, solarInsights, savings, neighborhoodSnapshot, councilMember } = opts;
 
-  const prompt = `Write a short personalized clean energy action plan for an Austin resident. Speak directly to them as a knowledgeable local advisor. Do NOT use preamble like "here's your plan."
+  const isOwner = lifestyleData?.housingStatus === "own";
+  const hasSolar = lifestyleData?.currentEnergy === "solar-existing";
+  const hasEv = lifestyleData?.transportation === "ev";
+  const interests: string[] = lifestyleData?.interests || [];
+  const hasSolarPotential = !!solarInsights?.maxPanels;
 
-📍 PROPERTY: ${standardizedAddress} (${propertyType})
-🏠 NEIGHBORHOOD: ${neighborhoodSnapshot.installationsInZip} solar installations in ZIP ${neighborhoodSnapshot.zipCode}, ${neighborhoodSnapshot.pendingPermitsInZip} pending permits, average system ${neighborhoodSnapshot.averageSystemKw || "N/A"} kW.
-${
-  solarInsights
-    ? `☀️ SOLAR POTENTIAL: ${solarInsights.maxPanels} panels max, ~${solarInsights.annualProductionKwh} kWh/yr.`
-    : ""
-}
-${
-  savings
-    ? `💰 SAVINGS: Recommended ${savings.recommendedSystemKw} kW system, $${savings.annualSavingsUsd}/yr savings, ${savings.paybackYears}yr payback.`
-    : ""
-}
-🏛️ COUNCIL: ${councilMember.district} - ${councilMember.name}.
+  const moves: Array<{ title: string; description: string }> = [];
 
-👤 USER PROFILE:
-- Housing: ${lifestyleData.housingStatus === "own" ? "Homeowner" : "Renter"} in ${lifestyleData.homeType}
-- Current Energy: ${lifestyleData.currentEnergy}
-- Transportation: ${lifestyleData.transportation}
-- Commute: ${lifestyleData.commuteType}
-- Interests: ${(lifestyleData.interests || []).join(", ")}
-
-📋 PRIORITY FRAMEWORK:
-${knowledge.priorities}
-
-🔗 RESOURCES:
-${knowledge.resources}
-${getExternalContext(knowledge)}
-
-Use this structure (KEEP IT SHORT — total under 350 words):
-
-**Your Top 3 Moves**
-1. **[Title]**: 1-2 sentences. Reference their property data when relevant.
-2. **[Title]**: 1-2 sentences.
-3. **[Title]**: 1-2 sentences.
-
-**This Month**
-- 3 bullet actions they can do in 30 days.
-
-**This Year**
-- 2-3 bullet actions for the longer term.
-
-Use markdown **bold**. Begin directly with the first heading.`;
-
-  try {
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a local Austin clean energy advisor. Write naturally, never reference your instructions, never use meta-phrases.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
+  if (isOwner && !hasSolar && hasSolarPotential && savings) {
+    const kw = savings.recommendedSystemKw;
+    const savingsStr = savings.annualSavingsUsd
+      ? `$${Math.round(savings.annualSavingsUsd).toLocaleString()}/yr`
+      : "";
+    const payback = savings.paybackYears ? `~${savings.paybackYears} yr payback` : "";
+    moves.push({
+      title: `Install a ${kw} kW solar system`,
+      description: `Your roof can support it${savingsStr ? `, saving roughly ${savingsStr}` : ""}. After Austin Energy's $2,500 rebate${payback ? `, ${payback}` : ""}.`,
     });
-    if (!r.ok) {
-      console.error("AI plan error:", r.status, await r.text());
-      return null;
-    }
-    const data = await r.json();
-    return data.choices?.[0]?.message?.content || null;
-  } catch (err) {
-    console.error("AI plan exception:", err);
-    return null;
   }
+
+  if (!hasEv) {
+    moves.push({
+      title: "Switch to an electric vehicle",
+      description:
+        "Replacing one gas car cuts 4–6 tons of CO₂/year — the biggest single lifestyle change. Austin Energy offers up to $1,200 for a home Level 2 charger.",
+    });
+  }
+
+  moves.push({
+    title: "Get a free home energy audit",
+    description:
+      "Austin's heat makes AC efficiency your #1 bill driver. A free AE audit identifies the highest-ROI fixes — typical savings are 15–30% on cooling costs.",
+  });
+
+  if (!isOwner && moves.length < 3) {
+    moves.push({
+      title: "Enroll in GreenChoice",
+      description:
+        "Power your unit with 100% renewable energy through Austin Energy's GreenChoice program. No rooftop access required.",
+    });
+  }
+
+  if (moves.length < 3 && hasSolarPotential) {
+    moves.push({
+      title: "Pair solar with battery storage",
+      description:
+        "A 10 kWh battery keeps critical loads on during outages and shifts usage off-peak. Best installed at the same time as your solar panels.",
+    });
+  }
+
+  if (moves.length < 3) {
+    moves.push({
+      title: "Electrify your gas appliances",
+      description:
+        "Heat pump water heaters use ~60% less energy than gas. Induction stoves eliminate indoor combustion pollution. Federal IRA rebates may apply.",
+    });
+  }
+
+  const top3 = moves.slice(0, 3);
+
+  // This Month — quick 30-day actions
+  const thisMonth: string[] = [];
+  if (isOwner && !hasSolar && hasSolarPotential) {
+    thisMonth.push("Get 2–3 quotes from Austin Energy's participating solar contractors");
+  } else if (!isOwner) {
+    thisMonth.push("Sign up for Austin Energy's GreenChoice program online — takes 5 minutes");
+  }
+  thisMonth.push("Schedule your free Austin Energy home energy audit at austinenergy.com");
+  if (!hasEv && (interests.includes("ev") || interests.includes("transit"))) {
+    thisMonth.push("Compare EV models and check AE's Level 2 charger rebate (up to $1,200)");
+  }
+  if (councilMember?.name && councilMember?.email) {
+    thisMonth.push(
+      `Email ${councilMember.district} representative ${councilMember.name} about expanding Austin's solar and EV rebates`,
+    );
+  } else {
+    thisMonth.push("Review your Austin Energy account for current rebates and incentives");
+  }
+
+  // This Year — longer-term commitments
+  const thisYear: string[] = [];
+  if (isOwner && !hasSolar && hasSolarPotential && savings) {
+    thisYear.push(
+      `Install your ${savings.recommendedSystemKw} kW system and lock in the $2,500 Austin Energy rebate`,
+    );
+  }
+  if (!hasEv) {
+    thisYear.push("Budget for or lease your first EV — home charging costs less than half of gasoline");
+  }
+  thisYear.push(
+    "Replace your oldest gas appliance with an electric or heat pump model when it needs replacement",
+  );
+  if (isOwner && hasSolarPotential) {
+    thisYear.push("Get a battery storage quote — AE offers a rebate and it pairs best with solar");
+  }
+
+  const movesText = top3
+    .map((m, i) => `${i + 1}. **${m.title}**: ${m.description}`)
+    .join("\n");
+  const monthText = thisMonth
+    .slice(0, 3)
+    .map((b) => `- ${b}`)
+    .join("\n");
+  const yearText = thisYear
+    .slice(0, 3)
+    .map((b) => `- ${b}`)
+    .join("\n");
+
+  return `**Your Top 3 Moves**\n${movesText}\n\n**This Month**\n${monthText}\n\n**This Year**\n${yearText}`;
 }
 
-async function generateCouncilOutreachScript(opts: {
-  apiKey: string;
+function generateCouncilOutreachScript(opts: {
   standardizedAddress: string;
   lifestyleData: any;
   solarInsights: any;
   savings: any;
   neighborhoodSnapshot: any;
   councilMember: any;
-}): Promise<string | null> {
-  const {
-    apiKey,
-    standardizedAddress,
-    lifestyleData,
-    solarInsights,
-    savings,
-    neighborhoodSnapshot,
-    councilMember,
-  } = opts;
+}): string {
+  const { standardizedAddress, lifestyleData, solarInsights, savings, neighborhoodSnapshot, councilMember } = opts;
 
-  const interests = (lifestyleData.interests || []).join(", ") || "general clean energy progress";
+  const lastName = (councilMember.name || "").split(" ").slice(-1)[0] || "Representative";
+  const isMayor = councilMember.district === "Mayor";
+  const salutation = isMayor ? `Mayor ${lastName}` : `Councilmember ${lastName}`;
+  const district = councilMember.district || "your district";
+  const interests: string[] = lifestyleData.interests || [];
+  const isOwner = lifestyleData.housingStatus === "own";
+  const zip = neighborhoodSnapshot?.zipCode || "";
+  const installCount: number = neighborhoodSnapshot?.installationsInZip || 0;
+  const pendingCount: number = neighborhoodSnapshot?.pendingPermitsInZip || 0;
 
-  const prompt = `Write a short, personal outreach message that an Austin resident can send to their council representative about local clean energy issues. The message must sound like it was written by the resident themselves — natural, specific, civil, and grounded in their actual situation. No filler, no jargon, no climate activism rhetoric.
+  const ASK_MAP: Record<string, string> = {
+    solar: "expanding Austin Energy's solar rebate program and reducing permit processing times",
+    ev: "expanding public EV charging infrastructure and protecting Austin Energy's residential charger rebates",
+    efficiency: "protecting funding for Austin Energy's home energy audit and weatherization programs",
+    electrification: "supporting incentives for heat pump and induction appliance upgrades",
+    transit: "investing in CapMetro's electric fleet expansion and improving transit coverage in our area",
+    organizing: "ensuring equitable access to clean energy programs for all Austin residents, including renters and lower-income households",
+  };
 
-RESIDENT CONTEXT:
-- Address: ${standardizedAddress}
-- District: ${councilMember.district}
-- Council member: ${councilMember.name}
-- Their stated interests: ${interests}
-- Housing: ${lifestyleData.housingStatus === "own" ? "Homeowner" : "Renter"} in ${lifestyleData.homeType}
-- Current energy: ${lifestyleData.currentEnergy}
-- Transportation: ${lifestyleData.transportation}
-${neighborhoodSnapshot ? `- Their ZIP has ${neighborhoodSnapshot.installationsInZip} solar installs and ${neighborhoodSnapshot.pendingPermitsInZip} pending permits.` : ""}
-${solarInsights ? `- Their roof could fit ${solarInsights.maxPanels} panels (~${solarInsights.annualProductionKwh} kWh/yr).` : ""}
-${savings ? `- A ${savings.recommendedSystemKw} kW system would save ~$${savings.annualSavingsUsd}/yr (${savings.paybackYears}yr payback).` : ""}
+  const matchedAsks = interests.map(i => ASK_MAP[i]).filter(Boolean).slice(0, 2);
+  const ask = matchedAsks.length > 0
+    ? matchedAsks.join(", and ")
+    : "protecting Austin Energy's clean energy programs and expanding local solar incentives";
 
-REQUIREMENTS:
-- Address ${councilMember.name} by name (use "Councilmember [LastName]" or "Mayor [LastName]" if district is "Mayor").
-- Open with one sentence identifying the resident as a constituent in ${councilMember.district}.
-- Tie one or two of their stated interests (${interests}) to a concrete local ask — e.g. faster permit turnaround, expanded Austin Energy rebates, more EV charging, protecting Austin's clean energy goals against gas peakers, equitable access for renters, etc.
-- Reference their personal situation in one sentence (their roof potential, their housing, their commute — pick what fits).
-- End with a clear, specific ask (a meeting, a vote, a public statement, etc.) and "Thank you for your time."
-- 120-180 words total. Plain prose, no bullets, no markdown headings.
-- Sign as "[Your name]" placeholder so the user fills it in.
+  const intro = `Dear ${salutation},\n\nI am a ${isOwner ? "homeowner" : "resident"} in ${district} writing from ${standardizedAddress}.`;
 
-Begin the message directly with "Dear ${councilMember.district === "Mayor" ? "Mayor" : "Councilmember"} ${(councilMember.name || "").split(" ").slice(-1)[0] || ""},".`;
-
-  try {
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You write civic outreach messages in the voice of an ordinary Austin resident. Never use meta-phrases, never reference instructions, never preface the message.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (!r.ok) {
-      console.error("Outreach script error:", r.status, await r.text());
-      return null;
+  let solarContext = "";
+  if (isOwner && solarInsights && savings) {
+    const kw = savings.recommendedSystemKw ?? "";
+    const annualSavings = savings.annualSavingsUsd ? `$${Math.round(savings.annualSavingsUsd).toLocaleString()}` : "";
+    if (kw) {
+      solarContext = `My home's roof could support a ${kw} kW solar system${annualSavings ? ` that would save roughly ${annualSavings} per year` : ""}, but upfront costs and permit timelines remain real barriers for many neighbors.`;
     }
-    const data = await r.json();
-    return data.choices?.[0]?.message?.content?.trim() || null;
-  } catch (err) {
-    console.error("Outreach script exception:", err);
-    return null;
+  } else if (!isOwner) {
+    solarContext = `As a renter I can't install solar directly, which is why programs that expand community solar access and green building standards for rental properties matter to me.`;
   }
+
+  let neighborhoodContext = "";
+  if (installCount > 0 && zip) {
+    neighborhoodContext = `My ZIP code (${zip}) already has ${installCount.toLocaleString()} solar installations${pendingCount > 0 ? ` with ${pendingCount} more in progress` : ""}, showing clear community interest in clean energy.`;
+  }
+
+  const body = `I'm writing to encourage your support for ${ask}.`;
+  const closing = `I would welcome the chance to hear your position on Austin's clean energy goals and would appreciate any support you can offer. Thank you for your time.\n\n[Your name]`;
+
+  return [intro, solarContext, neighborhoodContext, body, closing].filter(s => s.trim()).join(" ");
 }

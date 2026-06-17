@@ -49,6 +49,7 @@ import {
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
+import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -797,6 +798,7 @@ const PropertyAssessment = () => {
               {personalizedPlan && (
                 <div ref={postQuizRef} className="space-y-6 animate-slide-up">
                   <SectionHeading emoji="✅" title="Next Steps" />
+                  <PersonalizedPlanDisplay markdown={personalizedPlan || ""} />
                   <RecommendationCards cards={results.recommendationCards || []} />
 
                   <SectionHeading emoji="🏛️" title="Your council representative" />
@@ -854,9 +856,9 @@ const PropertyAssessment = () => {
                 <AlertDescription>
                   Solar potential comes from Google Solar API. Neighborhood counts come from Austin's
                   open permit data. Council district is resolved live from Austin's ArcGIS service.
-                  Any AI-generated recommendations or personalized plan content are estimates based on
-                  available data — for a precise, certified energy efficiency rating, schedule a
-                  professional audit through Austin Energy's Home Performance program.{" "}
+                  All recommendations and savings estimates are calculated from your property data —
+                  for a precise, certified energy efficiency rating, schedule a professional audit
+                  through Austin Energy's Home Performance program.{" "}
                   <button
                     onClick={() => navigate("/data-sources")}
                     className="text-primary font-medium hover:underline"
