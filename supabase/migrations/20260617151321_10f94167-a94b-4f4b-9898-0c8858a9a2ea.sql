@@ -1,0 +1,1 @@
+GRANT UPDATE ON public.ev_charging_stations TO sandbox_exec;
