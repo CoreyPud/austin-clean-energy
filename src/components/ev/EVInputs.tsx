@@ -125,6 +125,7 @@ const ModelSelect = ({
   modelYear,
   initialValue,
   onSelect,
+  onModelChange,
 }: {
   label: string;
   type: "ev" | "gas";
@@ -132,6 +133,7 @@ const ModelSelect = ({
   modelYear: number;
   initialValue?: string;
   onSelect: (price: number, efficiency: number) => void;
+  onModelChange?: (key: string) => void;
 }) => {
   const [value, setValue] = useState(initialValue ?? "");
   const models = type === "ev" ? EV_MODELS : GAS_MODELS;
@@ -158,6 +160,7 @@ const ModelSelect = ({
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     setValue(val);
+    onModelChange?.(val);
     if (!val) return;
     const [make, model] = val.split("|");
     const vehicle = models.find(v => v.make === make && v.model === model);
@@ -205,23 +208,31 @@ const YEAR_OPTIONS = Array.from(
 // "new" is a sentinel; numeric values are model years
 type YearValue = "new" | number;
 
+function nearestValidYear(year: number, valid: number[]): number {
+  return valid.reduce((best, y) => Math.abs(y - year) < Math.abs(best - year) ? y : best);
+}
+
 const YearSelect = ({
   value,
   onChange,
   showNew = true,
+  validYears,
+  discontinued = false,
 }: {
   value: YearValue;
   onChange: (y: YearValue) => void;
   showNew?: boolean;
+  validYears?: number[] | null;
+  discontinued?: boolean;
 }) => (
   <select
     value={value === "new" ? "new" : String(value)}
     onChange={e => onChange(e.target.value === "new" ? "new" : Number(e.target.value))}
     className="h-8 w-[76px] shrink-0 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
   >
-    {showNew && <option value="new">New</option>}
+    {showNew && <option value="new" disabled={discontinued}>New</option>}
     {YEAR_OPTIONS.map(y => (
-      <option key={y} value={y}>{y}</option>
+      <option key={y} value={y} disabled={validYears != null && !validYears.includes(y)}>{y}</option>
     ))}
   </select>
 );
@@ -236,6 +247,43 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
 
   const ownGas = mode === "own-gas";
   const evAge = CURRENT_YEAR - evModelYear;
+
+  // Track selected model keys to derive valid years for YearSelect greying
+  const [evModelKey,  setEvModelKey]  = useState<string>("Chevy|Equinox EV");
+  const [gasModelKey, setGasModelKey] = useState<string>("Chevy|Equinox");
+
+  const evModelData  = EV_MODELS.find(v => `${v.make}|${v.model}` === evModelKey);
+  const gasModelData = GAS_MODELS.find(v => `${v.make}|${v.model}` === gasModelKey);
+  const evValidYears  = evModelData  ? Object.keys(evModelData.usedPrices).map(Number).sort((a, b) => a - b)  : null;
+  const gasValidYears = gasModelData ? Object.keys(gasModelData.usedPrices).map(Number).sort((a, b) => a - b) : null;
+  const evDiscontinued  = evModelData?.discontinued  ?? false;
+  const gasDiscontinued = gasModelData?.discontinued ?? false;
+
+  const handleEvModelChange = (key: string) => {
+    setEvModelKey(key);
+    if (!key) return;
+    const model = EV_MODELS.find(v => `${v.make}|${v.model}` === key);
+    if (!model) return;
+    const valid = Object.keys(model.usedPrices).map(Number).sort((a, b) => a - b);
+    if (!valid.length) return;
+    if (evIsNew && model.discontinued) {
+      onChange({ evIsNew: false, evModelYear: valid[valid.length - 1] });
+    } else if (!evIsNew && !valid.includes(evModelYear)) {
+      onChange({ evModelYear: nearestValidYear(evModelYear, valid) });
+    }
+  };
+
+  const handleGasModelChange = (key: string) => {
+    setGasModelKey(key);
+    if (!key) return;
+    const model = GAS_MODELS.find(v => `${v.make}|${v.model}` === key);
+    if (!model) return;
+    const valid = Object.keys(model.usedPrices).map(Number).sort((a, b) => a - b);
+    if (!valid.length) return;
+    if (!gasIsNew && !valid.includes(gasModelYear)) {
+      onChange({ gasModelYear: nearestValidYear(gasModelYear, valid) });
+    }
+  };
 
   const handleModeChange = (m: EVMode) => {
     if (m === "own-gas" && gasIsNew) {
@@ -304,6 +352,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                     value={gasModelYear}
                     onChange={handleGasYearChange}
                     showNew={false}
+                    validYears={gasValidYears}
                   />
                   <div className="flex-1 min-w-0">
                     <ModelSelect
@@ -312,6 +361,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                       isNew={false}
                       modelYear={gasModelYear}
                       onSelect={(tradeIn, mpg) => onChange({ gasTradeInValue: tradeIn, gasMpg: mpg })}
+                      onModelChange={handleGasModelChange}
                     />
                   </div>
                 </div>
@@ -350,7 +400,12 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                 </div>
 
                 <div className="flex gap-2 items-center">
-                  <YearSelect value={gasIsNew ? "new" : gasModelYear} onChange={handleGasYearChange} />
+                  <YearSelect
+                    value={gasIsNew ? "new" : gasModelYear}
+                    onChange={handleGasYearChange}
+                    validYears={gasValidYears}
+                    discontinued={gasDiscontinued}
+                  />
                   <div className="flex-1 min-w-0">
                     <ModelSelect
                       label="Vehicle (optional)"
@@ -359,6 +414,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                       modelYear={gasModelYear}
                       initialValue="Chevy|Equinox"
                       onSelect={(price, mpg) => onChange({ gasPrice: price, gasMpg: mpg })}
+                      onModelChange={handleGasModelChange}
                     />
                   </div>
                 </div>
@@ -402,7 +458,12 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
             </div>
 
             <div className="flex gap-2 items-center">
-              <YearSelect value={evIsNew ? "new" : evModelYear} onChange={handleEvYearChange} />
+              <YearSelect
+                value={evIsNew ? "new" : evModelYear}
+                onChange={handleEvYearChange}
+                validYears={evValidYears}
+                discontinued={evDiscontinued}
+              />
               <div className="flex-1 min-w-0">
                 <ModelSelect
                   label="Vehicle (optional)"
@@ -411,6 +472,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                   modelYear={evModelYear}
                   initialValue="Chevy|Equinox EV"
                   onSelect={(price, miPerKwh) => onChange({ evPrice: price, evMiPerKwh: miPerKwh })}
+                  onModelChange={handleEvModelChange}
                 />
               </div>
             </div>
