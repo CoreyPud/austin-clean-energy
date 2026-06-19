@@ -45,7 +45,7 @@ const EVPriceTrendChart = () => {
   const latest = evModelMsrpSeries[evModelMsrpSeries.length - 1];
 
   const latestPrices = MODELS
-    .map(m => ({ name: m.label, price: latest[m.key] }))
+    .map(m => ({ name: m.label as string, price: latest[m.key] as number | null | undefined }))
     .filter((m): m is { name: string; price: number } => m.price != null);
 
   const cheapest = latestPrices.reduce((min, m) => m.price < min.price ? m : min);

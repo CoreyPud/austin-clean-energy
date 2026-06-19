@@ -31,7 +31,7 @@ const Index = () => {
           // Map cached stats to display format (excluding energy_audits)
           const iconMap: Record<string, any> = {
             'zip_codes': BarChart3,
-            'total_projects': Building2,
+            'solar_capacity_mw': Battery,
             'solar_permits': Leaf,
           };
 
