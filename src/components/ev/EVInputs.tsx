@@ -8,7 +8,8 @@ import {
   EVInputs, EVMode, AUSTIN_EV_DEFAULTS,
   typicalEvPrice, typicalGasPrice, typicalTradeInValue,
 } from "@/lib/ev-model";
-import { EV_MODELS, GAS_MODELS } from "@/data/vehicle-models";
+import type { VehicleModel, GasModel } from "@/data/vehicle-models";
+import { useVehicleModels } from "@/hooks/use-vehicle-models";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -124,6 +125,7 @@ const ModelSelect = ({
   isNew,
   modelYear,
   initialValue,
+  models,
   onSelect,
   onModelChange,
 }: {
@@ -132,11 +134,11 @@ const ModelSelect = ({
   isNew: boolean;
   modelYear: number;
   initialValue?: string;
+  models: VehicleModel[] | GasModel[];
   onSelect: (price: number, efficiency: number) => void;
   onModelChange?: (key: string) => void;
 }) => {
   const [value, setValue] = useState(initialValue ?? "");
-  const models = type === "ev" ? EV_MODELS : GAS_MODELS;
   const onSelectRef = useRef(onSelect);
   useEffect(() => { onSelectRef.current = onSelect; });
 
@@ -151,8 +153,8 @@ const ModelSelect = ({
       ? vehicle.msrp
       : (closestUsedPrice(vehicle.usedPrices, modelYear) ?? vehicle.msrp);
     const efficiency = type === "ev"
-      ? (vehicle as typeof EV_MODELS[0]).miPerKwh
-      : (vehicle as typeof GAS_MODELS[0]).mpg;
+      ? (vehicle as VehicleModel).miPerKwh
+      : (vehicle as GasModel).mpg;
     onSelectRef.current(price, efficiency);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, modelYear]);
@@ -170,8 +172,8 @@ const ModelSelect = ({
       ? vehicle.msrp
       : (closestUsedPrice(vehicle.usedPrices, modelYear) ?? vehicle.msrp);
     const efficiency = type === "ev"
-      ? (vehicle as typeof EV_MODELS[0]).miPerKwh
-      : (vehicle as typeof GAS_MODELS[0]).mpg;
+      ? (vehicle as VehicleModel).miPerKwh
+      : (vehicle as GasModel).mpg;
 
     onSelect(price, efficiency);
   };
@@ -189,9 +191,12 @@ const ModelSelect = ({
           const price = isNew
             ? v.msrp
             : (closestUsedPrice(v.usedPrices, modelYear) ?? v.msrp);
+          const rangeYear = isNew ? CURRENT_YEAR : modelYear;
+          const rangeMi = type === "ev" ? (v as VehicleModel).rangeMi : undefined;
+          const range = rangeMi ? closestUsedPrice(rangeMi, rangeYear) : null;
           return (
             <option key={key} value={key}>
-              {v.make} {v.model} · ${price.toLocaleString()}
+              {v.make} {v.model}{range ? ` · ${range} mi` : ''} · ${price.toLocaleString()}
             </option>
           );
         })}
@@ -231,9 +236,14 @@ const YearSelect = ({
     className="h-8 w-[76px] shrink-0 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
   >
     {showNew && <option value="new" disabled={discontinued}>New</option>}
-    {YEAR_OPTIONS.map(y => (
-      <option key={y} value={y} disabled={validYears != null && !validYears.includes(y)}>{y}</option>
-    ))}
+    {YEAR_OPTIONS.map(y => {
+      const disabled = validYears != null && !validYears.includes(y);
+      return (
+        <option key={y} value={y} disabled={disabled} style={disabled ? { color: '#c0c0c0' } : undefined}>
+          {y}
+        </option>
+      );
+    })}
   </select>
 );
 
@@ -248,12 +258,14 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
   const ownGas = mode === "own-gas";
   const evAge = CURRENT_YEAR - evModelYear;
 
+  const { evModels, gasModels } = useVehicleModels();
+
   // Track selected model keys to derive valid years for YearSelect greying
   const [evModelKey,  setEvModelKey]  = useState<string>("Chevy|Equinox EV");
   const [gasModelKey, setGasModelKey] = useState<string>("Chevy|Equinox");
 
-  const evModelData  = EV_MODELS.find(v => `${v.make}|${v.model}` === evModelKey);
-  const gasModelData = GAS_MODELS.find(v => `${v.make}|${v.model}` === gasModelKey);
+  const evModelData  = evModels.find(v => `${v.make}|${v.model}` === evModelKey);
+  const gasModelData = gasModels.find(v => `${v.make}|${v.model}` === gasModelKey);
   const evValidYears  = evModelData  ? Object.keys(evModelData.usedPrices).map(Number).sort((a, b) => a - b)  : null;
   const gasValidYears = gasModelData ? Object.keys(gasModelData.usedPrices).map(Number).sort((a, b) => a - b) : null;
   const evDiscontinued  = evModelData?.discontinued  ?? false;
@@ -262,7 +274,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
   const handleEvModelChange = (key: string) => {
     setEvModelKey(key);
     if (!key) return;
-    const model = EV_MODELS.find(v => `${v.make}|${v.model}` === key);
+    const model = evModels.find(v => `${v.make}|${v.model}` === key);
     if (!model) return;
     const valid = Object.keys(model.usedPrices).map(Number).sort((a, b) => a - b);
     if (!valid.length) return;
@@ -276,7 +288,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
   const handleGasModelChange = (key: string) => {
     setGasModelKey(key);
     if (!key) return;
-    const model = GAS_MODELS.find(v => `${v.make}|${v.model}` === key);
+    const model = gasModels.find(v => `${v.make}|${v.model}` === key);
     if (!model) return;
     const valid = Object.keys(model.usedPrices).map(Number).sort((a, b) => a - b);
     if (!valid.length) return;
@@ -360,6 +372,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                       type="gas"
                       isNew={false}
                       modelYear={gasModelYear}
+                      models={gasModels}
                       onSelect={(tradeIn, mpg) => onChange({ gasTradeInValue: tradeIn, gasMpg: mpg })}
                       onModelChange={handleGasModelChange}
                     />
@@ -413,6 +426,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                       isNew={gasIsNew}
                       modelYear={gasModelYear}
                       initialValue="Chevy|Equinox"
+                      models={gasModels}
                       onSelect={(price, mpg) => onChange({ gasPrice: price, gasMpg: mpg })}
                       onModelChange={handleGasModelChange}
                     />
@@ -471,6 +485,7 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                   isNew={evIsNew}
                   modelYear={evModelYear}
                   initialValue="Chevy|Equinox EV"
+                  models={evModels}
                   onSelect={(price, miPerKwh) => onChange({ evPrice: price, evMiPerKwh: miPerKwh })}
                   onModelChange={handleEvModelChange}
                 />
