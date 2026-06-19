@@ -596,6 +596,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_models: {
+        Row: {
+          discontinued: boolean
+          id: number
+          make: string
+          mi_per_kwh: number | null
+          model: string
+          mpg: number | null
+          msrp: number | null
+          range_mi: number | null
+          type: string
+          used_price: number | null
+          year: number
+        }
+        Insert: {
+          discontinued?: boolean
+          id?: number
+          make: string
+          mi_per_kwh?: number | null
+          model: string
+          mpg?: number | null
+          msrp?: number | null
+          range_mi?: number | null
+          type: string
+          used_price?: number | null
+          year: number
+        }
+        Update: {
+          discontinued?: boolean
+          id?: number
+          make?: string
+          mi_per_kwh?: number | null
+          model?: string
+          mpg?: number | null
+          msrp?: number | null
+          range_mi?: number | null
+          type?: string
+          used_price?: number | null
+          year?: number
+        }
+        Relationships: []
+      }
       volunteer_signups: {
         Row: {
           created_at: string
