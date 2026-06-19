@@ -50,6 +50,7 @@ import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
+import { buildPersonalizedPlan, buildRecommendationCards, computeRecommendedKw } from "@/lib/clean-energy-plan";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -324,8 +325,19 @@ const PropertyAssessment = () => {
     setPlanLoading(true);
     try {
       const data = await callUnified(lifestyleData);
-      setResults(data);
-      setPersonalizedPlan(data.personalizedPlan || null);
+
+      // Derive recommendedKw from fresh solar data and current bill inputs —
+      // same formula the tool uses, so both plan and cards stay in sync.
+      const usage = (billViewMode === "bill" && uploadedKwh)
+        ? uploadedKwh.reduce((s, v) => s + v, 0)
+        : billToMonthlyKwh(monthlyBill) * 12;
+      const localRecommendedKw = computeRecommendedKw(data.solarInsights, usage);
+
+      const planOpts = { lifestyleData, solarInsights: data.solarInsights, savings: data.savings, neighborhoodSnapshot: data.neighborhoodSnapshot, councilMember: data.councilMember, recommendedKw: localRecommendedKw };
+      const cardOpts = { propertyType, solarInsights: data.solarInsights, lifestyleData, neighborhoodSnapshot: data.neighborhoodSnapshot, savings: data.savings, recommendedKw: localRecommendedKw };
+
+      setResults({ ...data, recommendationCards: buildRecommendationCards(cardOpts) });
+      setPersonalizedPlan(buildPersonalizedPlan(planOpts));
       setCouncilOutreachScript(data.councilOutreachScript || null);
       setShowLifestyleForm(false);
       setTimeout(() => postQuizRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
