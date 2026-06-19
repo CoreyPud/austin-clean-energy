@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { Play, Pause } from "lucide-react";
+import { No2Section } from "@/components/No2Section";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,11 +51,36 @@ const CityOverview = () => {
   const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [allPoints, setAllPoints] = useState<Array<[string, number, number, number, string | null, number?]>>([]);
-  const [mapYear, setMapYear] = useState<number>(new Date().getFullYear());
+  // Shared time-slider state (controls both solar map and NO2 map)
+  const [no2Months, setNo2Months] = useState<string[]>([]);
+  const [no2Labels, setNo2Labels] = useState<string[]>([]);
+  const [sharedIdx, setSharedIdx] = useState(0);
+  const [sharedPlaying, setSharedPlaying] = useState(false);
   const [mapFitKey, setMapFitKey] = useState<string | undefined>(undefined);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
   const loadingTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Callback for No2Section to hand back its months/labels on first load
+  const handleNo2DataLoad = useCallback((months: string[], labels: string[]) => {
+    setNo2Months(months);
+    setNo2Labels(labels);
+    setSharedIdx(months.length - 1);
+  }, []);
+
+  // Auto-play timer
+  useEffect(() => {
+    if (!sharedPlaying || !no2Months.length) return;
+    const id = setInterval(() => {
+      setSharedIdx((prev) => (prev >= no2Months.length - 1 ? 0 : prev + 1));
+    }, 400);
+    return () => clearInterval(id);
+  }, [sharedPlaying, no2Months.length]);
+
+  // YYYYMM integer for the current period (e.g. 202306)
+  const currentYearMonth = no2Months[sharedIdx]
+    ? parseInt(no2Months[sharedIdx].replace("_", ""), 10)
+    : 0;
 
   const QUARTER_COLORS = [
     'hsl(var(--primary))',
@@ -324,12 +351,15 @@ const CityOverview = () => {
   const filteredClusterPoints = (() => {
     const pt = propertyTypeFilter;
     const zf = zipFilter;
-    const yr = mapYear;
-    return allPoints.filter(([, , , c, zip, year]) => {
+    return allPoints.filter(([, , , c, zip, ym]) => {
       if (pt === 'commercial' && c !== 1) return false;
       if (pt === 'residential' && c !== 0) return false;
       if (zf !== 'all' && zip !== zf) return false;
-      if (year != null && year > yr) return false;
+      if (currentYearMonth > 0 && ym != null && ym > 0) {
+        // Edge fn v3 stores YYYYMM (>9999); v2 stores plain year (≤9999)
+        const threshold = ym > 9999 ? currentYearMonth : Math.floor(currentYearMonth / 100);
+        if (ym > threshold) return false;
+      }
       return true;
     });
   })();
@@ -510,6 +540,43 @@ const CityOverview = () => {
         </div>
       </section>
 
+      {/* Sticky shared slider — sticks below KPIs, controls maps + charts below */}
+      <div className="sticky top-0 z-20">
+        <div className="border-b bg-background/95 backdrop-blur shadow-sm">
+          <div className="container mx-auto px-6 py-3">
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm" variant="outline"
+                className="h-7 w-7 p-0 shrink-0"
+                onClick={() => setSharedPlaying((p) => !p)}
+                disabled={no2Months.length === 0}
+                aria-label={sharedPlaying ? "Pause" : "Play"}
+              >
+                {sharedPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+              </Button>
+              <Slider
+                min={0}
+                max={Math.max(no2Months.length - 1, 0)}
+                step={1}
+                value={[sharedIdx]}
+                onValueChange={([v]) => { setSharedPlaying(false); setSharedIdx(v); }}
+                disabled={no2Months.length === 0}
+                className="flex-1"
+              />
+              <span className="text-sm font-semibold text-foreground shrink-0 min-w-[72px] text-right">
+                {no2Labels[sharedIdx] ?? "—"}
+              </span>
+            </div>
+            {no2Labels.length > 0 && (
+              <div className="flex justify-between mt-1 text-xs text-muted-foreground pl-10">
+                <span>{no2Labels[0]}</span>
+                <span>{no2Labels[no2Labels.length - 1]}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Map Section */}
       <section className="py-12">
         <div className="container mx-auto px-4">
@@ -545,25 +612,18 @@ const CityOverview = () => {
                   />
                 </MapTokenLoader>
               )}
-              <div className="mt-6 px-2">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Historical trend</span>
-                  <span className="text-sm font-semibold text-primary">{mapYear}</span>
-                </div>
-                <Slider
-                  min={2014}
-                  max={new Date().getFullYear()}
-                  step={1}
-                  value={[mapYear]}
-                  onValueChange={(v) => setMapYear(v[0])}
-                />
-                <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-                  <span>2014</span>
-                  <span>{new Date().getFullYear()}</span>
-                </div>
-              </div>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      {/* Texas NO2 Map + Generation Charts */}
+      <section className="py-12 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <No2Section
+            idx={sharedIdx}
+            onDataLoad={handleNo2DataLoad}
+          />
         </div>
       </section>
 
