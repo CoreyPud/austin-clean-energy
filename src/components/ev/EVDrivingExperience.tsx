@@ -236,7 +236,7 @@ const AccelerationChart = () => (
             type="category"
             dataKey="name"
             width={120}
-            tick={{ fontSize: 11, fill: "hsl(var(--foreground))", whiteSpace: "nowrap" }}
+            tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
             axisLine={false}
             tickLine={false}
           />
