@@ -135,6 +135,25 @@ const ModelSelect = ({
 }) => {
   const [value, setValue] = useState(initialValue ?? "");
   const models = type === "ev" ? EV_MODELS : GAS_MODELS;
+  const onSelectRef = useRef(onSelect);
+  useEffect(() => { onSelectRef.current = onSelect; });
+
+  // When year or new/used flag changes while a model is already selected,
+  // re-fire onSelect so the parent price matches the dropdown label.
+  useEffect(() => {
+    if (!value) return;
+    const [make, model] = value.split("|");
+    const vehicle = models.find(v => v.make === make && v.model === model);
+    if (!vehicle) return;
+    const price = isNew
+      ? vehicle.msrp
+      : (closestUsedPrice(vehicle.usedPrices, modelYear) ?? vehicle.msrp);
+    const efficiency = type === "ev"
+      ? (vehicle as typeof EV_MODELS[0]).miPerKwh
+      : (vehicle as typeof GAS_MODELS[0]).mpg;
+    onSelectRef.current(price, efficiency);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, modelYear]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
