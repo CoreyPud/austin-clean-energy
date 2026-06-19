@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +10,6 @@ import {
   Megaphone,
   Leaf,
   ExternalLink,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
 const ICONS: Record<string, any> = {
@@ -21,26 +18,23 @@ const ICONS: Record<string, any> = {
 
 const IMPACT_STYLES: Record<
   string,
-  { label: string; badge: string; border: string; iconBg: string; iconText: string }
+  { label: string; badge: string; iconBg: string; iconText: string }
 > = {
   high: {
     label: "High impact",
     badge: "bg-primary/15 text-primary border-primary/30",
-    border: "border-l-primary",
     iconBg: "bg-primary/15",
     iconText: "text-primary",
   },
   medium: {
     label: "Medium impact",
     badge: "bg-secondary/15 text-secondary border-secondary/30",
-    border: "border-l-secondary",
     iconBg: "bg-secondary/15",
     iconText: "text-secondary",
   },
   low: {
     label: "Quick win",
     badge: "bg-muted text-muted-foreground border-border",
-    border: "border-l-border",
     iconBg: "bg-muted",
     iconText: "text-muted-foreground",
   },
@@ -59,7 +53,7 @@ interface RecommendationCard {
 
 const RecommendationCards = ({ cards }: { cards: RecommendationCard[] }) => {
   return (
-    <div className="grid md:grid-cols-2 gap-4">
+    <div className="space-y-3">
       {cards.map((card) => (
         <RecommendationCardItem key={card.id} card={card} />
       ))}
@@ -68,17 +62,13 @@ const RecommendationCards = ({ cards }: { cards: RecommendationCard[] }) => {
 };
 
 const RecommendationCardItem = ({ card }: { card: RecommendationCard }) => {
-  const [expanded, setExpanded] = useState(false);
   const Icon = ICONS[card.icon] || Leaf;
   const impact = IMPACT_STYLES[card.impact] || IMPACT_STYLES.medium;
-  const visibleBullets = expanded ? card.bullets : card.bullets.slice(0, 2);
-  const hasMore = card.bullets.length > 2;
+  const visibleBullets = card.bullets.slice(0, 2);
 
   return (
-    <Card
-      className={`border-2 border-l-4 ${impact.border} hover:shadow-md transition-all hover:-translate-y-0.5`}
-    >
-      <CardContent className="p-5 space-y-3">
+    <Card className="border-2 hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col">
+      <CardContent className="p-5 flex flex-col flex-1 gap-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div
@@ -111,32 +101,13 @@ const RecommendationCardItem = ({ card }: { card: RecommendationCard }) => {
           </ul>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <Button asChild variant="outline" size="sm" className="flex-1 min-w-[140px]">
+        <div className="mt-auto">
+          <Button asChild variant="outline" size="sm" className="w-full">
             <a href={card.cta.url} target="_blank" rel="noopener noreferrer">
               {card.cta.label}
               <ExternalLink className="h-3.5 w-3.5 ml-2" />
             </a>
           </Button>
-          {hasMore && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setExpanded((e) => !e)}
-              className="text-xs"
-            >
-              {expanded ? (
-                <>
-                  Less <ChevronUp className="h-3.5 w-3.5 ml-1" />
-                </>
-              ) : (
-                <>
-                  +{card.bullets.length - 2} more
-                  <ChevronDown className="h-3.5 w-3.5 ml-1" />
-                </>
-              )}
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>

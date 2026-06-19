@@ -28,6 +28,7 @@ import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
+import EVComparison from "./pages/EVComparison";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/data-sources" element={<DataSources />} />
             <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
             <Route path="/decarb-dashboard" element={<SolarMap />} />
+            <Route path="/ev-comparison" element={<EVComparison />} />
 
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />

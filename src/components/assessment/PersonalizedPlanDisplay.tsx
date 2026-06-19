@@ -1,92 +1,54 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
-import { CheckCircle2, Calendar, Trophy, Target } from "lucide-react";
+import { Sun, Car, Wrench, Battery, Zap, Leaf, ExternalLink } from "lucide-react";
 
-interface PersonalizedPlanDisplayProps {
-  markdown: string;
+interface ParsedMove {
+  title: string;
+  description: string;
 }
 
-interface ParsedPlan {
-  topMoves: { title: string; description: string }[];
-  thisMonth: string[];
-  thisYear: string[];
-  intro?: string;
-  rest?: string; // any unparsed trailing markdown
-}
-
-/**
- * Parses the AI personalized plan into the three visual sections.
- * Falls back gracefully when sections are missing.
- *
- * Expected format (from unified-assessment edge function):
- *   **Your Top 3 Moves**
- *   1. **Title**: description...
- *   2. **Title**: description...
- *   3. **Title**: description...
- *
- *   **This Month**
- *   - bullet
- *
- *   **This Year**
- *   - bullet
- */
-function parsePlan(md: string): ParsedPlan {
-  const result: ParsedPlan = { topMoves: [], thisMonth: [], thisYear: [] };
-  if (!md) return result;
-
-  // Split on the bolded section headings (case-insensitive)
-  const sectionRegex = /\*\*\s*(Your Top 3 Moves|Top 3 Moves|This Month|This Year)\s*\*\*/gi;
-  const matches = [...md.matchAll(sectionRegex)];
-
-  if (matches.length === 0) {
-    result.rest = md;
-    return result;
-  }
-
-  // Anything before the first match is intro
-  if (matches[0].index! > 0) {
-    const intro = md.slice(0, matches[0].index).trim();
-    if (intro) result.intro = intro;
-  }
-
-  matches.forEach((m, i) => {
-    const start = m.index! + m[0].length;
-    const end = i + 1 < matches.length ? matches[i + 1].index! : md.length;
-    const body = md.slice(start, end).trim();
-    const heading = m[1].toLowerCase();
-
-    if (heading.includes("top 3")) {
-      // Numbered list "1. **Title**: description"
-      const items = [...body.matchAll(/^\s*\d+\.\s*(.+)$/gm)];
-      result.topMoves = items.map((it) => {
-        const raw = it[1].trim();
-        const titleMatch = raw.match(/^\*\*(.+?)\*\*\s*[:—-]?\s*(.*)$/s);
-        if (titleMatch) {
-          return { title: titleMatch[1].trim(), description: titleMatch[2].trim() };
-        }
-        // Fallback: split on first colon
-        const idx = raw.indexOf(":");
-        return idx > 0
-          ? { title: raw.slice(0, idx).replace(/\*\*/g, "").trim(), description: raw.slice(idx + 1).trim() }
-          : { title: raw.replace(/\*\*/g, "").trim(), description: "" };
-      });
-    } else if (heading.includes("this month")) {
-      result.thisMonth = parseBullets(body);
-    } else if (heading.includes("this year")) {
-      result.thisYear = parseBullets(body);
-    }
+function parseMoves(md: string): ParsedMove[] {
+  if (!md) return [];
+  const sectionMatch = md.match(/\*\*\s*(?:Your )?Top 3 Moves\s*\*\*([\s\S]*?)(?:\*\*This Month\*\*|$)/i);
+  if (!sectionMatch) return [];
+  const body = sectionMatch[1];
+  return [...body.matchAll(/^\s*\d+\.\s*(.+)$/gm)].map((m) => {
+    const raw = m[1].trim();
+    const titleMatch = raw.match(/^\*\*(.+?)\*\*\s*[:—-]?\s*(.*)$/s);
+    if (titleMatch) return { title: titleMatch[1].trim(), description: titleMatch[2].trim() };
+    const idx = raw.indexOf(":");
+    return idx > 0
+      ? { title: raw.slice(0, idx).replace(/\*\*/g, "").trim(), description: raw.slice(idx + 1).trim() }
+      : { title: raw.replace(/\*\*/g, "").trim(), description: "" };
   });
-
-  return result;
 }
 
-function parseBullets(body: string): string[] {
-  return body
-    .split(/\n/)
-    .map((l) => l.trim())
-    .filter((l) => /^[-*•]\s+/.test(l))
-    .map((l) => l.replace(/^[-*•]\s+/, "").replace(/\*\*/g, "").trim())
-    .filter(Boolean);
+const MOVE_TYPES: Record<string, {
+  icon: any; category: string; impact: "high" | "medium";
+  badge: string; iconBg: string; iconText: string;
+  cta: { label: string; url: string };
+}> = {
+  solar:   { icon: Sun,     category: "Home Power",    impact: "high",   badge: "bg-primary/15 text-primary border-primary/30",       iconBg: "bg-primary/15",   iconText: "text-primary",   cta: { label: "Austin Energy Solar Rebate",    url: "https://austinenergy.com/green-power/solar-solutions/for-your-home" } },
+  ev:      { icon: Car,     category: "Transportation", impact: "high",   badge: "bg-primary/15 text-primary border-primary/30",       iconBg: "bg-primary/15",   iconText: "text-primary",   cta: { label: "Austin Energy EV Programs",     url: "https://austinenergy.com/green-power/plug-in-austin" } },
+  audit:   { icon: Wrench,  category: "Efficiency",    impact: "high",   badge: "bg-primary/15 text-primary border-primary/30",       iconBg: "bg-primary/15",   iconText: "text-primary",   cta: { label: "Schedule a Home Energy Audit",  url: "https://austinenergy.com/energy-efficiency/rebates-incentives/residential/home-improvements/home-energy-savings" } },
+  battery: { icon: Battery, category: "Resilience",    impact: "medium", badge: "bg-secondary/15 text-secondary border-secondary/30", iconBg: "bg-secondary/15", iconText: "text-secondary", cta: { label: "Austin Energy Battery Rebate",  url: "https://austinenergy.com/green-power/solar-solutions/for-your-home/battery-storage-incentive" } },
+  green:   { icon: Leaf,    category: "Home Power",    impact: "medium", badge: "bg-secondary/15 text-secondary border-secondary/30", iconBg: "bg-secondary/15", iconText: "text-secondary", cta: { label: "Sign up for GreenChoice",       url: "https://austinenergy.com/green-power/greenchoice" } },
+  electric:{ icon: Zap,     category: "Appliances",    impact: "medium", badge: "bg-secondary/15 text-secondary border-secondary/30", iconBg: "bg-secondary/15", iconText: "text-secondary", cta: { label: "Heat Pump Rebates",             url: "https://austinenergy.com/energy-efficiency/rebates-incentives" } },
+};
+
+const IMPACT_LABELS = { high: "High impact", medium: "Medium impact" };
+
+function getMoveType(title: string) {
+  const t = title.toLowerCase();
+  if (t.includes("solar") || t.includes("kw")) return MOVE_TYPES.solar;
+  if (t.includes("electric vehicle") || t.includes(" ev")) return MOVE_TYPES.ev;
+  if (t.includes("audit") || t.includes("efficiency")) return MOVE_TYPES.audit;
+  if (t.includes("battery") || t.includes("storage")) return MOVE_TYPES.battery;
+  if (t.includes("greenchoice") || t.includes("renewable")) return MOVE_TYPES.green;
+  if (t.includes("electrif") || t.includes("appliance")) return MOVE_TYPES.electric;
+  return MOVE_TYPES.audit;
 }
 
 function MarkdownInline({ text }: { text: string }) {
@@ -95,14 +57,7 @@ function MarkdownInline({ text }: { text: string }) {
       components={{
         p: (p) => <span {...p} />,
         strong: (p) => <strong {...p} className="text-foreground font-semibold" />,
-        a: (p) => (
-          <a
-            {...p}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          />
-        ),
+        a: (p) => <a {...p} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" />,
       }}
     >
       {text}
@@ -110,125 +65,47 @@ function MarkdownInline({ text }: { text: string }) {
   );
 }
 
-const PersonalizedPlanDisplay = ({ markdown }: PersonalizedPlanDisplayProps) => {
-  const parsed = parsePlan(markdown);
-  const hasStructure =
-    parsed.topMoves.length > 0 || parsed.thisMonth.length > 0 || parsed.thisYear.length > 0;
-
-  // Fallback to plain markdown render if we can't parse the structure
-  if (!hasStructure) {
-    return (
-      <Card className="border-2 border-primary/30">
-        <CardContent className="p-6">
-          <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground">
-            <ReactMarkdown>{markdown}</ReactMarkdown>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+const PersonalizedPlanDisplay = ({ markdown }: { markdown: string }) => {
+  const moves = parseMoves(markdown);
+  if (!moves.length) return null;
 
   return (
-    <div className="space-y-4">
-      {parsed.intro && (
-        <Card className="border bg-muted/30">
-          <CardContent className="p-4 text-sm text-foreground/90">
-            <MarkdownInline text={parsed.intro} />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Top 3 Moves */}
-      {parsed.topMoves.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Trophy className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
-              Your Top {parsed.topMoves.length} Moves
-            </h3>
-          </div>
-          <div className="grid md:grid-cols-3 gap-3">
-            {parsed.topMoves.map((move, i) => (
-              <Card
-                key={i}
-                className="relative border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-background overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="absolute -top-3 -left-3 w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shadow-md">
-                  {i + 1}
+    <div className="space-y-3">
+      {moves.map((move, i) => {
+        const type = getMoveType(move.title);
+        const Icon = type.icon;
+        return (
+          <Card key={i} className="border-2 hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col">
+            <CardContent className="p-5 flex flex-col flex-1 gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`h-12 w-12 rounded-full ${type.iconBg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`h-6 w-6 ${type.iconText}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest">{type.category}</div>
+                    <h3 className="font-semibold text-foreground leading-tight">{move.title}</h3>
+                  </div>
                 </div>
-                <CardContent className="pt-6 pl-12 p-5">
-                  <h4 className="font-semibold text-foreground mb-1.5 leading-tight">
-                    {move.title}
-                  </h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    <MarkdownInline text={move.description} />
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* This Month */}
-        {parsed.thisMonth.length > 0 && (
-          <Card className="border-2 border-border shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Target className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
-                  This Month
-                </h3>
+                <Badge variant="outline" className={`${type.badge} shrink-0 text-xs`}>
+                  {IMPACT_LABELS[type.impact]}
+                </Badge>
               </div>
-              <ul className="space-y-2.5">
-                {parsed.thisMonth.map((item, i) => (
-                  <li key={i} className="flex gap-2.5 text-sm text-foreground/90">
-                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>
-                      <MarkdownInline text={item} />
-                    </span>
-                  </li>
-                ))}
-              </ul>
+
+              <p className="text-sm text-foreground/90 flex-1">
+                <MarkdownInline text={move.description} />
+              </p>
+
+              <Button asChild variant="outline" size="sm" className="w-full mt-auto">
+                <a href={type.cta.url} target="_blank" rel="noopener noreferrer">
+                  {type.cta.label}
+                  <ExternalLink className="h-3.5 w-3.5 ml-2" />
+                </a>
+              </Button>
             </CardContent>
           </Card>
-        )}
-
-        {/* This Year */}
-        {parsed.thisYear.length > 0 && (
-          <Card className="border-2 border-secondary/30 bg-gradient-to-br from-secondary/5 to-background shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-secondary" />
-                <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
-                  This Year
-                </h3>
-              </div>
-              <ol className="space-y-2.5">
-                {parsed.thisYear.map((item, i) => (
-                  <li key={i} className="flex gap-2.5 text-sm text-foreground/90">
-                    <span className="h-5 w-5 rounded-full bg-secondary/20 text-secondary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
-                    <span>
-                      <MarkdownInline text={item} />
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {parsed.rest && (
-        <Card className="border bg-muted/20">
-          <CardContent className="p-4 prose prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown>{parsed.rest}</ReactMarkdown>
-          </CardContent>
-        </Card>
-      )}
+        );
+      })}
     </div>
   );
 };
