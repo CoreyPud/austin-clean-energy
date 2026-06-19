@@ -268,7 +268,7 @@ export function No2Section({ idx, onDataLoad }: Props) {
                 <div className="flex flex-col flex-1 gap-4">
 
                   {/* Trend */}
-                  <div className="flex-1 min-h-[180px]">
+                  <div className="h-[260px] xl:flex-1 xl:h-auto xl:min-h-[180px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
