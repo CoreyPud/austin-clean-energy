@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { Zap } from "lucide-react";
+import { ArrowLeft, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { useSeo } from "@/hooks/use-seo";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import EVInputsCard from "@/components/ev/EVInputs";
@@ -15,6 +17,8 @@ import EVDrivingExperience from "@/components/ev/EVDrivingExperience";
 import { DEFAULT_EV_INPUTS, calcEVResults, type EVInputs } from "@/lib/ev-model";
 
 const EVComparison = () => {
+  const navigate = useNavigate();
+
   useSeo({
     title: "EV vs. Gas Cost Comparison — Austin, TX",
     description:
@@ -28,32 +32,41 @@ const EVComparison = () => {
   const results = useMemo(() => calcEVResults(inputs), [inputs]);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Page header */}
-      <div className="bg-gradient-to-br from-primary/10 via-background to-background border-b">
-        <div className="max-w-5xl mx-auto px-4 py-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold text-primary uppercase tracking-widest">
-              Austin Clean Energy
-            </span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            EV vs. Gas in Austin
-          </h1>
-          <p className="text-muted-foreground max-w-2xl text-sm md:text-base">
-            Compare the real cost of going electric using Austin Energy electricity rates,
-            local gas prices, and Austin-specific incentives. Works for new and used vehicles.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+      <div className="container mx-auto px-4 py-8">
+        <Button variant="ghost" onClick={() => navigate("/")} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
 
-      {/* Main content */}
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-widest">
+                Austin Clean Energy
+              </span>
+            </div>
+            <h1 className="text-4xl font-bold mb-3 text-foreground">EV vs. Gas in Austin</h1>
+            <p className="text-lg text-muted-foreground">
+              Compare the real cost of going electric using Austin Energy electricity rates,
+              local gas prices, and Austin-specific incentives.
+            </p>
+          </div>
+
+        <div className="space-y-8">
 
         <EVInputsCard inputs={inputs} onChange={onChange} />
 
         <EVKpiStrip results={results} mode={inputs.mode} />
+
+        <div className="rounded-lg bg-muted/40 border border-border/40 px-5 py-4 text-sm text-muted-foreground leading-relaxed">
+          <span className="font-medium text-foreground">Why EVs cost less to own: </span>
+          Electricity runs about 3–4× cheaper per mile than gas at Austin rates. Maintenance is lower because EVs have no engine oil, no timing belt, no spark plugs, and no exhaust system — and regenerative braking extends brake life 2–3×, since the motor slows the car instead of the pads.
+          {results.annualSavings > 0 && (
+            <> The <span className="font-medium text-foreground">${Math.round(results.annualSavings).toLocaleString()}/yr</span> in estimated annual savings breaks down as roughly <span className="font-medium text-foreground">${Math.round(results.gasAnnualFuel - results.evAnnualFuel).toLocaleString()}</span> in fuel and <span className="font-medium text-foreground">${Math.round(results.gasAnnualMaintenance - results.evAnnualMaintenance).toLocaleString()}</span> in maintenance.</>
+          )}
+        </div>
 
         <SectionHeading
           title="Annual Cost Breakdown"
@@ -100,6 +113,8 @@ const EVComparison = () => {
         />
         <EVIncentivesSection />
 
+        </div>
+        </div>
       </div>
     </div>
   );
