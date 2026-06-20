@@ -589,6 +589,14 @@ export type Database = {
           py_owner_name: string | null
           situs_address: string | null
           situs_zip: string | null
+          solar_fetched_at: string | null
+          solar_imagery_date: string | null
+          solar_imagery_quality: string | null
+          solar_max_area_m2: number | null
+          solar_max_panels: number | null
+          solar_panel_capacity_w: number | null
+          solar_sunshine_hrs: number | null
+          solar_sunshine_median: number | null
           stat_cd: string | null
           year_built: number | null
         }
@@ -609,6 +617,14 @@ export type Database = {
           py_owner_name?: string | null
           situs_address?: string | null
           situs_zip?: string | null
+          solar_fetched_at?: string | null
+          solar_imagery_date?: string | null
+          solar_imagery_quality?: string | null
+          solar_max_area_m2?: number | null
+          solar_max_panels?: number | null
+          solar_panel_capacity_w?: number | null
+          solar_sunshine_hrs?: number | null
+          solar_sunshine_median?: number | null
           stat_cd?: string | null
           year_built?: number | null
         }
@@ -629,10 +645,65 @@ export type Database = {
           py_owner_name?: string | null
           situs_address?: string | null
           situs_zip?: string | null
+          solar_fetched_at?: string | null
+          solar_imagery_date?: string | null
+          solar_imagery_quality?: string | null
+          solar_max_area_m2?: number | null
+          solar_max_panels?: number | null
+          solar_panel_capacity_w?: number | null
+          solar_sunshine_hrs?: number | null
+          solar_sunshine_median?: number | null
           stat_cd?: string | null
           year_built?: number | null
         }
         Relationships: []
+      }
+      tcad_roof_segments: {
+        Row: {
+          area_m2: number | null
+          azimuth_deg: number | null
+          center_lat: number | null
+          center_lon: number | null
+          ground_area_m2: number | null
+          pid: string
+          pitch_deg: number | null
+          segment_index: number
+          sunshine_max: number | null
+          sunshine_median: number | null
+        }
+        Insert: {
+          area_m2?: number | null
+          azimuth_deg?: number | null
+          center_lat?: number | null
+          center_lon?: number | null
+          ground_area_m2?: number | null
+          pid: string
+          pitch_deg?: number | null
+          segment_index: number
+          sunshine_max?: number | null
+          sunshine_median?: number | null
+        }
+        Update: {
+          area_m2?: number | null
+          azimuth_deg?: number | null
+          center_lat?: number | null
+          center_lon?: number | null
+          ground_area_m2?: number | null
+          pid?: string
+          pitch_deg?: number | null
+          segment_index?: number
+          sunshine_max?: number | null
+          sunshine_median?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tcad_roof_segments_pid_fkey"
+            columns: ["pid"]
+            isOneToOne: false
+            referencedRelation: "tcad_properties"
+            referencedColumns: ["pid"]
+          },
+        ]
       }
       vehicle_models: {
         Row: {
