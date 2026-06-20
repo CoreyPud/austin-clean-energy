@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS public.property_plant_distances_staging;

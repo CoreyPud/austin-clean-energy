@@ -452,24 +452,6 @@ export type Database = {
         }
         Relationships: []
       }
-      property_plant_distances_staging: {
-        Row: {
-          dist_nearest_gas_plant_mi: number | null
-          dist_proposed_peaker_mi: number | null
-          pid: string
-        }
-        Insert: {
-          dist_nearest_gas_plant_mi?: number | null
-          dist_proposed_peaker_mi?: number | null
-          pid: string
-        }
-        Update: {
-          dist_nearest_gas_plant_mi?: number | null
-          dist_proposed_peaker_mi?: number | null
-          pid?: string
-        }
-        Relationships: []
-      }
       proposed_peaker_sites: {
         Row: {
           id: number
