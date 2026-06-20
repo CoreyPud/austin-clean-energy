@@ -561,7 +561,15 @@ export type Database = {
           updated_at?: string | null
           wcad_pid?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_solar_tcad_pid"
+            columns: ["tcad_pid"]
+            isOneToOne: false
+            referencedRelation: "tcad_properties"
+            referencedColumns: ["pid_int"]
+          },
+        ]
       }
       tcad_properties: {
         Row: {
@@ -576,6 +584,7 @@ export type Database = {
           land_type_desc: string | null
           market_value: number | null
           pid: string
+          pid_int: number | null
           property_type: string | null
           py_owner_name: string | null
           situs_address: string | null
@@ -595,6 +604,7 @@ export type Database = {
           land_type_desc?: string | null
           market_value?: number | null
           pid: string
+          pid_int?: number | null
           property_type?: string | null
           py_owner_name?: string | null
           situs_address?: string | null
@@ -614,6 +624,7 @@ export type Database = {
           land_type_desc?: string | null
           market_value?: number | null
           pid?: string
+          pid_int?: number | null
           property_type?: string | null
           py_owner_name?: string | null
           situs_address?: string | null
