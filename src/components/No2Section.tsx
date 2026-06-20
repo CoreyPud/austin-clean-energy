@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -74,11 +73,11 @@ export function No2Section({ idx, onDataLoad }: Props) {
       .catch(() => setDataError(true));
   }, [onDataLoad]);
 
-  // ── Fetch AE plants from power_plants (ae_pct not null) ───────────────────
+  // ── Load AE plants from static snapshot ───────────────────────────────────
   useEffect(() => {
-    supabase.from("power_plants").select("*").not("ae_pct", "is", null)
-      .then(({ data: rows }) => {
-        if (!rows?.length) return;
+    fetch("/ae_plants.json")
+      .then(r => r.json())
+      .then((rows: any[]) => {
         setPlants(rows.map(p => ({
           id:               p.plantid,
           name:             p.plant_name ?? "",
@@ -92,55 +91,31 @@ export function No2Section({ idx, onDataLoad }: Props) {
           retirement_year:  p.retirement_year ?? null,
           co2_tons:         p.co2_tons ?? null,
         })));
-      });
+      })
+      .catch(() => {});
   }, []);
 
-  // ── Fetch AE monthly gen from plant_monthly_gen ────────────────────────────
+  // ── Load AE monthly gen from static snapshot ──────────────────────────────
   useEffect(() => {
-    (async () => {
-      const PAGE = 1000;
-      let from = 0;
-      const rows: { plantid: number; period: string; avg_mw: number | null }[] = [];
-      while (true) {
-        const { data: page, error } = await supabase
-          .from("plant_monthly_gen")
-          .select("plantid, period, avg_mw")
-          .range(from, from + PAGE - 1);
-        if (error || !page?.length) break;
-        rows.push(...page);
-        if (page.length < PAGE) break;
-        from += PAGE;
-      }
-      const grouped: Record<string, Record<string, number>> = {};
-      rows.forEach(r => {
-        if (!grouped[r.period]) grouped[r.period] = {};
-        grouped[r.period][String(r.plantid)] = r.avg_mw ?? 0;
-      });
-      setAllPlantGen(grouped);
-    })();
+    fetch("/plant_monthly_gen.json")
+      .then(r => r.json())
+      .then((rows: { plantid: number; period: string; avg_mw: number | null }[]) => {
+        const grouped: Record<string, Record<string, number>> = {};
+        rows.forEach(r => {
+          if (!grouped[r.period]) grouped[r.period] = {};
+          grouped[r.period][String(r.plantid)] = r.avg_mw ?? 0;
+        });
+        setAllPlantGen(grouped);
+      })
+      .catch(() => {});
   }, []);
 
   // ── Rooftop solar (AE view, Austin permit data) ────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const PAGE = 1000;
-        let from = 0;
-        const rows: { issued_date: string; installed_kw: number }[] = [];
-        while (true) {
-          const { data: page, error } = await supabase
-            .from("solar_installations")
-            .select("issued_date, installed_kw")
-            .not("issued_date", "is", null)
-            .not("installed_kw", "is", null)
-            .gt("installed_kw", 0)
-            .order("issued_date")
-            .range(from, from + PAGE - 1);
-          if (error || !page?.length) break;
-          rows.push(...(page as any));
-          if (page.length < PAGE) break;
-          from += PAGE;
-        }
+        const rows: { issued_date: string; installed_kw: number }[] =
+          await fetch("/solar_installations.json").then(r => r.json());
         if (!rows.length) return;
 
         const monthlyNew: Record<string, number> = {};

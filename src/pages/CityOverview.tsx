@@ -14,16 +14,16 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 import { Slider } from "@/components/ui/slider";
 import { useSeo } from "@/hooks/use-seo";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { 
-  TrendingUp, 
-  Building2, 
-  Zap, 
+import {
+  TrendingUp,
+  Building2,
+  Zap,
   Calendar,
   ArrowRight,
   ExternalLink,
   Home,
   Car,
-  TreePine
+  TreePine,
 } from "lucide-react";
 
 const CityOverview = () => {
@@ -425,28 +425,32 @@ const CityOverview = () => {
 
   const resources = [
     {
-      title: "Solar Rebate Program",
-      description: "Up to $2,500 for residential solar installations",
-      link: "https://austinenergy.com/green-power/solar-solutions",
+      title: "Solar Savings Calculator",
+      description: "See your personalized solar savings estimate using your Austin address and actual utility data.",
+      link: "/property-assessment",
       icon: Zap,
+      internal: true,
     },
     {
       title: "Free Home Energy Audit",
       description: "Professional assessment identifying $300-800 in annual savings",
       link: "https://austinenergy.com/energy-efficiency/rebates-incentives/residential/home-improvements/home-energy-savings",
       icon: Home,
+      internal: false,
     },
     {
       title: "Climate Action Plan",
       description: "Track Austin's progress toward net-zero emissions",
       link: "https://www.austintexas.gov/climate",
       icon: TreePine,
+      internal: false,
     },
     {
-      title: "EV Charging Rebates",
-      description: "Up to $1,200 for home Level 2 charger installation",
-      link: "https://austinenergy.com/ev",
+      title: "EV vs. Gas Calculator",
+      description: "Compare the real cost of going electric using Austin Energy rates, local gas prices, and Austin-specific incentives.",
+      link: "/ev-comparison",
       icon: Car,
+      internal: true,
     },
   ];
 
@@ -1025,13 +1029,16 @@ const CityOverview = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full"
-                    onClick={() => window.open(resource.link, '_blank')}
+                    onClick={() => resource.internal ? navigate(resource.link) : window.open(resource.link, '_blank')}
                   >
-                    Learn More
-                    <ExternalLink className="ml-2 h-4 w-4" />
+                    {resource.internal ? "Open Calculator" : "Learn More"}
+                    {resource.internal
+                      ? <ArrowRight className="ml-2 h-4 w-4" />
+                      : <ExternalLink className="ml-2 h-4 w-4" />
+                    }
                   </Button>
                 </CardContent>
               </Card>

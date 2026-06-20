@@ -29,6 +29,7 @@ import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 import EVComparison from "./pages/EVComparison";
+import PropertyViewer from "./pages/PropertyViewer";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,7 @@ const App = () => (
           </Route>
 
           {/* Pages without footer */}
+          <Route path="/property-viewer" element={<PropertyViewer />} />
           <Route path="/embed/area-analysis" element={<EmbedAreaAnalysis />} />
           <Route path="/import-solar-data" element={<ImportSolarData />} />
           <Route path="/admin" element={<AdminLogin />} />
