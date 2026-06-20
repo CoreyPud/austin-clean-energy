@@ -858,7 +858,6 @@ export type Database = {
       }
     }
     Functions: {
-      _tmp_exec_sql: { Args: { sql: string }; Returns: undefined }
       enrich_solar_tcad_pids: {
         Args: { _limit?: number; _radius_deg?: number }
         Returns: number
