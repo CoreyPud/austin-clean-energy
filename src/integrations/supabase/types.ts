@@ -452,6 +452,27 @@ export type Database = {
         }
         Relationships: []
       }
+      proposed_peaker_sites: {
+        Row: {
+          id: number
+          latitude: number
+          longitude: number
+          name: string
+        }
+        Insert: {
+          id: number
+          latitude: number
+          longitude: number
+          name: string
+        }
+        Update: {
+          id?: number
+          latitude?: number
+          longitude?: number
+          name?: string
+        }
+        Relationships: []
+      }
       solar_installations: {
         Row: {
           address: string
@@ -547,6 +568,8 @@ export type Database = {
           centroid_lat: number | null
           centroid_lon: number | null
           county: string | null
+          dist_nearest_gas_plant_mi: number | null
+          dist_proposed_peaker_mi: number | null
           estimated_roof_sqft: number | null
           has_solar: boolean | null
           in_ae: boolean | null
@@ -564,6 +587,8 @@ export type Database = {
           centroid_lat?: number | null
           centroid_lon?: number | null
           county?: string | null
+          dist_nearest_gas_plant_mi?: number | null
+          dist_proposed_peaker_mi?: number | null
           estimated_roof_sqft?: number | null
           has_solar?: boolean | null
           in_ae?: boolean | null
@@ -581,6 +606,8 @@ export type Database = {
           centroid_lat?: number | null
           centroid_lon?: number | null
           county?: string | null
+          dist_nearest_gas_plant_mi?: number | null
+          dist_proposed_peaker_mi?: number | null
           estimated_roof_sqft?: number | null
           has_solar?: boolean | null
           in_ae?: boolean | null
@@ -758,6 +785,10 @@ export type Database = {
         Returns: string
       }
       get_sync_solar_cron_secret: { Args: never; Returns: string }
+      haversine_mi: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
