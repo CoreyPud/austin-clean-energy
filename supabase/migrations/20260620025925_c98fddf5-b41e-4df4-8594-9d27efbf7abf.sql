@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public._tmp_exec_sql(text) TO sandbox_exec;
