@@ -24,3 +24,5 @@ supabase/.env
 *.njsproj
 *.sln
 *.sw?
+/data/google_solar
+/supabase/migrations

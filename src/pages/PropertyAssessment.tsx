@@ -49,8 +49,7 @@ import {
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
-import PersonalizedPlanDisplay from "@/components/assessment/PersonalizedPlanDisplay";
-import { buildPersonalizedPlan, buildRecommendationCards, computeRecommendedKw } from "@/lib/clean-energy-plan";
+import { buildRecommendationCards, computeRecommendedKw } from "@/lib/clean-energy-plan";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -164,7 +163,7 @@ const PropertyAssessment = () => {
 
   const [showLifestyleForm, setShowLifestyleForm] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
-  const [personalizedPlan, setPersonalizedPlan] = useState<string | null>(null);
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [councilOutreachScript, setCouncilOutreachScript] = useState<string | null>(null);
   const lifestyleRef = useRef<HTMLDivElement>(null);
   const postQuizRef = useRef<HTMLDivElement>(null);
@@ -279,7 +278,7 @@ const PropertyAssessment = () => {
     }
     setLoading(true);
     setShowLifestyleForm(false);
-    setPersonalizedPlan(null);
+    setQuizCompleted(false);
     setCouncilOutreachScript(null);
     // Sync the URL so this view is shareable
     const trimmed = address.trim();
@@ -333,11 +332,10 @@ const PropertyAssessment = () => {
         : billToMonthlyKwh(monthlyBill) * 12;
       const localRecommendedKw = computeRecommendedKw(data.solarInsights, usage);
 
-      const planOpts = { lifestyleData, solarInsights: data.solarInsights, savings: data.savings, neighborhoodSnapshot: data.neighborhoodSnapshot, councilMember: data.councilMember, recommendedKw: localRecommendedKw };
       const cardOpts = { propertyType, solarInsights: data.solarInsights, lifestyleData, neighborhoodSnapshot: data.neighborhoodSnapshot, savings: data.savings, recommendedKw: localRecommendedKw };
 
       setResults({ ...data, recommendationCards: buildRecommendationCards(cardOpts) });
-      setPersonalizedPlan(buildPersonalizedPlan(planOpts));
+      setQuizCompleted(true);
       setCouncilOutreachScript(data.councilOutreachScript || null);
       setShowLifestyleForm(false);
       setTimeout(() => postQuizRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -356,7 +354,7 @@ const PropertyAssessment = () => {
 
   const handleStartOver = () => {
     setResults(null);
-    setPersonalizedPlan(null);
+    setQuizCompleted(false);
     setCouncilOutreachScript(null);
     setShowLifestyleForm(false);
     setAddress("");
@@ -770,8 +768,8 @@ const PropertyAssessment = () => {
                 {/* Contact CTA */}
                 <ContactCtaCard />
 
-                {/* Quiz gate / lifestyle form — while no personalized plan yet */}
-                {!personalizedPlan && (
+                {/* Quiz gate / lifestyle form — while quiz not yet completed */}
+                {!quizCompleted && (
                   !showLifestyleForm ? (
                     <Card className="border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
                       <CardContent className="py-6 flex flex-col items-center text-center gap-3">
@@ -807,10 +805,9 @@ const PropertyAssessment = () => {
               </div>
 
               {/* Next Steps — outside sticky scope so control card scrolls away on arrival */}
-              {personalizedPlan && (
+              {quizCompleted && (
                 <div ref={postQuizRef} className="space-y-6 animate-slide-up">
                   <SectionHeading emoji="✅" title="Next Steps" />
-                  <PersonalizedPlanDisplay markdown={personalizedPlan || ""} />
                   <RecommendationCards cards={results.recommendationCards || []} />
 
                   <SectionHeading emoji="🏛️" title="Your council representative" />
@@ -833,7 +830,7 @@ const PropertyAssessment = () => {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        setPersonalizedPlan(null);
+                        setQuizCompleted(false);
                         setCouncilOutreachScript(null);
                         setShowLifestyleForm(true);
                         setTimeout(

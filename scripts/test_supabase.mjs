@@ -23,3 +23,14 @@ console.log("power_plants (ae_pct not null):", e1 ?? plants?.length + " rows", p
 
 const { data: gen, error: e2 } = await sb.from("plant_monthly_gen").select("plantid, period, avg_mw").limit(3);
 console.log("plant_monthly_gen:", e2 ?? gen?.length + " rows", gen);
+
+// Distance backfill progress
+const { count: filled, error: e3 } = await sb.from("tcad_properties").select("pid", { count: "exact", head: true }).not("dist_proposed_peaker_mi", "is", null);
+const { count: total,  error: e4 } = await sb.from("tcad_properties").select("pid", { count: "exact", head: true }).not("centroid_lat", "is", null);
+console.log(`\nDistance backfill: ${filled?.toLocaleString()} / ${total?.toLocaleString()} rows filled`);
+if (e3) console.log("Error (dist col):", e3.message);
+if (e4) console.log("Error (centroid col):", e4.message);
+
+const { data: sample, error: e5 } = await sb.from("tcad_properties").select("pid, situs_address, dist_proposed_peaker_mi, dist_nearest_gas_plant_mi").not("dist_proposed_peaker_mi", "is", null).order("dist_proposed_peaker_mi", { ascending: true }).limit(5);
+if (e5) console.log("Sample error:", e5.message);
+else console.log("Closest to proposed peaker:", sample);

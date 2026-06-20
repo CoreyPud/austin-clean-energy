@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import {
   Megaphone,
   Leaf,
   ExternalLink,
+  ArrowRight,
 } from "lucide-react";
 
 const ICONS: Record<string, any> = {
@@ -103,10 +105,17 @@ const RecommendationCardItem = ({ card }: { card: RecommendationCard }) => {
 
         <div className="mt-auto">
           <Button asChild variant="outline" size="sm" className="w-full">
-            <a href={card.cta.url} target="_blank" rel="noopener noreferrer">
-              {card.cta.label}
-              <ExternalLink className="h-3.5 w-3.5 ml-2" />
-            </a>
+            {card.cta.url.startsWith("/") ? (
+              <Link to={card.cta.url}>
+                {card.cta.label}
+                <ArrowRight className="h-3.5 w-3.5 ml-2" />
+              </Link>
+            ) : (
+              <a href={card.cta.url} target="_blank" rel="noopener noreferrer">
+                {card.cta.label}
+                <ExternalLink className="h-3.5 w-3.5 ml-2" />
+              </a>
+            )}
           </Button>
         </div>
       </CardContent>
