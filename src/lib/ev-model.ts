@@ -1,7 +1,7 @@
 // EV vs. Gas financial model with Austin, Texas defaults
 
 export const AUSTIN_EV_DEFAULTS = {
-  electricityRatePerKwh: 0.12,
+  electricityRatePerKwh: 0.09,
   gasPricePerGal: 3.50,
   evMiPerKwh: 3.5,
   gasMpg: 28,

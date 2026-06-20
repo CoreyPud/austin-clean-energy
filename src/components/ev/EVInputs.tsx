@@ -145,7 +145,7 @@ const ModelSelect = ({
   // When year or new/used flag changes while a model is already selected,
   // re-fire onSelect so the parent price matches the dropdown label.
   useEffect(() => {
-    if (!value) return;
+    if (!value || value === "__other__") return;
     const [make, model] = value.split("|");
     const vehicle = models.find(v => v.make === make && v.model === model);
     if (!vehicle) return;
@@ -163,7 +163,7 @@ const ModelSelect = ({
     const val = e.target.value;
     setValue(val);
     onModelChange?.(val);
-    if (!val) return;
+    if (!val || val === "__other__") return;
     const [make, model] = val.split("|");
     const vehicle = models.find(v => v.make === make && v.model === model);
     if (!vehicle) return;
@@ -200,6 +200,7 @@ const ModelSelect = ({
             </option>
           );
         })}
+        <option value="__other__">Other / custom…</option>
       </select>
     </div>
   );
@@ -270,6 +271,10 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
   const gasValidYears = gasModelData ? Object.keys(gasModelData.usedPrices).map(Number).sort((a, b) => a - b) : null;
   const evDiscontinued  = evModelData?.discontinued  ?? false;
   const gasDiscontinued = gasModelData?.discontinued ?? false;
+
+  // Lock efficiency sliders when a specific model is selected (unlock for empty / "Other / custom…")
+  const evEfficiencyLocked  = evModelKey  !== "" && evModelKey  !== "__other__";
+  const gasEfficiencyLocked = gasModelKey !== "" && gasModelKey !== "__other__";
 
   const handleEvModelChange = (key: string) => {
     setEvModelKey(key);
@@ -394,8 +399,13 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                   <Slider
                     value={[gasMpg]} min={10} max={60} step={1}
                     onValueChange={([v]) => onChange({ gasMpg: v })}
+                    disabled={gasEfficiencyLocked}
+                    className={gasEfficiencyLocked ? "opacity-50" : ""}
                   />
-                  <p className="text-[10px] text-muted-foreground">Avg gas vehicle ~28 MPG</p>
+                  {gasEfficiencyLocked
+                    ? <p className="text-[10px] text-muted-foreground">Select "Other / custom…" to edit</p>
+                    : <p className="text-[10px] text-muted-foreground">Avg gas vehicle ~28 MPG</p>
+                  }
                 </div>
 
                 <DecimalInput
@@ -450,8 +460,13 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
                   <Slider
                     value={[gasMpg]} min={10} max={60} step={1}
                     onValueChange={([v]) => onChange({ gasMpg: v })}
+                    disabled={gasEfficiencyLocked}
+                    className={gasEfficiencyLocked ? "opacity-50" : ""}
                   />
-                  <p className="text-[10px] text-muted-foreground">Avg new gas vehicle ~28 MPG</p>
+                  {gasEfficiencyLocked
+                    ? <p className="text-[10px] text-muted-foreground">Select "Other / custom…" to edit</p>
+                    : <p className="text-[10px] text-muted-foreground">Avg new gas vehicle ~28 MPG</p>
+                  }
                 </div>
 
                 <DecimalInput
@@ -504,24 +519,31 @@ const EVInputsCard = ({ inputs, onChange }: Props) => {
             <div className="space-y-1.5">
               <div className="flex justify-between">
                 <Label className="text-xs text-muted-foreground">Efficiency (rated)</Label>
-                <span className="text-xs font-medium tabular-nums">{evMiPerKwh} mi/kWh</span>
+                <span className="text-xs font-medium tabular-nums">
+                  {evMiPerKwh} mi/kWh · {Math.round(evMiPerKwh * 33.7)} MPGe
+                </span>
               </div>
               <Slider
                 value={[evMiPerKwh]} min={1.5} max={5.0} step={0.1}
                 onValueChange={([v]) => onChange({ evMiPerKwh: +v.toFixed(1) })}
+                disabled={evEfficiencyLocked}
+                className={evEfficiencyLocked ? "opacity-50" : ""}
               />
-              <p className="text-[10px] text-muted-foreground">
-                {evIsNew
-                  ? "Mainstream EVs: 3.0–4.0 mi/kWh"
-                  : `~2%/yr battery degradation applied · ${evAge === 1 ? "~2%" : `~${Math.round(evAge * 2)}%`} total for ${evModelYear}`}
-              </p>
+              {evEfficiencyLocked
+                ? <p className="text-[10px] text-muted-foreground">Select "Other / custom…" to edit</p>
+                : <p className="text-[10px] text-muted-foreground">
+                    {evIsNew
+                      ? "Mainstream EVs: 3.0–4.0 mi/kWh (100–135 MPGe)"
+                      : `~2%/yr battery degradation applied · ${evAge === 1 ? "~2%" : `~${Math.round(evAge * 2)}%`} total for ${evModelYear}`}
+                  </p>
+              }
             </div>
 
             <DecimalInput
               label="Electricity / kWh"
               value={electricityRatePerKwh}
               onChange={v => onChange({ electricityRatePerKwh: v })}
-              note="Austin Energy blended ~$0.12/kWh"
+              note="Austin Energy residential avg ~$0.09/kWh"
             />
           </div>
         </div>

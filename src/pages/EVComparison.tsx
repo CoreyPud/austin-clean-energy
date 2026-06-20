@@ -60,6 +60,14 @@ const EVComparison = () => {
 
         <EVKpiStrip results={results} mode={inputs.mode} />
 
+        <div className="rounded-lg bg-muted/40 border border-border/40 px-5 py-4 text-sm text-muted-foreground leading-relaxed">
+          <span className="font-medium text-foreground">Why EVs cost less to own: </span>
+          Electricity runs about 3–4× cheaper per mile than gas at Austin rates. Maintenance is lower because EVs have no engine oil, no timing belt, no spark plugs, and no exhaust system — and regenerative braking extends brake life 2–3×, since the motor slows the car instead of the pads.
+          {results.annualSavings > 0 && (
+            <> The <span className="font-medium text-foreground">${Math.round(results.annualSavings).toLocaleString()}/yr</span> in estimated annual savings breaks down as roughly <span className="font-medium text-foreground">${Math.round(results.gasAnnualFuel - results.evAnnualFuel).toLocaleString()}</span> in fuel and <span className="font-medium text-foreground">${Math.round(results.gasAnnualMaintenance - results.evAnnualMaintenance).toLocaleString()}</span> in maintenance.</>
+          )}
+        </div>
+
         <SectionHeading
           title="Annual Cost Breakdown"
           subtitle="Year 1 operating costs and fuel efficiency"
