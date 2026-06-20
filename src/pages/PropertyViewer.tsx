@@ -12,7 +12,8 @@ import {
   type ProposedSitePoint,
 } from "@/components/PropertyMap";
 
-const PAGE_SIZE = 1000;
+const PAGE_SIZE   = 1000;
+const MAX_RESULTS = 10_000;
 
 function haversineMi(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -159,10 +160,11 @@ export default function PropertyViewer() {
   // Single paginated fetch — all active filters applied as query params
   const fetchPage = async (
     distCol: "dist_proposed_peaker_mi" | "dist_nearest_gas_plant_mi" | null,
-    opts: { maxMi: number; types: string[]; withSolar: boolean },
+    opts: { maxMi: number; types: string[]; withSolar: boolean; maxRows?: number },
     onProgress: (rows: PropertyPoint[]) => void,
   ): Promise<PropertyPoint[] | null> => {
     const rows: PropertyPoint[] = [];
+    const limit = opts.maxRows ?? MAX_RESULTS;
     let from = 0;
     while (true) {
       let data: any[] | null = null;
@@ -189,6 +191,7 @@ export default function PropertyViewer() {
       if (!data?.length) break;
       rows.push(...data.map(mapRow));
       onProgress(rows);
+      if (rows.length >= limit) break;
       if (data.length < PAGE_SIZE) break;
       from += PAGE_SIZE;
     }
@@ -210,18 +213,18 @@ export default function PropertyViewer() {
       setProperties([...merged]);
     };
 
-    const opts = { maxMi: maxDistMi, types: selectedTypes, withSolar: onlyWithSolar };
+    const baseOpts = { maxMi: maxDistMi, types: selectedTypes, withSolar: onlyWithSolar };
 
     if (!proximityOn) {
-      const rows = await fetchPage(null, opts, merge);
+      const rows = await fetchPage(null, { ...baseOpts, maxRows: MAX_RESULTS }, merge);
       if (!rows) { setLoading(false); return; }
     } else {
       if (includeProposed) {
-        const rows = await fetchPage("dist_proposed_peaker_mi", opts, merge);
+        const rows = await fetchPage("dist_proposed_peaker_mi", { ...baseOpts, maxRows: MAX_RESULTS - merged.length }, merge);
         if (!rows) { setLoading(false); return; }
       }
-      if (includeGas) {
-        const rows = await fetchPage("dist_nearest_gas_plant_mi", opts, merge);
+      if (includeGas && merged.length < MAX_RESULTS) {
+        const rows = await fetchPage("dist_nearest_gas_plant_mi", { ...baseOpts, maxRows: MAX_RESULTS - merged.length }, merge);
         if (!rows) { setLoading(false); return; }
       }
     }
