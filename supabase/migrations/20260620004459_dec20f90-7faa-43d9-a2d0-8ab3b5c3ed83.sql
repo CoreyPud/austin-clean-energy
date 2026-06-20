@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS idx_tcad_dist_proposed_peaker ON public.tcad_properties (dist_proposed_peaker_mi) WHERE dist_proposed_peaker_mi IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tcad_dist_gas_plant ON public.tcad_properties (dist_nearest_gas_plant_mi) WHERE dist_nearest_gas_plant_mi IS NOT NULL;
