@@ -1,13 +1,33 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, BarChart3, Building2, Battery, Leaf } from "lucide-react";
+import { ArrowRight, MapPin, Zap, Car, Wrench, Leaf } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
-import { useState, useEffect } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
 import CampaignPopup from "@/components/CampaignPopup";
 import { useSeo } from "@/hooks/use-seo";
+import {
+  BarChart, Bar, Cell,
+  LineChart, Line,
+  XAxis, YAxis,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import {
+  buildThirtyYearModel,
+  DEFAULT_MONTHLY_USAGE_KWH,
+  DEFAULT_PRODUCTION_PER_KW,
+  type CalcInputs,
+} from "@/lib/solar-model";
+import { calcEVResults, DEFAULT_EV_INPUTS } from "@/lib/ev-model";
+import { evAdoptionSeries } from "@/data/ev-adoption";
+import FeatureCard from "@/components/FeatureCard";
+
+const PRI  = "hsl(var(--primary))";
+const BLUE = "#3b82f6";
+const ORNG = "#f59e0b";
+
+function austinPopEst(year: number) { return 1_273_000 + (year - 2019) * 21_000; }
+function texasPopEst(year: number)  { return 29_000_000 + (year - 2019) * 230_000; }
 
 const Index = () => {
   useSeo({
@@ -15,199 +35,285 @@ const Index = () => {
     description: "Data-driven insights for solar adoption, energy efficiency, and battery storage in Austin. Empowering residents and policymakers to accelerate clean energy transition.",
   });
   const navigate = useNavigate();
-  const [stats, setStats] = useState<Array<{ value: string; label: string; icon: any }> | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        // First, try to get cached stats from database
-        const { data: cachedStats, error: cacheError } = await supabase
-          .from('cached_stats')
-          .select('*')
-          .order('stat_type');
-
-        if (!cacheError && cachedStats && cachedStats.length > 0) {
-          // Map cached stats to display format (excluding energy_audits)
-          const iconMap: Record<string, any> = {
-            'zip_codes': BarChart3,
-            'solar_capacity_mw': Battery,
-            'solar_permits': Leaf,
-          };
-
-          const allowedTypes = new Set(Object.keys(iconMap));
-          const displayStats = cachedStats
-            .filter(stat => allowedTypes.has(stat.stat_type))
-            .map(stat => ({
-            value: stat.value,
-            label: stat.label,
-            icon: iconMap[stat.stat_type] || BarChart3
-          }));
-
-          setStats(displayStats);
-          setIsLoading(false);
-        }
-
-        // Stats refresh is now admin-only; public pages read cached data only
-
-      } catch (error) {
-        console.error('Error loading stats:', error);
-        setStats([
-          { value: "Live", label: "Austin Open Data", icon: BarChart3 },
-          { value: "Real-time", label: "Solar Permits", icon: Building2 },
-          { value: "Verified", label: "Energy Audits", icon: Leaf },
-          { value: "Active", label: "Data Sources", icon: Battery },
-        ]);
-        setIsLoading(false);
-      }
+  const solarCumulative = useMemo(() => {
+    const SAMPLE_KW = 8;
+    const inputs: CalcInputs = {
+      annualUsageKwh: DEFAULT_MONTHLY_USAGE_KWH * 12,
+      systemKw: SAMPLE_KW,
+      batteryKwh: 0,
+      loanTermYears: 0,
+      loanInterestRate: 0,
+      productionPerKw: DEFAULT_PRODUCTION_PER_KW,
     };
-
-    loadStats();
+    return buildThirtyYearModel(inputs, SAMPLE_KW * 2950 - 2500)
+      .cumulativeByYear.slice(0, 25);
   }, []);
 
-  const modules = [
-    {
-      icon: Building2,
-      title: "Calculate Solar Savings in Austin",
-      description: "Enter your address to get neighborhood solar trends, your roof's potential, savings estimates, your council member, and tailored next steps — all in one place.",
-      features: ["Neighborhood snapshot + map", "Solar savings + payback", "Your council representative", "Optional personalized plan"],
-      gradient: "from-primary to-accent",
-      route: "/property-assessment",
-    },
-    {
-      icon: BarChart3,
-      title: "City-Wide Progress",
-      description: "See how Austin is tracking on solar permits, battery storage, and efficiency programs across every ZIP and council district.",
-      features: ["Adoption by ZIP code", "Yearly + fiscal trends", "Permit timeline data"],
-      gradient: "from-secondary to-accent",
-      route: "/city-overview",
-    },
-  ];
+  const evAnnualCostData = useMemo(() => {
+    const r = calcEVResults(DEFAULT_EV_INPUTS);
+    return [
+      { vehicle: "Gas Vehicle",      fuel: Math.round(r.gasAnnualFuel), maintenance: Math.round(r.gasAnnualMaintenance), registration: r.gasRegistrationFee },
+      { vehicle: "Electric Vehicle", fuel: Math.round(r.evAnnualFuel),  maintenance: Math.round(r.evAnnualMaintenance),  registration: r.evRegistrationSurcharge },
+    ];
+  }, []);
+
+  const evAdoptionPreview = useMemo(() =>
+    evAdoptionSeries.map(row => {
+      const d = new Date(row.date + "T12:00:00Z");
+      const yr = d.getUTCFullYear() + d.getUTCMonth() / 12;
+      return {
+        t: Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+        austin: +((row.austin / austinPopEst(yr)) * 1000).toFixed(2),
+        texas:  +((row.texas  / texasPopEst(yr))  * 1000).toFixed(2),
+      };
+    }),
+  []);
 
   return (
     <div className="min-h-screen">
       <CampaignPopup />
-      {/* Hero Section */}
+
+      {/* Hero */}
       <section className="relative overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-secondary/80" />
         </div>
-        
-        <div className="relative z-10 container mx-auto px-4 py-24 md:py-32">
-          <div className="max-w-3xl animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-              Accelerate Austin's Clean Energy Future
+        <div className="relative z-10 max-w-5xl mx-auto px-4 py-14 md:py-20">
+          <div className="animate-fade-in">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
+              Help Build Austin's Clean Energy Future
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-8 leading-relaxed">
-              Data-driven insights for solar adoption, energy efficiency, and battery storage—empowering residents, 
-              policymakers, and activists to make informed decisions that cut costs and reduce emissions.
+            <p className="text-lg md:text-xl text-white/90 mb-4 leading-relaxed">
+              Austin is in the middle of a clean energy shift. We make the underlying data accessible so anyone can follow the city's progress, understand the trends, and figure out what it means for their household and their community.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/city-overview")}
-                className="bg-accent hover:bg-accent/90 text-foreground font-semibold"
+            <p className="text-lg text-white/80 mb-8 leading-relaxed">
+              Pick a place to start: track how Austin is doing, or calculate what clean energy would mean for your home.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 sm:w-fit">
+              <Button
+                size="lg"
+                onClick={() => document.getElementById("city-trends")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="bg-accent hover:bg-accent/90 text-foreground font-semibold w-full sm:w-48"
               >
-                View City-Wide Progress
+                Austin Trends
               </Button>
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/property-assessment")}
-                className="bg-accent hover:bg-accent/90 text-foreground font-semibold"
+              <Button
+                size="lg"
+                onClick={() => document.getElementById("personal-picture")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="bg-accent hover:bg-accent/90 text-foreground font-semibold w-full sm:w-48"
               >
-                Get Personalized Plan
-              </Button>
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/decarb-dashboard")}
-                className="bg-accent hover:bg-accent/90 text-foreground font-semibold"
-              >
-                Path to Net Zero Simulator
+                Run the Numbers
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap justify-center gap-12 md:gap-20">
-            {isLoading ? (
-              // Loading skeletons
-              Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="text-center">
-                  <Skeleton className="h-8 w-8 mx-auto mb-3 rounded-full" />
-                  <Skeleton className="h-10 w-24 mx-auto mb-2" />
-                  <Skeleton className="h-4 w-32 mx-auto" />
-                </div>
-              ))
-            ) : stats ? (
-              stats.map((stat, index) => (
-                <div 
-                  key={index} 
-                  className="text-center animate-slide-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <stat.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
-                </div>
-              ))
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      {/* Modules Section */}
+      {/* Feature cards */}
       <section className="py-20 container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-foreground">
-            Two Ways to Get Started
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From your address-driven personal profile to city-wide progress trends
-          </p>
-        </div>
+        <div className="space-y-16 max-w-5xl mx-auto">
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {modules.map((module, index) => (
-            <Card
-              key={index}
-              onClick={() => navigate(module.route)}
-              className="group hover:shadow-lg transition-all duration-300 animate-scale-in border-2 hover:border-primary/50 cursor-pointer"
-              style={{ animationDelay: `${index * 0.15}s` }}
-            >
-              <CardHeader>
-                <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${module.gradient} p-3.5 mb-4 group-hover:scale-110 transition-transform`}>
-                  <module.icon className="h-full w-full text-white" />
-                </div>
-                <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
-                <CardDescription className="text-base">{module.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 mb-4">
-                  {module.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center text-sm text-muted-foreground">
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button variant="ghost" className="w-full group-hover:bg-primary group-hover:text-white transition-colors">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+          {/* ── City-Wide ── */}
+          <div id="city-trends" className="scroll-mt-8">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">Austin at a Glance</h2>
+              <p className="text-muted-foreground max-w-2xl">How the city's solar buildout and EV adoption have grown over time, broken down by ZIP code and district.</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+
+              <FeatureCard
+                to="/city-overview"
+                title="Austin Rooftop Solar"
+                description="See how Austin is trending on new solar and battery installs, and which areas are adopting solar the fastest."
+                cta="Learn More"
+                preview={
+                  <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground select-none">
+                      <MapPin className="h-8 w-8 opacity-30" />
+                      <span className="text-xs opacity-40">Map preview</span>
+                    </div>
+                    <img
+                      src="/city-map-preview.png"
+                      alt="Austin solar installations map"
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/ev-progress"
+                title="Austin EV Adoption"
+                description="Track Austin's EV growth, CO₂ avoided, and the economic impact of keeping fuel dollars local."
+                cta="Learn More"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <LineChart data={evAdoptionPreview} margin={{ left: 0, right: 4, top: 2, bottom: 0 }}>
+                        <XAxis
+                          dataKey="t"
+                          scale="time"
+                          type="number"
+                          domain={["dataMin", "dataMax"]}
+                          tickFormatter={v => new Date(v).getUTCFullYear().toString()}
+                          ticks={[2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026].map(y => Date.UTC(y, 0, 1))}
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={28}
+                        />
+                        <Line type="monotone" dataKey="austin" stroke={PRI}  strokeWidth={2.5} dot={false} connectNulls />
+                        <Line type="monotone" dataKey="texas"  stroke={BLUE} strokeWidth={2}   dot={false} connectNulls strokeDasharray="5 3" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/decarb-dashboard"
+                title="Path to Net Zero by 2035"
+                description="Model what it would take for Austin to reach net zero by 2035 — adjust solar buildout, EV adoption, and efficiency targets to see the emissions impact."
+                cta="Learn More"
+                preview={
+                  <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground select-none">
+                      <span className="text-xs opacity-40">Preview</span>
+                    </div>
+                    <img
+                      src="/2035-zero-calc-preview.png"
+                      alt="Path to 2035 net zero simulator"
+                      className="absolute inset-0 w-full h-full object-cover object-top"
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                }
+              />
+
+            </div>
+          </div>
+
+          {/* ── Personal ── */}
+          <div id="personal-picture" className="scroll-mt-8">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">Run the Numbers</h2>
+              <p className="text-muted-foreground max-w-2xl">Solar payback periods and EV cost comparisons vary a lot by household. Run the numbers using Austin's real rates and incentives to see what the math looks like for your situation.</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+
+              <FeatureCard
+                to="/property-assessment"
+                title="Calculate Solar Savings in Austin"
+                description="Enter your address to get neighborhood solar trends, your roof's potential, savings estimates, your council member, and tailored next steps — all in one place."
+                cta="Calculate Savings"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart data={solarCumulative} margin={{ left: 0, right: 4, top: 2, bottom: 0 }}>
+                        <XAxis
+                          dataKey="year"
+                          tickFormatter={v => v % 5 === 0 ? `Yr ${v}` : ""}
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={40}
+                        />
+                        <Bar dataKey="cumulative" radius={[2, 2, 0, 0]}>
+                          {solarCumulative.map((entry, i) => (
+                            <Cell key={i} fill={entry.cumulative >= 0 ? "#047857" : "#b91c1c"} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/ev-comparison"
+                title="EV vs. Gas Calculator"
+                description="Compare the real cost of going electric using Austin Energy rates, local gas prices, and Austin-specific incentives."
+                cta="Compare Costs"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart data={evAnnualCostData} margin={{ left: 0, right: 4, top: 2, bottom: 0 }} barSize={56}>
+                        <XAxis
+                          dataKey="vehicle"
+                          tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tickFormatter={v => `$${v}`}
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={40}
+                        />
+                        <Legend
+                          iconType="square"
+                          iconSize={8}
+                          formatter={v => <span style={{ fontSize: 10, color: "hsl(var(--muted-foreground))" }}>{v}</span>}
+                        />
+                        <Bar dataKey="fuel"         stackId="c" fill={PRI}  name="Fuel"         radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="maintenance"  stackId="c" fill={BLUE} name="Maintenance"  radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="registration" stackId="c" fill={ORNG} name="Registration" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/clean-energy-plan"
+                title="Your Clean Energy Plan"
+                description="Answer a few questions about your home and lifestyle to get personalized recommendations across solar, EVs, efficiency, and more."
+                cta="Build My Plan"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b flex items-center justify-center" style={{ height: 226 }}>
+                    <div className="grid grid-cols-2 gap-4 w-full px-8">
+                      {[
+                        { icon: Car,    label: "Transportation", color: "text-primary",      bg: "bg-primary/10" },
+                        { icon: Zap,    label: "Electrification", color: "text-blue-500",    bg: "bg-blue-500/10" },
+                        { icon: Leaf,   label: "Home Power",      color: "text-emerald-600", bg: "bg-emerald-500/10" },
+                        { icon: Wrench, label: "Efficiency",      color: "text-amber-600",   bg: "bg-amber-500/10" },
+                      ].map(({ icon: Icon, label, color, bg }) => (
+                        <div key={label} className="flex flex-col items-center gap-2">
+                          <div className={`h-12 w-12 rounded-full ${bg} flex items-center justify-center`}>
+                            <Icon className={`h-5 w-5 ${color}`} />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground text-center leading-tight">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                }
+              />
+
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="py-20 bg-gradient-to-br from-primary via-secondary to-accent">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
@@ -217,8 +323,8 @@ const Index = () => {
             <p className="text-lg md:text-xl text-white/90 mb-8">
               Start exploring solar, efficiency, and storage opportunities in your neighborhood today
             </p>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               onClick={() => navigate("/property-assessment")}
               className="bg-white text-primary hover:bg-white/90 font-semibold"
             >
@@ -228,7 +334,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
     </div>
   );
 };

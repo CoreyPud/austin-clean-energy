@@ -12,7 +12,7 @@ function texasPop(year: number)  { return 29_000_000 + (year - 2019) * 230_000; 
 function usPop(year: number)     { return 328_000_000 + (year - 2019) * 1_100_000; }
 
 const PRI   = "hsl(var(--primary))";
-const AMBER = "#f59e0b";
+const AMBER = "#3b82f6";
 const GRAY  = "#9ca3af";
 
 const fmt = (v: number) => v.toFixed(1);
@@ -76,37 +76,9 @@ const EVAdoptionChart = () => {
     });
   }, []);
 
-  const latest = chartData[chartData.length - 1];
-  const latestUs = chartData.filter(d => d.us !== null).at(-1);
-
   return (
     <Card className="border border-border/50">
       <CardContent className="pt-5 pb-3">
-        {/* KPI strip */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          <div className="rounded-lg bg-muted/40 px-3 py-2.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Austin (Travis Co.)</p>
-            <p className="text-xl font-bold text-primary tabular-nums">
-              {latest.austinRaw.toLocaleString()}
-            </p>
-            <p className="text-[11px] text-muted-foreground">{fmt(latest.austin)} per 1,000 residents</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Texas statewide</p>
-            <p className="text-xl font-bold text-amber-500 tabular-nums">
-              {latest.texasRaw.toLocaleString()}
-            </p>
-            <p className="text-[11px] text-muted-foreground">{fmt(latest.texas)} per 1,000 residents</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Austin vs. US avg</p>
-            <p className="text-xl font-bold text-foreground tabular-nums">
-              {latestUs ? `${(latest.austin / latestUs.us!).toFixed(1)}×` : "—"}
-            </p>
-            <p className="text-[11px] text-muted-foreground">Austin's adoption rate vs. national</p>
-          </div>
-        </div>
-
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData} margin={{ left: 0, right: 16, top: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

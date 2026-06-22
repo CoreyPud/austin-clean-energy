@@ -8,7 +8,15 @@ import { CheckCircle } from "lucide-react";
 const FORM_ACTION =
   "https://docs.google.com/forms/u/0/d/e/1FAIpQLSfDDzb_DouZV7dw-ZokNcF7Hf3Bhbsz-y-qhTwlEKSfr6uYVQ/formResponse";
 
-const ContactCtaCard = () => {
+interface ContactCtaCardProps {
+  title?: string;
+  description?: string;
+}
+
+const ContactCtaCard = ({
+  title = "Want help navigating your options?",
+  description = "We're not a solar company — we're an independent resource here to help Austin homeowners understand rebates, incentives, and what questions to ask installers.",
+}: ContactCtaCardProps = {}) => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
@@ -42,11 +50,8 @@ const ContactCtaCard = () => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <p className="text-xl font-bold text-foreground mb-1">Want help navigating your options?</p>
-              <p className="text-sm text-muted-foreground">
-                We're not a solar company — we're an independent resource here to help Austin homeowners
-                understand rebates, incentives, and what questions to ask installers.
-              </p>
+              <p className="text-xl font-bold text-foreground mb-1">{title}</p>
+              <p className="text-sm text-muted-foreground">{description}</p>
             </div>
             <Input
               type="email"

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
@@ -62,13 +62,7 @@ const LifestyleAssessmentForm = ({ onSubmit, loading = false, initialHomeType }:
 
   return (
     <Card className="border-2 shadow-lg">
-      <CardHeader>
-        <CardTitle>Beyond solar: what's right for you?</CardTitle>
-        <CardDescription>
-          A few questions help us surface the highest-impact moves for your home, commute, and lifestyle — EVs, electrification, efficiency, and more.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Housing Status */}
           <div className="space-y-3">

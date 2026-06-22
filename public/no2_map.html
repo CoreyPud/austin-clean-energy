@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+    .leaflet-control-attribution { font-size: 10px; }
+    #scroll-hint {
+      display: none; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.55); color: #fff;
+      padding: 8px 14px; border-radius: 6px; font-size: 13px;
+      pointer-events: none; z-index: 1000; white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="scroll-hint">Hold Ctrl to zoom</div>
+  <script>
+    var params  = new URLSearchParams(window.location.search);
+    var token   = params.get('token') || '';
+    var img     = params.get('img') || '/no2_2026_05.png';
+    var opacity = parseFloat(params.get('opacity') || '0.45');
+
+    var map = L.map('map').setView([30.27, -97.74], 6);
+
+    if (token) {
+      L.tileLayer(
+        'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token=' + token,
+        { attribution: '© <a href="https://www.mapbox.com/">Mapbox</a>', tileSize: 256 }
+      ).addTo(map);
+    } else {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>'
+      }).addTo(map);
+    }
+
+    // Bounds shifted 0.16° south to align TROPOMI overlay with basemap
+    L.imageOverlay(img, [[25.70, -106.65], [36.36, -93.51]], { opacity: opacity }).addTo(map);
+
+    // Ctrl+scroll to zoom; show hint on plain scroll
+    map.scrollWheelZoom.disable();
+    var hintEl = document.getElementById('scroll-hint');
+    var hintTimer;
+    map.getContainer().addEventListener('wheel', function(e) {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        e.deltaY < 0 ? map.zoomIn() : map.zoomOut();
+      } else {
+        hintEl.style.display = 'block';
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(function() { hintEl.style.display = 'none'; }, 1500);
+      }
+    }, { passive: false });
+  </script>
+</body>
+</html>

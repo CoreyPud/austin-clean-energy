@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { slugifyAddress } from "@/lib/property-solar";
 import MapTokenLoader from "@/components/MapTokenLoader";
-import mapboxgl from "mapbox-gl";
+import SatellitePane from "@/components/SatellitePane";
 import {
   PropertyMap,
   type PropertyPoint,
@@ -42,35 +43,6 @@ const TYPE_COLOR: Record<string, string> = {
 
 const ALL_TYPES = ["single_family", "multifamily", "condo", "commercial", "other"] as const;
 
-function SatellitePane({ lat, lon }: { lat: number; lon: number }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef       = useRef<mapboxgl.Map | null>(null);
-  const markerRef    = useRef<mapboxgl.Marker | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const token = (window as any).MAPBOX_TOKEN;
-    if (!token) return;
-    mapboxgl.accessToken = token;
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: "mapbox://styles/mapbox/satellite-streets-v12",
-      center: [lon, lat],
-      zoom: 18,
-      cooperativeGestures: false,
-    });
-    mapRef.current = map;
-    markerRef.current = new mapboxgl.Marker({ color: "#ef4444" }).setLngLat([lon, lat]).addTo(map);
-    return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
-  }, []);
-
-  useEffect(() => {
-    mapRef.current?.jumpTo({ center: [lon, lat], zoom: 18 });
-    markerRef.current?.setLngLat([lon, lat]);
-  }, [lat, lon]);
-
-  return <div ref={containerRef} className="w-full h-full" />;
-}
 
 export default function PropertyViewer() {
   const navigate = useNavigate();
@@ -568,7 +540,7 @@ export default function PropertyViewer() {
           <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
             {/* Satellite map */}
             <div className="flex-shrink-0" style={{ height: "52vh" }}>
-              <SatellitePane lat={sel.lat} lon={sel.lon} />
+              <SatellitePane lat={sel.lat} lon={sel.lon} className="w-full h-full" />
             </div>
             {/* Property info */}
             <div className="flex-1 overflow-auto bg-card p-4 space-y-4">
@@ -654,6 +626,12 @@ export default function PropertyViewer() {
                       <p className="text-xs text-muted-foreground">
                         Imagery: {sel.solar_imagery_quality ?? "—"} · {sel.solar_imagery_date ?? "—"}
                       </p>
+                      <Link
+                        to={`/property/${sel.pid}/${slugifyAddress(sel.address ?? "")}`}
+                        className="text-xs text-primary underline underline-offset-2"
+                      >
+                        View property solar page →
+                      </Link>
                     </>
                   )}
                 </div>
