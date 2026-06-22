@@ -13,6 +13,7 @@ import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import { Slider } from "@/components/ui/slider";
 import { useSeo } from "@/hooks/use-seo";
+import PageHeader from "@/components/PageHeader";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import {
   TrendingUp,
@@ -456,27 +457,11 @@ const CityOverview = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary via-secondary to-accent py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center text-white">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="mb-6 text-white hover:bg-white/10"
-            >
-              <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
-              Back to Home
-            </Button>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Austin's Clean Energy Progress
-            </h1>
-            <p className="text-xl md:text-2xl text-white/90">
-              Real-time insights into our city's solar adoption, energy efficiency, and path to net-zero emissions
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        title="Austin's Clean Energy Progress"
+        subtitle="Real-time insights into our city's solar adoption, energy efficiency, and path to net-zero emissions."
+        contentClassName="max-w-5xl mx-auto px-4"
+      />
 
       {/* Key Metrics */}
       <section className="py-12 bg-muted/30">

@@ -28,8 +28,12 @@ import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
+import ScrollToTop from "./components/ScrollToTop";
 import EVComparison from "./pages/EVComparison";
+import EVProgress from "./pages/EVProgress";
+import CleanEnergyPlan from "./pages/CleanEnergyPlan";
 import PropertyViewer from "./pages/PropertyViewer";
+import PropertyPage from "./pages/PropertyPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +50,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <TrailingSlashRedirect />
         <Routes>
           {/* Public pages with footer */}
@@ -60,6 +65,8 @@ const App = () => (
             <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
             <Route path="/decarb-dashboard" element={<SolarMap />} />
             <Route path="/ev-comparison" element={<EVComparison />} />
+            <Route path="/ev-progress" element={<EVProgress />} />
+            <Route path="/clean-energy-plan" element={<CleanEnergyPlan />} />
 
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />
@@ -70,6 +77,7 @@ const App = () => (
 
           {/* Pages without footer */}
           <Route path="/property-viewer" element={<PropertyViewer />} />
+          <Route path="/property/:pid/:slug?" element={<PropertyPage />} />
           <Route path="/embed/area-analysis" element={<EmbedAreaAnalysis />} />
           <Route path="/import-solar-data" element={<ImportSolarData />} />
           <Route path="/admin" element={<AdminLogin />} />

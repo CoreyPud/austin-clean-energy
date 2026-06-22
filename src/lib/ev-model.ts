@@ -29,8 +29,18 @@ export const AUSTIN_EV_INCENTIVES = {
   federalEvCredit: 0,            // Expired Oct 1, 2025
 } as const;
 
-// ERCOT grid carbon intensity
-const ERCOT_CO2_KG_PER_MWH = 400;
+// Austin Energy grid carbon intensity (not ERCOT avg) — AE is ~55% carbon-free (wind, solar, nuclear)
+// Source: Austin Energy 2024 Resource Guide
+const ERCOT_CO2_KG_PER_MWH = 200;
+
+// Lifecycle manufacturing CO₂
+// Gas car: fixed ~6 t — variation by segment is small vs. EV battery-driven spread (ICCT 2021)
+export const GAS_MFG_CO2_KG = 6_000;
+// EV battery: ~70 kg CO₂/kWh (ICCT 2021, ANL 2022, UCS 2020 median); rest of vehicle ≈ gas car
+export const EV_BATTERY_CO2_KG_PER_KWH = 70;
+// Estimated EPA range used to back-calculate battery size from evMiPerKwh
+// ~270 mi is close to the sales-weighted average for current mainstream EVs
+export const ASSUMED_EV_RANGE_MILES = 270;
 // EPA: CO2 per gallon of gasoline burned
 const CO2_KG_PER_GAL_GAS = 8.89;
 // EPA: average domestic round-trip flight, per passenger
@@ -115,6 +125,11 @@ export interface EVResults {
   evCo2KgPerYear: number;
   flightsEquivalent: number;
   tenYearSavings: number;
+  estimatedBatteryKwh: number;
+  evMfgCo2Kg: number;
+  mfgCarbonPremiumKg: number;
+  carbonBreakevenYears: number | null;
+  carbonBreakevenMiles: number | null;
 }
 
 // Typical used prices by model year — simple depreciation curves
@@ -217,6 +232,21 @@ export function calcEVResults(inputs: EVInputs): EVResults {
   const treesEquivalent = Math.round(co2AvoidedKgPerYear / CO2_KG_PER_TREE_YEAR);
   const flightsEquivalent = Math.round(co2AvoidedKgPerYear / CO2_KG_PER_FLIGHT_ROUNDTRIP);
 
+  // Estimate battery size from efficiency — less efficient vehicles have larger batteries
+  // Uses assumed typical EPA range (270 mi) as the connecting variable
+  const estimatedBatteryKwh = ASSUMED_EV_RANGE_MILES / Math.max(effectiveMiPerKwh, 0.5);
+  const evMfgCo2Kg = Math.round(estimatedBatteryKwh * EV_BATTERY_CO2_KG_PER_KWH + GAS_MFG_CO2_KG);
+  const mfgCarbonPremiumKg = evMfgCo2Kg - GAS_MFG_CO2_KG;
+
+  // Manufacturing carbon breakeven: years until cumulative EV lifecycle CO₂ < gas lifecycle CO₂
+  const operationalDeltaPerYear = gasCo2KgPerYear - evCo2KgPerYear;
+  const carbonBreakevenYears = operationalDeltaPerYear > 0
+    ? mfgCarbonPremiumKg / operationalDeltaPerYear
+    : null;
+  const carbonBreakevenMiles = carbonBreakevenYears != null
+    ? carbonBreakevenYears * annualMiles
+    : null;
+
   return {
     effectiveMiPerKwh,
     evAnnualFuel,
@@ -242,5 +272,10 @@ export function calcEVResults(inputs: EVInputs): EVResults {
     evCo2KgPerYear,
     flightsEquivalent,
     tenYearSavings,
+    estimatedBatteryKwh,
+    evMfgCo2Kg,
+    mfgCarbonPremiumKg,
+    carbonBreakevenYears,
+    carbonBreakevenMiles,
   };
 }

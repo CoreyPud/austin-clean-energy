@@ -24,6 +24,7 @@ import Map from "@/components/Map";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSeo } from "@/hooks/use-seo";
+import PageHeader from "@/components/PageHeader";
 import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ZipSolarAdoptionTrend from "@/components/assessment/ZipSolarAdoptionTrend";
@@ -368,20 +369,13 @@ const PropertyAssessment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+    <div className="min-h-screen bg-background">
+      <PageHeader
+        title="Calculate Solar Savings in Austin"
+        subtitle="Find out your solar potential and estimated savings based on Austin's energy and solar buyback policies."
+      />
       <div className="container mx-auto px-4 py-8">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-
         <div className="max-w-5xl mx-auto">
-          <div className="mb-8 animate-fade-in">
-            <h1 className="text-4xl font-bold mb-3 text-foreground">Calculate Solar Savings in Austin</h1>
-            <p className="text-lg text-muted-foreground">
-              Find out your solar potential and estimated savings based on Austin's energy and solar buyback policies
-            </p>
-          </div>
 
           {/* Address Form */}
           <Card className="mb-8 shadow-lg border-2">

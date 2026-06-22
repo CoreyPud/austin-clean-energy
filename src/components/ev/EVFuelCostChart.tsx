@@ -9,8 +9,8 @@ interface Props {
 }
 
 const COLOR_FUEL  = "hsl(var(--primary))";
-const COLOR_MAINT = "hsl(var(--muted-foreground))";
-const COLOR_REG   = "#f59e0b"; // amber
+const COLOR_MAINT = "#3b82f6";
+const COLOR_REG   = "#f59e0b";
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -54,7 +54,7 @@ const EVFuelCostChart = ({ results }: Props) => {
       registration: gasRegistrationFee,
     },
     {
-      vehicle: "Electric",
+      vehicle: "Electric Vehicle",
       fuel: Math.round(evAnnualFuel),
       maintenance: Math.round(evAnnualMaintenance),
       registration: evRegistrationSurcharge,

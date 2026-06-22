@@ -96,9 +96,9 @@ const EVEnvironmentalImpact = ({ results }: Props) => {
                 Your gas vehicle produces {Math.round(gasCo2KgPerYear).toLocaleString()} kg CO₂/year.
               </p>
               <p>
-                <strong className="text-foreground">EV emissions:</strong> ERCOT grid carbon intensity of 400 kg CO₂ per MWh —
-                roughly a third of Texas grid power already comes from wind and solar.
-                Your EV produces {Math.round(evCo2KgPerYear).toLocaleString()} kg CO₂/year charging on the Austin grid.
+                <strong className="text-foreground">EV emissions:</strong> Austin Energy grid intensity of 200 kg CO₂ per MWh —
+                roughly 55% carbon-free (wind, solar, nuclear), about half the ERCOT grid average.
+                Your EV produces {Math.round(evCo2KgPerYear).toLocaleString()} kg CO₂/year charging on Austin Energy.
               </p>
               <p>
                 <strong className="text-foreground">Equivalencies:</strong> Trees absorb ~21 kg CO₂/year.

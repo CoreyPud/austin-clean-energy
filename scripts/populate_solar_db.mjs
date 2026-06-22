@@ -1,16 +1,15 @@
 /**
- * Reads local data/google_solar/{pid}.json files and populates:
- *   - tcad_properties: solar scalar columns + solar_fetched_at
- *   - tcad_roof_segments: one row per roof face
+ * Reads local data/google_solar/{pid}.json files and pushes solar data
+ * to the DB via the solar-data-import edge function.
  *
- * Run after applying migrations 20260619200000 and 20260619210000.
- * Safe to re-run — uses upsert for segments, update for properties.
+ * Requires SOLAR_IMPORT_SECRET and VITE_SUPABASE_URL in supabase/.env or .env.local
  *
- * Usage: node scripts/populate_solar_db.mjs
+ * Usage:
+ *   node scripts/populate_solar_db.mjs          # push only PIDs in solar_targets.json
+ *   node scripts/populate_solar_db.mjs --all    # push all files in data/google_solar/
  */
 
-import { createClient } from "@supabase/supabase-js";
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -18,7 +17,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT    = join(__dirname, "..");
 const SOL_DIR = join(ROOT, "data", "google_solar");
 
-// ── Load env vars ─────────────────────────────────────────────────────────────
 function loadEnv(...files) {
   const vars = {};
   for (const f of files) {
@@ -36,33 +34,18 @@ function loadEnv(...files) {
 }
 
 const env = loadEnv(".env.local", ".env", "supabase/.env");
-const SUPABASE_URL = env.VITE_SUPABASE_URL;
-const SERVICE_KEY  = env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = env.VITE_SUPABASE_URL ?? env.SUPABASE_URL;
+const SECRET       = env.SOLAR_IMPORT_SECRET;
 
-if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error("Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
-  process.exit(1);
-}
+if (!SUPABASE_URL) { console.error("Missing SUPABASE_URL"); process.exit(1); }
+if (!SECRET)       { console.error("Missing SOLAR_IMPORT_SECRET in supabase/.env"); process.exit(1); }
 
-const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+const ENDPOINT = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/solar-data-import`;
+const ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// ── Parse a single raw file ───────────────────────────────────────────────────
 function parseFile(pid, raw) {
-  // 404 — building not found
   if (raw._status === 404) {
-    return {
-      property: {
-        pid,
-        solar_fetched_at: raw._fetched_at ?? new Date().toISOString(),
-        solar_imagery_quality: null,
-        solar_imagery_date: null,
-        solar_max_panels: null,
-        solar_max_area_m2: null,
-        solar_sunshine_hrs: null,
-        solar_panel_capacity_w: null,
-      },
-      segments: [],
-    };
+    return { property: { pid, solar_fetched_at: raw._fetched_at ?? new Date().toISOString() }, segments: [] };
   }
 
   const sp = raw.solarPotential ?? {};
@@ -99,19 +82,40 @@ function parseFile(pid, raw) {
   return { property, segments };
 }
 
-// ── Batch upsert helper ───────────────────────────────────────────────────────
-async function upsertBatch(table, rows, onConflict) {
-  if (!rows.length) return;
-  const { error } = await sb.from(table).upsert(rows, { onConflict });
-  if (error) throw new Error(`${table} upsert: ${error.message}`);
+async function pushBatch(properties, segments) {
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SECRET}`,
+      ...(ANON_KEY ? { "apikey": ANON_KEY } : {}),
+    },
+    body: JSON.stringify({ properties, segments }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.ok) throw new Error(JSON.stringify(data));
+  return data;
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-const files = readdirSync(SOL_DIR).filter(f => f.endsWith(".json"));
-console.log(`Found ${files.length} local files in data/google_solar/`);
+const pushAll     = process.argv.includes("--all");
+const TARGETS_FILE = join(ROOT, "data", "solar_targets.json");
+
+let files;
+if (pushAll) {
+  files = readdirSync(SOL_DIR).filter(f => f.endsWith(".json"));
+  console.log(`Mode: --all (${files.length} files in data/google_solar/)`);
+} else {
+  if (!existsSync(TARGETS_FILE)) {
+    console.error("data/solar_targets.json not found. Run export_solar_targets.mjs first, or use --all.");
+    process.exit(1);
+  }
+  const targets = JSON.parse(readFileSync(TARGETS_FILE, "utf8"));
+  files = targets.map(t => `${t.pid}.json`).filter(f => existsSync(join(SOL_DIR, f)));
+  console.log(`Mode: targets only (${files.length} of ${targets.length} targets have local files)`);
+}
 
 const BATCH = 200;
-let propRows = [], segRows = [], done = 0, skipped404 = 0;
+let propBatch = [], segBatch = [], done = 0, skipped404 = 0;
 
 for (const f of files) {
   const pid = f.replace(".json", "");
@@ -119,28 +123,22 @@ for (const f of files) {
   const { property, segments } = parseFile(pid, raw);
 
   if (raw._status === 404) skipped404++;
-
-  propRows.push(property);
-  segRows.push(...segments);
+  propBatch.push(property);
+  segBatch.push(...segments);
   done++;
 
-  if (propRows.length >= BATCH) {
-    process.stdout.write(`\r  Upserting ${done}/${files.length}...`);
-    await upsertBatch("tcad_properties", propRows, "pid");
-    await upsertBatch("tcad_roof_segments", segRows, "pid,segment_index");
-    propRows = [];
-    segRows  = [];
+  if (propBatch.length >= BATCH) {
+    process.stdout.write(`\r  Pushing ${done}/${files.length}...`);
+    await pushBatch(propBatch, segBatch);
+    propBatch = []; segBatch = [];
   }
 }
 
-// flush remainder
-if (propRows.length) {
-  process.stdout.write(`\r  Upserting ${done}/${files.length}...`);
-  await upsertBatch("tcad_properties", propRows, "pid");
-  await upsertBatch("tcad_roof_segments", segRows, "pid,segment_index");
+if (propBatch.length) {
+  process.stdout.write(`\r  Pushing ${done}/${files.length}...`);
+  await pushBatch(propBatch, segBatch);
 }
 
 console.log(`\nDone.`);
 console.log(`  Properties updated: ${files.length}`);
 console.log(`  404s (no building): ${skipped404}`);
-console.log(`  Segments inserted:  ${files.length - skipped404} properties × avg segments`);

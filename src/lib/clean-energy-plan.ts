@@ -66,10 +66,21 @@ export function buildRecommendationCards(opts: CardOpts) {
         `Net cost after $${savings.austinEnergyRebateUsd.toLocaleString()} rebate: ~$${savings.netSystemCostUsd.toLocaleString()}`,
         `25-year savings: ~$${savings.twentyFiveYearSavingsUsd.toLocaleString()}`,
       ],
-      cta: {
-        label: "Calculate Solar Savings",
-        url: "/property-assessment",
-      },
+      cta: { label: "Calculate Solar Savings", url: "/property-assessment" },
+      icon: "Sun",
+    });
+  } else if (!hasSolar && isOwner && !hasSolarPotential) {
+    cards.push({
+      id: "solar",
+      impact: "high",
+      category: "Home Power",
+      title: "Explore rooftop solar",
+      summary: "Austin averages 220+ sunny days a year. Austin Energy offers rebates up to $2,500 and the federal tax credit covers 30% of installation costs.",
+      bullets: [
+        "Austin Energy solar rebate: up to $2,500",
+        "Federal Investment Tax Credit: 30% of system cost",
+      ],
+      cta: { label: "See your roof's potential", url: "/property-assessment" },
       icon: "Sun",
     });
   } else if (!isOwner) {
