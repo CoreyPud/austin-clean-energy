@@ -16,6 +16,11 @@ import {
 const PAGE_SIZE   = 1000;
 const MAX_RESULTS = 10_000;
 
+const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+function azimuthLabel(deg: number): string {
+  return COMPASS[Math.round(deg / 22.5) % 16];
+}
+
 function haversineMi(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -62,6 +67,21 @@ export default function PropertyViewer() {
   const [queryError, setQueryError] = useState<string | null>(null);
   const [focusPid,   setFocusPid]   = useState<string | null>(null);
   const [tablePage,  setTablePage]  = useState(0);
+
+  const [segments, setSegments] = useState<{
+    segment_index: number; pitch_deg: number; azimuth_deg: number;
+    area_m2: number; sunshine_median: number; sunshine_max: number;
+  }[]>([]);
+
+  useEffect(() => {
+    if (!focusPid) { setSegments([]); return; }
+    supabase
+      .from("tcad_roof_segments")
+      .select("segment_index, pitch_deg, azimuth_deg, area_m2, sunshine_median, sunshine_max")
+      .eq("pid", focusPid)
+      .order("segment_index")
+      .then(({ data }) => setSegments(data ?? []));
+  }, [focusPid]);
 
   // Static data: gas plants + proposed sites
   useEffect(() => {
@@ -539,7 +559,7 @@ export default function PropertyViewer() {
         return (
           <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
             {/* Satellite map */}
-            <div className="flex-shrink-0" style={{ height: "52vh" }}>
+            <div className="flex-shrink-0" style={{ height: "21vh" }}>
               <SatellitePane lat={sel.lat} lon={sel.lon} className="w-full h-full" />
             </div>
             {/* Property info */}
@@ -623,6 +643,31 @@ export default function PropertyViewer() {
                           </dd>
                         </div>
                       </dl>
+                      {segments.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Roof segments</p>
+                          <table className="w-full text-xs border-collapse">
+                            <thead>
+                              <tr className="text-muted-foreground">
+                                <th className="text-left font-normal pb-1">Face</th>
+                                <th className="text-right font-normal pb-1">Pitch</th>
+                                <th className="text-right font-normal pb-1">Area</th>
+                                <th className="text-right font-normal pb-1">Sun hrs</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {segments.map(s => (
+                                <tr key={s.segment_index} className="border-t border-border/50">
+                                  <td className="py-0.5 font-medium">{azimuthLabel(s.azimuth_deg)} <span className="text-muted-foreground font-normal">{Math.round(s.azimuth_deg)}°</span></td>
+                                  <td className="text-right py-0.5">{Math.round(s.pitch_deg)}°</td>
+                                  <td className="text-right py-0.5">{Math.round(s.area_m2 * 10.764)} sqft</td>
+                                  <td className="text-right py-0.5">{Math.round(s.sunshine_median).toLocaleString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         Imagery: {sel.solar_imagery_quality ?? "—"} · {sel.solar_imagery_date ?? "—"}
                       </p>
