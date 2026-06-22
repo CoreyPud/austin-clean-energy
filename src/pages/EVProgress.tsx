@@ -4,7 +4,7 @@ import {
   ArrowLeft, ArrowRight, Zap, Leaf, DollarSign, Car, TrendingUp, Plane, TreePine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useSeo } from "@/hooks/use-seo";
 import PageHeader from "@/components/PageHeader";
 import EVAdoptionChart from "@/components/ev/EVAdoptionChart";
@@ -128,14 +128,14 @@ const EVProgress = () => {
           <section>
             <h2 className="text-2xl font-bold mb-1">Where the Money Goes</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              Gas fuel costs are split between oil companies, refiners, distributors, and state/federal highway taxes,
-              with a small retailer margin staying local. EV charging costs go to Austin Energy, a city-owned utility
-              whose net revenue is partially transferred to the City of Austin's general fund.
+              Most gas spending leaves Austin — oil companies, refiners, and distributors take the bulk, with state and federal highway taxes and a small local retailer margin accounting for the rest.
+              EV charging dollars go entirely to Austin Energy, a city-owned utility whose net revenue flows back into the City's general fund, supporting parks, libraries, and city services.
+              Across Austin's {s.evCount.toLocaleString()} registered EVs, that's an estimated {fmtM(s.fleetAeRevenue)}/yr staying local — roughly {s.localMultiple}× more than the equivalent gas spending.
             </p>
 
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div className="grid md:grid-cols-2 gap-4 items-stretch">
               {/* Gas card */}
-              <Card className="border-amber-200/60">
+              <Card className="border-amber-200/60 flex flex-col">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
@@ -143,50 +143,24 @@ const EVProgress = () => {
                     </div>
                     <div>
                       <CardTitle className="text-base">Gas Vehicle</CardTitle>
-                      <CardDescription>{fmt$(s.gasFuelCost)}/yr in fuel · {Math.round(s.gasGalsPerYr)} gal</CardDescription>
+                      <CardDescription>{fmt$(s.gasFuelCost)}/yr · {Math.round(s.gasGalsPerYr)} gal</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <MoneyRow
-                    label="Oil company / refinery / distribution"
-                    amount={s.gasOilCo}
-                    pct={s.gasOilCo / s.gasFuelCost}
-                    sentiment="bad"
-                    note="leaves Austin"
-                  />
-                  <MoneyRow
-                    label="Federal highway tax"
-                    amount={s.gasFedTax}
-                    pct={s.gasFedTax / s.gasFuelCost}
-                    sentiment="neutral"
-                    note="federal fund"
-                  />
-                  <MoneyRow
-                    label="Texas highway tax"
-                    amount={s.gasTxTax}
-                    pct={s.gasTxTax / s.gasFuelCost}
-                    sentiment="neutral"
-                    note="state fund"
-                  />
-                  <MoneyRow
-                    label="Local gas station margin"
-                    amount={s.gasRetailer}
-                    pct={s.gasRetailer / s.gasFuelCost}
-                    sentiment="good"
-                    note="stays in Austin"
-                  />
-                  <div className="border-t pt-2 mt-1 flex justify-between text-sm">
-                    <span className="text-muted-foreground">Stays in Austin</span>
-                    <span className="font-semibold text-amber-600">
-                      {fmt$(s.gasRetailer)}/yr (~{Math.round(s.gasRetailer / s.gasFuelCost * 100)}%)
-                    </span>
-                  </div>
+                <CardContent className="space-y-2 flex-1">
+                  <MoneyRow label="Oil company / refinery / distribution" amount={s.gasOilCo} pct={s.gasOilCo / s.gasFuelCost} sentiment="bad" />
+                  <MoneyRow label="Federal highway tax" amount={s.gasFedTax} pct={s.gasFedTax / s.gasFuelCost} sentiment="neutral" />
+                  <MoneyRow label="Texas highway tax" amount={s.gasTxTax} pct={s.gasTxTax / s.gasFuelCost} sentiment="neutral" />
+                  <MoneyRow label="Local gas station margin" amount={s.gasRetailer} pct={s.gasRetailer / s.gasFuelCost} sentiment="good" />
                 </CardContent>
+                <CardFooter className="border-t pt-3 flex justify-between text-sm">
+                  <span className="text-muted-foreground">Stays in Austin</span>
+                  <span className="font-semibold text-amber-600">{fmt$(s.gasRetailer)}/yr (~{Math.round(s.gasRetailer / s.gasFuelCost * 100)}%)</span>
+                </CardFooter>
               </Card>
 
               {/* EV card */}
-              <Card className="border-primary/30 bg-primary/5">
+              <Card className="border-primary/30 bg-primary/5 flex flex-col">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
@@ -194,51 +168,19 @@ const EVProgress = () => {
                     </div>
                     <div>
                       <CardTitle className="text-base">Electric Vehicle</CardTitle>
-                      <CardDescription>{fmt$(s.evFuelCost)}/yr in electricity · {Math.round(s.evKwhPerYr).toLocaleString()} kWh</CardDescription>
+                      <CardDescription>{fmt$(s.evFuelCost)}/yr · {Math.round(s.evKwhPerYr).toLocaleString()} kWh</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <MoneyRow
-                    label="Austin Energy (city-owned utility)"
-                    amount={s.evFuelCost}
-                    pct={1}
-                    sentiment="good"
-                    note="stays in Austin"
-                  />
-                  <div className="rounded-md bg-primary/10 px-3 py-2.5 text-xs text-muted-foreground leading-relaxed">
-                    Austin Energy is owned by the City of Austin. A portion of its annual revenue is transferred
-                    directly to the City's general fund, supporting parks, libraries, and city services.
-                  </div>
-                  <div className="border-t pt-2 mt-1 flex justify-between text-sm">
-                    <span className="text-muted-foreground">Stays in Austin</span>
-                    <span className="font-semibold text-primary">{fmt$(s.evFuelCost)}/yr (~100%)</span>
-                  </div>
+                <CardContent className="space-y-2 flex-1">
+                  <MoneyRow label="Austin Energy (city-owned utility)" amount={s.evFuelCost} pct={1} sentiment="good" />
                 </CardContent>
+                <CardFooter className="border-t pt-3 flex justify-between text-sm">
+                  <span className="text-muted-foreground">Stays in Austin</span>
+                  <span className="font-semibold text-primary">{fmt$(s.evFuelCost)}/yr (~100%)</span>
+                </CardFooter>
               </Card>
             </div>
-
-            {/* AE revenue highlight */}
-            <div className="rounded-xl border-2 border-primary/30 bg-primary/5 px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Estimated AE Revenue from Austin EVs</p>
-                <p className="text-4xl font-bold text-primary tabular-nums">{fmtM(s.fleetAeRevenue)}<span className="text-lg font-medium text-muted-foreground">/yr</span></p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {s.evCount.toLocaleString()} EVs × {fmt$(s.evFuelCost)}/yr per vehicle in electricity — all paid to Austin Energy, a city-owned utility.
-                </p>
-              </div>
-              <div className="text-center sm:text-right shrink-0 space-y-1">
-                <p className="text-2xl font-bold text-foreground tabular-nums">{s.localMultiple}×</p>
-                <p className="text-xs text-muted-foreground">more local than equivalent<br/>gas station purchases</p>
-              </div>
-            </div>
-
-            {/* Fleet-wide footnote */}
-            <p className="text-xs text-muted-foreground leading-relaxed px-1">
-              Gas estimate: {Math.round(s.gasGalsPerYr)} gal/yr × $3.50 = {fmt$(s.gasFuelCost)}, of which ~{Math.round(GAS_RETAILER_MARGIN / GAS_PRICE * 100)}% stays local (retailer margin).
-              EV estimate: {Math.round(s.evKwhPerYr).toLocaleString()} kWh/yr × $0.09 = {fmt$(s.evFuelCost)}, all to Austin Energy.
-              Sources: EIA gas price breakdown, TxDOT, Austin Energy rate schedule.
-            </p>
           </section>
 
           {/* Climate impact */}
@@ -396,9 +338,9 @@ const SENTIMENT_COLORS = {
 };
 
 const MoneyRow = ({
-  label, amount, pct, sentiment, note,
+  label, amount, pct, sentiment,
 }: {
-  label: string; amount: number; pct: number; sentiment: "good" | "neutral" | "bad"; note: string;
+  label: string; amount: number; pct: number; sentiment: "good" | "neutral" | "bad";
 }) => (
   <div className="space-y-1">
     <div className="flex justify-between items-baseline text-sm">
@@ -415,7 +357,6 @@ const MoneyRow = ({
         style={{ width: `${Math.round(pct * 100)}%` }}
       />
     </div>
-    <p className="text-[10px] text-muted-foreground">{note}</p>
   </div>
 );
 
