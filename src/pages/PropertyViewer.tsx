@@ -12,6 +12,7 @@ import {
   type GasPlantPoint,
   type ProposedSitePoint,
 } from "@/components/PropertyMap";
+import { PropertyEditModal } from "@/components/PropertyEditModal";
 
 const PAGE_SIZE   = 1000;
 const MAX_RESULTS = 10_000;
@@ -73,6 +74,15 @@ export default function PropertyViewer() {
     area_m2: number; sunshine_median: number; sunshine_max: number;
   }[]>([]);
 
+  const [isAdmin,  setIsAdmin]  = useState(false);
+  const [editPid,  setEditPid]  = useState<string | null>(null);
+
+  useEffect(() => {
+    const token   = sessionStorage.getItem('admin_token');
+    const expires = sessionStorage.getItem('admin_token_expires');
+    setIsAdmin(!!token && !!expires && new Date(expires) > new Date());
+  }, []);
+
   useEffect(() => {
     if (!focusPid) { setSegments([]); return; }
     supabase
@@ -115,7 +125,7 @@ export default function PropertyViewer() {
       });
   }, []);
 
-  const SOLAR_SELECT = "*, solar_installations(permit_number, issued_date, completed_date, installed_kw, contractor_company, total_job_valuation, status_current, link)";
+  const SOLAR_SELECT = "*, solar_installations(id, permit_number, issued_date, completed_date, installed_kw, contractor_company, total_job_valuation, status_current, link)";
 
   const mapRow = (p: any): PropertyPoint => {
     const permits: any[] = (p.solar_installations ?? [])
@@ -564,11 +574,18 @@ export default function PropertyViewer() {
             </div>
             {/* Property info */}
             <div className="flex-1 overflow-auto bg-card p-4 space-y-4">
-              <div>
-                <p className="text-base font-semibold text-foreground leading-snug">
-                  {sel.address ?? <span className="italic text-muted-foreground">No address</span>}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{sel.zip ?? ""}{sel.county ? ` · ${sel.county}` : ""}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-base font-semibold text-foreground leading-snug">
+                    {sel.address ?? <span className="italic text-muted-foreground">No address</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{sel.zip ?? ""}{sel.county ? ` · ${sel.county}` : ""}</p>
+                </div>
+                {isAdmin && (
+                  <Button size="sm" variant="outline" className="flex-shrink-0" onClick={() => setEditPid(focusPid)}>
+                    Edit
+                  </Button>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -726,6 +743,21 @@ export default function PropertyViewer() {
       })()}
 
       </div> {/* end body */}
+
+      {editPid && (() => {
+        const sel = properties.find(p => p.pid === editPid);
+        if (!sel) return null;
+        return (
+          <PropertyEditModal
+            property={sel}
+            onClose={() => setEditPid(null)}
+            onSave={(updated) => {
+              setProperties(prev => prev.map(p => p.pid === updated.pid ? updated : p));
+              setEditPid(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
