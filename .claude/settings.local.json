@@ -12,7 +12,6 @@
       "Bash(ls /tmp/supabase*)",
       "Bash(cp /tmp/supabase.exe /usr/local/bin/supabase)",
       "Bash(chmod +x /usr/local/bin/supabase)",
-      "*",
       "Bash(mkdir -p ~/bin)",
       "Bash(cp /tmp/supabase.exe ~/bin/supabase)",
       "Bash(chmod +x ~/bin/supabase)",
