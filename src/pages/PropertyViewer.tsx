@@ -1,7 +1,11 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { slugifyAddress } from "@/lib/property-solar";
 import MapTokenLoader from "@/components/MapTokenLoader";
@@ -12,6 +16,7 @@ import {
   type GasPlantPoint,
   type ProposedSitePoint,
 } from "@/components/PropertyMap";
+import { PropertyEditModal } from "@/components/PropertyEditModal";
 
 const PAGE_SIZE   = 1000;
 const MAX_RESULTS = 10_000;
@@ -73,6 +78,50 @@ export default function PropertyViewer() {
     area_m2: number; sunshine_median: number; sunshine_max: number;
   }[]>([]);
 
+  const [isAdmin,        setIsAdmin]        = useState(false);
+  const [editPid,        setEditPid]        = useState<string | null>(null);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminPassword,  setAdminPassword]  = useState("");
+  const [adminLogging,   setAdminLogging]   = useState(false);
+
+  useEffect(() => {
+    const token   = sessionStorage.getItem('admin_token');
+    const expires = sessionStorage.getItem('admin_token_expires');
+    setIsAdmin(!!token && !!expires && new Date(expires) > new Date());
+  }, []);
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminPassword.trim()) return;
+    setAdminLogging(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-auth', {
+        body: { action: 'login', password: adminPassword },
+      });
+      if (error) throw error;
+      if (data?.success && data?.token) {
+        sessionStorage.setItem('admin_token', data.token);
+        sessionStorage.setItem('admin_token_expires', data.expiresAt);
+        setIsAdmin(true);
+        setShowAdminLogin(false);
+        setAdminPassword("");
+        toast.success("Logged in as admin");
+      } else {
+        toast.error(data?.error || "Invalid password");
+      }
+    } catch {
+      toast.error("Login failed");
+    } finally {
+      setAdminLogging(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('admin_token');
+    sessionStorage.removeItem('admin_token_expires');
+    setIsAdmin(false);
+  };
+
   useEffect(() => {
     if (!focusPid) { setSegments([]); return; }
     supabase
@@ -115,7 +164,7 @@ export default function PropertyViewer() {
       });
   }, []);
 
-  const SOLAR_SELECT = "*, solar_installations(permit_number, issued_date, completed_date, installed_kw, contractor_company, total_job_valuation, status_current, link)";
+  const SOLAR_SELECT = "*, solar_installations(id, permit_number, issued_date, completed_date, installed_kw, contractor_company, total_job_valuation, status_current, link)";
 
   const mapRow = (p: any): PropertyPoint => {
     const permits: any[] = (p.solar_installations ?? [])
@@ -284,6 +333,21 @@ export default function PropertyViewer() {
           </span>
         )}
         {queryError && <span className="text-sm text-red-600 ml-2 font-medium">{queryError}</span>}
+        <div className="ml-auto flex items-center gap-2">
+          {isAdmin ? (
+            <>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Lock className="h-3 w-3" /> Admin
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleAdminLogout}>Log out</Button>
+            </>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setShowAdminLogin(true)}>
+              <Lock className="h-3.5 w-3.5 mr-1" />
+              Admin login
+            </Button>
+          )}
+        </div>
       </header>
 
       {/* Body: left (map+table) + right panel */}
@@ -564,11 +628,18 @@ export default function PropertyViewer() {
             </div>
             {/* Property info */}
             <div className="flex-1 overflow-auto bg-card p-4 space-y-4">
-              <div>
-                <p className="text-base font-semibold text-foreground leading-snug">
-                  {sel.address ?? <span className="italic text-muted-foreground">No address</span>}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{sel.zip ?? ""}{sel.county ? ` · ${sel.county}` : ""}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-base font-semibold text-foreground leading-snug">
+                    {sel.address ?? <span className="italic text-muted-foreground">No address</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{sel.zip ?? ""}{sel.county ? ` · ${sel.county}` : ""}</p>
+                </div>
+                {isAdmin && (
+                  <Button size="sm" variant="outline" className="flex-shrink-0" onClick={() => setEditPid(focusPid)}>
+                    Edit
+                  </Button>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -726,6 +797,52 @@ export default function PropertyViewer() {
       })()}
 
       </div> {/* end body */}
+
+      <Dialog open={showAdminLogin} onOpenChange={open => { setShowAdminLogin(open); setAdminPassword(""); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-4 w-4" /> Admin login
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAdminLogin} className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-pw">Password</Label>
+              <Input
+                id="admin-pw"
+                type="password"
+                autoFocus
+                value={adminPassword}
+                onChange={e => setAdminPassword(e.target.value)}
+                disabled={adminLogging}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowAdminLogin(false)} disabled={adminLogging}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={adminLogging || !adminPassword.trim()}>
+                {adminLogging ? "Logging in…" : "Log in"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {editPid && (() => {
+        const sel = properties.find(p => p.pid === editPid);
+        if (!sel) return null;
+        return (
+          <PropertyEditModal
+            property={sel}
+            onClose={() => setEditPid(null)}
+            onSave={(updated) => {
+              setProperties(prev => prev.map(p => p.pid === updated.pid ? updated : p));
+              setEditPid(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

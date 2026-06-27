@@ -30,6 +30,12 @@ async function validateToken(token: string | null): Promise<boolean> {
   }
 }
 
+function stripKeys<T extends Record<string, unknown>>(obj: T, ...keys: string[]): Record<string, unknown> {
+  const out = { ...obj };
+  for (const k of keys) delete out[k];
+  return out;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -50,46 +56,74 @@ serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    const { pid, fields } = await req.json();
+    const body = await req.json();
 
-    if (!pid) {
-      return new Response(
-        JSON.stringify({ error: 'pid is required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
+    if (!body.fields || typeof body.fields !== 'object' || Array.isArray(body.fields)) {
       return new Response(
         JSON.stringify({ error: 'fields object is required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Guard only the primary key — overwriting pid would orphan related rows
-    const { pid: _drop, ...updateFields } = fields as Record<string, unknown>;
+    // --- Update a solar_installations permit row ---
+    if (body.permit_id != null) {
+      const updateFields = stripKeys(body.fields as Record<string, unknown>, 'id', 'tcad_pid');
 
-    if (Object.keys(updateFields).length === 0) {
+      if (Object.keys(updateFields).length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'No fields to update' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('solar_installations')
+        .update(updateFields)
+        .eq('id', body.permit_id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('Updated solar_installations id:', body.permit_id, 'fields:', Object.keys(updateFields));
+
       return new Response(
-        JSON.stringify({ error: 'No fields to update' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ success: true, updated: data }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { data, error } = await supabase
-      .from('tcad_properties')
-      .update(updateFields)
-      .eq('pid', pid)
-      .select()
-      .single();
+    // --- Update a tcad_properties row ---
+    if (body.pid != null) {
+      const updateFields = stripKeys(body.fields as Record<string, unknown>, 'pid');
 
-    if (error) throw error;
+      if (Object.keys(updateFields).length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'No fields to update' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
 
-    console.log('Updated tcad_properties for pid:', pid, 'fields:', Object.keys(updateFields));
+      const { data, error } = await supabase
+        .from('tcad_properties')
+        .update(updateFields)
+        .eq('pid', body.pid)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('Updated tcad_properties pid:', body.pid, 'fields:', Object.keys(updateFields));
+
+      return new Response(
+        JSON.stringify({ success: true, updated: data }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
-      JSON.stringify({ success: true, updated: data }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'pid or permit_id is required' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     );
 
   } catch (error) {
