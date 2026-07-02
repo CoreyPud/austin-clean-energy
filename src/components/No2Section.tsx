@@ -16,7 +16,7 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 const FUEL_ORDER = ["coal","oil","gas","biomass","hydro","nuclear","wind","solar","rooftop","other"] as const;
 
 const GROUPS = [
-  { key: "coal_oil",    fuels: ["coal","oil"] as string[],                                              color: "#dc2626", label: "Coal & Oil"   },
+  { key: "coal_oil",    fuels: ["coal","oil"] as string[],                                              color: "#991b1b", label: "Coal"        },
   { key: "gas",         fuels: ["gas"] as string[],                                                     color: "#d97706", label: "Gas"          },
   { key: "zero_carbon", fuels: ["biomass","nuclear","hydro","wind","solar","rooftop","other"] as string[], color: "#16a34a", label: "Zero Carbon" },
 ];
@@ -191,7 +191,7 @@ export function No2Section({ idx, onDataLoad }: Props) {
     <div className="flex flex-col xl:flex-row gap-4" style={{ alignItems: "stretch" }}>
 
       {/* Map card */}
-      <div className="xl:w-[52%] shrink-0 flex flex-col">
+      <div className="xl:w-1/3 shrink-0 flex flex-col">
         <Card className="flex flex-col flex-1">
           <CardHeader className="pb-2 shrink-0">
             <CardTitle className="text-xl">Power Plant Map</CardTitle>
@@ -219,7 +219,7 @@ export function No2Section({ idx, onDataLoad }: Props) {
               <div>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <CardTitle className="text-xl">Austin Energy Power Generation</CardTitle>
+                  <CardTitle className="text-xl">Austin Energy generation mix over time</CardTitle>
                   <CardDescription>
                     {rolling ? "12-month rolling average" : "Monthly output"} by fuel type{curLabel ? ` · ${curLabel}` : ""}
                   </CardDescription>

@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import {
   buildThirtyYearModel,
+  austinEnergyRebate,
   DEFAULT_MONTHLY_USAGE_KWH,
   DEFAULT_PRODUCTION_PER_KW,
   type CalcInputs,
@@ -46,7 +47,7 @@ const Index = () => {
       loanInterestRate: 0,
       productionPerKw: DEFAULT_PRODUCTION_PER_KW,
     };
-    return buildThirtyYearModel(inputs, SAMPLE_KW * 2950 - 2500)
+    return buildThirtyYearModel(inputs, SAMPLE_KW * 2950 - austinEnergyRebate(SAMPLE_KW, "single_family"))
       .cumulativeByYear.slice(0, 25);
   }, []);
 

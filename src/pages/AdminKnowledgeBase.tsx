@@ -39,7 +39,7 @@ const FILE_GUIDANCE: Record<string, FileGuidance> = {
   },
   resources: {
     purpose: "Contains Austin-specific programs, rebates, tax credits, and resources that users can take action on.",
-    howUsed: "The AI includes these specific programs and links in recommendations, giving users actionable next steps like 'Apply for Austin Energy's $2,500 solar rebate at [link]'.",
+    howUsed: "The AI includes these specific programs and links in recommendations, giving users actionable next steps like 'Apply for Austin Energy's $4,000 solar rebate at [link]'.",
     updateGuidelines: [
       "Verify all URLs are still active (broken links frustrate users)",
       "Update rebate/incentive amounts when programs change",

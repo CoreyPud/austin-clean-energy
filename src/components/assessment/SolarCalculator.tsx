@@ -67,12 +67,12 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
 
   const rebate = useMemo(() => austinEnergyRebate(systemKw, propertyType), [systemKw, propertyType]);
   const rebateLabel = propertyType === "commercial"
-    ? "after $0.50/W rebate"
+    ? "after $0.70/W rebate (up to 100 kW)"
     : propertyType === "non-profit"
-    ? "after $0.70/W rebate"
+    ? "after $1.00/W rebate (up to 200 kW)"
     : propertyType === "multi-family"
     ? "no rebate (virtual metering)"
-    : "after $2,500 rebate";
+    : "after $4,000 rebate";
 
   const grossCost = systemKw * costPerKw + batteryKwh * 1000;
   const installCost = useMemo(
@@ -131,8 +131,8 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                   <span className="mx-1">gross –</span>
                   <span className="text-emerald-700">{fmt$(rebate)}</span>
                   <span className="ml-1">
-                    {propertyType === "commercial" ? "$0.50/W rebate"
-                      : propertyType === "non-profit" ? "$0.70/W rebate"
+                    {propertyType === "commercial" ? "$0.70/W rebate (up to 100 kW)"
+                      : propertyType === "non-profit" ? "$1.00/W rebate (up to 200 kW)"
                       : "Austin Energy rebate"}
                   </span>
                 </p>

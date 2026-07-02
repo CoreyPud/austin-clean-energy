@@ -75,9 +75,9 @@ export function buildRecommendationCards(opts: CardOpts) {
       impact: "high",
       category: "Home Power",
       title: "Explore rooftop solar",
-      summary: "Austin averages 220+ sunny days a year. Austin Energy offers rebates up to $2,500 and the federal tax credit covers 30% of installation costs.",
+      summary: "Austin averages 220+ sunny days a year. Austin Energy offers rebates up to $4,000 and the federal tax credit covers 30% of installation costs.",
       bullets: [
-        "Austin Energy solar rebate: up to $2,500",
+        "Austin Energy solar rebate: up to $4,000",
         "Federal Investment Tax Credit: 30% of system cost",
       ],
       cta: { label: "See your roof's potential", url: "/property-assessment" },
