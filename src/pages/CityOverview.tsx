@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Play, Pause } from "lucide-react";
 import { No2Section } from "@/components/No2Section";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +27,11 @@ import {
   TreePine,
 } from "lucide-react";
 
+const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtYm(ym: number): string {
+  return `${MONTH_ABBR[(ym % 100) - 1]} ${Math.floor(ym / 100)}`;
+}
+
 const CityOverview = () => {
   useSeo({
     title: "City Overview",
@@ -52,36 +57,57 @@ const CityOverview = () => {
   const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [allPoints, setAllPoints] = useState<Array<[string, number, number, number, string | null, number?]>>([]);
-  // Shared time-slider state (controls both solar map and NO2 map)
+  // Per-section slider state
   const [no2Months, setNo2Months] = useState<string[]>([]);
   const [no2Labels, setNo2Labels] = useState<string[]>([]);
-  const [sharedIdx, setSharedIdx] = useState(0);
-  const [sharedPlaying, setSharedPlaying] = useState(false);
+  const [no2Idx, setNo2Idx] = useState(0);
+  const [no2Playing, setNo2Playing] = useState(false);
+  const [solarIdx, setSolarIdx] = useState(0);
+  const [solarPlaying, setSolarPlaying] = useState(false);
   const [mapFitKey, setMapFitKey] = useState<string | undefined>(undefined);
   const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(10);
   const loadingTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Year range 2013 → current year
+  const solarYears = useMemo(() => {
+    const years: number[] = [];
+    const end = new Date().getFullYear();
+    for (let y = 2013; y <= end; y++) years.push(y);
+    return years;
+  }, []);
+
+  // Initialise solarIdx to the latest year on mount
+  useEffect(() => {
+    if (solarYears.length) setSolarIdx(solarYears.length - 1);
+  }, [solarYears.length]);
+
   // Callback for No2Section to hand back its months/labels on first load
   const handleNo2DataLoad = useCallback((months: string[], labels: string[]) => {
     setNo2Months(months);
     setNo2Labels(labels);
-    setSharedIdx(months.length - 1);
+    setNo2Idx(months.length - 1);
   }, []);
 
-  // Auto-play timer
+  // Auto-play timers
   useEffect(() => {
-    if (!sharedPlaying || !no2Months.length) return;
+    if (!no2Playing || !no2Months.length) return;
     const id = setInterval(() => {
-      setSharedIdx((prev) => (prev >= no2Months.length - 1 ? 0 : prev + 1));
+      setNo2Idx((prev) => (prev >= no2Months.length - 1 ? 0 : prev + 1));
     }, 400);
     return () => clearInterval(id);
-  }, [sharedPlaying, no2Months.length]);
+  }, [no2Playing, no2Months.length]);
 
-  // YYYYMM integer for the current period (e.g. 202306)
-  const currentYearMonth = no2Months[sharedIdx]
-    ? parseInt(no2Months[sharedIdx].replace("_", ""), 10)
-    : 0;
+  useEffect(() => {
+    if (!solarPlaying || !solarYears.length) return;
+    const id = setInterval(() => {
+      setSolarIdx((prev) => (prev >= solarYears.length - 1 ? 0 : prev + 1));
+    }, 600);
+    return () => clearInterval(id);
+  }, [solarPlaying, solarYears.length]);
+
+  // YYYYMM ceiling for the solar map filter (end of selected year)
+  const currentYearMonth = solarYears.length > 0 ? solarYears[solarIdx] * 100 + 12 : 0;
 
   const QUARTER_COLORS = [
     'hsl(var(--primary))',
@@ -458,8 +484,8 @@ const CityOverview = () => {
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        title="Austin's Clean Energy Progress"
-        subtitle="Real-time insights into our city's solar adoption, energy efficiency, and path to net-zero emissions."
+        title="Austin's Solar Progress"
+        subtitle="Real-time insights into our city's solar adoption and path to net-zero emissions."
         contentClassName="max-w-5xl mx-auto px-4"
       />
 
@@ -503,7 +529,7 @@ const CityOverview = () => {
                     <div className="text-3xl font-bold text-primary mb-1">
                       {stats?.thisYearInstalls}
                     </div>
-                    <div className="text-sm text-muted-foreground">In the Last 12 Months</div>
+                    <div className="text-sm text-muted-foreground">Solar Installations — Last 12 Months</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -529,47 +555,20 @@ const CityOverview = () => {
         </div>
       </section>
 
-      {/* Sticky shared slider — sticks below KPIs, controls maps + charts below */}
-      <div className="sticky top-0 z-20">
-        <div className="border-b bg-background/95 backdrop-blur shadow-sm">
-          <div className="container mx-auto px-6 py-3">
-            <div className="flex items-center gap-3">
-              <Button
-                size="sm" variant="outline"
-                className="h-7 w-7 p-0 shrink-0"
-                onClick={() => setSharedPlaying((p) => !p)}
-                disabled={no2Months.length === 0}
-                aria-label={sharedPlaying ? "Pause" : "Play"}
-              >
-                {sharedPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-              </Button>
-              <Slider
-                min={0}
-                max={Math.max(no2Months.length - 1, 0)}
-                step={1}
-                value={[sharedIdx]}
-                onValueChange={([v]) => { setSharedPlaying(false); setSharedIdx(v); }}
-                disabled={no2Months.length === 0}
-                className="flex-1"
-              />
-              <span className="text-sm font-semibold text-foreground shrink-0 min-w-[72px] text-right">
-                {no2Labels[sharedIdx] ?? "—"}
-              </span>
-            </div>
-            {no2Labels.length > 0 && (
-              <div className="flex justify-between mt-1 text-xs text-muted-foreground pl-10">
-                <span>{no2Labels[0]}</span>
-                <span>{no2Labels[no2Labels.length - 1]}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Map Section */}
-      <section className="py-12">
+      {/* Solar Progress */}
+      <section className="py-12 bg-muted/30">
         <div className="container mx-auto px-4">
-          <Card>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Solar Progress
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Tracking verified solar adoption trends in Austin based on city permit data
+            </p>
+          </div>
+
+          {/* Map */}
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-2xl">Solar Installations Across Austin</CardTitle>
               {filteredClusterPoints.length === 0 && (
@@ -586,7 +585,7 @@ const CityOverview = () => {
                 </div>
               ) : (
                 <MapTokenLoader>
-                  <Map 
+                  <Map
                     className="h-[500px] rounded-lg overflow-hidden"
                     center={(() => {
                       if (!allPoints.length) return [-97.7431, 30.2672];
@@ -601,32 +600,34 @@ const CityOverview = () => {
                   />
                 </MapTokenLoader>
               )}
+              {!isLoading && solarYears.length > 0 && (
+                <div className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <Button size="sm" variant="outline" className="h-7 w-7 p-0 shrink-0"
+                      onClick={() => setSolarPlaying(p => !p)}
+                      aria-label={solarPlaying ? "Pause" : "Play"}>
+                      {solarPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                    </Button>
+                    <Slider
+                      min={0}
+                      max={solarYears.length - 1}
+                      step={1}
+                      value={[solarIdx]}
+                      onValueChange={([v]) => { setSolarPlaying(false); setSolarIdx(v); }}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-semibold shrink-0 min-w-[48px] text-right">
+                      {solarYears[solarIdx]}
+                    </span>
+                  </div>
+                  <div className="flex justify-between mt-1 text-xs text-muted-foreground pl-10">
+                    <span>{solarYears[0]}</span>
+                    <span>{solarYears[solarYears.length - 1]}</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      {/* Texas NO2 Map + Generation Charts */}
-      <section className="py-12 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <No2Section
-            idx={sharedIdx}
-            onDataLoad={handleNo2DataLoad}
-          />
-        </div>
-      </section>
-
-      {/* Solar Growth Trends */}
-      <section className="py-12 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Solar Installation Growth
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Tracking verified solar adoption trends in Austin based on city permit data
-            </p>
-          </div>
 
           {/* Cumulative property count vs cumulative solar permits, filterable by property type + ZIP */}
           {(() => {
@@ -985,6 +986,50 @@ const CityOverview = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      {/* Austin Energy Power Generation */}
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Austin Energy Power Generation
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Real-time and historical view of Austin Energy's generation mix and plant locations
+            </p>
+          </div>
+          {no2Months.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-3">
+                <Button size="sm" variant="outline" className="h-7 w-7 p-0 shrink-0"
+                  onClick={() => setNo2Playing(p => !p)}
+                  aria-label={no2Playing ? "Pause" : "Play"}>
+                  {no2Playing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                </Button>
+                <Slider
+                  min={0}
+                  max={no2Months.length - 1}
+                  step={1}
+                  value={[no2Idx]}
+                  onValueChange={([v]) => { setNo2Playing(false); setNo2Idx(v); }}
+                  className="flex-1"
+                />
+                <span className="text-sm font-semibold shrink-0 min-w-[72px] text-right">
+                  {no2Labels[no2Idx] ?? "—"}
+                </span>
+              </div>
+              <div className="flex justify-between mt-1 text-xs text-muted-foreground pl-10">
+                <span>{no2Labels[0]}</span>
+                <span>{no2Labels[no2Labels.length - 1]}</span>
+              </div>
+            </div>
+          )}
+          <No2Section
+            idx={no2Idx}
+            onDataLoad={handleNo2DataLoad}
+          />
         </div>
       </section>
 

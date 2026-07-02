@@ -39,20 +39,32 @@ export const AUSTIN_ENERGY_RATES = {
   },
 };
 
-export const AUSTIN_ENERGY_SOLAR_REBATE = 2500; // residential default
+export const AUSTIN_ENERGY_SOLAR_REBATE = 4000; // residential flat rebate (systems > 3 kW)
 
 export function austinEnergyRebate(systemKw: number, propertyType: string): number {
-  const watts = systemKw * 1000;
   switch (propertyType) {
     case "commercial":
-      return watts * 0.50; // $0.50/W, no cap specified
+      return Math.min(systemKw, 100) * 1000 * 0.70; // $0.70/W, capped at 100 kW
     case "non-profit":
-      return watts * 0.70; // $0.70/W, no cap specified
+      return Math.min(systemKw, 200) * 1000 * 1.00; // $1.00/W, capped at 200 kW
     case "multi-family":
       return 0; // virtual net metering — separate program, no upfront rebate
-    default: // single-family, condo
-      return 2500;
+    default: // single-family, condo — flat rebate for systems > 3 kW
+      return systemKw > 3 ? 4000 : 0;
   }
+}
+
+// Performance-Based Incentive (PBI) — paid per kWh generated over 5 years
+export const COMMERCIAL_PBI_YEARS = 5;
+
+export function commercialPbiRate(systemKw: number): number {
+  if (systemKw >= 1000) return 0.06; // $/kWh
+  if (systemKw >= 400)  return 0.08;
+  return 0.10;
+}
+
+export function commercialPbiBenefit(systemKw: number, productionPerKw: number): number {
+  return systemKw * productionPerKw * commercialPbiRate(systemKw) * COMMERCIAL_PBI_YEARS;
 }
 // Berkeley Lab 2024 regression for Austin residential installs
 const AUSTIN_INSTALL_COST_INTERCEPT  = 4800;

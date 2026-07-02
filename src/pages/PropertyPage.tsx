@@ -544,11 +544,11 @@ export default function PropertyPage() {
                 <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average — get real quotes to verify)</li>
                 <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
                 {isResidential && <li>Savings rate: Austin Energy Value of Solar ($0.126/kWh on all production)</li>}
-                {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($2,500) applied</li>}
+                {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
                 {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
                 {isCommercial && ssoEligible && <li>Revenue rate: Austin Energy Standard Offer ({(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh, systems under 1 MW)</li>}
-                {isCommercial && ssoEligible && <li>System sized to maximum roof capacity; AE commercial rebate ($0.50/W) applied</li>}
-                {isCommercial && !ssoEligible && <li>Rate: Austin Energy Value of Solar ($0.126/kWh on all production, unused credits carry forward); AE commercial rebate ($0.50/W) applied</li>}
+                {isCommercial && ssoEligible && <li>System sized to maximum roof capacity; AE commercial capacity rebate ($0.70/W, up to 100 kW) applied</li>}
+                {isCommercial && !ssoEligible && <li>Rate: Austin Energy Value of Solar ($0.126/kWh on all production, unused credits carry forward); AE commercial capacity rebate ($0.70/W, up to 100 kW) applied</li>}
                 {isCommercial && !ssoEligible && <li>System sized to maximum roof capacity</li>}
               </ul>
             </div>
