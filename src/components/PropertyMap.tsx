@@ -27,6 +27,11 @@ export interface PropertyPoint {
   solar_panel_capacity_w?: number | null;
   solar_imagery_quality?: string | null;
   solar_imagery_date?: string | null;
+  comment?: string | null;
+  roof_type?: string | null;
+  optimal_system_size_kw?: number | null;
+  owner_contact?: string | null;
+  owned_or_rented?: string | null;
 }
 
 export interface GasPlantPoint {

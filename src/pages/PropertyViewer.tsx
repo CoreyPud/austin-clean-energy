@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -195,6 +195,11 @@ export default function PropertyViewer() {
       solar_panel_capacity_w: p.solar_panel_capacity_w ?? null,
       solar_imagery_quality:  p.solar_imagery_quality ?? null,
       solar_imagery_date:     p.solar_imagery_date ?? null,
+      comment:                p.comment ?? null,
+      roof_type:              p.roof_type ?? null,
+      optimal_system_size_kw:     p.optimal_system_size_kw ?? null,
+      owner_contact:          p.owner_contact ?? null,
+      owned_or_rented:        p.owned_or_rented ?? null,
     };
   };
 
@@ -290,6 +295,8 @@ export default function PropertyViewer() {
     return out;
   }, [properties, gasPlants, maxDistMi]);
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2" | "dist_gas" | "dist_peaker";
   const [sortKey, setSortKey]   = useState<SortKey>("dist_peaker");
   const [sortDir, setSortDir]   = useState<"asc" | "desc">("asc");
@@ -312,8 +319,47 @@ export default function PropertyViewer() {
     });
   }, [properties, sortKey, sortDir]);
 
-  const totalPages = Math.ceil(sorted.length / TABLE_PAGE);
-  const tableRows  = sorted.slice(tablePage * TABLE_PAGE, (tablePage + 1) * TABLE_PAGE);
+  const filteredSorted = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return sorted;
+    return sorted.filter(p =>
+      p.address?.toLowerCase().includes(q) ||
+      p.owner?.toLowerCase().includes(q) ||
+      p.pid?.toLowerCase().includes(q)
+    );
+  }, [sorted, searchQuery]);
+
+  const exportCsv = () => {
+    const headers = ["Address","Owner","ZIP","Type","Land use","Built","Market value","Roof sqft","Solar kW","Sun score","Max system kW","Dist peaker mi","Dist gas mi"];
+    const rows = filteredSorted.map(p => [
+      p.address ?? "",
+      p.owner ?? "",
+      p.zip ?? "",
+      TYPE_LABEL[p.property_type ?? ""] ?? "Other",
+      p.land_type_desc ?? "",
+      p.year_built ?? "",
+      p.market_value ?? "",
+      p.roof_sqft ?? "",
+      p.solar_kw ?? "",
+      p.solar_sunshine_median != null ? Math.round(p.solar_sunshine_median) : "",
+      p.solar_max_panels != null && p.solar_panel_capacity_w != null
+        ? ((p.solar_max_panels * p.solar_panel_capacity_w) / 1000).toFixed(1)
+        : "",
+      p.dist_peaker ?? "",
+      p.dist_gas ?? "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "property-viewer-export.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const totalPages = Math.ceil(filteredSorted.length / TABLE_PAGE);
+  const tableRows  = filteredSorted.slice(tablePage * TABLE_PAGE, (tablePage + 1) * TABLE_PAGE);
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
@@ -334,6 +380,25 @@ export default function PropertyViewer() {
         )}
         {queryError && <span className="text-sm text-red-600 ml-2 font-medium">{queryError}</span>}
         <div className="ml-auto flex items-center gap-2">
+          {properties.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                className="h-7 pl-7 pr-3 text-sm w-48"
+                placeholder="Search address / owner…"
+                value={searchQuery}
+                onChange={e => { setSearchQuery(e.target.value); setTablePage(0); }}
+              />
+            </div>
+          )}
+          {filteredSorted.length > 0 && (
+            <Button variant="outline" size="sm" onClick={exportCsv} className="h-7 gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
           {isAdmin ? (
             <>
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -444,18 +509,28 @@ export default function PropertyViewer() {
 
             <div className="pt-2 border-t border-border space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground mb-1">Map legend</p>
+              {ALL_TYPES.map(t => (
+                <div key={t} className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: TYPE_COLOR[t] }} />
+                  <span className="text-xs text-foreground">{TYPE_LABEL[t]}</span>
+                </div>
+              ))}
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-yellow-400" style={{ background: "#3b82f6" }} />
-                <span className="text-xs text-foreground">Yellow border = has solar</span>
+                <span className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-yellow-400 bg-transparent" />
+                <span className="text-xs text-foreground">Yellow ring = has solar</span>
               </div>
-              <div className="flex items-center gap-2 pt-1.5 mt-1.5 border-t border-border">
-                <span className="w-3 h-3 rounded-full flex-shrink-0 bg-[#7f1d1d]" />
-                <span className="text-xs text-foreground">Existing gas plant</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full flex-shrink-0 bg-amber-600" />
-                <span className="text-xs text-foreground">Proposed peaker site</span>
-              </div>
+              {proximityOn && includeGas && (
+                <div className="flex items-center gap-2 pt-1.5 mt-1.5 border-t border-border">
+                  <span className="w-3 h-3 rounded-full flex-shrink-0 bg-[#7f1d1d]" />
+                  <span className="text-xs text-foreground">Existing gas plant</span>
+                </div>
+              )}
+              {proximityOn && includeProposed && (
+                <div className={`flex items-center gap-2 ${proximityOn && includeGas ? "" : "pt-1.5 mt-1.5 border-t border-border"}`}>
+                  <span className="w-3 h-3 rounded-full flex-shrink-0 bg-amber-600" />
+                  <span className="text-xs text-foreground">Proposed peaker site</span>
+                </div>
+              )}
             </div>
           </div>
         </aside>
@@ -744,9 +819,11 @@ export default function PropertyViewer() {
                       </p>
                       <Link
                         to={`/property/${sel.pid}/${slugifyAddress(sel.address ?? "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-xs text-primary underline underline-offset-2"
                       >
-                        View property solar page →
+                        View property solar page ↗
                       </Link>
                     </>
                   )}
