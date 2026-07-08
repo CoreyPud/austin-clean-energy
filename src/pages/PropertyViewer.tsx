@@ -290,7 +290,7 @@ export default function PropertyViewer() {
     return out;
   }, [properties, gasPlants, maxDistMi]);
 
-  type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2";
+  type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2" | "dist_gas" | "dist_peaker";
   const [sortKey, setSortKey]   = useState<SortKey>("dist_peaker");
   const [sortDir, setSortDir]   = useState<"asc" | "desc">("asc");
 

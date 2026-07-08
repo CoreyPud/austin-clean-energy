@@ -267,7 +267,7 @@ function SolarCharts({
             <Tooltip formatter={(v: number) => fmt$(v)} />
             <Bar dataKey={cumulativeKey} radius={[3, 3, 0, 0]}>
               {cumulativeData.map((entry, i) => (
-                <Cell key={i} fill={entry[cumulativeKey] >= 0 ? "#047857" : "#b91c1c"} />
+                <Cell key={i} fill={Number(entry[cumulativeKey]) >= 0 ? "#047857" : "#b91c1c"} />
               ))}
             </Bar>
           </BarChart>
