@@ -575,6 +575,7 @@ export type Database = {
         Row: {
           centroid_lat: number | null
           centroid_lon: number | null
+          comment: string | null
           county: string | null
           dist_nearest_gas_plant_mi: number | null
           dist_proposed_peaker_mi: number | null
@@ -583,10 +584,14 @@ export type Database = {
           in_ae: boolean | null
           land_type_desc: string | null
           market_value: number | null
+          optimal_system_size_kw: number | null
+          owned_or_rented: string | null
+          owner_contact: string | null
           pid: string
           pid_int: number | null
           property_type: string | null
           py_owner_name: string | null
+          roof_type: string | null
           situs_address: string | null
           situs_zip: string | null
           solar_fetched_at: string | null
@@ -603,6 +608,7 @@ export type Database = {
         Insert: {
           centroid_lat?: number | null
           centroid_lon?: number | null
+          comment?: string | null
           county?: string | null
           dist_nearest_gas_plant_mi?: number | null
           dist_proposed_peaker_mi?: number | null
@@ -611,10 +617,14 @@ export type Database = {
           in_ae?: boolean | null
           land_type_desc?: string | null
           market_value?: number | null
+          optimal_system_size_kw?: number | null
+          owned_or_rented?: string | null
+          owner_contact?: string | null
           pid: string
           pid_int?: number | null
           property_type?: string | null
           py_owner_name?: string | null
+          roof_type?: string | null
           situs_address?: string | null
           situs_zip?: string | null
           solar_fetched_at?: string | null
@@ -631,6 +641,7 @@ export type Database = {
         Update: {
           centroid_lat?: number | null
           centroid_lon?: number | null
+          comment?: string | null
           county?: string | null
           dist_nearest_gas_plant_mi?: number | null
           dist_proposed_peaker_mi?: number | null
@@ -639,10 +650,14 @@ export type Database = {
           in_ae?: boolean | null
           land_type_desc?: string | null
           market_value?: number | null
+          optimal_system_size_kw?: number | null
+          owned_or_rented?: string | null
+          owner_contact?: string | null
           pid?: string
           pid_int?: number | null
           property_type?: string | null
           py_owner_name?: string | null
+          roof_type?: string | null
           situs_address?: string | null
           situs_zip?: string | null
           solar_fetched_at?: string | null
