@@ -78,6 +78,7 @@ export default function PropertyViewer() {
     area_m2: number; sunshine_median: number; sunshine_max: number;
   }[]>([]);
 
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [isAdmin,        setIsAdmin]        = useState(false);
   const [editPid,        setEditPid]        = useState<string | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -123,6 +124,7 @@ export default function PropertyViewer() {
   };
 
   useEffect(() => {
+    if (focusPid) setRightPanelOpen(true);
     if (!focusPid) { setSegments([]); return; }
     supabase
       .from("tcad_roof_segments")
@@ -695,6 +697,17 @@ export default function PropertyViewer() {
       {focusPid && (() => {
         const sel = properties.find(p => p.pid === focusPid);
         if (!sel) return null;
+
+        if (!rightPanelOpen) {
+          return (
+            <div className="w-8 flex-shrink-0 border-l border-border bg-card flex flex-col items-center pt-2 gap-2">
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setRightPanelOpen(true)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        }
+
         return (
           <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
             {/* Satellite map */}
@@ -710,11 +723,16 @@ export default function PropertyViewer() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{sel.zip ?? ""}{sel.county ? ` · ${sel.county}` : ""}</p>
                 </div>
-                {isAdmin && (
-                  <Button size="sm" variant="outline" className="flex-shrink-0" onClick={() => setEditPid(focusPid)}>
-                    Edit
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {isAdmin && (
+                    <Button size="sm" variant="outline" onClick={() => setEditPid(focusPid)}>
+                      Edit
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setRightPanelOpen(false)}>
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
-                )}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
