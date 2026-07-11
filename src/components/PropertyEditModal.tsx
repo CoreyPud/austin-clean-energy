@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Save, ChevronDown, ChevronUp } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { PropertyPoint } from "@/components/PropertyMap";
 
 interface PropertyEditModalProps {
@@ -56,6 +57,11 @@ export function PropertyEditModal({ property, onClose, onSave }: PropertyEditMod
     land_type_desc:             property.land_type_desc ?? "",
     dist_nearest_gas_plant_mi:  property.dist_gas != null ? String(property.dist_gas) : "",
     dist_proposed_peaker_mi:    property.dist_peaker != null ? String(property.dist_peaker) : "",
+    comment:                    property.comment ?? "",
+    roof_type:                  property.roof_type ?? "",
+    optimal_system_size_kw:         property.optimal_system_size_kw != null ? String(property.optimal_system_size_kw) : "",
+    owner_contact:              property.owner_contact ?? "",
+    owned_or_rented:            property.owned_or_rented ?? "",
   });
 
   const set = (key: keyof typeof fields, value: string | boolean) =>
@@ -105,6 +111,11 @@ export function PropertyEditModal({ property, onClose, onSave }: PropertyEditMod
         land_type_desc:            fields.land_type_desc || null,
         dist_nearest_gas_plant_mi: fields.dist_nearest_gas_plant_mi ? parseFloat(fields.dist_nearest_gas_plant_mi) : null,
         dist_proposed_peaker_mi:   fields.dist_proposed_peaker_mi ? parseFloat(fields.dist_proposed_peaker_mi) : null,
+        comment:                   fields.comment || null,
+        roof_type:                 fields.roof_type || null,
+        optimal_system_size_kw:        fields.optimal_system_size_kw ? parseFloat(fields.optimal_system_size_kw) : null,
+        owner_contact:             fields.owner_contact || null,
+        owned_or_rented:           fields.owned_or_rented || null,
       };
 
       const { data: propData, error: propError } = await supabase.functions.invoke('update-tcad-property', {
@@ -163,9 +174,14 @@ export function PropertyEditModal({ property, onClose, onSave }: PropertyEditMod
         market_value:   propData.updated.market_value,
         roof_sqft:      propData.updated.estimated_roof_sqft,
         land_type_desc: propData.updated.land_type_desc,
-        dist_gas:       propData.updated.dist_nearest_gas_plant_mi,
-        dist_peaker:    propData.updated.dist_proposed_peaker_mi,
-        solar_permits:  updatedPermits,
+        dist_gas:        propData.updated.dist_nearest_gas_plant_mi,
+        dist_peaker:     propData.updated.dist_proposed_peaker_mi,
+        comment:         propData.updated.comment,
+        roof_type:       propData.updated.roof_type,
+        optimal_system_size_kw: propData.updated.optimal_system_size_kw,
+        owner_contact:   propData.updated.owner_contact,
+        owned_or_rented: propData.updated.owned_or_rented,
+        solar_permits:   updatedPermits,
       };
 
       toast.success("Saved");
@@ -272,6 +288,51 @@ export function PropertyEditModal({ property, onClose, onSave }: PropertyEditMod
               <Label>Proposed peaker dist (mi)</Label>
               <Input type="number" step="any" value={fields.dist_proposed_peaker_mi} onChange={e => set('dist_proposed_peaker_mi', e.target.value)} />
             </div>
+          </div>
+
+          {/* Owner contact / owned or rented / roof type / max system size */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Owner contact</Label>
+              <Input value={fields.owner_contact} placeholder="Phone or email" onChange={e => set('owner_contact', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Owned or rented</Label>
+              <Select value={fields.owned_or_rented || "unknown"} onValueChange={v => set('owned_or_rented', v === "unknown" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Unknown" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unknown">Unknown</SelectItem>
+                  <SelectItem value="owned">Owned</SelectItem>
+                  <SelectItem value="rented">Rented</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Roof type</Label>
+              <Select value={fields.roof_type || "unknown"} onValueChange={v => set('roof_type', v === "unknown" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Unknown" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unknown">Unknown</SelectItem>
+                  <SelectItem value="pitched">Pitched</SelectItem>
+                  <SelectItem value="flat">Flat</SelectItem>
+                  <SelectItem value="hip">Hip</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Max system size (kW)</Label>
+              <Input type="number" step="any" value={fields.optimal_system_size_kw} onChange={e => set('optimal_system_size_kw', e.target.value)} />
+            </div>
+          </div>
+
+          {/* Comment */}
+          <div className="space-y-1.5">
+            <Label>Comment</Label>
+            <Textarea value={fields.comment} rows={3} onChange={e => set('comment', e.target.value)} />
           </div>
 
           {/* Solar permits */}

@@ -183,8 +183,8 @@ const Index = () => {
 
               <FeatureCard
                 to="/decarb-dashboard"
-                title="Path to Net Zero by 2035"
-                description="Model what it would take for Austin to reach net zero by 2035 — adjust solar buildout, EV adoption, and efficiency targets to see the emissions impact."
+                title="Path to Zero Emissions by 2035"
+                description="Model what it would take for Austin to reach zero emissions by 2035 — adjust solar buildout, EV adoption, and efficiency targets to see the emissions impact."
                 cta="Learn More"
                 preview={
                   <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
