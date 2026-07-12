@@ -129,7 +129,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
           type: "fill",
           source: "panels",
           paint: {
-            "fill-color": ["case", [">=", ["get", "tsrf"], 0.75], "#22c55e", "#f59e0b"],
+            "fill-color": ["interpolate", ["linear"], ["get", "tsrf"], 0.6, "#f59e0b", 1.0, "#22c55e"],
             "fill-opacity": 0.7,
           },
         });
