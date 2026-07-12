@@ -151,7 +151,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
           if (tsrf == null) return;
           popupRef.current!
             .setLngLat(e.lngLat)
-            .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% TSRF</strong>`)
+            .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% of optimal</strong>`)
             .addTo(map);
         });
         map.on("mousemove", "panels-fill", (e) => {
