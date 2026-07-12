@@ -116,8 +116,13 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
 
     const fitView = () => {
       const el = containerRef.current;
-      const padX = el ? el.clientWidth  * 0.25 : 80;
-      const padY = el ? el.clientHeight * 0.25 : 80;
+      const boxW = (Math.max(...lons) - Math.min(...lons)) * mPerDegLon;
+      const boxH = (Math.max(...lats) - Math.min(...lats)) * M_PER_DEG_LAT;
+      const diag = Math.sqrt(boxW ** 2 + boxH ** 2);
+      const t = Math.max(0, Math.min(1, (diag - 20) / (100 - 20)));
+      const padFrac = 0.25 - t * 0.15; // 25% for small residential → 10% for large commercial
+      const padX = el ? el.clientWidth  * padFrac : 80;
+      const padY = el ? el.clientHeight * padFrac : 80;
       map.fitBounds(bounds, { padding: { top: padY, bottom: padY, left: padX, right: padX }, animate: false });
       if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
     };
