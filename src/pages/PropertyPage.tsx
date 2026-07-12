@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import SatellitePane from "@/components/SatellitePane";
+import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
@@ -288,6 +288,33 @@ export default function PropertyPage() {
   const [loading, setLoading]   = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState(150);
+  const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
+  const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
+  const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    if (!pid) return;
+    fetch(`/api/local-solar/${pid}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.solarPotential?.solarPanels) return;
+        const sp = data.solarPotential;
+        setSolarPanels(sp.solarPanels.map((p: any) => ({
+          lat: p.center.latitude,
+          lon: p.center.longitude,
+          orientation: p.orientation,
+          yearlyEnergyDcKwh: p.yearlyEnergyDcKwh,
+          segmentIndex: p.segmentIndex,
+        })));
+        setPanelDims({ h: sp.panelHeightMeters ?? 1.0, w: sp.panelWidthMeters ?? 1.65 });
+        const azimuths: Record<number, number> = {};
+        (sp.roofSegmentStats ?? []).forEach((seg: any, i: number) => {
+          azimuths[i] = seg.azimuthDegrees ?? 180;
+        });
+        setSegmentAzimuths(azimuths);
+      })
+      .catch(() => {});
+  }, [pid]);
 
   useEffect(() => {
     if (!pid) return;
@@ -380,6 +407,10 @@ export default function PropertyPage() {
             lat={property.centroid_lat}
             lon={property.centroid_lon}
             className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
+            panels={solarPanels.length > 0 ? solarPanels : undefined}
+            panelHeightM={panelDims ? panelDims.h * 0.75 : undefined}
+            panelWidthM={panelDims?.w}
+            segmentAzimuths={segmentAzimuths}
           />
         )}
 

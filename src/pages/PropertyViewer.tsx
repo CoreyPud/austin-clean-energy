@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { slugifyAddress } from "@/lib/property-solar";
 import MapTokenLoader from "@/components/MapTokenLoader";
-import SatellitePane from "@/components/SatellitePane";
+import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
 import {
   PropertyMap,
   type PropertyPoint,
@@ -76,7 +76,14 @@ export default function PropertyViewer() {
   const [segments, setSegments] = useState<{
     segment_index: number; pitch_deg: number; azimuth_deg: number;
     area_m2: number; sunshine_median: number; sunshine_max: number;
+    max_panels: number | null; max_kw: number | null; yearly_energy_kwh: number | null;
   }[]>([]);
+
+  const [panelOverlay, setPanelOverlay] = useState<{
+    panels: SolarPanel[];
+    dims: { h: number; w: number };
+    azimuths: Record<number, number>;
+  } | null>(null);
 
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [isAdmin,        setIsAdmin]        = useState(false);
@@ -125,13 +132,35 @@ export default function PropertyViewer() {
 
   useEffect(() => {
     if (focusPid) setRightPanelOpen(true);
-    if (!focusPid) { setSegments([]); return; }
+    if (!focusPid) { setSegments([]); setPanelOverlay(null); return; }
     supabase
       .from("tcad_roof_segments")
-      .select("segment_index, pitch_deg, azimuth_deg, area_m2, sunshine_median, sunshine_max")
+      .select("segment_index, pitch_deg, azimuth_deg, area_m2, sunshine_median, sunshine_max, max_panels, max_kw, yearly_energy_kwh")
       .eq("pid", focusPid)
       .order("segment_index")
       .then(({ data }) => setSegments(data ?? []));
+
+    fetch(`/api/local-solar/${focusPid}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (!json) { setPanelOverlay(null); return; }
+        const sp = json.solarPotential ?? {};
+        const panels: SolarPanel[] = (sp.solarPanels ?? []).map((p: any) => ({
+          lat: p.center?.latitude,
+          lon: p.center?.longitude,
+          orientation: p.orientation,
+          yearlyEnergyDcKwh: p.yearlyEnergyDcKwh,
+          segmentIndex: p.segmentIndex,
+        })).filter((p: SolarPanel) => p.lat != null && p.lon != null);
+        const azimuths: Record<number, number> = {};
+        (sp.roofSegmentStats ?? []).forEach((s: any, i: number) => {
+          if (s.azimuthDegrees != null) azimuths[i] = s.azimuthDegrees;
+        });
+        const h = (sp.panelHeightMeters ?? 1.0);
+        const w = (sp.panelWidthMeters ?? 1.65);
+        setPanelOverlay(panels.length ? { panels, dims: { h, w }, azimuths } : null);
+      })
+      .catch(() => setPanelOverlay(null));
   }, [focusPid]);
 
   // Static data: gas plants + proposed sites
@@ -719,7 +748,13 @@ export default function PropertyViewer() {
           <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
             {/* Satellite map */}
             <div className="flex-shrink-0" style={{ height: "21vh" }}>
-              <SatellitePane lat={sel.lat} lon={sel.lon} className="w-full h-full" />
+              <SatellitePane
+                lat={sel.lat} lon={sel.lon} className="w-full h-full"
+                panels={panelOverlay?.panels}
+                panelHeightM={panelOverlay ? panelOverlay.dims.h * 0.75 : undefined}
+                panelWidthM={panelOverlay?.dims.w}
+                segmentAzimuths={panelOverlay?.azimuths}
+              />
             </div>
             {/* Property info */}
             <div className="flex-1 overflow-auto bg-card p-4 space-y-4">
@@ -831,12 +866,13 @@ export default function PropertyViewer() {
                                 <th className="text-left font-normal pb-1">Face</th>
                                 <th className="text-right font-normal pb-1">Pitch</th>
                                 <th className="text-right font-normal pb-1">Area</th>
-                                <th className="text-right font-normal pb-1">Sun hrs</th>
+                                <th className="text-right font-normal pb-1">Max kW</th>
+                                <th className="text-right font-normal pb-1">kWh/yr</th>
                                 <th className="text-right font-normal pb-1">TSRF</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {segments.map(s => {
+                              {[...segments].filter(s => s.max_panels != null && s.max_panels > 0).sort((a, b) => (b.sunshine_median ?? 0) - (a.sunshine_median ?? 0)).map(s => {
                                 const tsrf = s.sunshine_median / 1950;
                                 const passes = tsrf >= 0.75;
                                 const color = passes ? "text-emerald-600" : "text-amber-600";
@@ -845,7 +881,8 @@ export default function PropertyViewer() {
                                     <td className={`py-0.5 font-medium ${color}`}>{azimuthLabel(s.azimuth_deg)} <span className="font-normal">{Math.round(s.azimuth_deg)}°</span></td>
                                     <td className="text-right py-0.5">{Math.round(s.pitch_deg)}°</td>
                                     <td className="text-right py-0.5">{Math.round(s.area_m2 * 10.764)} sqft</td>
-                                    <td className="text-right py-0.5">{Math.round(s.sunshine_median).toLocaleString()}</td>
+                                    <td className={`text-right py-0.5 font-medium ${color}`}>{s.max_kw != null ? `${s.max_kw.toFixed(1)} kW` : "—"}</td>
+                                    <td className="text-right py-0.5 text-muted-foreground">{s.yearly_energy_kwh != null ? Math.round(s.yearly_energy_kwh).toLocaleString() : "—"}</td>
                                     <td className={`text-right py-0.5 font-medium ${color}`}>{Math.round(tsrf * 100)}%</td>
                                   </tr>
                                 );
