@@ -220,6 +220,95 @@ serve(async (req) => {
       };
     }
 
+    // 3b. Individual panel layout data + persistence
+    let solarCenter: any = null;
+    let panelDims: any = null;
+    let roofSegments: any = null;
+    let solarPanelsCompact: any = null;
+    if (solarApiResp?.solarPotential?.solarPanels && solarApiResp?.center) {
+      const sp = solarApiResp.solarPotential;
+      const refLat = solarApiResp.center.latitude;
+      const refLon = solarApiResp.center.longitude;
+      solarCenter = { lat: refLat, lon: refLon };
+      panelDims = { h: 1.879, w: 1.045 };
+      roofSegments = (sp.roofSegmentStats || []).map((seg: any, i: number) => ({
+        segmentIndex: i,
+        azimuthDeg: seg.azimuthDegrees,
+        pitchDeg: seg.pitchDegrees,
+      }));
+      solarPanelsCompact = sp.solarPanels.map((p: any) => [
+        +((p.center.latitude - refLat) * 1e6).toFixed(6),
+        +((p.center.longitude - refLon) * 1e6).toFixed(6),
+        p.orientation === "LANDSCAPE" ? 1 : 0,
+        +p.yearlyEnergyDcKwh.toFixed(1),
+        p.segmentIndex,
+      ]);
+
+      // Persist to DB if we can match a single TCAD property by street
+      try {
+        const streetPart = standardizedAddress.split(",")[0].trim();
+        const matchResp = await supabase
+          .from("tcad_properties")
+          .select("pid")
+          .ilike("situs_address", streetPart + "%")
+          .limit(2);
+        if (matchResp.data && matchResp.data.length === 1) {
+          const pid = matchResp.data[0].pid;
+          const imageryDateStr = solarApiResp.imageryDate
+            ? `${solarApiResp.imageryDate.year}-${String(solarApiResp.imageryDate.month).padStart(2, "0")}-${String(solarApiResp.imageryDate.day).padStart(2, "0")}`
+            : null;
+          const wholeQuantiles = sp.wholeRoofStats?.sunshineQuantiles || [];
+          const propertyRow = {
+            pid,
+            solar_fetched_at: new Date().toISOString(),
+            solar_imagery_quality: solarApiResp.imageryQuality ?? null,
+            solar_imagery_date: imageryDateStr,
+            solar_max_panels: sp.maxArrayPanelsCount ?? null,
+            solar_max_area_m2: sp.maxArrayAreaMeters2 ?? null,
+            solar_sunshine_hrs: sp.maxSunshineHoursPerYear ?? null,
+            solar_sunshine_median: wholeQuantiles[5] ?? null,
+            solar_panel_capacity_w: sp.panelCapacityWatts ?? null,
+            solar_panels_layout: { ref: [refLat, refLon], p: solarPanelsCompact },
+          };
+          const propUpsert = await supabase
+            .from("tcad_properties")
+            .upsert(propertyRow, { onConflict: "pid" });
+          if (propUpsert.error) console.error("tcad_properties upsert error:", propUpsert.error);
+
+          const lastConfig = sp.solarPanelConfigs?.at?.(-1);
+          const segSummaries: any[] = lastConfig?.roofSegmentSummaries || [];
+          const segRows = (sp.roofSegmentStats || []).map((seg: any, i: number) => {
+            const summary = segSummaries.find((s: any) => s.segmentIndex === i);
+            const q = seg.stats?.sunshineQuantiles || [];
+            return {
+              pid,
+              segment_index: i,
+              pitch_deg: seg.pitchDegrees ?? null,
+              azimuth_deg: seg.azimuthDegrees ?? null,
+              area_m2: seg.stats?.areaMeters2 ?? null,
+              sunshine_median: q[5] ?? null,
+              sunshine_max: q[10] ?? null,
+              center_lat: seg.center?.latitude ?? null,
+              center_lon: seg.center?.longitude ?? null,
+              max_panels: summary?.panelsCount ?? null,
+              max_kw: summary?.yearlyEnergyDcKwh != null && sp.panelCapacityWatts
+                ? +((summary.panelsCount * sp.panelCapacityWatts) / 1000).toFixed(3)
+                : null,
+              yearly_energy_kwh: summary?.yearlyEnergyDcKwh ?? null,
+            };
+          });
+          if (segRows.length > 0) {
+            const segUpsert = await supabase
+              .from("tcad_roof_segments")
+              .upsert(segRows, { onConflict: "pid,segment_index" });
+            if (segUpsert.error) console.error("tcad_roof_segments upsert error:", segUpsert.error);
+          }
+        }
+      } catch (persistErr) {
+        console.error("solar persistence error (non-fatal):", persistErr);
+      }
+    }
+
     // 4. Savings card (deterministic) — rough initial estimate; frontend recomputes with optimised sizing.
     let savings: any = null;
     if (solarInsights?.maxPanels && solarInsights?.panelCapacityWatts) {
