@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import MapTokenLoader from "@/components/MapTokenLoader";
 
@@ -47,7 +47,11 @@ function panelPolygon(
   ]);
 }
 
-function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65, segmentAzimuths = {} }: Omit<Props, "className">) {
+interface MapProps extends Omit<Props, "className"> {
+  panelOpacity: number;
+}
+
+function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65, segmentAzimuths = {}, panelOpacity }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
@@ -72,7 +76,6 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
     return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
   }, []);
 
-  // Hide before paint whenever panels change so we never show the pre-fitBounds view
   useLayoutEffect(() => {
     if (!panels?.length) return;
     if (wrapperRef.current) wrapperRef.current.style.opacity = "0";
@@ -129,7 +132,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
           source: "panels",
           paint: {
             "fill-color": ["interpolate", ["linear"], ["get", "tsrf"], 0.6, "#f59e0b", 1.0, "#22c55e"],
-            "fill-opacity": 0.7,
+            "fill-opacity": panelOpacity,
           },
         });
         map.addLayer({
@@ -147,7 +150,13 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
   }, [panels, panelHeightM, panelWidthM, segmentAzimuths]);
 
   useEffect(() => {
-    if (panels?.length) return; // let fitBounds control view when panels present
+    const map = mapRef.current;
+    if (!map?.getLayer("panels-fill")) return;
+    map.setPaintProperty("panels-fill", "fill-opacity", panelOpacity);
+  }, [panelOpacity]);
+
+  useEffect(() => {
+    if (panels?.length) return;
     mapRef.current?.jumpTo({ center: [lon, lat], zoom: 18 });
     markerRef.current?.setLngLat([lon, lat]);
   }, [lat, lon]);
@@ -160,11 +169,31 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
 }
 
 export default function SatellitePane({ lat, lon, className = "w-full h-64 rounded-lg overflow-hidden border border-border", panels, panelHeightM, panelWidthM, segmentAzimuths }: Props) {
+  const [panelOpacity, setPanelOpacity] = useState(0.7);
+
   return (
-    <div className={className}>
+    <div className={`${className} relative`}>
       <MapTokenLoader>
-        <SatelliteMap lat={lat} lon={lon} panels={panels} panelHeightM={panelHeightM} panelWidthM={panelWidthM} segmentAzimuths={segmentAzimuths} />
+        <SatelliteMap
+          lat={lat} lon={lon}
+          panels={panels} panelHeightM={panelHeightM} panelWidthM={panelWidthM}
+          segmentAzimuths={segmentAzimuths} panelOpacity={panelOpacity}
+        />
       </MapTokenLoader>
+      {panels?.length ? (
+        <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2 pointer-events-none">
+          <div className="flex-1 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 pointer-events-auto">
+            <span className="text-white/70 text-xs select-none shrink-0">Panels</span>
+            <input
+              type="range"
+              min={0} max={1} step={0.01}
+              value={panelOpacity}
+              onChange={e => setPanelOpacity(+e.target.value)}
+              className="w-full h-1 accent-white cursor-pointer"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
