@@ -133,38 +133,35 @@ export default function PropertyViewer() {
   useEffect(() => {
     if (focusPid) setRightPanelOpen(true);
     setSegments([]);
-    if (!focusPid) { setPanelOverlay(null); return; }
+    setPanelOverlay(null);
+    if (!focusPid) return;
+
     supabase
       .from("tcad_roof_segments")
       .select("segment_index, pitch_deg, azimuth_deg, area_m2, sunshine_median, sunshine_max, max_panels, max_kw, yearly_energy_kwh")
       .eq("pid", focusPid)
       .order("segment_index")
-      .then(({ data }) => setSegments(data ?? []));
+      .then(({ data }) => {
+        const segs = data ?? [];
+        setSegments(segs);
 
-    const sel = properties.find(p => p.pid === focusPid);
-    const layout = (sel as any)?.solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
-    if (layout?.p?.length) {
-      const [refLat, refLon] = layout.ref;
-      const panels: SolarPanel[] = layout.p.map(([dlat, dlon, o, kwh, si]) => ({
-        lat: refLat + dlat / 1e6,
-        lon: refLon + dlon / 1e6,
-        orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT",
-        yearlyEnergyDcKwh: kwh,
-        segmentIndex: si,
-      }));
-      setPanelOverlay({ panels, dims: { h: 1.879, w: 1.045 }, azimuths: {} });
-    } else {
-      setPanelOverlay(null);
-    }
+        const sel = properties.find(p => p.pid === focusPid);
+        const layout = (sel as any)?.solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
+        if (layout?.p?.length) {
+          const [refLat, refLon] = layout.ref;
+          const panels: SolarPanel[] = layout.p.map(([dlat, dlon, o, kwh, si]) => ({
+            lat: refLat + dlat / 1e6,
+            lon: refLon + dlon / 1e6,
+            orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT",
+            yearlyEnergyDcKwh: kwh,
+            segmentIndex: si,
+          }));
+          const azimuths: Record<number, number> = {};
+          segs.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; });
+          setPanelOverlay({ panels, dims: { h: 1.879, w: 1.045 }, azimuths });
+        }
+      });
   }, [focusPid]);
-
-  // Patch azimuths into panel overlay once segments load
-  useEffect(() => {
-    if (!segments.length || !panelOverlay) return;
-    const azimuths: Record<number, number> = {};
-    segments.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; });
-    setPanelOverlay(prev => prev ? { ...prev, azimuths } : null);
-  }, [segments]);
 
   // Static data: gas plants + proposed sites
   useEffect(() => {
@@ -751,7 +748,7 @@ export default function PropertyViewer() {
         return (
           <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
             {/* Satellite map */}
-            <div className="flex-shrink-0" style={{ height: "21vh" }}>
+            <div className="flex-shrink-0 aspect-square w-full">
               <SatellitePane
                 lat={sel.lat} lon={sel.lon} className="w-full h-full"
                 panels={panelOverlay?.panels}

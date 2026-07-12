@@ -76,7 +76,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
   useLayoutEffect(() => {
     if (!panels?.length) return;
     if (wrapperRef.current) wrapperRef.current.style.opacity = "0";
-  }, [panels]);
+  }, [panels, segmentAzimuths]);
 
   useEffect(() => {
     const map = mapRef.current;
