@@ -296,39 +296,36 @@ export default function PropertyPage() {
   useEffect(() => {
     if (!pid) return;
     setLoading(true);
-    supabase
-      .from("tcad_properties")
-      .select(
-        "pid, situs_address, situs_zip, property_type, year_built, market_value, estimated_roof_sqft, land_type_desc, centroid_lat, centroid_lon, solar_fetched_at, solar_max_panels, solar_panel_capacity_w, solar_sunshine_hrs, solar_sunshine_median, solar_max_area_m2, solar_imagery_quality, solar_imagery_date, solar_panels_layout"
-      )
-      .eq("pid", pid)
-      .single()
-      .then(({ data, error }) => {
-        setLoading(false);
-        if (error || !data) { setNotFound(true); return; }
-        setProperty(data as PropertyData);
-        const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
-        if (layout?.p?.length) {
-          const [refLat, refLon] = layout.ref;
-          setSolarPanels(layout.p.map(([dlat, dlon, o, kwh, si]) => ({
-            lat: refLat + dlat / 1e6,
-            lon: refLon + dlon / 1e6,
-            orientation: o ? "LANDSCAPE" : "PORTRAIT",
-            yearlyEnergyDcKwh: kwh,
-            segmentIndex: si,
-          })));
-          setPanelDims({ h: 1.879, w: 1.045 });
-          supabase
-            .from("tcad_roof_segments")
-            .select("segment_index, azimuth_deg")
-            .eq("pid", pid)
-            .then(({ data: segs }) => {
-              const az: Record<number, number> = {};
-              (segs ?? []).forEach(s => { az[s.segment_index] = s.azimuth_deg; });
-              setSegmentAzimuths(az);
-            });
-        }
-      });
+    Promise.all([
+      supabase
+        .from("tcad_properties")
+        .select("pid, situs_address, situs_zip, property_type, year_built, market_value, estimated_roof_sqft, land_type_desc, centroid_lat, centroid_lon, solar_fetched_at, solar_max_panels, solar_panel_capacity_w, solar_sunshine_hrs, solar_sunshine_median, solar_max_area_m2, solar_imagery_quality, solar_imagery_date, solar_panels_layout")
+        .eq("pid", pid)
+        .single(),
+      supabase
+        .from("tcad_roof_segments")
+        .select("segment_index, azimuth_deg")
+        .eq("pid", pid),
+    ]).then(([{ data, error }, { data: segs }]) => {
+      setLoading(false);
+      if (error || !data) { setNotFound(true); return; }
+      setProperty(data as PropertyData);
+      const az: Record<number, number> = {};
+      (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; });
+      setSegmentAzimuths(az);
+      const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
+      if (layout?.p?.length) {
+        const [refLat, refLon] = layout.ref;
+        setSolarPanels(layout.p.map(([dlat, dlon, o, kwh, si]) => ({
+          lat: refLat + dlat / 1e6,
+          lon: refLon + dlon / 1e6,
+          orientation: o ? "LANDSCAPE" : "PORTRAIT",
+          yearlyEnergyDcKwh: kwh,
+          segmentIndex: si,
+        })));
+        setPanelDims({ h: 1.879, w: 1.045 });
+      }
+    });
   }, [pid]);
 
   const nbStats = useNeighborhoodStats(property?.situs_zip ?? null);

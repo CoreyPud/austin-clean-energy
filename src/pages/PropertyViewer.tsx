@@ -132,7 +132,8 @@ export default function PropertyViewer() {
 
   useEffect(() => {
     if (focusPid) setRightPanelOpen(true);
-    if (!focusPid) { setSegments([]); setPanelOverlay(null); return; }
+    setSegments([]);
+    if (!focusPid) { setPanelOverlay(null); return; }
     supabase
       .from("tcad_roof_segments")
       .select("segment_index, pitch_deg, azimuth_deg, area_m2, sunshine_median, sunshine_max, max_panels, max_kw, yearly_energy_kwh")
@@ -229,6 +230,7 @@ export default function PropertyViewer() {
       solar_imagery_quality:  p.solar_imagery_quality ?? null,
       solar_imagery_date:     p.solar_imagery_date ?? null,
       solar_eligible_kw:      p.solar_eligible_kw ?? null,
+      solar_panels_layout:    p.solar_panels_layout ?? null,
       comment:                p.comment ?? null,
       roof_type:              p.roof_type ?? null,
       optimal_system_size_kw:     p.optimal_system_size_kw ?? null,
