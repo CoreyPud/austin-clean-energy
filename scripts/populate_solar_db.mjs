@@ -43,6 +43,22 @@ if (!SECRET)       { console.error("Missing SOLAR_IMPORT_SECRET in supabase/.env
 const ENDPOINT = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/solar-data-import`;
 const ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Austin NREL TMY reference: south-facing ~30° tilt, peak sun hours/yr
+const AUSTIN_REF_HRS = 1950;
+const TSRF_MIN = 0.75;
+
+function calcEligibleKw(sp) {
+  const configs = sp.solarPanelConfigs;
+  if (!configs?.length) return null;
+  const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
+  const threshold = panelKw * AUSTIN_REF_HRS * TSRF_MIN; // kWh/yr per panel
+  let best = null;
+  for (const cfg of configs) {
+    if (cfg.yearlyEnergyDcKwh / cfg.panelsCount >= threshold) best = cfg;
+  }
+  return best ? +(best.panelsCount * panelKw).toFixed(2) : 0;
+}
+
 function parseFile(pid, raw) {
   if (raw._status === 404) {
     return { property: { pid, solar_fetched_at: raw._fetched_at ?? new Date().toISOString() }, segments: [] };
@@ -64,6 +80,7 @@ function parseFile(pid, raw) {
     solar_sunshine_hrs:     sp.maxSunshineHoursPerYear ?? null,
     solar_sunshine_median:  sp.wholeRoofStats?.sunshineQuantiles?.[5] ?? null,
     solar_panel_capacity_w: sp.panelCapacityWatts ?? null,
+    solar_eligible_kw:      calcEligibleKw(sp),
   };
 
   const segments = (sp.roofSegmentStats ?? []).map((seg, i) => ({

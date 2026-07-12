@@ -197,6 +197,7 @@ export default function PropertyViewer() {
       solar_panel_capacity_w: p.solar_panel_capacity_w ?? null,
       solar_imagery_quality:  p.solar_imagery_quality ?? null,
       solar_imagery_date:     p.solar_imagery_date ?? null,
+      solar_eligible_kw:      p.solar_eligible_kw ?? null,
       comment:                p.comment ?? null,
       roof_type:              p.roof_type ?? null,
       optimal_system_size_kw:     p.optimal_system_size_kw ?? null,
@@ -299,7 +300,7 @@ export default function PropertyViewer() {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2" | "dist_gas" | "dist_peaker";
+  type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2" | "solar_eligible_kw" | "dist_gas" | "dist_peaker";
   const [sortKey, setSortKey]   = useState<SortKey>("dist_peaker");
   const [sortDir, setSortDir]   = useState<"asc" | "desc">("asc");
 
@@ -573,6 +574,7 @@ export default function PropertyViewer() {
                 { key: "solar_kw",              label: "Solar kW",       align: "right" },
                 { key: "solar_sunshine_median", label: "Sun score",      align: "right" },
                 { key: "solar_max_panels",      label: "Max system",     align: "right" },
+                { key: "solar_eligible_kw",     label: "75% TSRF kW",    align: "right" },
                 { key: "solar_max_area_m2",     label: "Roof area",      align: "right" },
               ] as { key: SortKey | null; label: string; align: string }[]).map(col => (
                 <th
@@ -647,6 +649,11 @@ export default function PropertyViewer() {
                       ? `${((p.solar_max_panels * p.solar_panel_capacity_w) / 1000).toFixed(1)} kW`
                       : "—"}
                   </td>
+                  <td className="px-3 py-2 text-right text-xs">
+                    {p.solar_eligible_kw != null
+                      ? <span className={p.solar_eligible_kw >= 3 ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>{p.solar_eligible_kw.toFixed(1)} kW</span>
+                      : <span className="text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-3 py-2 text-right text-xs text-muted-foreground">
                     {p.solar_max_area_m2 != null ? `${Math.round(p.solar_max_area_m2 * 10.764).toLocaleString()} sqft` : "—"}
                   </td>
@@ -655,7 +662,7 @@ export default function PropertyViewer() {
             })}
             {!loading && properties.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={13} className="px-4 py-10 text-center text-sm text-muted-foreground">
                   No properties match these filters.
                 </td>
               </tr>
@@ -792,6 +799,14 @@ export default function PropertyViewer() {
                             {sel.solar_max_panels != null && sel.solar_panel_capacity_w != null
                               ? `${((sel.solar_max_panels * sel.solar_panel_capacity_w) / 1000).toFixed(1)} kW`
                               : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Eligible (75% TSRF)</dt>
+                          <dd className="text-sm font-medium mt-0.5">
+                            {sel.solar_eligible_kw != null
+                              ? <span className={sel.solar_eligible_kw >= 3 ? "text-emerald-600" : "text-amber-600"}>{sel.solar_eligible_kw.toFixed(1)} kW{sel.solar_eligible_kw < 3 ? " — below AE 3 kW min" : ""}</span>
+                              : <span className="text-foreground">—</span>}
                           </dd>
                         </div>
                         <div>
