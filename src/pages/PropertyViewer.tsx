@@ -832,17 +832,24 @@ export default function PropertyViewer() {
                                 <th className="text-right font-normal pb-1">Pitch</th>
                                 <th className="text-right font-normal pb-1">Area</th>
                                 <th className="text-right font-normal pb-1">Sun hrs</th>
+                                <th className="text-right font-normal pb-1">TSRF</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {segments.map(s => (
-                                <tr key={s.segment_index} className="border-t border-border/50">
-                                  <td className="py-0.5 font-medium">{azimuthLabel(s.azimuth_deg)} <span className="text-muted-foreground font-normal">{Math.round(s.azimuth_deg)}°</span></td>
-                                  <td className="text-right py-0.5">{Math.round(s.pitch_deg)}°</td>
-                                  <td className="text-right py-0.5">{Math.round(s.area_m2 * 10.764)} sqft</td>
-                                  <td className="text-right py-0.5">{Math.round(s.sunshine_median).toLocaleString()}</td>
-                                </tr>
-                              ))}
+                              {segments.map(s => {
+                                const tsrf = s.sunshine_median / 1950;
+                                const passes = tsrf >= 0.75;
+                                const color = passes ? "text-emerald-600" : "text-amber-600";
+                                return (
+                                  <tr key={s.segment_index} className={`border-t border-border/50 ${passes ? "" : "opacity-60"}`}>
+                                    <td className={`py-0.5 font-medium ${color}`}>{azimuthLabel(s.azimuth_deg)} <span className="font-normal">{Math.round(s.azimuth_deg)}°</span></td>
+                                    <td className="text-right py-0.5">{Math.round(s.pitch_deg)}°</td>
+                                    <td className="text-right py-0.5">{Math.round(s.area_m2 * 10.764)} sqft</td>
+                                    <td className="text-right py-0.5">{Math.round(s.sunshine_median).toLocaleString()}</td>
+                                    <td className={`text-right py-0.5 font-medium ${color}`}>{Math.round(tsrf * 100)}%</td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
