@@ -317,7 +317,7 @@ export default function PropertyPage() {
             yearlyEnergyDcKwh: kwh,
             segmentIndex: si,
           })));
-          setPanelDims({ h: 1.65, w: 1.0 });
+          setPanelDims({ h: 1.879, w: 1.045 });
           supabase
             .from("tcad_roof_segments")
             .select("segment_index, azimuth_deg")

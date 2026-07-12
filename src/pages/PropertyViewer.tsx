@@ -151,7 +151,7 @@ export default function PropertyViewer() {
         yearlyEnergyDcKwh: kwh,
         segmentIndex: si,
       }));
-      setPanelOverlay({ panels, dims: { h: 1.65, w: 1.0 }, azimuths: {} });
+      setPanelOverlay({ panels, dims: { h: 1.879, w: 1.045 }, azimuths: {} });
     } else {
       setPanelOverlay(null);
     }
