@@ -100,27 +100,47 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
       }),
     };
 
+    // Compute panel bounding box (centers ± half-panel extent)
+    const lats = panels.map(p => p.lat);
+    const lons = panels.map(p => p.lon);
+    const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const mPerDegLon = M_PER_DEG_LAT * Math.cos(midLat * RAD);
+    const dLat = halfH / M_PER_DEG_LAT;
+    const dLon = halfW / mPerDegLon;
+    const bounds: mapboxgl.LngLatBoundsLike = [
+      [Math.min(...lons) - dLon, Math.min(...lats) - dLat],
+      [Math.max(...lons) + dLon, Math.max(...lats) + dLat],
+    ];
+
+    const fitView = () => {
+      const el = containerRef.current;
+      const padX = el ? el.clientWidth  * 0.1 : 40;
+      const padY = el ? el.clientHeight * 0.1 : 40;
+      map.fitBounds(bounds, { padding: { top: padY, bottom: padY, left: padX, right: padX }, animate: false });
+    };
+
     const addLayers = () => {
       if (map.getSource("panels")) {
         (map.getSource("panels") as mapboxgl.GeoJSONSource).setData(geojson);
-        return;
+      } else {
+        map.addSource("panels", { type: "geojson", data: geojson });
+        map.addLayer({
+          id: "panels-fill",
+          type: "fill",
+          source: "panels",
+          paint: {
+            "fill-color": ["case", [">=", ["get", "tsrf"], 0.75], "#22c55e", "#f59e0b"],
+            "fill-opacity": 0.7,
+          },
+        });
+        map.addLayer({
+          id: "panels-outline",
+          type: "line",
+          source: "panels",
+          paint: { "line-color": "#000", "line-opacity": 0.3, "line-width": 0.5 },
+        });
       }
-      map.addSource("panels", { type: "geojson", data: geojson });
-      map.addLayer({
-        id: "panels-fill",
-        type: "fill",
-        source: "panels",
-        paint: {
-          "fill-color": ["case", [">=", ["get", "tsrf"], 0.75], "#22c55e", "#f59e0b"],
-          "fill-opacity": 0.7,
-        },
-      });
-      map.addLayer({
-        id: "panels-outline",
-        type: "line",
-        source: "panels",
-        paint: { "line-color": "#000", "line-opacity": 0.3, "line-width": 0.5 },
-      });
+      fitView();
     };
 
     if (map.isStyleLoaded()) addLayers();
