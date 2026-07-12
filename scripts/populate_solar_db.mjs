@@ -76,10 +76,10 @@ function parseFile(pid, raw) {
     ? {
         ref: [refLat, refLon],
         p: sp.solarPanels.map(p => [
-          Math.round((p.center.latitude  - refLat) * 1e6),
-          Math.round((p.center.longitude - refLon) * 1e6),
+          +((p.center.latitude  - refLat) * 1e6).toFixed(6),
+          +((p.center.longitude - refLon) * 1e6).toFixed(6),
           p.orientation === "LANDSCAPE" ? 1 : 0,
-          Math.round(p.yearlyEnergyDcKwh),
+          +p.yearlyEnergyDcKwh.toFixed(1),
           p.segmentIndex,
         ]),
       }
