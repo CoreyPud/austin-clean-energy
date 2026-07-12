@@ -87,8 +87,8 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
     const map = mapRef.current;
     if (!map || !panels?.length) return;
 
-    const halfH = panelHeightM / 2;
-    const halfW = panelWidthM / 2;
+    const halfH = panelHeightM / 2 * 0.95;
+    const halfW = panelWidthM / 2 * 0.95;
 
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
