@@ -690,6 +690,8 @@ export type Database = {
           segment_index: number
           sunshine_max: number | null
           sunshine_median: number | null
+          sunshine_quantiles: Json | null
+          yearly_energy_kwh: number | null
         }
         Insert: {
           area_m2?: number | null
@@ -704,6 +706,8 @@ export type Database = {
           segment_index: number
           sunshine_max?: number | null
           sunshine_median?: number | null
+          sunshine_quantiles?: Json | null
+          yearly_energy_kwh?: number | null
         }
         Update: {
           area_m2?: number | null
@@ -718,6 +722,8 @@ export type Database = {
           segment_index?: number
           sunshine_max?: number | null
           sunshine_median?: number | null
+          sunshine_quantiles?: Json | null
+          yearly_energy_kwh?: number | null
         }
         Relationships: [
           {
