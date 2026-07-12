@@ -683,6 +683,8 @@ export type Database = {
           center_lat: number | null
           center_lon: number | null
           ground_area_m2: number | null
+          max_kw: number | null
+          max_panels: number | null
           pid: string
           pitch_deg: number | null
           segment_index: number
@@ -695,6 +697,8 @@ export type Database = {
           center_lat?: number | null
           center_lon?: number | null
           ground_area_m2?: number | null
+          max_kw?: number | null
+          max_panels?: number | null
           pid: string
           pitch_deg?: number | null
           segment_index: number
@@ -707,6 +711,8 @@ export type Database = {
           center_lat?: number | null
           center_lon?: number | null
           ground_area_m2?: number | null
+          max_kw?: number | null
+          max_panels?: number | null
           pid?: string
           pitch_deg?: number | null
           segment_index?: number
