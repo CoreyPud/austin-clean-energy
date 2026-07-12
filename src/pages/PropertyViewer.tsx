@@ -751,8 +751,8 @@ export default function PropertyViewer() {
               <SatellitePane
                 lat={sel.lat} lon={sel.lon} className="w-full h-full"
                 panels={panelOverlay?.panels}
-                panelHeightM={panelOverlay?.dims.h}
-                panelWidthM={panelOverlay ? panelOverlay.dims.w * 0.75 : undefined}
+                panelHeightM={panelOverlay ? panelOverlay.dims.h * 0.95 : undefined}
+                panelWidthM={panelOverlay ? panelOverlay.dims.w * 0.85 : undefined}
                 segmentAzimuths={panelOverlay?.azimuths}
               />
             </div>

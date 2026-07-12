@@ -408,8 +408,8 @@ export default function PropertyPage() {
             lon={property.centroid_lon}
             className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
             panels={solarPanels.length > 0 ? solarPanels : undefined}
-            panelHeightM={panelDims?.h}
-            panelWidthM={panelDims ? panelDims.w * 0.75 : undefined}
+            panelHeightM={panelDims ? panelDims.h * 0.95 : undefined}
+            panelWidthM={panelDims ? panelDims.w * 0.85 : undefined}
             segmentAzimuths={segmentAzimuths}
           />
         )}
