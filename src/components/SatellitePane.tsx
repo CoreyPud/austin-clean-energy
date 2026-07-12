@@ -56,6 +56,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
   const markerRef    = useRef<mapboxgl.Marker | null>(null);
+  const popupRef     = useRef<mapboxgl.Popup | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -140,6 +141,25 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
           type: "line",
           source: "panels",
           paint: { "line-color": "#000", "line-opacity": 0.3, "line-width": 0.5 },
+        });
+
+        popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
+
+        map.on("mouseenter", "panels-fill", (e) => {
+          map.getCanvas().style.cursor = "pointer";
+          const tsrf = e.features?.[0]?.properties?.tsrf;
+          if (tsrf == null) return;
+          popupRef.current!
+            .setLngLat(e.lngLat)
+            .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% TSRF</strong>`)
+            .addTo(map);
+        });
+        map.on("mousemove", "panels-fill", (e) => {
+          popupRef.current?.setLngLat(e.lngLat);
+        });
+        map.on("mouseleave", "panels-fill", () => {
+          map.getCanvas().style.cursor = "";
+          popupRef.current?.remove();
         });
       }
       fitView();
