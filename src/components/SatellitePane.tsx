@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import MapTokenLoader from "@/components/MapTokenLoader";
 
@@ -31,23 +31,16 @@ function panelPolygon(
   isLandscape: boolean,
 ): [number, number][] {
   const mPerDegLon = M_PER_DEG_LAT * Math.cos(lat * RAD);
-  // azimuth = direction panel faces; panel long axis is perpendicular to azimuth
   const az = azimuthDeg * RAD;
-  // along-azimuth unit vector (points "downslope")
   const ax = Math.sin(az), ay = Math.cos(az);
-  // perpendicular (along ridge)
   const px = -ay, py = ax;
-
-  // if landscape, long axis is along the ridge (perpendicular to azimuth)
   const [longH, longW] = isLandscape ? [halfW, halfH] : [halfH, halfW];
-
   const corners: [number, number][] = [
     [ ax * longH + px * longW,  ay * longH + py * longW],
     [ ax * longH - px * longW,  ay * longH - py * longW],
     [-ax * longH - px * longW, -ay * longH - py * longW],
     [-ax * longH + px * longW, -ay * longH + py * longW],
   ];
-
   return corners.map(([dx, dy]) => [
     lon + dx / mPerDegLon,
     lat + dy / M_PER_DEG_LAT,
@@ -56,6 +49,7 @@ function panelPolygon(
 
 function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65, segmentAzimuths = {} }: Omit<Props, "className">) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
   const markerRef    = useRef<mapboxgl.Marker | null>(null);
 
@@ -78,7 +72,12 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
     return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
   }, []);
 
-  // Add/update panel overlay when panels or map ready
+  // Hide before paint whenever panels change so we never show the pre-fitBounds view
+  useLayoutEffect(() => {
+    if (!panels?.length) return;
+    if (wrapperRef.current) wrapperRef.current.style.opacity = "0";
+  }, [panels]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !panels?.length) return;
@@ -100,7 +99,6 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
       }),
     };
 
-    // Compute panel bounding box (centers ± half-panel extent)
     const lats = panels.map(p => p.lat);
     const lons = panels.map(p => p.lon);
     const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
@@ -114,9 +112,10 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
 
     const fitView = () => {
       const el = containerRef.current;
-      const padX = el ? el.clientWidth  * 0.1 : 40;
-      const padY = el ? el.clientHeight * 0.1 : 40;
+      const padX = el ? el.clientWidth  * 0.25 : 80;
+      const padY = el ? el.clientHeight * 0.25 : 80;
       map.fitBounds(bounds, { padding: { top: padY, bottom: padY, left: padX, right: padX }, animate: false });
+      if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
     };
 
     const addLayers = () => {
@@ -129,7 +128,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
           type: "fill",
           source: "panels",
           paint: {
-            "fill-color": ["interpolate", ["linear"], ["get", "tsrf"], 0.6, "#f59e0b", 0.75, "#facc15", 1.0, "#22c55e"],
+            "fill-color": ["interpolate", ["linear"], ["get", "tsrf"], 0.6, "#f59e0b", 1.0, "#22c55e"],
             "fill-opacity": 0.7,
           },
         });
@@ -148,11 +147,16 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
   }, [panels, panelHeightM, panelWidthM, segmentAzimuths]);
 
   useEffect(() => {
+    if (panels?.length) return; // let fitBounds control view when panels present
     mapRef.current?.jumpTo({ center: [lon, lat], zoom: 18 });
     markerRef.current?.setLngLat([lon, lat]);
   }, [lat, lon]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return (
+    <div ref={wrapperRef} className="w-full h-full">
+      <div ref={containerRef} className="w-full h-full" />
+    </div>
+  );
 }
 
 export default function SatellitePane({ lat, lon, className = "w-full h-64 rounded-lg overflow-hidden border border-border", panels, panelHeightM, panelWidthM, segmentAzimuths }: Props) {
