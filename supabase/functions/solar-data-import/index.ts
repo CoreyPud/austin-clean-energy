@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
     "solar_sunshine_hrs",
     "solar_sunshine_median",
     "solar_panel_capacity_w",
+    "solar_eligible_kw",
   ]);
 
   // Upsert properties — strip any columns not in the solar allowlist
