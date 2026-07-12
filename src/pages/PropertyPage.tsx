@@ -291,6 +291,7 @@ export default function PropertyPage() {
   const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
   const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
   const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
+  const [segmentPitches,   setSegmentPitches]   = useState<Record<number, number>>({});
 
 
   useEffect(() => {
@@ -304,15 +305,17 @@ export default function PropertyPage() {
         .single(),
       supabase
         .from("tcad_roof_segments")
-        .select("segment_index, azimuth_deg")
+        .select("segment_index, azimuth_deg, pitch_deg")
         .eq("pid", pid),
     ]).then(([{ data, error }, { data: segs }]) => {
       setLoading(false);
       if (error || !data) { setNotFound(true); return; }
       setProperty(data as PropertyData);
       const az: Record<number, number> = {};
-      (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; });
+      const pt: Record<number, number> = {};
+      (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; pt[s.segment_index] = s.pitch_deg; });
       setSegmentAzimuths(az);
+      setSegmentPitches(pt);
       const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
       if (layout?.p?.length) {
         const [refLat, refLon] = layout.ref;
@@ -403,9 +406,10 @@ export default function PropertyPage() {
             lon={property.centroid_lon}
             className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
             panels={solarPanels.length > 0 ? solarPanels : undefined}
-            panelHeightM={panelDims ? panelDims.h * 0.95 : undefined}
-            panelWidthM={panelDims ? panelDims.w * 0.85 : undefined}
+            panelHeightM={panelDims?.h}
+            panelWidthM={panelDims?.w}
             segmentAzimuths={segmentAzimuths}
+            segmentPitches={segmentPitches}
           />
         )}
 

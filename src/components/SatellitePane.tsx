@@ -18,6 +18,7 @@ interface Props {
   panelHeightM?: number;
   panelWidthM?: number;
   segmentAzimuths?: Record<number, number>;
+  segmentPitches?: Record<number, number>;
 }
 
 const AUSTIN_REF_HRS = 1950;
@@ -51,7 +52,7 @@ interface MapProps extends Omit<Props, "className"> {
   panelOpacity: number;
 }
 
-function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65, segmentAzimuths = {}, panelOpacity }: MapProps) {
+function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65, segmentAzimuths = {}, segmentPitches = {}, panelOpacity }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
@@ -93,8 +94,9 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
       type: "FeatureCollection",
       features: panels.map((p, i) => {
         const az = segmentAzimuths[p.segmentIndex] ?? 180;
+        const pitch = segmentPitches[p.segmentIndex] ?? 20;
         const tsrf = p.yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS);
-        const coords = panelPolygon(p.lat, p.lon, halfH, halfW, az, p.orientation === "LANDSCAPE");
+        const coords = panelPolygon(p.lat, p.lon, halfH * Math.cos(pitch * RAD), halfW, az, p.orientation === "LANDSCAPE");
         return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] },
@@ -193,7 +195,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
   );
 }
 
-export default function SatellitePane({ lat, lon, className = "w-full h-64 rounded-lg overflow-hidden border border-border", panels, panelHeightM, panelWidthM, segmentAzimuths }: Props) {
+export default function SatellitePane({ lat, lon, className = "w-full h-64 rounded-lg overflow-hidden border border-border", panels, panelHeightM, panelWidthM, segmentAzimuths, segmentPitches }: Props) {
   const [panelOpacity, setPanelOpacity] = useState(0.7);
 
   return (
@@ -202,7 +204,7 @@ export default function SatellitePane({ lat, lon, className = "w-full h-64 round
         <SatelliteMap
           lat={lat} lon={lon}
           panels={panels} panelHeightM={panelHeightM} panelWidthM={panelWidthM}
-          segmentAzimuths={segmentAzimuths} panelOpacity={panelOpacity}
+          segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches} panelOpacity={panelOpacity}
         />
       </MapTokenLoader>
       {panels?.length ? (

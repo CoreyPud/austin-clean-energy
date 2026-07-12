@@ -83,6 +83,7 @@ export default function PropertyViewer() {
     panels: SolarPanel[];
     dims: { h: number; w: number };
     azimuths: Record<number, number>;
+    pitches: Record<number, number>;
   } | null>(null);
 
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
@@ -157,8 +158,9 @@ export default function PropertyViewer() {
             segmentIndex: si,
           }));
           const azimuths: Record<number, number> = {};
-          segs.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; });
-          setPanelOverlay({ panels, dims: { h: 1.879, w: 1.045 }, azimuths });
+          const pitches: Record<number, number> = {};
+          segs.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; pitches[s.segment_index] = s.pitch_deg; });
+          setPanelOverlay({ panels, dims: { h: 1.879, w: 1.045 }, azimuths, pitches });
         }
       });
   }, [focusPid]);
@@ -752,9 +754,10 @@ export default function PropertyViewer() {
               <SatellitePane
                 lat={sel.lat} lon={sel.lon} className="w-full h-full"
                 panels={panelOverlay?.panels}
-                panelHeightM={panelOverlay ? panelOverlay.dims.h * 0.95 : undefined}
-                panelWidthM={panelOverlay ? panelOverlay.dims.w * 0.85 : undefined}
+                panelHeightM={panelOverlay?.dims.h}
+                panelWidthM={panelOverlay?.dims.w}
                 segmentAzimuths={panelOverlay?.azimuths}
+                segmentPitches={panelOverlay?.pitches}
               />
             </div>
             {/* Property info */}
