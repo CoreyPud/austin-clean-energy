@@ -140,28 +140,30 @@ export default function PropertyViewer() {
       .order("segment_index")
       .then(({ data }) => setSegments(data ?? []));
 
-    fetch(`/api/local-solar/${focusPid}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
-        if (!json) { setPanelOverlay(null); return; }
-        const sp = json.solarPotential ?? {};
-        const panels: SolarPanel[] = (sp.solarPanels ?? []).map((p: any) => ({
-          lat: p.center?.latitude,
-          lon: p.center?.longitude,
-          orientation: p.orientation,
-          yearlyEnergyDcKwh: p.yearlyEnergyDcKwh,
-          segmentIndex: p.segmentIndex,
-        })).filter((p: SolarPanel) => p.lat != null && p.lon != null);
-        const azimuths: Record<number, number> = {};
-        (sp.roofSegmentStats ?? []).forEach((s: any, i: number) => {
-          if (s.azimuthDegrees != null) azimuths[i] = s.azimuthDegrees;
-        });
-        const h = (sp.panelHeightMeters ?? 1.0);
-        const w = (sp.panelWidthMeters ?? 1.65);
-        setPanelOverlay(panels.length ? { panels, dims: { h, w }, azimuths } : null);
-      })
-      .catch(() => setPanelOverlay(null));
+    const sel = properties.find(p => p.pid === focusPid);
+    const layout = (sel as any)?.solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
+    if (layout?.p?.length) {
+      const [refLat, refLon] = layout.ref;
+      const panels: SolarPanel[] = layout.p.map(([dlat, dlon, o, kwh, si]) => ({
+        lat: refLat + dlat / 1e6,
+        lon: refLon + dlon / 1e6,
+        orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT",
+        yearlyEnergyDcKwh: kwh,
+        segmentIndex: si,
+      }));
+      setPanelOverlay({ panels, dims: { h: 1.65, w: 1.0 }, azimuths: {} });
+    } else {
+      setPanelOverlay(null);
+    }
   }, [focusPid]);
+
+  // Patch azimuths into panel overlay once segments load
+  useEffect(() => {
+    if (!segments.length || !panelOverlay) return;
+    const azimuths: Record<number, number> = {};
+    segments.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; });
+    setPanelOverlay(prev => prev ? { ...prev, azimuths } : null);
+  }, [segments]);
 
   // Static data: gas plants + proposed sites
   useEffect(() => {

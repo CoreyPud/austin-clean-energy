@@ -70,6 +70,21 @@ function parseFile(pid, raw) {
     ? `${id.year}-${String(id.month).padStart(2,"0")}-${String(id.day).padStart(2,"0")}`
     : null;
 
+  const refLat = raw.center?.latitude ?? null;
+  const refLon = raw.center?.longitude ?? null;
+  const solarPanels = (refLat != null && (sp.solarPanels ?? []).length)
+    ? {
+        ref: [refLat, refLon],
+        p: sp.solarPanels.map(p => [
+          Math.round((p.center.latitude  - refLat) * 1e6),
+          Math.round((p.center.longitude - refLon) * 1e6),
+          p.orientation === "LANDSCAPE" ? 1 : 0,
+          Math.round(p.yearlyEnergyDcKwh),
+          p.segmentIndex,
+        ]),
+      }
+    : null;
+
   const property = {
     pid,
     solar_fetched_at:       raw._fetched_at ?? new Date().toISOString(),
@@ -81,6 +96,7 @@ function parseFile(pid, raw) {
     solar_sunshine_median:  sp.wholeRoofStats?.sunshineQuantiles?.[5] ?? null,
     solar_panel_capacity_w: sp.panelCapacityWatts ?? null,
     solar_eligible_kw:      calcEligibleKw(sp),
+    solar_panels_layout:    solarPanels,
   };
 
   const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
