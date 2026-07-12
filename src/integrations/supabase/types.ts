@@ -601,6 +601,7 @@ export type Database = {
           solar_max_area_m2: number | null
           solar_max_panels: number | null
           solar_panel_capacity_w: number | null
+          solar_panels_layout: Json | null
           solar_sunshine_hrs: number | null
           solar_sunshine_median: number | null
           stat_cd: string | null
@@ -635,6 +636,7 @@ export type Database = {
           solar_max_area_m2?: number | null
           solar_max_panels?: number | null
           solar_panel_capacity_w?: number | null
+          solar_panels_layout?: Json | null
           solar_sunshine_hrs?: number | null
           solar_sunshine_median?: number | null
           stat_cd?: string | null
@@ -669,6 +671,7 @@ export type Database = {
           solar_max_area_m2?: number | null
           solar_max_panels?: number | null
           solar_panel_capacity_w?: number | null
+          solar_panels_layout?: Json | null
           solar_sunshine_hrs?: number | null
           solar_sunshine_median?: number | null
           stat_cd?: string | null
