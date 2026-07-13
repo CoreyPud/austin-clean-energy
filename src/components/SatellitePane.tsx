@@ -19,6 +19,7 @@ interface Props {
   panelWidthM?: number;
   segmentAzimuths?: Record<number, number>;
   segmentPitches?: Record<number, number>;
+  selectedPanelCount?: number;
 }
 
 const AUSTIN_REF_HRS = 1950;
@@ -48,16 +49,34 @@ function panelPolygon(
   ]);
 }
 
+function fillOpacityExpr(opacity: number, hasFilter: boolean): any {
+  if (!hasFilter) return opacity;
+  return ["case", ["boolean", ["get", "selected"], true], opacity, Math.max(0.07, opacity * 0.18)];
+}
+
 interface MapProps extends Omit<Props, "className"> {
   panelOpacity: number;
 }
 
-function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65, segmentAzimuths = {}, segmentPitches = {}, panelOpacity }: MapProps) {
+function SatelliteMap({
+  lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65,
+  segmentAzimuths = {}, segmentPitches = {}, panelOpacity, selectedPanelCount,
+}: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
   const markerRef    = useRef<mapboxgl.Marker | null>(null);
   const popupRef     = useRef<mapboxgl.Popup | null>(null);
+
+  // Refs to detect panel/azimuth changes vs selection-only changes
+  const panelsRef    = useRef<SolarPanel[] | undefined>(undefined);
+  const azimuthsRef  = useRef<Record<number, number>>({});
+  // Refs so the panelOpacity effect can build the correct expression
+  const selCountRef  = useRef<number | undefined>(selectedPanelCount);
+  const panelsLenRef = useRef<number>(panels?.length ?? 0);
+
+  useEffect(() => { selCountRef.current  = selectedPanelCount; }, [selectedPanelCount]);
+  useEffect(() => { panelsLenRef.current = panels?.length ?? 0; }, [panels]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -85,22 +104,111 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !panels?.length) return;
+    if (!map) return;
+
+    if (panels === undefined) {
+      // Loading state — hide map and clear stale overlay.
+      // Only hide if we had panels before (avoids hiding on initial no-panel mount).
+      if (panelsRef.current !== undefined && wrapperRef.current) {
+        wrapperRef.current.style.opacity = "0";
+      }
+      const clearSource = () => {
+        if (map.getSource("panels")) {
+          (map.getSource("panels") as mapboxgl.GeoJSONSource).setData({ type: "FeatureCollection", features: [] });
+        }
+      };
+      if (map.isStyleLoaded()) clearSource();
+      else map.once("load", clearSource);
+      // Don't update panelsRef — keep previous value so next non-undefined panels trigger shouldFit
+      return;
+    }
+
+    if (panels.length === 0) {
+      // Confirmed no panels — show satellite with marker at property location
+      const show = () => {
+        if (map.getSource("panels")) {
+          (map.getSource("panels") as mapboxgl.GeoJSONSource).setData({ type: "FeatureCollection", features: [] });
+        }
+        if (markerRef.current) {
+          markerRef.current.setLngLat([lon, lat]);
+        } else {
+          markerRef.current = new mapboxgl.Marker({ color: "#ef4444" }).setLngLat([lon, lat]).addTo(map);
+        }
+        map.jumpTo({ center: [lon, lat], zoom: 18 });
+        if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
+      };
+      if (map.isStyleLoaded()) show();
+      else map.once("load", show);
+      panelsRef.current = panels;
+      return;
+    }
+
+    // Has panels — remove marker
+    if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
+
+    // Detect whether this is a layout change (needs fitView) vs selection-only
+    const panelsChanged   = panels !== panelsRef.current;
+    const azimuthsChanged = segmentAzimuths !== azimuthsRef.current;
+    panelsRef.current   = panels;
+    azimuthsRef.current = segmentAzimuths;
+    const shouldFit = panelsChanged || azimuthsChanged;
 
     const halfH = panelHeightM / 2 * 0.95;
     const halfW = panelWidthM / 2 * 0.95;
 
+    // Selection order: greedy proximity growth through ≥80% TSRF panels (seed = northernmost),
+    // then <80% TSRF panels by production % descending.
+    // Proximity growth ensures contiguous patches — distant sections aren't jumped to until nearby ones are full.
+    const TSRF_THRESH = 0.80;
+    const withMeta = panels.map((p, i) => ({
+      i, lat: p.lat, lon: p.lon,
+      tsrf: p.yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS),
+    }));
+
+    const highQ = withMeta.filter(x => x.tsrf >= TSRF_THRESH);
+    const lowQ  = withMeta.filter(x => x.tsrf <  TSRF_THRESH).sort((a, b) => b.tsrf - a.tsrf);
+
+    // Greedy nearest-neighbour through ≥80% panels; seed from northernmost
+    const greedyOrder: typeof withMeta = [];
+    if (highQ.length > 0) {
+      const remaining = new Set(highQ.map(x => x.i));
+      const seed = highQ.reduce((best, x) => x.lat > best.lat || (x.lat === best.lat && x.lon < best.lon) ? x : best);
+      const minDist = new Float64Array(panels.length).fill(Infinity);
+
+      const grow = (p: typeof withMeta[0]) => {
+        greedyOrder.push(p);
+        remaining.delete(p.i);
+        for (const ri of remaining) {
+          const r = withMeta[ri];
+          const d2 = (r.lat - p.lat) ** 2 + (r.lon - p.lon) ** 2;
+          if (d2 < minDist[ri]) minDist[ri] = d2;
+        }
+      };
+
+      grow(seed);
+      while (remaining.size > 0) {
+        let bestI = -1, bestD = Infinity;
+        for (const ri of remaining) { if (minDist[ri] < bestD) { bestD = minDist[ri]; bestI = ri; } }
+        if (bestI === -1) break;
+        grow(withMeta[bestI]);
+      }
+    }
+
+    const nSel = selectedPanelCount ?? panels.length;
+    const selectedSet = new Set([...greedyOrder, ...lowQ].slice(0, Math.min(nSel, panels.length)).map(x => x.i));
+    const hasFilter = selectedPanelCount != null && selectedPanelCount < panels.length;
+
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
       features: panels.map((p, i) => {
-        const az = segmentAzimuths[p.segmentIndex] ?? 180;
+        const az    = segmentAzimuths[p.segmentIndex] ?? 180;
         const pitch = segmentPitches[p.segmentIndex] ?? 20;
-        const tsrf = p.yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS);
+        const tsrf  = p.yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS);
         const coords = panelPolygon(p.lat, p.lon, halfH * Math.cos(pitch * RAD), halfW, az, p.orientation === "LANDSCAPE");
         return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] },
-          properties: { id: i, tsrf },
+          properties: { id: i, tsrf, selected: selectedSet.has(i) },
         };
       }),
     };
@@ -117,21 +225,29 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
     ];
 
     const fitView = () => {
-      const el = containerRef.current;
-      const boxW = (Math.max(...lons) - Math.min(...lons)) * mPerDegLon;
-      const boxH = (Math.max(...lats) - Math.min(...lats)) * M_PER_DEG_LAT;
-      const diag = Math.sqrt(boxW ** 2 + boxH ** 2);
-      const t = Math.max(0, Math.min(1, (diag - 20) / (100 - 20)));
-      const padFrac = 0.25 - t * 0.15; // 25% for small residential → 10% for large commercial
-      const padX = el ? el.clientWidth  * padFrac : 80;
-      const padY = el ? el.clientHeight * padFrac : 80;
-      map.fitBounds(bounds, { padding: { top: padY, bottom: padY, left: padX, right: padX }, animate: false });
-      if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
+      try {
+        const el = containerRef.current;
+        const boxW = (Math.max(...lons) - Math.min(...lons)) * mPerDegLon;
+        const boxH = (Math.max(...lats) - Math.min(...lats)) * M_PER_DEG_LAT;
+        const diag = Math.sqrt(boxW ** 2 + boxH ** 2);
+        const t = Math.max(0, Math.min(1, (diag - 20) / (100 - 20)));
+        const padFrac = 0.25 - t * 0.15;
+        const padX = el ? el.clientWidth  * padFrac : 80;
+        const padY = el ? el.clientHeight * padFrac : 80;
+        map.fitBounds(bounds, { padding: { top: padY, bottom: padY, left: padX, right: padX }, animate: false });
+      } finally {
+        if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
+      }
     };
+
+    const opacityExpr = fillOpacityExpr(panelOpacity, hasFilter);
 
     const addLayers = () => {
       if (map.getSource("panels")) {
         (map.getSource("panels") as mapboxgl.GeoJSONSource).setData(geojson);
+        if (map.getLayer("panels-fill")) {
+          map.setPaintProperty("panels-fill", "fill-opacity", opacityExpr);
+        }
       } else {
         map.addSource("panels", { type: "geojson", data: geojson });
         map.addLayer({
@@ -140,7 +256,7 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
           source: "panels",
           paint: {
             "fill-color": ["interpolate", ["linear"], ["get", "tsrf"], 0.6, "#f59e0b", 1.0, "#22c55e"],
-            "fill-opacity": panelOpacity,
+            "fill-opacity": opacityExpr,
           },
         });
         map.addLayer({
@@ -169,21 +285,24 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
           popupRef.current?.remove();
         });
       }
-      fitView();
+      if (shouldFit) fitView();
     };
 
     if (map.isStyleLoaded()) addLayers();
     else map.once("load", addLayers);
-  }, [panels, panelHeightM, panelWidthM, segmentAzimuths]);
+  }, [panels, panelHeightM, panelWidthM, segmentAzimuths, selectedPanelCount]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map?.getLayer("panels-fill")) return;
-    map.setPaintProperty("panels-fill", "fill-opacity", panelOpacity);
+    const cnt = selCountRef.current;
+    const len = panelsLenRef.current;
+    const hasFilter = cnt != null && cnt < len;
+    map.setPaintProperty("panels-fill", "fill-opacity", fillOpacityExpr(panelOpacity, hasFilter));
   }, [panelOpacity]);
 
   useEffect(() => {
-    if (panels?.length) return;
+    if (panels === undefined || panels.length > 0) return;
     mapRef.current?.jumpTo({ center: [lon, lat], zoom: 18 });
     markerRef.current?.setLngLat([lon, lat]);
   }, [lat, lon]);
@@ -195,7 +314,11 @@ function SatelliteMap({ lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65
   );
 }
 
-export default function SatellitePane({ lat, lon, className = "w-full h-64 rounded-lg overflow-hidden border border-border", panels, panelHeightM, panelWidthM, segmentAzimuths, segmentPitches }: Props) {
+export default function SatellitePane({
+  lat, lon,
+  className = "w-full h-64 rounded-lg overflow-hidden border border-border",
+  panels, panelHeightM, panelWidthM, segmentAzimuths, segmentPitches, selectedPanelCount,
+}: Props) {
   const [panelOpacity, setPanelOpacity] = useState(0.7);
 
   return (
@@ -204,7 +327,8 @@ export default function SatellitePane({ lat, lon, className = "w-full h-64 round
         <SatelliteMap
           lat={lat} lon={lon}
           panels={panels} panelHeightM={panelHeightM} panelWidthM={panelWidthM}
-          segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches} panelOpacity={panelOpacity}
+          segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches}
+          panelOpacity={panelOpacity} selectedPanelCount={selectedPanelCount}
         />
       </MapTokenLoader>
       {panels?.length ? (

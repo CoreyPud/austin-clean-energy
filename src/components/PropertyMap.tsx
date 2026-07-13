@@ -93,6 +93,7 @@ function toPropertyGeoJSON(properties: PropertyPoint[]): GeoJSON.FeatureCollecti
         dist_peaker: p.dist_peaker,
         property_type: p.property_type ?? "other",
         has_solar: p.has_solar,
+        has_google_data: !!p.solar_fetched_at,
       },
     })),
   };
@@ -151,9 +152,9 @@ export function PropertyMap({ properties, gasPlants, proposedSites, siteCounts, 
       // ── Selected property highlight ──────────────────────────────
       map.addSource("selected-prop", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addLayer({ id: "selected-prop-ring", type: "circle", source: "selected-prop",
-        paint: { "circle-radius": 12, "circle-color": "transparent", "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
+        paint: { "circle-radius": 11, "circle-color": "transparent", "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
       map.addLayer({ id: "selected-prop-dot",  type: "circle", source: "selected-prop",
-        paint: { "circle-radius": 7, "circle-color": "#facc15", "circle-stroke-width": 1.5, "circle-stroke-color": "#78350f" } });
+        paint: { "circle-radius": 6, "circle-color": "#ffffff", "circle-stroke-width": 1.5, "circle-stroke-color": "#94a3b8" } });
 
       // ── Properties ──────────────────────────────────────────────
       map.addSource("properties", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -163,17 +164,30 @@ export function PropertyMap({ properties, gasPlants, proposedSites, siteCounts, 
         source: "properties",
         paint: {
           "circle-radius": 4,
-          "circle-opacity": 0.85,
+          "circle-opacity": 0.9,
           "circle-color": [
-            "match", ["get", "property_type"],
-            "single_family", "#3b82f6",
-            "multifamily",   "#8b5cf6",
-            "condo",         "#ec4899",
-            "commercial",    "#f97316",
-            "#6b7280",
+            "case", ["boolean", ["get", "has_google_data"], false],
+            ["match", ["get", "property_type"],
+              "single_family", "#3b82f6",
+              "multifamily",   "#8b5cf6",
+              "condo",         "#ec4899",
+              "commercial",    "#f97316",
+              "#6b7280"],
+            "#ffffff",
           ],
-          "circle-stroke-width": ["case", ["boolean", ["get", "has_solar"], false], 2, 0.5],
-          "circle-stroke-color": ["case", ["boolean", ["get", "has_solar"], false], "#facc15", "#ffffff"],
+          "circle-stroke-width": [
+            "case", ["boolean", ["get", "has_solar"], false], 1.5, 1,
+          ],
+          "circle-stroke-color": [
+            "case", ["boolean", ["get", "has_solar"], false],
+            "#facc15",
+            ["match", ["get", "property_type"],
+              "single_family", "#3b82f6",
+              "multifamily",   "#8b5cf6",
+              "condo",         "#ec4899",
+              "commercial",    "#f97316",
+              "#6b7280"],
+          ],
         },
       });
 
@@ -380,7 +394,10 @@ export function PropertyMap({ properties, gasPlants, proposedSites, siteCounts, 
       ? { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "Point", coordinates: [prop.lon, prop.lat] }, properties: {} }] }
       : { type: "FeatureCollection", features: [] }
     );
-    if (prop) mapRef.current?.flyTo({ center: [prop.lon, prop.lat], zoom: 15, duration: 600 });
+    if (prop) {
+      const map = mapRef.current;
+      if (map) map.flyTo({ center: [prop.lon, prop.lat], zoom: Math.max(map.getZoom(), 15), duration: 600 });
+    }
   }, [ready, focusPid, properties]);
 
   return <div ref={containerRef} className="w-full h-full" />;
