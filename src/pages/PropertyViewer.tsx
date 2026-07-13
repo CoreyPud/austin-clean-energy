@@ -949,8 +949,10 @@ export default function PropertyViewer() {
                       size="sm"
                       variant="outline"
                       className="h-6 text-xs px-2"
-                      disabled={solarFetching}
+                      disabled={solarFetching || !isAdmin}
+                      title={!isAdmin ? "Admin login required" : undefined}
                       onClick={() => handleFetchSolar(sel.pid, sel.lat, sel.lon)}
+
                     >
                       {solarFetching ? (
                         <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Fetching…</>
