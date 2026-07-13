@@ -867,7 +867,16 @@ export default function PropertyViewer() {
         }
 
         return (
-          <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
+          <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0 relative">
+            {/* Close button pinned to top-right of the pane */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 absolute top-2 right-2 z-10 bg-card/80 hover:bg-card backdrop-blur-sm rounded-md shadow"
+              onClick={() => setRightPanelOpen(false)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
             {/* Satellite map */}
             <div className="flex-shrink-0 aspect-square w-full">
               <SatellitePane
@@ -894,11 +903,9 @@ export default function PropertyViewer() {
                       Edit
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setRightPanelOpen(false)}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
+
               <div className="flex flex-wrap gap-2">
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                   style={{ background: (TYPE_COLOR[sel.property_type ?? ""] ?? "#6b7280") + "22", color: TYPE_COLOR[sel.property_type ?? ""] ?? "#6b7280" }}>
