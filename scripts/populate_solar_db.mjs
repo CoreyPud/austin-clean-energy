@@ -70,6 +70,21 @@ function parseFile(pid, raw) {
     ? `${id.year}-${String(id.month).padStart(2,"0")}-${String(id.day).padStart(2,"0")}`
     : null;
 
+  const refLat = raw.center?.latitude ?? null;
+  const refLon = raw.center?.longitude ?? null;
+  const solarPanels = (refLat != null && (sp.solarPanels ?? []).length)
+    ? {
+        ref: [refLat, refLon],
+        p: sp.solarPanels.map(p => [
+          +((p.center.latitude  - refLat) * 1e6).toFixed(6),
+          +((p.center.longitude - refLon) * 1e6).toFixed(6),
+          p.orientation === "LANDSCAPE" ? 1 : 0,
+          +p.yearlyEnergyDcKwh.toFixed(1),
+          p.segmentIndex,
+        ]),
+      }
+    : null;
+
   const property = {
     pid,
     solar_fetched_at:       raw._fetched_at ?? new Date().toISOString(),
@@ -81,20 +96,34 @@ function parseFile(pid, raw) {
     solar_sunshine_median:  sp.wholeRoofStats?.sunshineQuantiles?.[5] ?? null,
     solar_panel_capacity_w: sp.panelCapacityWatts ?? null,
     solar_eligible_kw:      calcEligibleKw(sp),
+    solar_panels_layout:    solarPanels,
   };
 
-  const segments = (sp.roofSegmentStats ?? []).map((seg, i) => ({
-    pid,
-    segment_index:   i,
-    pitch_deg:       seg.pitchDegrees ?? null,
-    azimuth_deg:     seg.azimuthDegrees ?? null,
-    area_m2:         seg.stats?.areaMeters2 ?? null,
-    ground_area_m2:  seg.stats?.groundAreaMeters2 ?? null,
-    sunshine_median: seg.stats?.sunshineQuantiles?.[5] ?? null,
-    sunshine_max:    seg.stats?.sunshineQuantiles?.[10] ?? null,
-    center_lat:      seg.center?.latitude ?? null,
-    center_lon:      seg.center?.longitude ?? null,
-  }));
+  const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
+  const maxConfig = (sp.solarPanelConfigs ?? []).at(-1);
+  const segSummaryMap = new Map(
+    (maxConfig?.roofSegmentSummaries ?? []).map(s => [s.segmentIndex, s])
+  );
+
+  const segments = (sp.roofSegmentStats ?? []).map((seg, i) => {
+    const summary = segSummaryMap.get(i);
+    return {
+      pid,
+      segment_index:       i,
+      pitch_deg:           seg.pitchDegrees ?? null,
+      azimuth_deg:         seg.azimuthDegrees ?? null,
+      area_m2:             seg.stats?.areaMeters2 ?? null,
+      ground_area_m2:      seg.stats?.groundAreaMeters2 ?? null,
+      sunshine_median:     seg.stats?.sunshineQuantiles?.[5] ?? null,
+      sunshine_max:        seg.stats?.sunshineQuantiles?.[10] ?? null,
+      sunshine_quantiles:  seg.stats?.sunshineQuantiles ?? null,
+      center_lat:          seg.center?.latitude ?? null,
+      center_lon:          seg.center?.longitude ?? null,
+      max_panels:          summary?.panelsCount ?? null,
+      max_kw:              summary ? +(summary.panelsCount * panelKw).toFixed(2) : null,
+      yearly_energy_kwh:   summary ? +summary.yearlyEnergyDcKwh.toFixed(1) : null,
+    };
+  });
 
   return { property, segments };
 }

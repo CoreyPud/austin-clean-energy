@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { slugifyAddress } from "@/lib/property-solar";
 import MapTokenLoader from "@/components/MapTokenLoader";
-import SatellitePane from "@/components/SatellitePane";
+import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
 import {
   PropertyMap,
   type PropertyPoint,
@@ -53,6 +53,23 @@ const TYPE_COLOR: Record<string, string> = {
 
 const ALL_TYPES = ["single_family", "multifamily", "condo", "commercial", "other"] as const;
 
+const STREET_SUFFIXES = new Set([
+  "drive","dr","street","st","avenue","ave","road","rd","lane","ln",
+  "boulevard","blvd","court","ct","place","pl","way","circle","cir",
+  "trail","trl","terrace","ter","loop","highway","hwy","parkway","pkwy",
+  "run","pass","bend","cove","crossing","xing","grove","ridge","view",
+  "creek","falls","springs","hollow","row","path",
+]);
+
+function normalizeAddressSearch(q: string): string {
+  const street = q.split(",")[0].trim();
+  const words = street.split(/\s+/);
+  if (words.length > 1 && STREET_SUFFIXES.has(words[words.length - 1].toLowerCase())) {
+    words.pop();
+  }
+  return words.join(" ");
+}
+
 
 export default function PropertyViewer() {
   const navigate = useNavigate();
@@ -76,7 +93,15 @@ export default function PropertyViewer() {
   const [segments, setSegments] = useState<{
     segment_index: number; pitch_deg: number; azimuth_deg: number;
     area_m2: number; sunshine_median: number; sunshine_max: number;
+    max_panels: number | null; max_kw: number | null; yearly_energy_kwh: number | null;
   }[]>([]);
+
+  const [panelOverlay, setPanelOverlay] = useState<{
+    panels: SolarPanel[];
+    dims: { h: number; w: number };
+    azimuths: Record<number, number>;
+    pitches: Record<number, number>;
+  } | null>(null);
 
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [isAdmin,        setIsAdmin]        = useState(false);
@@ -84,6 +109,14 @@ export default function PropertyViewer() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword,  setAdminPassword]  = useState("");
   const [adminLogging,   setAdminLogging]   = useState(false);
+
+  const [addressSearch,      setAddressSearch]      = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState<PropertyPoint[]>([]);
+  const [addrDropdownOpen,   setAddrDropdownOpen]   = useState(false);
+  const [solarFetching,      setSolarFetching]      = useState(false);
+  const [solarRefreshKey,    setSolarRefreshKey]     = useState(0);
+  const addrSearchRef = useRef<HTMLDivElement>(null);
+  const addrTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const token   = sessionStorage.getItem('admin_token');
@@ -123,16 +156,122 @@ export default function PropertyViewer() {
     setIsAdmin(false);
   };
 
+  const handleAddressInput = (val: string) => {
+    setAddressSearch(val);
+    setSearchQuery(val);
+    setTablePage(0);
+    if (addrTimerRef.current) clearTimeout(addrTimerRef.current);
+    if (!val.trim() || val.trim().length < 3) { setAddressSuggestions([]); setAddrDropdownOpen(false); return; }
+    addrTimerRef.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from("tcad_properties")
+        .select(SOLAR_SELECT)
+        .ilike("situs_address", `%${val.trim()}%`)
+        .limit(6);
+      if (data?.length) {
+        setAddressSuggestions(data.map(mapRow));
+        setAddrDropdownOpen(true);
+      } else {
+        setAddressSuggestions([]);
+        setAddrDropdownOpen(false);
+      }
+    }, 250);
+  };
+
+  const handleAddressSelect = (p: PropertyPoint) => {
+    setAddressSearch(p.address ?? "");
+    setSearchQuery(p.address ?? "");
+    setAddressSuggestions([]);
+    setAddrDropdownOpen(false);
+    if (!properties.find(x => x.pid === p.pid)) {
+      setProperties(prev => [...prev, p]);
+    }
+    setFocusPid(p.pid);
+  };
+
+  const handleFetchSolar = async (pid: string, lat: number, lon: number) => {
+    setSolarFetching(true);
+    try {
+      const token = sessionStorage.getItem('admin_token');
+      const { data, error } = await supabase.functions.invoke('fetch-property-solar', {
+        body: { pid, lat, lon },
+        headers: { 'x-admin-token': token ?? '' },
+      });
+      if (error || !data?.ok) throw new Error(data?.error || 'Fetch failed');
+      if (data.property) {
+        const prop = data.property;
+        setProperties(prev => prev.map(p => {
+          if (p.pid !== pid) return p;
+          return {
+            ...p,
+            solar_fetched_at:       prop.solar_fetched_at       ?? p.solar_fetched_at,
+            solar_max_panels:       prop.solar_max_panels        ?? p.solar_max_panels,
+            solar_max_area_m2:      prop.solar_max_area_m2       ?? p.solar_max_area_m2,
+            solar_sunshine_hrs:     prop.solar_sunshine_hrs      ?? p.solar_sunshine_hrs,
+            solar_sunshine_median:  prop.solar_sunshine_median   ?? p.solar_sunshine_median,
+            solar_panel_capacity_w: prop.solar_panel_capacity_w  ?? p.solar_panel_capacity_w,
+            solar_eligible_kw:      prop.solar_eligible_kw       ?? p.solar_eligible_kw,
+            solar_imagery_quality:  prop.solar_imagery_quality   ?? p.solar_imagery_quality,
+            solar_imagery_date:     prop.solar_imagery_date      ?? p.solar_imagery_date,
+            solar_panels_layout:    prop.solar_panels_layout     ?? p.solar_panels_layout,
+          };
+        }));
+      }
+      setSolarRefreshKey(k => k + 1);
+      toast.success('Solar data updated');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to fetch solar data');
+    } finally {
+      setSolarFetching(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (addrSearchRef.current && !addrSearchRef.current.contains(e.target as Node)) {
+        setAddrDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   useEffect(() => {
     if (focusPid) setRightPanelOpen(true);
-    if (!focusPid) { setSegments([]); return; }
+    setSegments([]);
+    setPanelOverlay(null);
+    if (!focusPid) return;
+
     supabase
       .from("tcad_roof_segments")
-      .select("segment_index, pitch_deg, azimuth_deg, area_m2, sunshine_median, sunshine_max")
+      .select("segment_index, pitch_deg, azimuth_deg, area_m2, sunshine_median, sunshine_max, max_panels, max_kw, yearly_energy_kwh")
       .eq("pid", focusPid)
       .order("segment_index")
-      .then(({ data }) => setSegments(data ?? []));
-  }, [focusPid]);
+      .then(({ data }) => {
+        const segs = data ?? [];
+        setSegments(segs);
+
+        const sel = properties.find(p => p.pid === focusPid);
+        const layout = (sel as any)?.solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
+        if (layout?.p?.length) {
+          const [refLat, refLon] = layout.ref;
+          const panels: SolarPanel[] = layout.p.map(([dlat, dlon, o, kwh, si]) => ({
+            lat: refLat + dlat / 1e6,
+            lon: refLon + dlon / 1e6,
+            orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT",
+            yearlyEnergyDcKwh: kwh,
+            segmentIndex: si,
+          }));
+          const azimuths: Record<number, number> = {};
+          const pitches: Record<number, number> = {};
+          segs.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; pitches[s.segment_index] = s.pitch_deg; });
+          setPanelOverlay({ panels, dims: { h: 1.879, w: 1.045 }, azimuths, pitches });
+        } else {
+          // Signal "loaded, no panels" so SatellitePane shows satellite instead of staying hidden
+          setPanelOverlay({ panels: [], dims: { h: 1.879, w: 1.045 }, azimuths: {}, pitches: {} });
+        }
+      });
+  }, [focusPid, solarRefreshKey]);
 
   // Static data: gas plants + proposed sites
   useEffect(() => {
@@ -166,6 +305,8 @@ export default function PropertyViewer() {
       });
   }, []);
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const SOLAR_SELECT = "*, solar_installations(id, permit_number, issued_date, completed_date, installed_kw, contractor_company, total_job_valuation, status_current, link)";
 
   const mapRow = (p: any): PropertyPoint => {
@@ -198,6 +339,7 @@ export default function PropertyViewer() {
       solar_imagery_quality:  p.solar_imagery_quality ?? null,
       solar_imagery_date:     p.solar_imagery_date ?? null,
       solar_eligible_kw:      p.solar_eligible_kw ?? null,
+      solar_panels_layout:    p.solar_panels_layout ?? null,
       comment:                p.comment ?? null,
       roof_type:              p.roof_type ?? null,
       optimal_system_size_kw:     p.optimal_system_size_kw ?? null,
@@ -209,7 +351,7 @@ export default function PropertyViewer() {
   // Single paginated fetch — all active filters applied as query params
   const fetchPage = async (
     distCol: "dist_proposed_peaker_mi" | "dist_nearest_gas_plant_mi" | null,
-    opts: { maxMi: number; types: string[]; withSolar: boolean; maxRows?: number },
+    opts: { maxMi: number; types: string[]; withSolar: boolean; addressQ?: string; maxRows?: number },
     onProgress: (rows: PropertyPoint[]) => void,
   ): Promise<PropertyPoint[] | null> => {
     const rows: PropertyPoint[] = [];
@@ -232,6 +374,10 @@ export default function PropertyViewer() {
         }
         if (opts.types.length < ALL_TYPES.length) q = q.in("property_type", opts.types);
         if (opts.withSolar) q = q.not("solar_fetched_at", "is", null);
+        if (opts.addressQ) {
+          const esc = normalizeAddressSearch(opts.addressQ).replace(/[%_]/g, "\\$&");
+          q = q.or(`situs_address.ilike.%${esc}%,py_owner_name.ilike.%${esc}%`);
+        }
         ({ data, error } = await q);
       } catch (e: any) {
         error = { message: e?.message ?? "Failed to fetch" };
@@ -262,7 +408,7 @@ export default function PropertyViewer() {
       setProperties([...merged]);
     };
 
-    const baseOpts = { maxMi: maxDistMi, types: selectedTypes, withSolar: onlyWithSolar };
+    const baseOpts = { maxMi: maxDistMi, types: selectedTypes, withSolar: onlyWithSolar, addressQ: searchQuery.trim() || undefined };
 
     if (!proximityOn) {
       const rows = await fetchPage(null, { ...baseOpts, maxRows: MAX_RESULTS }, merge);
@@ -279,7 +425,7 @@ export default function PropertyViewer() {
     }
 
     setLoading(false);
-  }, [maxDistMi, includeGas, includeProposed, selectedTypes, onlyWithSolar, proximityOn]);
+  }, [maxDistMi, includeGas, includeProposed, selectedTypes, onlyWithSolar, proximityOn, searchQuery]);
 
 
   const siteCounts = useMemo(() => {
@@ -297,8 +443,6 @@ export default function PropertyViewer() {
     });
     return out;
   }, [properties, gasPlants, maxDistMi]);
-
-  const [searchQuery, setSearchQuery] = useState("");
 
   type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2" | "solar_eligible_kw" | "dist_gas" | "dist_peaker";
   const [sortKey, setSortKey]   = useState<SortKey>("dist_peaker");
@@ -323,8 +467,9 @@ export default function PropertyViewer() {
   }, [properties, sortKey, sortDir]);
 
   const filteredSorted = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return sorted;
+    const raw = searchQuery.trim();
+    if (!raw) return sorted;
+    const q = normalizeAddressSearch(raw).toLowerCase();
     return sorted.filter(p =>
       p.address?.toLowerCase().includes(q) ||
       p.owner?.toLowerCase().includes(q) ||
@@ -378,22 +523,11 @@ export default function PropertyViewer() {
           <span className="text-sm text-muted-foreground ml-2">
             {loading
               ? `Loading… (${properties.length.toLocaleString()} so far)`
-              : `${properties.length.toLocaleString()} propert${properties.length === 1 ? "y" : "ies"}`}
+              : `${filteredSorted.length.toLocaleString()} propert${filteredSorted.length === 1 ? "y" : "ies"}`}
           </span>
         )}
         {queryError && <span className="text-sm text-red-600 ml-2 font-medium">{queryError}</span>}
         <div className="ml-auto flex items-center gap-2">
-          {properties.length > 0 && (
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <Input
-                className="h-7 pl-7 pr-3 text-sm w-48"
-                placeholder="Search address / owner…"
-                value={searchQuery}
-                onChange={e => { setSearchQuery(e.target.value); setTablePage(0); }}
-              />
-            </div>
-          )}
           {filteredSorted.length > 0 && (
             <Button variant="outline" size="sm" onClick={exportCsv} className="h-7 gap-1.5">
               <Download className="h-3.5 w-3.5" />
@@ -430,6 +564,19 @@ export default function PropertyViewer() {
         {/* Filter panel */}
         <aside className="w-72 flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
           <div className="p-4 space-y-5">
+
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Address / owner</p>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  className="h-7 pl-7 pr-3 text-sm w-full"
+                  placeholder="Filter by address or owner…"
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setTablePage(0); }}
+                />
+              </div>
+            </div>
 
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -521,6 +668,10 @@ export default function PropertyViewer() {
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-yellow-400 bg-transparent" />
                 <span className="text-xs text-foreground">Yellow ring = has solar</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full flex-shrink-0 bg-white ring-1 ring-border" />
+                <span className="text-xs text-foreground">White = no Google Solar data</span>
               </div>
               {proximityOn && includeGas && (
                 <div className="flex items-center gap-2 pt-1.5 mt-1.5 border-t border-border">
@@ -718,8 +869,15 @@ export default function PropertyViewer() {
         return (
           <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
             {/* Satellite map */}
-            <div className="flex-shrink-0" style={{ height: "21vh" }}>
-              <SatellitePane lat={sel.lat} lon={sel.lon} className="w-full h-full" />
+            <div className="flex-shrink-0 aspect-square w-full">
+              <SatellitePane
+                lat={sel.lat} lon={sel.lon} className="w-full h-full"
+                panels={panelOverlay?.panels}
+                panelHeightM={panelOverlay?.dims.h}
+                panelWidthM={panelOverlay?.dims.w}
+                segmentAzimuths={panelOverlay?.azimuths}
+                segmentPitches={panelOverlay?.pitches}
+              />
             </div>
             {/* Property info */}
             <div className="flex-1 overflow-auto bg-card p-4 space-y-4">
@@ -777,10 +935,24 @@ export default function PropertyViewer() {
                 </div>
               </div>
 
-              {sel.solar_fetched_at && (
-                <div className="border-t border-border pt-3 space-y-3">
-                  <p className="text-xs font-medium text-muted-foreground">Google Solar</p>
-                  {sel.solar_max_panels == null ? (
+              <div className="border-t border-border pt-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground">Google Solar</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 text-xs px-2"
+                      disabled={solarFetching}
+                      onClick={() => handleFetchSolar(sel.pid, sel.lat, sel.lon)}
+                    >
+                      {solarFetching ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Fetching…</>
+                      ) : sel.solar_fetched_at ? "Refresh" : "Fetch solar data"}
+                    </Button>
+                  </div>
+                  {!sel.solar_fetched_at ? (
+                    <p className="text-xs text-muted-foreground italic">No solar data fetched yet</p>
+                  ) : sel.solar_max_panels == null ? (
                     <p className="text-xs text-muted-foreground italic">No building found in Solar API</p>
                   ) : (
                     <>
@@ -804,9 +976,11 @@ export default function PropertyViewer() {
                         <div>
                           <dt className="text-xs text-muted-foreground">Eligible (75% TSRF)</dt>
                           <dd className="text-sm font-medium mt-0.5">
-                            {sel.solar_eligible_kw != null
-                              ? <span className={sel.solar_eligible_kw >= 3 ? "text-emerald-600" : "text-amber-600"}>{sel.solar_eligible_kw.toFixed(1)} kW{sel.solar_eligible_kw < 3 ? " — below AE 3 kW min" : ""}</span>
-                              : <span className="text-foreground">—</span>}
+                            {sel.solar_eligible_kw != null ? (() => {
+                              const kw = sel.solar_eligible_kw;
+                              const ok = kw >= 3;
+                              return <span className={ok ? "text-emerald-600" : "text-amber-600"}>{kw.toFixed(1)} kW{ok ? "" : " — below AE 3 kW min"}</span>;
+                            })() : <span className="text-foreground">—</span>}
                           </dd>
                         </div>
                         <div>
@@ -831,18 +1005,27 @@ export default function PropertyViewer() {
                                 <th className="text-left font-normal pb-1">Face</th>
                                 <th className="text-right font-normal pb-1">Pitch</th>
                                 <th className="text-right font-normal pb-1">Area</th>
-                                <th className="text-right font-normal pb-1">Sun hrs</th>
+                                <th className="text-right font-normal pb-1">Max kW</th>
+                                <th className="text-right font-normal pb-1">kWh/yr</th>
+                                <th className="text-right font-normal pb-1">TSRF</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {segments.map(s => (
-                                <tr key={s.segment_index} className="border-t border-border/50">
-                                  <td className="py-0.5 font-medium">{azimuthLabel(s.azimuth_deg)} <span className="text-muted-foreground font-normal">{Math.round(s.azimuth_deg)}°</span></td>
-                                  <td className="text-right py-0.5">{Math.round(s.pitch_deg)}°</td>
-                                  <td className="text-right py-0.5">{Math.round(s.area_m2 * 10.764)} sqft</td>
-                                  <td className="text-right py-0.5">{Math.round(s.sunshine_median).toLocaleString()}</td>
-                                </tr>
-                              ))}
+                              {[...segments].filter(s => s.max_panels != null && s.max_panels > 0).sort((a, b) => (b.sunshine_median ?? 0) - (a.sunshine_median ?? 0)).map(s => {
+                                const tsrf = s.sunshine_median / 1950;
+                                const passes = tsrf >= 0.75;
+                                const color = passes ? "text-emerald-600" : "text-amber-600";
+                                return (
+                                  <tr key={s.segment_index} className={`border-t border-border/50 ${passes ? "" : "opacity-60"}`}>
+                                    <td className={`py-0.5 font-medium ${color}`}>{azimuthLabel(s.azimuth_deg)} <span className="font-normal">{Math.round(s.azimuth_deg)}°</span></td>
+                                    <td className="text-right py-0.5">{Math.round(s.pitch_deg)}°</td>
+                                    <td className="text-right py-0.5">{Math.round(s.area_m2 * 10.764)} sqft</td>
+                                    <td className={`text-right py-0.5 font-medium ${color}`}>{s.max_kw != null ? s.max_kw.toFixed(1) + " kW" : "—"}</td>
+                                    <td className="text-right py-0.5 text-muted-foreground">{s.yearly_energy_kwh != null ? Math.round(s.yearly_energy_kwh).toLocaleString() : "—"}</td>
+                                    <td className={`text-right py-0.5 font-medium ${color}`}>{Math.round(tsrf * 100)}%</td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
@@ -861,12 +1044,13 @@ export default function PropertyViewer() {
                     </>
                   )}
                 </div>
-              )}
 
               {(sel.solar_permits ?? []).length > 0 && (
                 <div className="border-t border-border pt-3 space-y-3">
                   <p className="text-xs font-medium text-muted-foreground">
-                    {(() => { const n = (sel.solar_permits ?? []).length; return `Solar permit${n > 1 ? `s (${n})` : ""}`; })()}
+                    {(sel.solar_permits ?? []).length > 1
+                      ? `Solar permits (${(sel.solar_permits ?? []).length})`
+                      : "Solar permit"}
                   </p>
                   {(sel.solar_permits ?? []).map((permit, i) => (
                     <div key={i} className="bg-background rounded-lg p-3 space-y-2 text-sm">

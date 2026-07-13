@@ -7,6 +7,7 @@ interface Props {
   id?: string;
   value: string;
   onChange: (value: string) => void;
+  onPlaceSelected?: (address: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   placeholder?: string;
   className?: string;
@@ -17,7 +18,7 @@ const AUSTIN_BOUNDS = {
   ne: { lat: 30.516, lng: -97.565 },
 };
 
-const AddressAutocomplete = ({ id, value, onChange, onKeyDown, placeholder, className }: Props) => {
+const AddressAutocomplete = ({ id, value, onChange, onPlaceSelected, onKeyDown, placeholder, className }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
   const [mapsReady, setMapsReady] = useState(false);
@@ -62,6 +63,7 @@ const AddressAutocomplete = ({ id, value, onChange, onKeyDown, placeholder, clas
       const place = ac.getPlace();
       if (place?.formatted_address) {
         onChange(place.formatted_address);
+        onPlaceSelected?.(place.formatted_address);
       }
     });
 

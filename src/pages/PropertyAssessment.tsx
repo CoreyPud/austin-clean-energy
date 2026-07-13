@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,7 @@ import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
-import SolarRoofMap from "@/components/assessment/SolarRoofMap";
+import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -74,6 +74,29 @@ const PropertyAssessment = () => {
 
   // Derived solar values — recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
+
+  const assessmentPanels = useMemo<SolarPanel[] | undefined>(() => {
+    const sc = results?.solarCenter;
+    const sp = results?.solarPanels as number[][] | undefined;
+    if (!sc || !sp?.length) return undefined;
+    return sp.map(([dlat, dlon, o, kwh, seg]) => ({
+      lat: sc.lat + dlat / 1e6,
+      lon: sc.lon + dlon / 1e6,
+      orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT",
+      yearlyEnergyDcKwh: kwh,
+      segmentIndex: seg,
+    }));
+  }, [results]);
+
+  const [assessmentAzimuths, assessmentPitches] = useMemo(() => {
+    const az: Record<number, number> = {};
+    const pt: Record<number, number> = {};
+    (results?.roofSegments ?? []).forEach((s: any) => {
+      az[s.segmentIndex] = s.azimuthDeg;
+      pt[s.segmentIndex] = s.pitchDeg;
+    });
+    return [az, pt];
+  }, [results]);
   const solarMaxKw = si ? Math.round((si.maxPanels * si.panelCapacityWatts) / 100) / 10 : 0;
   const solarProdPerKw = si && si.annualProductionKwh > 0 && solarMaxKw > 0
     ? si.annualProductionKwh / solarMaxKw : 1500;
@@ -93,7 +116,7 @@ const PropertyAssessment = () => {
   // Reset to recommended only when a fresh assessment result loads
   useEffect(() => {
     if (recommendedKw != null) setSystemKw(recommendedKw);
-    setBillingMode("vos");
+    setBillingMode(propertyType === "commercial" ? "sso" : "vos");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
 
@@ -107,7 +130,7 @@ const PropertyAssessment = () => {
   useEffect(() => {
     const defaults: Record<string, number> = { commercial: 3000, "non-profit": 800 };
     setMonthlyBill(defaults[propertyType] ?? 150);
-    if (propertyType !== "commercial") setBillingMode("vos");
+    setBillingMode(propertyType === "commercial" ? "sso" : "vos");
     setCostPerW(propertyType === "commercial" ? 2.00 : 2.95);
   }, [propertyType]);
 
@@ -353,6 +376,28 @@ const PropertyAssessment = () => {
     }
   };
 
+  const DB_TYPE_MAP: Record<string, string> = {
+    single_family:  "single-family",
+    multifamily:    "multi-family",
+    condo:          "condo",
+    commercial:     "commercial",
+    non_profit:     "non-profit",
+  };
+
+  const handlePlaceSelected = async (fullAddress: string) => {
+    const streetPart = fullAddress.split(",")[0].trim();
+    if (!streetPart) return;
+    const { data } = await supabase
+      .from("tcad_properties")
+      .select("property_type")
+      .ilike("situs_address", streetPart + "%")
+      .limit(2);
+    if (data?.length === 1 && data[0].property_type) {
+      const mapped = DB_TYPE_MAP[data[0].property_type];
+      if (mapped) setPropertyType(mapped);
+    }
+  };
+
   const handleStartOver = () => {
     setResults(null);
     setQuizCompleted(false);
@@ -387,6 +432,7 @@ const PropertyAssessment = () => {
                   id="address"
                   value={address}
                   onChange={setAddress}
+                  onPlaceSelected={handlePlaceSelected}
                   onKeyDown={(e) => e.key === "Enter" && !loading && handleAssess()}
                 />
               </div>
@@ -589,6 +635,40 @@ const PropertyAssessment = () => {
                     <div className="sticky top-0 z-20 -mx-4 px-4">
                       <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
                         <CardContent className="p-4">
+                          {/* Billing mode toggle — full width, above sliders */}
+                          {ssoEligible && (
+                            <div className="mb-3 pb-3 border-b space-y-2">
+                              <span className="text-xs text-muted-foreground">Billing model</span>
+                              <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full">
+                                <button
+                                  onClick={() => setBillingMode("sso")}
+                                  className={`flex-1 py-1.5 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                  Standard Offer
+                                </button>
+                                <button
+                                  onClick={() => setBillingMode("vos")}
+                                  className={`flex-1 py-1.5 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                  Value of Solar
+                                </button>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {billingMode === "vos" ? (
+                                  <>
+                                    Your solar offsets your own electricity bill. Austin Energy credits excess production at {(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢/kWh. Best when you consume most of what you produce.{" "}
+                                    <a href="https://austinenergy.com/rates/residential-rates/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
+                                  </>
+                                ) : (
+                                  <>
+                                    Austin Energy buys all power your system generates at 11.24¢/kWh. Your electricity bill stays unchanged. Best when your roof capacity exceeds your load.{" "}
+                                    <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          )}
+
                           <div className="flex items-start gap-6">
                             {/* System size slider */}
                             <div className="flex-1 min-w-0">
@@ -627,42 +707,6 @@ const PropertyAssessment = () => {
                               />
                             </div>
                           </div>
-
-                          {/* Billing mode toggle — only when roof qualifies for SSO */}
-                          {ssoEligible && (
-                            <div className="border-t mt-3 pt-3 space-y-2">
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs text-muted-foreground shrink-0">Billing model</span>
-                                <div className="flex rounded-md border overflow-hidden text-xs font-medium">
-                                  <button
-                                    onClick={() => setBillingMode("vos")}
-                                    className={`px-3 py-1 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                                  >
-                                    Value of Solar
-                                  </button>
-                                  <button
-                                    onClick={() => setBillingMode("sso")}
-                                    className={`px-3 py-1 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                                  >
-                                    Standard Offer
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {billingMode === "vos" ? (
-                                  <>
-                                    Your solar offsets your own electricity bill. Austin Energy credits excess production at {(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢/kWh. Best when you consume most of what you produce.{" "}
-                                    <a href="https://austinenergy.com/rates/residential-rates/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
-                                  </>
-                                ) : (
-                                  <>
-                                    Austin Energy buys all power your system generates at 11.24¢/kWh. Your electricity bill stays unchanged. Best when your roof capacity exceeds your load.{" "}
-                                    <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
-                                  </>
-                                )}
-                              </p>
-                            </div>
-                          )}
 
                           {/* KPI strip */}
                           {liveSummary && (
@@ -710,7 +754,21 @@ const PropertyAssessment = () => {
                     {/* Roof map — full width */}
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
-                        <SolarRoofMap center={results.center || [-97.7431, 30.2672]} solarInsights={si} />
+                        <SatellitePane
+                          lat={results.solarCenter?.lat ?? results.center?.[1] ?? 30.2672}
+                          lon={results.solarCenter?.lon ?? results.center?.[0] ?? -97.7431}
+                          className="w-full h-[480px]"
+                          panels={assessmentPanels}
+                          panelHeightM={results.panelDims?.h}
+                          panelWidthM={results.panelDims?.w}
+                          segmentAzimuths={assessmentAzimuths}
+                          segmentPitches={assessmentPitches}
+                          selectedPanelCount={
+                            assessmentPanels && si?.panelCapacityWatts
+                              ? Math.round(systemKw * 1000 / si.panelCapacityWatts)
+                              : undefined
+                          }
+                        />
                       </CardContent>
                     </Card>
 
