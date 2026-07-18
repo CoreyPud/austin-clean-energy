@@ -594,6 +594,7 @@ export type Database = {
           roof_type: string | null
           situs_address: string | null
           situs_zip: string | null
+          solar_buildable_kw: number | null
           solar_eligible_kw: number | null
           solar_fetched_at: string | null
           solar_imagery_date: string | null
@@ -629,6 +630,7 @@ export type Database = {
           roof_type?: string | null
           situs_address?: string | null
           situs_zip?: string | null
+          solar_buildable_kw?: number | null
           solar_eligible_kw?: number | null
           solar_fetched_at?: string | null
           solar_imagery_date?: string | null
@@ -664,6 +666,7 @@ export type Database = {
           roof_type?: string | null
           situs_address?: string | null
           situs_zip?: string | null
+          solar_buildable_kw?: number | null
           solar_eligible_kw?: number | null
           solar_fetched_at?: string | null
           solar_imagery_date?: string | null
