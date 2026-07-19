@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { slugifyAddress } from "@/lib/property-solar";
+import { useSolarFilter, SolarFilterPanel } from "@/components/SolarFilterPanel";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
 import {
@@ -103,7 +104,35 @@ export default function PropertyViewer() {
     pitches: Record<number, number>;
   } | null>(null);
 
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const selectedProperty = useMemo(
+    () => properties.find(p => p.pid === focusPid) ?? null,
+    [properties, focusPid],
+  );
+
+  const solarFilter = useSolarFilter({
+    panels:       panelOverlay?.panels,
+    propertyType: selectedProperty?.property_type,
+    azimuths:     panelOverlay?.azimuths,
+  });
+
+  const [rightPanelOpen,  setRightPanelOpen]  = useState(true);
+  const [rightPanelWidth, setRightPanelWidth] = useState(576); // px; default = 36rem
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX, startWidth = rightPanelWidth;
+    dragRef.current = { startX, startWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      // handle is on left edge → dragging left widens the panel
+      const next = Math.max(320, Math.min(1100, dragRef.current.startWidth + (dragRef.current.startX - ev.clientX)));
+      setRightPanelWidth(next);
+    };
+    const onUp = () => { dragRef.current = null; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [rightPanelWidth]);
   const [isAdmin,        setIsAdmin]        = useState(false);
   const [editPid,        setEditPid]        = useState<string | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -211,6 +240,7 @@ export default function PropertyViewer() {
             solar_sunshine_median:  prop.solar_sunshine_median   ?? p.solar_sunshine_median,
             solar_panel_capacity_w: prop.solar_panel_capacity_w  ?? p.solar_panel_capacity_w,
             solar_eligible_kw:      prop.solar_eligible_kw       ?? p.solar_eligible_kw,
+            solar_buildable_kw:     prop.solar_buildable_kw      ?? p.solar_buildable_kw,
             solar_imagery_quality:  prop.solar_imagery_quality   ?? p.solar_imagery_quality,
             solar_imagery_date:     prop.solar_imagery_date      ?? p.solar_imagery_date,
             solar_panels_layout:    prop.solar_panels_layout     ?? p.solar_panels_layout,
@@ -339,6 +369,7 @@ export default function PropertyViewer() {
       solar_imagery_quality:  p.solar_imagery_quality ?? null,
       solar_imagery_date:     p.solar_imagery_date ?? null,
       solar_eligible_kw:      p.solar_eligible_kw ?? null,
+      solar_buildable_kw:     p.solar_buildable_kw ?? null,
       solar_panels_layout:    p.solar_panels_layout ?? null,
       comment:                p.comment ?? null,
       roof_type:              p.roof_type ?? null,
@@ -444,7 +475,7 @@ export default function PropertyViewer() {
     return out;
   }, [properties, gasPlants, maxDistMi]);
 
-  type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2" | "solar_eligible_kw" | "dist_gas" | "dist_peaker";
+  type SortKey = "address" | "owner" | "zip" | "property_type" | "year_built" | "market_value" | "roof_sqft" | "solar_kw" | "solar_sunshine_median" | "solar_max_panels" | "solar_max_area_m2" | "solar_eligible_kw" | "solar_buildable_kw" | "dist_gas" | "dist_peaker";
   const [sortKey, setSortKey]   = useState<SortKey>("dist_peaker");
   const [sortDir, setSortDir]   = useState<"asc" | "desc">("asc");
 
@@ -724,7 +755,8 @@ export default function PropertyViewer() {
                 { key: "roof_sqft",    label: "Roof sqft",    align: "right" },
                 { key: "solar_kw",              label: "Solar kW",       align: "right" },
                 { key: "solar_sunshine_median", label: "Sun score",      align: "right" },
-                { key: "solar_max_panels",      label: "Max system",     align: "right" },
+                { key: "solar_max_panels",      label: "Max kW",         align: "right" },
+                { key: "solar_buildable_kw",    label: "Buildable kW",   align: "right" },
                 { key: "solar_eligible_kw",     label: "75% TSRF kW",    align: "right" },
                 { key: "solar_max_area_m2",     label: "Roof area",      align: "right" },
               ] as { key: SortKey | null; label: string; align: string }[]).map(col => (
@@ -801,6 +833,11 @@ export default function PropertyViewer() {
                       : "—"}
                   </td>
                   <td className="px-3 py-2 text-right text-xs">
+                    {p.solar_buildable_kw != null
+                      ? <span className={p.solar_buildable_kw >= 3 ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>{p.solar_buildable_kw.toFixed(1)} kW</span>
+                      : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs">
                     {p.solar_eligible_kw != null
                       ? <span className={p.solar_eligible_kw >= 3 ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>{p.solar_eligible_kw.toFixed(1)} kW</span>
                       : <span className="text-muted-foreground">—</span>}
@@ -867,16 +904,22 @@ export default function PropertyViewer() {
         }
 
         return (
-          <div className="w-[36rem] flex-shrink-0 border-l border-border flex flex-col min-h-0">
-            {/* Satellite map */}
+          <div className="flex-shrink-0 border-l border-border flex flex-col min-h-0 relative" style={{ width: rightPanelWidth }}>
+            {/* Drag-to-resize handle on left edge */}
+            <div
+              className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 hover:bg-primary/30 transition-colors"
+              onMouseDown={handleDragStart}
+            />
+            {/* Satellite map — aspect-square keeps it square as width changes */}
             <div className="flex-shrink-0 aspect-square w-full">
               <SatellitePane
                 lat={sel.lat} lon={sel.lon} className="w-full h-full"
-                panels={panelOverlay?.panels}
+                {...solarFilter.paneProps}
                 panelHeightM={panelOverlay?.dims.h}
                 panelWidthM={panelOverlay?.dims.w}
                 segmentAzimuths={panelOverlay?.azimuths}
                 segmentPitches={panelOverlay?.pitches}
+                fitKey={focusPid ?? undefined}
               />
             </div>
             {/* Property info */}
@@ -956,6 +999,10 @@ export default function PropertyViewer() {
                     <p className="text-xs text-muted-foreground italic">No building found in Solar API</p>
                   ) : (
                     <>
+                      <SolarFilterPanel
+                        state={solarFilter}
+                        capacityW={sel.solar_panel_capacity_w}
+                      />
                       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                         <div>
                           <dt className="text-xs text-muted-foreground">Roof sun score</dt>

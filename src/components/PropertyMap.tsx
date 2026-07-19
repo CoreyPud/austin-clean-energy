@@ -28,6 +28,7 @@ export interface PropertyPoint {
   solar_imagery_quality?: string | null;
   solar_imagery_date?: string | null;
   solar_eligible_kw?: number | null;
+  solar_buildable_kw?: number | null;
   comment?: string | null;
   roof_type?: string | null;
   optimal_system_size_kw?: number | null;

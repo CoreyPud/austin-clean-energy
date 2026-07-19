@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
+import { useSolarFilter } from "@/components/SolarFilterPanel";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import SectionHeading from "@/components/assessment/SectionHeading";
@@ -333,6 +334,12 @@ export default function PropertyPage() {
 
   const nbStats = useNeighborhoodStats(property?.situs_zip ?? null);
 
+  const solarFilter = useSolarFilter({
+    panels:       solarPanels.length ? solarPanels : undefined,
+    propertyType: property?.property_type,
+    azimuths:     segmentAzimuths,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">
@@ -351,7 +358,11 @@ export default function PropertyPage() {
   }
 
   const cls      = classifyProperty(property.property_type);
-  const rec      = computeRecommendation(property);
+  // Size the system off the buildable layout (setbacks, low-TSRF panels and rooftop
+  // walkways removed) rather than Google's raw maximum, so every figure downstream —
+  // kW, cost, rebate, production, payback, SSO — reflects what can actually be built.
+  const buildablePanels = solarFilter.filteredPanelCount ?? property.solar_max_panels;
+  const rec      = computeRecommendation({ ...property, solar_max_panels: buildablePanels });
   const hasSolar = !!property.solar_fetched_at && property.solar_max_panels != null;
   const address  = formatAssessorAddress(property.situs_address) || `Property ${property.pid}`;
   const typeLabel = TYPE_LABEL[property.property_type ?? ""] ?? "Other";
@@ -401,16 +412,18 @@ export default function PropertyPage() {
 
         {/* Satellite map */}
         {property.centroid_lat != null && property.centroid_lon != null && (
-          <SatellitePane
-            lat={property.centroid_lat}
-            lon={property.centroid_lon}
-            className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
-            panels={solarPanels.length > 0 ? solarPanels : undefined}
-            panelHeightM={panelDims?.h}
-            panelWidthM={panelDims?.w}
-            segmentAzimuths={segmentAzimuths}
-            segmentPitches={segmentPitches}
-          />
+          <div className="space-y-3">
+            <SatellitePane
+              lat={property.centroid_lat}
+              lon={property.centroid_lon}
+              className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
+              {...solarFilter.paneProps}
+              panelHeightM={panelDims?.h}
+              panelWidthM={panelDims?.w}
+              segmentAzimuths={segmentAzimuths}
+              segmentPitches={segmentPitches}
+            />
+          </div>
         )}
 
         {/* No solar data states */}
@@ -548,7 +561,7 @@ export default function PropertyPage() {
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Max system</dt>
-                  <dd className="font-medium">{rec.maxKw} kW ({property.solar_max_panels?.toLocaleString()} panels)</dd>
+                  <dd className="font-medium">{rec.maxKw} kW ({buildablePanels?.toLocaleString()} panels)</dd>
                 </div>
                 {roofSqft && (
                   <div>
