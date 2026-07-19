@@ -910,6 +910,15 @@ export default function PropertyViewer() {
               className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 hover:bg-primary/30 transition-colors"
               onMouseDown={handleDragStart}
             />
+            {/* Close button pinned to top-right of the pane */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 absolute top-2 right-2 z-10 bg-card/80 hover:bg-card backdrop-blur-sm rounded-md shadow"
+              onClick={() => setRightPanelOpen(false)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
             {/* Satellite map — aspect-square keeps it square as width changes */}
             <div className="flex-shrink-0 aspect-square w-full">
               <SatellitePane
@@ -937,11 +946,9 @@ export default function PropertyViewer() {
                       Edit
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setRightPanelOpen(false)}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
+
               <div className="flex flex-wrap gap-2">
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                   style={{ background: (TYPE_COLOR[sel.property_type ?? ""] ?? "#6b7280") + "22", color: TYPE_COLOR[sel.property_type ?? ""] ?? "#6b7280" }}>
@@ -985,8 +992,10 @@ export default function PropertyViewer() {
                       size="sm"
                       variant="outline"
                       className="h-6 text-xs px-2"
-                      disabled={solarFetching}
+                      disabled={solarFetching || !isAdmin}
+                      title={!isAdmin ? "Admin login required" : undefined}
                       onClick={() => handleFetchSolar(sel.pid, sel.lat, sel.lon)}
+
                     >
                       {solarFetching ? (
                         <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Fetching…</>

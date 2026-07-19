@@ -594,12 +594,15 @@ export type Database = {
           roof_type: string | null
           situs_address: string | null
           situs_zip: string | null
+          solar_buildable_kw: number | null
+          solar_eligible_kw: number | null
           solar_fetched_at: string | null
           solar_imagery_date: string | null
           solar_imagery_quality: string | null
           solar_max_area_m2: number | null
           solar_max_panels: number | null
           solar_panel_capacity_w: number | null
+          solar_panels_layout: Json | null
           solar_sunshine_hrs: number | null
           solar_sunshine_median: number | null
           stat_cd: string | null
@@ -627,12 +630,15 @@ export type Database = {
           roof_type?: string | null
           situs_address?: string | null
           situs_zip?: string | null
+          solar_buildable_kw?: number | null
+          solar_eligible_kw?: number | null
           solar_fetched_at?: string | null
           solar_imagery_date?: string | null
           solar_imagery_quality?: string | null
           solar_max_area_m2?: number | null
           solar_max_panels?: number | null
           solar_panel_capacity_w?: number | null
+          solar_panels_layout?: Json | null
           solar_sunshine_hrs?: number | null
           solar_sunshine_median?: number | null
           stat_cd?: string | null
@@ -660,12 +666,15 @@ export type Database = {
           roof_type?: string | null
           situs_address?: string | null
           situs_zip?: string | null
+          solar_buildable_kw?: number | null
+          solar_eligible_kw?: number | null
           solar_fetched_at?: string | null
           solar_imagery_date?: string | null
           solar_imagery_quality?: string | null
           solar_max_area_m2?: number | null
           solar_max_panels?: number | null
           solar_panel_capacity_w?: number | null
+          solar_panels_layout?: Json | null
           solar_sunshine_hrs?: number | null
           solar_sunshine_median?: number | null
           stat_cd?: string | null
@@ -680,11 +689,15 @@ export type Database = {
           center_lat: number | null
           center_lon: number | null
           ground_area_m2: number | null
+          max_kw: number | null
+          max_panels: number | null
           pid: string
           pitch_deg: number | null
           segment_index: number
           sunshine_max: number | null
           sunshine_median: number | null
+          sunshine_quantiles: Json | null
+          yearly_energy_kwh: number | null
         }
         Insert: {
           area_m2?: number | null
@@ -692,11 +705,15 @@ export type Database = {
           center_lat?: number | null
           center_lon?: number | null
           ground_area_m2?: number | null
+          max_kw?: number | null
+          max_panels?: number | null
           pid: string
           pitch_deg?: number | null
           segment_index: number
           sunshine_max?: number | null
           sunshine_median?: number | null
+          sunshine_quantiles?: Json | null
+          yearly_energy_kwh?: number | null
         }
         Update: {
           area_m2?: number | null
@@ -704,11 +721,15 @@ export type Database = {
           center_lat?: number | null
           center_lon?: number | null
           ground_area_m2?: number | null
+          max_kw?: number | null
+          max_panels?: number | null
           pid?: string
           pitch_deg?: number | null
           segment_index?: number
           sunshine_max?: number | null
           sunshine_median?: number | null
+          sunshine_quantiles?: Json | null
+          yearly_energy_kwh?: number | null
         }
         Relationships: [
           {

@@ -29,6 +29,9 @@ export interface PropertyPoint {
   solar_imagery_date?: string | null;
   solar_eligible_kw?: number | null;
   solar_buildable_kw?: number | null;
+  solar_sunshine_hrs?: number | null;
+  solar_panels_layout?: any | null;
+
   comment?: string | null;
   roof_type?: string | null;
   optimal_system_size_kw?: number | null;
