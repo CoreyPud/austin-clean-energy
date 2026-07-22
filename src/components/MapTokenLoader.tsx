@@ -11,6 +11,7 @@ const MapTokenLoader = ({ children }: MapTokenLoaderProps) => {
 
   useEffect(() => {
     const loadToken = async () => {
+      if ((window as any).MAPBOX_TOKEN) { setTokenLoaded(true); return; }
       try {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         

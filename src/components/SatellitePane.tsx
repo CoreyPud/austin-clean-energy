@@ -2,27 +2,32 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import MapTokenLoader from "@/components/MapTokenLoader";
 
-export interface SolarPanel {
-  lat: number;
-  lon: number;
-  orientation: "LANDSCAPE" | "PORTRAIT";
-  yearlyEnergyDcKwh: number;
-  segmentIndex: number;
-}
+// Defined in the filter lib (which must stay import-free so scripts can load it);
+// re-exported here since components already import the type from this module.
+import type { SolarPanel } from "@/lib/solar-filters";
+export type { SolarPanel };
+
+interface LatLon { lat: number; lon: number }
 
 interface Props {
   lat: number;
   lon: number;
   className?: string;
   panels?: SolarPanel[];
+  walkwayPanels?: SolarPanel[];
+  debugHoles?: LatLon[];
+  edgeSegments?: LatLon[][];
   panelHeightM?: number;
   panelWidthM?: number;
   segmentAzimuths?: Record<number, number>;
   segmentPitches?: Record<number, number>;
   selectedPanelCount?: number;
+  fitKey?: string | number;
 }
 
 const AUSTIN_REF_HRS = 1950;
+const PANEL_OPACITY = 0.9;
+const PANEL_LAYERS = ["panels-fill", "panels-outline", "walkways-fill", "walkways-outline"];
 const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
 
@@ -55,12 +60,12 @@ function fillOpacityExpr(opacity: number, hasFilter: boolean): any {
 }
 
 interface MapProps extends Omit<Props, "className"> {
-  panelOpacity: number;
+  panelsVisible: boolean;
 }
 
 function SatelliteMap({
-  lat, lon, panels, panelHeightM = 1.0, panelWidthM = 1.65,
-  segmentAzimuths = {}, segmentPitches = {}, panelOpacity, selectedPanelCount,
+  lat, lon, panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM = 1.0, panelWidthM = 1.65,
+  segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey,
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
@@ -68,10 +73,11 @@ function SatelliteMap({
   const markerRef    = useRef<mapboxgl.Marker | null>(null);
   const popupRef     = useRef<mapboxgl.Popup | null>(null);
 
-  // Refs to detect panel/azimuth changes vs selection-only changes
+  // panelsRef: tracks loading state (undefined = loading). fitKeyRef + azimuthsRef drive refit.
   const panelsRef    = useRef<SolarPanel[] | undefined>(undefined);
   const azimuthsRef  = useRef<Record<number, number>>({});
-  // Refs so the panelOpacity effect can build the correct expression
+  const fitKeyRef    = useRef<string | number | undefined>(undefined);
+  // Refs so the visibility effect can rebuild the correct opacity expression
   const selCountRef  = useRef<number | undefined>(selectedPanelCount);
   const panelsLenRef = useRef<number>(panels?.length ?? 0);
 
@@ -94,7 +100,10 @@ function SatelliteMap({
     if (!panels?.length) {
       markerRef.current = new mapboxgl.Marker({ color: "#ef4444" }).setLngLat([lon, lat]).addTo(map);
     }
-    return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
+    // Auto-resize Mapbox canvas whenever the CSS container is resized (e.g., panel drag)
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(containerRef.current);
+    return () => { resizeObserver.disconnect(); map.remove(); mapRef.current = null; markerRef.current = null; };
   }, []);
 
   useLayoutEffect(() => {
@@ -146,12 +155,13 @@ function SatelliteMap({
     // Has panels — remove marker
     if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
 
-    // Detect whether this is a layout change (needs fitView) vs selection-only
-    const panelsChanged   = panels !== panelsRef.current;
+    // Refit only when the property/data changes (fitKey), not when the filter toggles
+    const fitKeyChanged   = fitKey !== fitKeyRef.current;
     const azimuthsChanged = segmentAzimuths !== azimuthsRef.current;
     panelsRef.current   = panels;
     azimuthsRef.current = segmentAzimuths;
-    const shouldFit = panelsChanged || azimuthsChanged;
+    fitKeyRef.current   = fitKey;
+    const shouldFit = fitKeyChanged || azimuthsChanged;
 
     const halfH = panelHeightM / 2 * 0.95;
     const halfW = panelWidthM / 2 * 0.95;
@@ -240,13 +250,62 @@ function SatelliteMap({
       }
     };
 
-    const opacityExpr = fillOpacityExpr(panelOpacity, hasFilter);
+    const opacityExpr = fillOpacityExpr(PANEL_OPACITY, hasFilter);
+
+    // Walkway GeoJSON (gray tiles for removed walkway panels)
+    const walkwayGeojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: (walkwayPanels ?? []).map((p) => {
+        const az    = segmentAzimuths[p.segmentIndex] ?? 180;
+        const pitch = segmentPitches[p.segmentIndex] ?? 0;
+        const coords = panelPolygon(p.lat, p.lon, halfH * Math.cos(pitch * RAD), halfW, az, p.orientation === "LANDSCAPE");
+        return {
+          type: "Feature" as const,
+          geometry: { type: "Polygon" as const, coordinates: [[...coords, coords[0]]] },
+          properties: {},
+        };
+      }),
+    };
+
+    // Debug holes — red dots at interior hole cell centres
+    const debugGeojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: (debugHoles ?? []).map(h => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [h.lon, h.lat] },
+        properties: {},
+      })),
+    };
+
+    // Detected roof edge — dashed orange polyline along the panel/open-space boundary
+    const hullGeojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: (edgeSegments ?? []).length
+        ? [{
+            type: "Feature" as const,
+            geometry: {
+              type: "MultiLineString" as const,
+              coordinates: (edgeSegments ?? []).map(seg => seg.map(p => [p.lon, p.lat] as [number, number])),
+            },
+            properties: {},
+          }]
+        : [],
+    };
 
     const addLayers = () => {
       if (map.getSource("panels")) {
         (map.getSource("panels") as mapboxgl.GeoJSONSource).setData(geojson);
         if (map.getLayer("panels-fill")) {
           map.setPaintProperty("panels-fill", "fill-opacity", opacityExpr);
+        }
+        if (map.getSource("walkways")) {
+          (map.getSource("walkways") as mapboxgl.GeoJSONSource).setData(walkwayGeojson);
+        }
+        if (map.getSource("debug-holes")) {
+          (map.getSource("debug-holes") as mapboxgl.GeoJSONSource).setData(debugGeojson);
+        }
+        if (map.getSource("hull-outline")) {
+          (map.getSource("hull-outline") as mapboxgl.GeoJSONSource).setData(hullGeojson);
         }
       } else {
         map.addSource("panels", { type: "geojson", data: geojson });
@@ -264,6 +323,46 @@ function SatelliteMap({
           type: "line",
           source: "panels",
           paint: { "line-color": "#000", "line-opacity": 0.3, "line-width": 0.5 },
+        });
+
+        // Walkway layer (always created; empty when no walkways active)
+        map.addSource("walkways", { type: "geojson", data: walkwayGeojson });
+        map.addLayer({
+          id: "walkways-fill",
+          type: "fill",
+          source: "walkways",
+          paint: { "fill-color": "#e5e7eb", "fill-opacity": 0.75 },
+        });
+        map.addLayer({
+          id: "walkways-outline",
+          type: "line",
+          source: "walkways",
+          paint: { "line-color": "#6b7280", "line-opacity": 0.6, "line-width": 0.5 },
+        });
+
+        // Hull outline (dashed orange polygon)
+        map.addSource("hull-outline", { type: "geojson", data: hullGeojson });
+        map.addLayer({
+          id: "hull-line",
+          type: "line",
+          source: "hull-outline",
+          paint: { "line-color": "#f97316", "line-width": 2, "line-dasharray": [4, 3], "line-opacity": 0.9 },
+        });
+
+        // Debug holes (red circles)
+        map.addSource("debug-holes", { type: "geojson", data: debugGeojson });
+        map.addLayer({
+          id: "debug-holes-circles",
+          type: "circle",
+          source: "debug-holes",
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#ef4444",
+            "circle-opacity": 0.6,
+            "circle-stroke-color": "#991b1b",
+            "circle-stroke-width": 1,
+            "circle-stroke-opacity": 0.9,
+          },
         });
 
         popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
@@ -286,20 +385,22 @@ function SatelliteMap({
         });
       }
       if (shouldFit) fitView();
+      else if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
     };
 
     if (map.isStyleLoaded()) addLayers();
     else map.once("load", addLayers);
-  }, [panels, panelHeightM, panelWidthM, segmentAzimuths, selectedPanelCount]);
+  }, [panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths, selectedPanelCount]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map?.getLayer("panels-fill")) return;
-    const cnt = selCountRef.current;
-    const len = panelsLenRef.current;
-    const hasFilter = cnt != null && cnt < len;
-    map.setPaintProperty("panels-fill", "fill-opacity", fillOpacityExpr(panelOpacity, hasFilter));
-  }, [panelOpacity]);
+    const vis = panelsVisible ? "visible" : "none";
+    for (const id of PANEL_LAYERS) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
+    }
+    if (!panelsVisible) popupRef.current?.remove();
+  }, [panelsVisible]);
 
   useEffect(() => {
     if (panels === undefined || panels.length > 0) return;
@@ -317,32 +418,35 @@ function SatelliteMap({
 export default function SatellitePane({
   lat, lon,
   className = "w-full h-64 rounded-lg overflow-hidden border border-border",
-  panels, panelHeightM, panelWidthM, segmentAzimuths, segmentPitches, selectedPanelCount,
+  panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM,
+  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey,
 }: Props) {
-  const [panelOpacity, setPanelOpacity] = useState(0.7);
+  const [panelsVisible, setPanelsVisible] = useState(true);
 
   return (
     <div className={`${className} relative`}>
       <MapTokenLoader>
         <SatelliteMap
           lat={lat} lon={lon}
-          panels={panels} panelHeightM={panelHeightM} panelWidthM={panelWidthM}
+          panels={panels} walkwayPanels={walkwayPanels}
+          debugHoles={debugHoles} edgeSegments={edgeSegments}
+          panelHeightM={panelHeightM} panelWidthM={panelWidthM}
           segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches}
-          panelOpacity={panelOpacity} selectedPanelCount={selectedPanelCount}
+          panelsVisible={panelsVisible} selectedPanelCount={selectedPanelCount}
+          fitKey={fitKey}
         />
       </MapTokenLoader>
       {panels?.length ? (
-        <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2 pointer-events-none">
-          <div className="flex-1 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 pointer-events-auto">
-            <span className="text-white/70 text-xs select-none shrink-0">Panels</span>
+        <div className="absolute bottom-2 left-3 flex items-center gap-2 pointer-events-none">
+          <label className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 pointer-events-auto cursor-pointer">
             <input
-              type="range"
-              min={0} max={1} step={0.01}
-              value={panelOpacity}
-              onChange={e => setPanelOpacity(+e.target.value)}
-              className="w-full h-1 accent-white cursor-pointer"
+              type="checkbox"
+              checked={panelsVisible}
+              onChange={e => setPanelsVisible(e.target.checked)}
+              className="rounded accent-white cursor-pointer"
             />
-          </div>
+            <span className="text-white/80 text-xs select-none">Panels</span>
+          </label>
         </div>
       ) : null}
     </div>

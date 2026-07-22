@@ -12,6 +12,7 @@
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { applySolarFilters } from "./load_solar_filters.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT    = join(__dirname, "..");
@@ -59,7 +60,57 @@ function calcEligibleKw(sp) {
   return best ? +(best.panelsCount * panelKw).toFixed(2) : 0;
 }
 
-function parseFile(pid, raw) {
+/**
+ * Buildable capacity after the derate, using the same supabase/functions/_shared/solar-filters.ts the site
+ * runs. Needs property_type because commercial roofs additionally get the perimeter
+ * setback and HVAC walkways; everything else is the 75% TSRF cut only.
+ */
+function calcBuildable(sp, propertyType) {
+  const raw = sp.solarPanels ?? [];
+  if (!raw.length) return { kw: null };
+
+  const panels = raw.map(p => ({
+    lat: p.center.latitude,
+    lon: p.center.longitude,
+    orientation: p.orientation === "LANDSCAPE" ? "LANDSCAPE" : "PORTRAIT",
+    yearlyEnergyDcKwh: p.yearlyEnergyDcKwh,
+    segmentIndex: p.segmentIndex,
+  }));
+
+  const azimuths = {};
+  (sp.roofSegmentStats ?? []).forEach((seg, i) => {
+    if (seg.azimuthDegrees != null) azimuths[i] = seg.azimuthDegrees;
+  });
+
+  const res = applySolarFilters(panels, { propertyType, azimuths });
+  const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
+  return { kw: +(res.panels.length * panelKw).toFixed(2) };
+}
+
+/** pid -> property_type, needed to pick the right derate. */
+async function fetchPropertyTypes(pids) {
+  const map = new Map();
+  const key = ANON_KEY;
+  if (!key) {
+    console.warn("No anon key found — every property will be derated as non-commercial.");
+    return map;
+  }
+  const CHUNK = 200;
+  for (let i = 0; i < pids.length; i += CHUNK) {
+    const slice = pids.slice(i, i + CHUNK);
+    const url = `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/tcad_properties`
+      + `?select=pid,property_type&pid=in.(${slice.map(p => `"${p}"`).join(",")})`;
+    const res = await fetch(url, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    if (!res.ok) {
+      console.warn(`property_type lookup failed (${res.status}) — treating chunk as non-commercial`);
+      continue;
+    }
+    for (const row of await res.json()) map.set(row.pid, row.property_type);
+  }
+  return map;
+}
+
+function parseFile(pid, raw, propertyType) {
   if (raw._status === 404) {
     return { property: { pid, solar_fetched_at: raw._fetched_at ?? new Date().toISOString() }, segments: [] };
   }
@@ -85,6 +136,8 @@ function parseFile(pid, raw) {
       }
     : null;
 
+  const buildable = calcBuildable(sp, propertyType);
+
   const property = {
     pid,
     solar_fetched_at:       raw._fetched_at ?? new Date().toISOString(),
@@ -97,6 +150,7 @@ function parseFile(pid, raw) {
     solar_panel_capacity_w: sp.panelCapacityWatts ?? null,
     solar_eligible_kw:      calcEligibleKw(sp),
     solar_panels_layout:    solarPanels,
+    solar_buildable_kw:     buildable.kw,
   };
 
   const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
@@ -160,13 +214,16 @@ if (pushAll) {
   console.log(`Mode: targets only (${files.length} of ${targets.length} targets have local files)`);
 }
 
+const typeMap = await fetchPropertyTypes(files.map(f => f.replace(".json", "")));
+console.log(`Loaded property_type for ${typeMap.size} of ${files.length} pids`);
+
 const BATCH = 200;
 let propBatch = [], segBatch = [], done = 0, skipped404 = 0;
 
 for (const f of files) {
   const pid = f.replace(".json", "");
   const raw = JSON.parse(readFileSync(join(SOL_DIR, f), "utf8"));
-  const { property, segments } = parseFile(pid, raw);
+  const { property, segments } = parseFile(pid, raw, typeMap.get(pid) ?? null);
 
   if (raw._status === 404) skipped404++;
   propBatch.push(property);
