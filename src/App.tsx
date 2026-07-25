@@ -26,6 +26,7 @@ import GuideDetail from "./pages/GuideDetail";
 import Contact from "./pages/Contact";
 import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
+import AdminSchemaDocs from "./pages/AdminSchemaDocs";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 import ScrollToTop from "./components/ScrollToTop";
