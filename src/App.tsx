@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import Footer from "./components/Footer";
+import ShareWidget from "./components/ShareWidget";
 import Index from "./pages/Index";
 import CityOverview from "./pages/CityOverview";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
@@ -41,6 +42,7 @@ const queryClient = new QueryClient();
 const PublicLayout = () => (
   <>
     <Outlet />
+    <ShareWidget />
     <Footer />
   </>
 );
