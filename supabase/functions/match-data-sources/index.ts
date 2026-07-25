@@ -202,15 +202,30 @@ Deno.serve(async (req) => {
       errors: [] as string[]
     };
 
+    // Fetch already-matched IDs first (PostgREST .not('id','in',...) requires an inline list, not a subquery builder)
+    const { data: existingMatches, error: existingErr } = await supabaseClient
+      .from('data_match_results')
+      .select('solar_installation_id, pir_installation_id');
+
+    if (existingErr) {
+      console.error('Error fetching existing matches:', existingErr);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to fetch existing matches' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const matchedCityIds = Array.from(new Set((existingMatches ?? []).map((r: any) => r.solar_installation_id).filter(Boolean)));
+    const matchedPirIds = Array.from(new Set((existingMatches ?? []).map((r: any) => r.pir_installation_id).filter(Boolean)));
+
     // Get all city records that haven't been matched yet
-    // Fetch more fields for better matching
-    const { data: unmatchedCity, error: cityError } = await supabaseClient
+    let cityQuery = supabaseClient
       .from('solar_installations')
-      .select('id, address, installed_kw, completed_date, issued_date, applied_date, contractor_company, calendar_year_issued')
-      .not('id', 'in', 
-        supabaseClient.from('data_match_results').select('solar_installation_id')
-      )
-      .limit(2000);
+      .select('id, address, installed_kw, completed_date, issued_date, applied_date, contractor_company, calendar_year_issued');
+    if (matchedCityIds.length > 0) {
+      cityQuery = cityQuery.not('id', 'in', `(${matchedCityIds.join(',')})`);
+    }
+    const { data: unmatchedCity, error: cityError } = await cityQuery.limit(2000);
 
     if (cityError) {
       console.error('Error fetching city records:', cityError);
@@ -221,12 +236,13 @@ Deno.serve(async (req) => {
     }
 
     // Get all PIR records that haven't been matched yet
-    const { data: pirRecords, error: pirError } = await supabaseClient
+    let pirQuery = supabaseClient
       .from('pir_installations')
-      .select('id, address, address_normalized, system_kw, interconnection_date, raw_data')
-      .not('id', 'in',
-        supabaseClient.from('data_match_results').select('pir_installation_id')
-      );
+      .select('id, address, address_normalized, system_kw, interconnection_date, raw_data');
+    if (matchedPirIds.length > 0) {
+      pirQuery = pirQuery.not('id', 'in', `(${matchedPirIds.join(',')})`);
+    }
+    const { data: pirRecords, error: pirError } = await pirQuery;
 
     if (pirError) {
       console.error('Error fetching PIR records:', pirError);
