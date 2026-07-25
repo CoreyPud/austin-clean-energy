@@ -42,6 +42,7 @@ const queryClient = new QueryClient();
 const PublicLayout = () => (
   <>
     <Outlet />
+    <ShareWidget />
     <Footer />
   </>
 );
