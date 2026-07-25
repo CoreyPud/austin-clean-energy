@@ -35,7 +35,6 @@ const ShareWidget = () => {
 
   const xUrl = `https://twitter.com/intent/tweet?url=${encoded}&text=${encodedText}`;
   const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encoded}`;
-  const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encoded}`;
   const mailUrl = `mailto:?subject=${encodedTitle}&body=${encodedText}%20${encoded}`;
 
   const handleCopy = async () => {
@@ -113,15 +112,6 @@ const ShareWidget = () => {
             >
               <Linkedin className="h-5 w-5" />
               <span className="text-sm font-medium">LinkedIn</span>
-            </a>
-            <a
-              href={fbUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center gap-1 rounded-lg border border-border py-3 hover:bg-muted transition-colors"
-            >
-              <Facebook className="h-5 w-5" />
-              <span className="text-sm font-medium">Facebook</span>
             </a>
             <a
               href={mailUrl}
