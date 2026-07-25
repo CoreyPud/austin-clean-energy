@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Share2, X, Twitter, Linkedin, Facebook, Mail, MoreHorizontal, Sun } from "lucide-react";
+import { Share2, X, Twitter, Linkedin, Mail, MoreHorizontal, Sun } from "lucide-react";
 import { toast } from "sonner";
 
 const ShareWidget = () => {
