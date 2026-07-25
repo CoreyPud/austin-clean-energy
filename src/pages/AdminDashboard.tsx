@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw } from "lucide-react";
+import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw, Table2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -118,6 +118,12 @@ export default function AdminDashboard() {
   ];
 
   const documentationLinks = [
+    {
+      title: "Schema Documentation",
+      description: "Browse tables, columns, foreign keys, and example queries for the entire database.",
+      icon: Table2,
+      path: "/admin/schema-docs"
+    },
     {
       title: "Recommendation Knowledge Base",
       description: "View and manage the markdown files that drive AI recommendations",

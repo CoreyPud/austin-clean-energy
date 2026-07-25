@@ -26,6 +26,7 @@ import GuideDetail from "./pages/GuideDetail";
 import Contact from "./pages/Contact";
 import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
+import AdminSchemaDocs from "./pages/AdminSchemaDocs";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
 import ScrollToTop from "./components/ScrollToTop";
@@ -87,6 +88,7 @@ const App = () => (
           <Route path="/admin/pir-import" element={<PIRImport />} />
           <Route path="/admin/data-comparison" element={<DataComparison />} />
           <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
+          <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
