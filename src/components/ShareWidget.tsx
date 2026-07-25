@@ -164,9 +164,9 @@ const ShareWidget = () => {
         onClick={() => setOpen((v) => !v)}
         aria-label="Share this page"
         aria-expanded={open}
-        className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center ring-4 ring-primary/15"
+        className="h-11 w-11 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center ring-4 ring-primary/15"
       >
-        {open ? <X className="h-6 w-6" /> : <Share2 className="h-6 w-6" />}
+        {open ? <X className="h-5 w-5" /> : <Share2 className="h-5 w-5" />}
       </button>
     </div>
   );
