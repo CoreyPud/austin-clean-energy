@@ -6,6 +6,8 @@ import {
   Area,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -23,6 +25,9 @@ import {
   stackByYear,
   byPropertyType,
   totals,
+  peakMwByYear,
+  systemContext,
+  AUSTIN_ENERGY_PEAK_MW,
   type BuildingEnergyRow,
 } from "@/lib/building-energy";
 
