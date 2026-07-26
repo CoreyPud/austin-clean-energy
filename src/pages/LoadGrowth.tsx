@@ -91,7 +91,16 @@ const LoadGrowth = () => {
     let cumCommercial = 0;
     const baselineEV = evCountAtYearEnd(BASELINE_YEAR);
 
-    const historical = historicalYears.map((year) => {
+    type Point = {
+      year: number;
+      newHomesMW: number;
+      newCommercialMW: number;
+      evsMW: number;
+      totalAddedMW: number;
+      totalPeakMW: number;
+      projection: boolean;
+    };
+    const historical: Point[] = historicalYears.map((year) => {
       const p = permits?.[year] ?? { residential: 0, commercial: 0 };
       cumHomes += p.residential;
       cumCommercial += p.commercial;
