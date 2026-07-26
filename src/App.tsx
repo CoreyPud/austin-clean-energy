@@ -77,6 +77,7 @@ const App = () => (
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/join-the-community" element={<JoinCommunity />} />
+            <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
           </Route>
 
           {/* Pages without footer */}
