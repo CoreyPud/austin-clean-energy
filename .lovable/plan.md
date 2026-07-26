@@ -1,61 +1,36 @@
-## Goal
-Add a gated "Join the Community" page. Visitors submit a short form; on success, the Slack invite link is revealed. Admins can review submissions and export them as CSV.
+## Build the Austin Building Energy Usage page
 
-## New public page: `/join-the-community`
-- Route added to `src/App.tsx` inside `PublicLayout` (so global footer applies).
-- New file `src/pages/JoinCommunity.tsx`:
-  - SEO via `useSeo` (title "Join the Austin Clean Energy Community", meta description, canonical).
-  - Intro: who we are, what the Slack community is for, why we ask for info first.
-  - Form (zod validated):
-    - Name (required, ≤100)
-    - Email (required, valid, ≤255)
-    - Involvement area — single-select `Select` dropdown:
-      1. Outreach & community building
-      2. Data validation
-      3. Technical work
-      4. Engineering / volunteering at events
-    - "Tell us more about your skills or interest" — `Textarea` (optional, ≤2000)
-    - Honeypot hidden field for bot deterrence.
-  - On submit → insert into `volunteer_signups` → success state reveals Slack invite as a primary button:
-    `https://join.slack.com/t/solaraustingroup/shared_invite/zt-40tsu7gxh-8exWmLou1xHM2l3NmfM9hQ`
-  - Success state also includes a copy-link button and short "what to expect in Slack" note.
+Add a new public page at `/building-energy-usage` (distinct from existing `/building-energy-use` ECAD explainer) that visualizes estimated annual electricity load for newly permitted Austin buildings.
 
-## Database (migration)
-New table `public.volunteer_signups`:
-- Columns: `id uuid pk`, `name text`, `email text`, `involvement_area text` with `CHECK` constraint limiting to the 4 values, `notes text`, `user_agent text`, `created_at timestamptz`.
-- RLS enabled.
-- Grants: `INSERT` to `anon` + `authenticated`; `ALL` to `service_role`. No SELECT for anon/authenticated — admin reads go through an edge function using the service role.
-- Policy: `INSERT` allowed for anon + authenticated. No SELECT policy (locked down).
+### Files to create
 
-## Footer
-- `src/components/Footer.tsx`: add "Join the Community" link → `/join-the-community`.
+1. **`public/data/building-energy-usage.csv`** — placeholder with the 6-column header (`permit_id,issued_date,property_type,sqft,est_annual_kwh,permit_class`) and 3–4 sample rows. User will upload real CSV after (they've uploaded a larger raw file already; we'll leave replacement to them since column names differ).
 
-## Sitemap
-- Add `/join-the-community` to `public/sitemap.xml` and `src/pages/Sitemap.tsx` (manual sitemap policy).
+2. **`src/lib/building-energy.ts`** — types + zero-dep CSV parser (handles quoted fields with commas) + `loadBuildingEnergyCsv`, `stackByYear`, `byPropertyType`, `totals` helpers.
 
-## Admin: review + CSV export
-- New edge function `supabase/functions/manage-volunteer-signups/index.ts`:
-  - Requires `x-admin-token` (matches existing admin pattern; validates against `ADMIN_CORRECTIONS_PASSWORD`).
-  - Uses service role to read `volunteer_signups`.
-  - Actions:
-    - `GET ?action=list` → JSON list of all signups (most recent first).
-    - `GET ?action=export` → CSV file (`Content-Type: text/csv`, `Content-Disposition: attachment; filename=volunteer-signups.csv`), columns: `created_at, name, email, involvement_area, notes`.
-  - Returns CORS headers; sanitized error messages.
-- New admin page `src/pages/AdminVolunteerSignups.tsx`:
-  - Route `/admin/volunteer-signups` in `src/App.tsx` (outside PublicLayout, like other admin pages).
-  - Reuses the same admin token pattern (sessionStorage `admin_token`) as `AdminCorrections`.
-  - Shows table: Date, Name, Email, Involvement Area, Notes (truncated with expand).
-  - "Download CSV" button calls the edge function `?action=export` with the admin token and triggers a browser download.
-  - Back button → `/admin/dashboard` (per admin nav convention).
-- `src/pages/AdminDashboard.tsx`: add a card/link "Volunteer Signups" → `/admin/volunteer-signups`.
+3. **`src/pages/BuildingEnergyUsage.tsx`** — full page:
+   - `useSeo` with specified title/description
+   - Header: back link, "Austin at a Glance" eyebrow, H1, subtitle
+   - Hero `Card` with 320px stacked `AreaChart` (recharts), Y-axis label "MWh / yr", loading + error states, 8-color palette from semantic tokens
+   - 4-card KPI strip (permits, sqft, MWh, top type)
+   - Horizontal `BarChart` by property type with `LabelList` showing "X MWh"
+   - Permit table: top 10 rows sorted by `est_annual_kwh` desc, sortable headers, download CSV button, "Showing 10 of N" footer
+   - Methodology: formula callout card, literature benchmarks table (single_family 6.48, residential_other 6.48, adu_accessory 8.94, personal_services 14.04, pool_spa n/a), sources with 4 external links, limitations `Alert`
+   - Layout `max-w-6xl px-4`, shadcn components, tabular-nums, `Intl.NumberFormat`
 
-## Technical notes
-- Reuse shadcn primitives: `Card`, `Input`, `Textarea`, `Select`, `Button`, `Table`.
-- Public form insert uses anon key + INSERT-only RLS policy — safe.
-- Admin read/export goes through service-role edge function gated by `x-admin-token`, matching project security conventions.
-- Slack invite URL is a constant in `JoinCommunity.tsx` for easy future updates.
+### Files to modify
 
-## Out of scope (can add later)
-- Email auto-reply or Slack notification on new signup.
-- CAPTCHA beyond honeypot.
-- Per-row delete/edit in the admin view.
+4. **`src/App.tsx`** — import `BuildingEnergyUsage`, add `<Route path="/building-energy-usage" ...>` inside `PublicLayout`.
+
+5. **`src/pages/Index.tsx`** — add a 4th `FeatureCard` in the "Austin at a Glance" grid with a small stacked `AreaChart` preview (years 2023–2025, 8 property types, semantic colors, fillOpacity ~0.5).
+
+6. **`src/pages/Sitemap.tsx`** — add entry with `Gauge` icon, title "Building Energy Usage", specified description.
+
+### Notes
+
+- Existing `/building-energy-use` page and its sitemap entry stay untouched.
+- Chart palette uses `hsl(var(--primary))`, `hsl(var(--accent))`, plus fixed semantic-friendly hues for blue/amber/emerald/purple/red/cyan.
+- No backend/database changes — CSV lives in `public/` and is fetched client-side.
+- I'll skip updating `public/sitemap.xml` unless you want it included (it's a static XML file maintained manually per project memory).
+
+Ready to implement on approval.
