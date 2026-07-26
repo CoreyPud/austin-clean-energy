@@ -196,14 +196,14 @@ const LoadGrowth = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" /> Est. added avg load
+                <Zap className="h-4 w-4 text-primary" /> Load added last full year
               </CardDescription>
               <CardTitle className="text-3xl">
                 {latestActual ? `${latestActual.totalAddedMW} MW` : "—"}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Avg power from new buildings + EVs since {BASELINE_YEAR}. Peak demand is typically 1.5–2× this.
+              Avg power from that year's new buildings + EVs ({latestActual?.year ?? "—"}). Peak demand is typically 1.5–2× this.
             </CardContent>
           </Card>
         </section>
@@ -212,11 +212,10 @@ const LoadGrowth = () => {
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">Load added since 2020, with 5-year projection</h2>
+            <h2 className="text-2xl font-bold text-foreground">New load added each year, with 5-year projection</h2>
           </div>
           <p className="text-muted-foreground text-sm">
-            Stacked contributions from new residential permits, new commercial permits, and new EVs. The
-            dashed region is a projection extrapolated from recent trends — not a utility forecast.
+            Each bar shows load added <em>in that year alone</em> from new residential permits, new commercial permits, and net new EV registrations — the annual increment planners need to size new generation. The dashed region is a projection extrapolated from recent trends, not a utility forecast.
           </p>
 
           <Card>
