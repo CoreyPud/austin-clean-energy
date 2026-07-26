@@ -8,6 +8,7 @@ import { useSeo } from "@/hooks/use-seo";
 import {
   BarChart, Bar, Cell,
   LineChart, Line,
+  AreaChart, Area,
   XAxis, YAxis,
   ResponsiveContainer,
   Legend,
@@ -26,6 +27,20 @@ import FeatureCard from "@/components/FeatureCard";
 const PRI  = "hsl(var(--primary))";
 const BLUE = "#3b82f6";
 const ORNG = "#f59e0b";
+
+const BUILDING_ENERGY_TYPES = [
+  "Office", "Multifamily", "Retail", "Warehouse",
+  "Hotel", "Hospital", "School", "Grocery",
+] as const;
+const BUILDING_ENERGY_COLORS = [
+  "hsl(var(--primary))", "hsl(var(--accent))",
+  "#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444", "#06b6d4",
+];
+const buildingEnergyPreview = [
+  { year: 2023, Office: 42, Multifamily: 58, Retail: 18, Warehouse: 22, Hotel: 24, Hospital: 30, School: 14, Grocery: 20 },
+  { year: 2024, Office: 48, Multifamily: 72, Retail: 22, Warehouse: 30, Hotel: 28, Hospital: 36, School: 18, Grocery: 24 },
+  { year: 2025, Office: 55, Multifamily: 84, Retail: 26, Warehouse: 34, Hotel: 32, Hospital: 42, School: 20, Grocery: 28 },
+];
 
 function austinPopEst(year: number) { return 1_273_000 + (year - 2019) * 21_000; }
 function texasPopEst(year: number)  { return 29_000_000 + (year - 2019) * 230_000; }
@@ -197,6 +212,44 @@ const Index = () => {
                       className="absolute inset-0 w-full h-full object-cover object-top"
                       onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/building-energy-usage"
+                title="Building Energy Usage"
+                description="Estimated annual electricity load of newly permitted Austin buildings, stacked by property type using ECAD and third-party benchmarks."
+                cta="Learn More"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <AreaChart data={buildingEnergyPreview} margin={{ left: 0, right: 4, top: 2, bottom: 0 }}>
+                        <XAxis
+                          dataKey="year"
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={28}
+                        />
+                        {BUILDING_ENERGY_TYPES.map((t, i) => (
+                          <Area
+                            key={t}
+                            type="monotone"
+                            dataKey={t}
+                            stackId="1"
+                            stroke={BUILDING_ENERGY_COLORS[i]}
+                            fill={BUILDING_ENERGY_COLORS[i]}
+                            fillOpacity={0.55}
+                          />
+                        ))}
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
                 }
               />
