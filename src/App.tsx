@@ -38,6 +38,7 @@ import PropertyViewer from "./pages/PropertyViewer";
 import PropertyPage from "./pages/PropertyPage";
 import BuildingEnergyUse from "./pages/BuildingEnergyUse";
 import LoadGrowth from "./pages/LoadGrowth";
+import ImportCapacity from "./pages/ImportCapacity";
 
 const queryClient = new QueryClient();
 
