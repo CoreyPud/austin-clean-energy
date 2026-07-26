@@ -88,15 +88,19 @@ const LoadGrowth = () => {
   }, [currentYear]);
 
   const chartData = useMemo(() => {
-    // Per-year added load (MW avg) from that year's new permits + net new EVs.
+    // Per-year added load (MW avg) from that year's new permits + net new EVs,
+    // plus running total demand (baseline + cumulative additions).
     type Point = {
       year: number;
       newHomesMW: number;
       newCommercialMW: number;
       evsMW: number;
       totalAddedMW: number;
+      totalDemandMW: number;
       projection: boolean;
     };
+
+    let running = BASELINE_AVG_MW_2020;
 
     const historical: Point[] = historicalYears.map((year, i) => {
       const p = permits?.[year] ?? { residential: 0, commercial: 0 };
@@ -106,19 +110,21 @@ const LoadGrowth = () => {
       const homeMW = kWhToAvgMW(p.residential * KWH_PER_NEW_HOME);
       const commMW = kWhToAvgMW(p.commercial * KWH_PER_NEW_COMMERCIAL_UNIT);
       const evMW = kWhToAvgMW(Math.max(0, evsThisYear) * KWH_PER_EV);
+      const totalAddedMW = homeMW + commMW + evMW;
+      running += totalAddedMW;
 
       return {
         year,
         newHomesMW: +homeMW.toFixed(1),
         newCommercialMW: +commMW.toFixed(1),
         evsMW: +evMW.toFixed(1),
-        totalAddedMW: +(homeMW + commMW + evMW).toFixed(1),
+        totalAddedMW: +totalAddedMW.toFixed(1),
+        totalDemandMW: +running.toFixed(0),
         projection: false,
       };
     });
 
     // Projection: average of last 3 complete years' annual additions, held forward.
-    // Skip the current year if permits are still coming in (partial year).
     const complete = historical.filter((h) => h.year < currentYear);
     const last3 = complete.slice(-3);
     if (last3.length >= 1) {
@@ -134,12 +140,14 @@ const LoadGrowth = () => {
         const newCommercialMW = +aC.toFixed(1);
         const evsMW = +aE.toFixed(1);
         const totalAddedMW = +(newHomesMW + newCommercialMW + evsMW).toFixed(1);
+        running += totalAddedMW;
         historical.push({
           year,
           newHomesMW,
           newCommercialMW,
           evsMW,
           totalAddedMW,
+          totalDemandMW: +running.toFixed(0),
           projection: true,
         });
       }
