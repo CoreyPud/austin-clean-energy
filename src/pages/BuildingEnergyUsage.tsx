@@ -83,6 +83,8 @@ const BuildingEnergyUsage = () => {
   const stacked = useMemo(() => stackByYear(rows), [rows]);
   const typeAgg = useMemo(() => byPropertyType(rows), [rows]);
   const kpis = useMemo(() => totals(rows), [rows]);
+  const mwSeries = useMemo(() => peakMwByYear(rows), [rows]);
+  const ctx = useMemo(() => systemContext(rows), [rows]);
 
   const sortedRows = useMemo(() => {
     const copy = [...rows];
