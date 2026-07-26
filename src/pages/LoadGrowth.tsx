@@ -394,8 +394,7 @@ const LoadGrowth = () => {
               <strong>Projection:</strong> forward years hold the average of the last 3 complete years' annual additions. Not a scenario forecast.
             </li>
             <li>
-              <strong>Peak vs average:</strong> peak demand typically runs 1.5–2× average, driven by
-              summer afternoon AC load.
+              <strong>Total demand baseline:</strong> {BASELINE_AVG_MW_2020.toLocaleString()} MW average in {BASELINE_YEAR} (~13 TWh/yr retail sales ÷ 8,760 hrs). The blue line adds each year's new load on top of that baseline; it does not subtract efficiency gains, rooftop solar offsets, or customer departures.
             </li>
           </ul>
         </section>
