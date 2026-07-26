@@ -387,8 +387,7 @@ const LoadGrowth = () => {
 
           <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-1">
             <li>
-              <strong>Baseline year:</strong> {BASELINE_YEAR}. Load is expressed as{" "}
-              <em>added average MW</em> above that baseline.
+              <strong>Annual (not cumulative):</strong> each year's value is the new load added <em>in that year alone</em>, from that year's new permits and net new EV registrations. Baseline: {BASELINE_YEAR}.
             </li>
             <li>
               <strong>Homes:</strong> {KWH_PER_NEW_HOME.toLocaleString()} kWh/yr per new residential permit.
@@ -398,11 +397,10 @@ const LoadGrowth = () => {
               commercial permit unit (varies widely by use).
             </li>
             <li>
-              <strong>EVs:</strong> {KWH_PER_EV.toLocaleString()} kWh/yr per registered light-duty EV.
+              <strong>EVs:</strong> {KWH_PER_EV.toLocaleString()} kWh/yr per net new registered light-duty EV.
             </li>
             <li>
-              <strong>Projection:</strong> linear extrapolation of the 3-year average change in each
-              driver. Not a scenario forecast.
+              <strong>Projection:</strong> forward years hold the average of the last 3 complete years' annual additions. Not a scenario forecast.
             </li>
             <li>
               <strong>Peak vs average:</strong> peak demand typically runs 1.5–2× average, driven by
