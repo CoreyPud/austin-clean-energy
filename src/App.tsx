@@ -37,6 +37,7 @@ import CleanEnergyPlan from "./pages/CleanEnergyPlan";
 import PropertyViewer from "./pages/PropertyViewer";
 import PropertyPage from "./pages/PropertyPage";
 import BuildingEnergyUse from "./pages/BuildingEnergyUse";
+import LoadGrowth from "./pages/LoadGrowth";
 
 const queryClient = new QueryClient();
 
