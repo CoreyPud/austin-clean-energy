@@ -81,6 +81,7 @@ const App = () => (
             <Route path="/join-the-community" element={<JoinCommunity />} />
             <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
             <Route path="/load-growth" element={<LoadGrowth />} />
+            <Route path="/import-capacity" element={<ImportCapacity />} />
           </Route>
 
           {/* Pages without footer */}
