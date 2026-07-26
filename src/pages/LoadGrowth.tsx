@@ -86,29 +86,24 @@ const LoadGrowth = () => {
   }, [currentYear]);
 
   const chartData = useMemo(() => {
-    // Cumulative added load (MW avg) vs baseline year, plus projection through +5 years.
-    let cumHomes = 0;
-    let cumCommercial = 0;
-    const baselineEV = evCountAtYearEnd(BASELINE_YEAR);
-
+    // Per-year added load (MW avg) from that year's new permits + net new EVs.
     type Point = {
       year: number;
       newHomesMW: number;
       newCommercialMW: number;
       evsMW: number;
       totalAddedMW: number;
-      totalPeakMW: number;
       projection: boolean;
     };
-    const historical: Point[] = historicalYears.map((year) => {
-      const p = permits?.[year] ?? { residential: 0, commercial: 0 };
-      cumHomes += p.residential;
-      cumCommercial += p.commercial;
-      const evs = evCountAtYearEnd(year) - baselineEV;
 
-      const homeMW = kWhToAvgMW(cumHomes * KWH_PER_NEW_HOME);
-      const commMW = kWhToAvgMW(cumCommercial * KWH_PER_NEW_COMMERCIAL_UNIT);
-      const evMW = kWhToAvgMW(evs * KWH_PER_EV);
+    const historical: Point[] = historicalYears.map((year, i) => {
+      const p = permits?.[year] ?? { residential: 0, commercial: 0 };
+      const prevYear = historicalYears[i - 1] ?? year - 1;
+      const evsThisYear = evCountAtYearEnd(year) - evCountAtYearEnd(prevYear);
+
+      const homeMW = kWhToAvgMW(p.residential * KWH_PER_NEW_HOME);
+      const commMW = kWhToAvgMW(p.commercial * KWH_PER_NEW_COMMERCIAL_UNIT);
+      const evMW = kWhToAvgMW(Math.max(0, evsThisYear) * KWH_PER_EV);
 
       return {
         year,
@@ -116,48 +111,44 @@ const LoadGrowth = () => {
         newCommercialMW: +commMW.toFixed(1),
         evsMW: +evMW.toFixed(1),
         totalAddedMW: +(homeMW + commMW + evMW).toFixed(1),
-        totalPeakMW: +(BASELINE_PEAK_MW_2020 + homeMW + commMW + evMW).toFixed(0),
         projection: false,
       };
     });
 
-    // Simple projection: average YoY delta of last 3 available years for each driver
-    const last3 = historical.slice(-3);
-    if (last3.length >= 2) {
-      const yoy = (key: "newHomesMW" | "newCommercialMW" | "evsMW") => {
-        const deltas: number[] = [];
-        for (let i = 1; i < last3.length; i++) deltas.push(last3[i][key] - last3[i - 1][key]);
-        return deltas.reduce((s, d) => s + d, 0) / deltas.length;
-      };
-      const dH = yoy("newHomesMW");
-      const dC = yoy("newCommercialMW");
-      const dE = yoy("evsMW");
+    // Projection: average of last 3 complete years' annual additions, held forward.
+    // Skip the current year if permits are still coming in (partial year).
+    const complete = historical.filter((h) => h.year < currentYear);
+    const last3 = complete.slice(-3);
+    if (last3.length >= 1) {
+      const avg = (key: "newHomesMW" | "newCommercialMW" | "evsMW") =>
+        last3.reduce((s, d) => s + d[key], 0) / last3.length;
+      const aH = avg("newHomesMW");
+      const aC = avg("newCommercialMW");
+      const aE = avg("evsMW");
 
-      let prev = historical[historical.length - 1];
       for (let i = 1; i <= 5; i++) {
         const year = currentYear + i;
-        const newHomesMW = +(prev.newHomesMW + dH).toFixed(1);
-        const newCommercialMW = +(prev.newCommercialMW + dC).toFixed(1);
-        const evsMW = +(prev.evsMW + dE).toFixed(1);
+        const newHomesMW = +aH.toFixed(1);
+        const newCommercialMW = +aC.toFixed(1);
+        const evsMW = +aE.toFixed(1);
         const totalAddedMW = +(newHomesMW + newCommercialMW + evsMW).toFixed(1);
-        const point = {
+        historical.push({
           year,
           newHomesMW,
           newCommercialMW,
           evsMW,
           totalAddedMW,
-          totalPeakMW: +(BASELINE_PEAK_MW_2020 + totalAddedMW).toFixed(0),
           projection: true,
-        };
-        historical.push(point);
-        prev = point;
+        });
       }
     }
 
     return historical;
   }, [permits, historicalYears, currentYear]);
 
-  const latestActual = chartData.filter((d) => !d.projection).slice(-1)[0];
+  // Use last complete (prior) year as "latest actual" since current year permits are still trickling in.
+  const completeActuals = chartData.filter((d) => !d.projection && d.year < currentYear);
+  const latestActual = completeActuals.slice(-1)[0];
   const latestProjected = chartData.slice(-1)[0];
 
   const totalPermitsToDate = permits
@@ -205,14 +196,14 @@ const LoadGrowth = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" /> Est. added avg load
+                <Zap className="h-4 w-4 text-primary" /> Load added last full year
               </CardDescription>
               <CardTitle className="text-3xl">
                 {latestActual ? `${latestActual.totalAddedMW} MW` : "—"}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Avg power from new buildings + EVs since {BASELINE_YEAR}. Peak demand is typically 1.5–2× this.
+              Avg power from that year's new buildings + EVs ({latestActual?.year ?? "—"}). Peak demand is typically 1.5–2× this.
             </CardContent>
           </Card>
         </section>
@@ -221,11 +212,10 @@ const LoadGrowth = () => {
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">Load added since 2020, with 5-year projection</h2>
+            <h2 className="text-2xl font-bold text-foreground">New load added each year, with 5-year projection</h2>
           </div>
           <p className="text-muted-foreground text-sm">
-            Stacked contributions from new residential permits, new commercial permits, and new EVs. The
-            dashed region is a projection extrapolated from recent trends — not a utility forecast.
+            Each bar shows load added <em>in that year alone</em> from new residential permits, new commercial permits, and net new EV registrations — the annual increment planners need to size new generation. The dashed region is a projection extrapolated from recent trends, not a utility forecast.
           </p>
 
           <Card>
@@ -312,25 +302,24 @@ const LoadGrowth = () => {
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Today ({latestActual.year})
+                      Last full year ({latestActual.year})
                     </p>
                     <p className="text-2xl font-bold text-foreground">
                       +{latestActual.totalAddedMW} MW avg
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      ≈ {(latestActual.totalAddedMW * 1.75).toFixed(0)} MW of new peak demand added
-                      since {BASELINE_YEAR}.
+                      ≈ {(latestActual.totalAddedMW * 1.75).toFixed(0)} MW of new peak demand added in {latestActual.year} alone.
                     </p>
                   </div>
                   <div className="rounded-lg border border-dashed border-border p-4">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Projected {latestProjected.year}
+                      Projected annual add — {latestProjected.year}
                     </p>
                     <p className="text-2xl font-bold text-foreground">
                       +{latestProjected.totalAddedMW} MW avg
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      If recent growth in permits and EV registrations continues.
+                      Expected new load in {latestProjected.year} if recent permit and EV trends continue.
                     </p>
                   </div>
                 </div>
@@ -398,8 +387,7 @@ const LoadGrowth = () => {
 
           <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-1">
             <li>
-              <strong>Baseline year:</strong> {BASELINE_YEAR}. Load is expressed as{" "}
-              <em>added average MW</em> above that baseline.
+              <strong>Annual (not cumulative):</strong> each year's value is the new load added <em>in that year alone</em>, from that year's new permits and net new EV registrations. Baseline: {BASELINE_YEAR}.
             </li>
             <li>
               <strong>Homes:</strong> {KWH_PER_NEW_HOME.toLocaleString()} kWh/yr per new residential permit.
@@ -409,11 +397,10 @@ const LoadGrowth = () => {
               commercial permit unit (varies widely by use).
             </li>
             <li>
-              <strong>EVs:</strong> {KWH_PER_EV.toLocaleString()} kWh/yr per registered light-duty EV.
+              <strong>EVs:</strong> {KWH_PER_EV.toLocaleString()} kWh/yr per net new registered light-duty EV.
             </li>
             <li>
-              <strong>Projection:</strong> linear extrapolation of the 3-year average change in each
-              driver. Not a scenario forecast.
+              <strong>Projection:</strong> forward years hold the average of the last 3 complete years' annual additions. Not a scenario forecast.
             </li>
             <li>
               <strong>Peak vs average:</strong> peak demand typically runs 1.5–2× average, driven by
