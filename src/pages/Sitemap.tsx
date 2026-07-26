@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
