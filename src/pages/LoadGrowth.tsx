@@ -6,6 +6,7 @@ import { Info, TrendingUp, Home, Car, Zap, Building2 } from "lucide-react";
 import {
   ResponsiveContainer,
   ComposedChart,
+  Bar,
   Line,
   Area,
   XAxis,
@@ -24,8 +25,10 @@ const KWH_PER_NEW_COMMERCIAL_UNIT = 45000; // avg for a new commercial permit un
 const KWH_PER_EV = 3500; // avg light-duty EV annual charging
 const BASELINE_YEAR = 2020;
 
-// City of Austin baseline peak demand (MW) — reference point only
-const BASELINE_PEAK_MW_2020 = 2800;
+// Austin Energy system-wide average load in the baseline year (MW).
+// Derived from ~13 TWh annual retail sales ÷ 8,760 hrs ≈ 1,500 MW average.
+// (Peak demand is roughly 2× this but is not shown on this page.)
+const BASELINE_AVG_MW_2020 = 1500;
 
 const kWhToAvgMW = (kwh: number) => kwh / 8760;
 
@@ -86,15 +89,19 @@ const LoadGrowth = () => {
   }, [currentYear]);
 
   const chartData = useMemo(() => {
-    // Per-year added load (MW avg) from that year's new permits + net new EVs.
+    // Per-year added load (MW avg) from that year's new permits + net new EVs,
+    // plus running total demand (baseline + cumulative additions).
     type Point = {
       year: number;
       newHomesMW: number;
       newCommercialMW: number;
       evsMW: number;
       totalAddedMW: number;
+      totalDemandMW: number;
       projection: boolean;
     };
+
+    let running = BASELINE_AVG_MW_2020;
 
     const historical: Point[] = historicalYears.map((year, i) => {
       const p = permits?.[year] ?? { residential: 0, commercial: 0 };
@@ -104,19 +111,21 @@ const LoadGrowth = () => {
       const homeMW = kWhToAvgMW(p.residential * KWH_PER_NEW_HOME);
       const commMW = kWhToAvgMW(p.commercial * KWH_PER_NEW_COMMERCIAL_UNIT);
       const evMW = kWhToAvgMW(Math.max(0, evsThisYear) * KWH_PER_EV);
+      const totalAddedMW = homeMW + commMW + evMW;
+      running += totalAddedMW;
 
       return {
         year,
         newHomesMW: +homeMW.toFixed(1),
         newCommercialMW: +commMW.toFixed(1),
         evsMW: +evMW.toFixed(1),
-        totalAddedMW: +(homeMW + commMW + evMW).toFixed(1),
+        totalAddedMW: +totalAddedMW.toFixed(1),
+        totalDemandMW: +running.toFixed(0),
         projection: false,
       };
     });
 
     // Projection: average of last 3 complete years' annual additions, held forward.
-    // Skip the current year if permits are still coming in (partial year).
     const complete = historical.filter((h) => h.year < currentYear);
     const last3 = complete.slice(-3);
     if (last3.length >= 1) {
@@ -132,12 +141,14 @@ const LoadGrowth = () => {
         const newCommercialMW = +aC.toFixed(1);
         const evsMW = +aE.toFixed(1);
         const totalAddedMW = +(newHomesMW + newCommercialMW + evsMW).toFixed(1);
+        running += totalAddedMW;
         historical.push({
           year,
           newHomesMW,
           newCommercialMW,
           evsMW,
           totalAddedMW,
+          totalDemandMW: +running.toFixed(0),
           projection: true,
         });
       }
@@ -203,7 +214,7 @@ const LoadGrowth = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Avg power from that year's new buildings + EVs ({latestActual?.year ?? "—"}). Peak demand is typically 1.5–2× this.
+              Average new load from that year's new buildings + EVs ({latestActual?.year ?? "—"}).
             </CardContent>
           </Card>
         </section>
@@ -212,10 +223,10 @@ const LoadGrowth = () => {
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">New load added each year, with 5-year projection</h2>
+            <h2 className="text-2xl font-bold text-foreground">Total demand and new load added each year</h2>
           </div>
           <p className="text-muted-foreground text-sm">
-            Each bar shows load added <em>in that year alone</em> from new residential permits, new commercial permits, and net new EV registrations — the annual increment planners need to size new generation. The dashed region is a projection extrapolated from recent trends, not a utility forecast.
+            The <span className="text-primary font-medium">blue line</span> shows Austin's estimated total average electric demand (baseline ~{BASELINE_AVG_MW_2020.toLocaleString()} MW in {BASELINE_YEAR}, plus everything added since). The <span className="font-medium" style={{ color: "hsl(142 71% 45%)" }}>green bars</span> show new load added <em>in that year alone</em> from new residential permits, new commercial permits, and net new EV registrations. The dashed region is a projection extrapolated from recent trends, not a utility forecast.
           </p>
 
           <Card>
@@ -228,7 +239,7 @@ const LoadGrowth = () => {
                     <YAxis
                       stroke="hsl(var(--muted-foreground))"
                       label={{
-                        value: "Added avg load (MW)",
+                        value: "Average load (MW)",
                         angle: -90,
                         position: "insideLeft",
                         style: { fill: "hsl(var(--muted-foreground))", fontSize: 12 },
@@ -250,38 +261,18 @@ const LoadGrowth = () => {
                     />
                     <Area
                       type="monotone"
-                      dataKey="newHomesMW"
-                      stackId="1"
-                      name="New homes"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.55}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="newCommercialMW"
-                      stackId="1"
-                      name="New commercial"
-                      stroke="hsl(var(--secondary))"
-                      fill="hsl(var(--secondary))"
-                      fillOpacity={0.55}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="evsMW"
-                      stackId="1"
-                      name="EVs"
-                      stroke="hsl(var(--accent))"
-                      fill="hsl(var(--accent))"
-                      fillOpacity={0.55}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="totalAddedMW"
-                      name="Total added"
-                      stroke="hsl(var(--foreground))"
+                      dataKey="totalDemandMW"
+                      name="Total average demand"
+                      stroke="hsl(217 91% 60%)"
+                      fill="hsl(217 91% 60%)"
+                      fillOpacity={0.18}
                       strokeWidth={2}
-                      dot={false}
+                    />
+                    <Bar
+                      dataKey="totalAddedMW"
+                      name="New load added this year"
+                      fill="hsl(142 71% 45%)"
+                      radius={[4, 4, 0, 0]}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -305,21 +296,21 @@ const LoadGrowth = () => {
                       Last full year ({latestActual.year})
                     </p>
                     <p className="text-2xl font-bold text-foreground">
-                      +{latestActual.totalAddedMW} MW avg
+                      +{latestActual.totalAddedMW} MW avg new
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      ≈ {(latestActual.totalAddedMW * 1.75).toFixed(0)} MW of new peak demand added in {latestActual.year} alone.
+                      Estimated total demand at year-end: ~{latestActual.totalDemandMW.toLocaleString()} MW avg.
                     </p>
                   </div>
                   <div className="rounded-lg border border-dashed border-border p-4">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Projected annual add — {latestProjected.year}
+                      Projected — {latestProjected.year}
                     </p>
                     <p className="text-2xl font-bold text-foreground">
-                      +{latestProjected.totalAddedMW} MW avg
+                      +{latestProjected.totalAddedMW} MW avg new
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Expected new load in {latestProjected.year} if recent permit and EV trends continue.
+                      Projected total demand: ~{latestProjected.totalDemandMW.toLocaleString()} MW avg if recent trends continue.
                     </p>
                   </div>
                 </div>
@@ -364,8 +355,7 @@ const LoadGrowth = () => {
                 thousands of EVs since {BASELINE_YEAR}.
               </p>
               <p>
-                EV load is time-shifted — most charging happens overnight, which softens its peak
-                impact but grows shoulder-hour baseload.
+                EV load is time-shifted — most charging happens overnight, so it primarily grows shoulder-hour baseload rather than midday demand.
               </p>
             </CardContent>
           </Card>
@@ -403,8 +393,7 @@ const LoadGrowth = () => {
               <strong>Projection:</strong> forward years hold the average of the last 3 complete years' annual additions. Not a scenario forecast.
             </li>
             <li>
-              <strong>Peak vs average:</strong> peak demand typically runs 1.5–2× average, driven by
-              summer afternoon AC load.
+              <strong>Total demand baseline:</strong> {BASELINE_AVG_MW_2020.toLocaleString()} MW average in {BASELINE_YEAR} (~13 TWh/yr retail sales ÷ 8,760 hrs). The blue line adds each year's new load on top of that baseline; it does not subtract efficiency gains, rooftop solar offsets, or customer departures.
             </li>
           </ul>
         </section>
