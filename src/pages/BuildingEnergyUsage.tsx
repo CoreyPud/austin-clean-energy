@@ -498,6 +498,27 @@ const BuildingEnergyUsage = () => {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardContent className="pt-6 space-y-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                Annual kWh → peak MW
+              </div>
+              <pre className="rounded-md bg-muted/50 border border-border p-4 text-sm font-mono overflow-x-auto">
+{`avg_kw      = total_annual_kwh / 8760
+peak_mw     = (avg_kw / load_factor) / 1000
+load_factor = 0.5   // mixed-use rough assumption`}
+              </pre>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Load factor converts average load to a rough peak-demand estimate.
+                A 0.5 factor is a mixed-use approximation — adjust if a better
+                basis is available. System context: Austin Energy sold ~14 TWh
+                in FY2024 and set a record system peak of {nf.format(AUSTIN_ENERGY_PEAK_MW)} MW in
+                August 2023.
+              </p>
+            </CardContent>
+          </Card>
+
+
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground">
               Literature-based benchmarks
