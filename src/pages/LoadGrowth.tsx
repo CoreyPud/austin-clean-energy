@@ -213,7 +213,7 @@ const LoadGrowth = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Avg power from that year's new buildings + EVs ({latestActual?.year ?? "—"}). Peak demand is typically 1.5–2× this.
+              Average new load from that year's new buildings + EVs ({latestActual?.year ?? "—"}).
             </CardContent>
           </Card>
         </section>
@@ -222,10 +222,10 @@ const LoadGrowth = () => {
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">New load added each year, with 5-year projection</h2>
+            <h2 className="text-2xl font-bold text-foreground">Total demand and new load added each year</h2>
           </div>
           <p className="text-muted-foreground text-sm">
-            Each bar shows load added <em>in that year alone</em> from new residential permits, new commercial permits, and net new EV registrations — the annual increment planners need to size new generation. The dashed region is a projection extrapolated from recent trends, not a utility forecast.
+            The <span className="text-primary font-medium">blue line</span> shows Austin's estimated total average electric demand (baseline ~{BASELINE_AVG_MW_2020.toLocaleString()} MW in {BASELINE_YEAR}, plus everything added since). The <span className="font-medium" style={{ color: "hsl(142 71% 45%)" }}>green bars</span> show new load added <em>in that year alone</em> from new residential permits, new commercial permits, and net new EV registrations. The dashed region is a projection extrapolated from recent trends, not a utility forecast.
           </p>
 
           <Card>
@@ -238,7 +238,7 @@ const LoadGrowth = () => {
                     <YAxis
                       stroke="hsl(var(--muted-foreground))"
                       label={{
-                        value: "Added avg load (MW)",
+                        value: "Average load (MW)",
                         angle: -90,
                         position: "insideLeft",
                         style: { fill: "hsl(var(--muted-foreground))", fontSize: 12 },
@@ -260,38 +260,18 @@ const LoadGrowth = () => {
                     />
                     <Area
                       type="monotone"
-                      dataKey="newHomesMW"
-                      stackId="1"
-                      name="New homes"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.55}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="newCommercialMW"
-                      stackId="1"
-                      name="New commercial"
-                      stroke="hsl(var(--secondary))"
-                      fill="hsl(var(--secondary))"
-                      fillOpacity={0.55}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="evsMW"
-                      stackId="1"
-                      name="EVs"
-                      stroke="hsl(var(--accent))"
-                      fill="hsl(var(--accent))"
-                      fillOpacity={0.55}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="totalAddedMW"
-                      name="Total added"
-                      stroke="hsl(var(--foreground))"
+                      dataKey="totalDemandMW"
+                      name="Total average demand"
+                      stroke="hsl(217 91% 60%)"
+                      fill="hsl(217 91% 60%)"
+                      fillOpacity={0.18}
                       strokeWidth={2}
-                      dot={false}
+                    />
+                    <Bar
+                      dataKey="totalAddedMW"
+                      name="New load added this year"
+                      fill="hsl(142 71% 45%)"
+                      radius={[4, 4, 0, 0]}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -315,21 +295,21 @@ const LoadGrowth = () => {
                       Last full year ({latestActual.year})
                     </p>
                     <p className="text-2xl font-bold text-foreground">
-                      +{latestActual.totalAddedMW} MW avg
+                      +{latestActual.totalAddedMW} MW avg new
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      ≈ {(latestActual.totalAddedMW * 1.75).toFixed(0)} MW of new peak demand added in {latestActual.year} alone.
+                      Estimated total demand at year-end: ~{latestActual.totalDemandMW.toLocaleString()} MW avg.
                     </p>
                   </div>
                   <div className="rounded-lg border border-dashed border-border p-4">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Projected annual add — {latestProjected.year}
+                      Projected — {latestProjected.year}
                     </p>
                     <p className="text-2xl font-bold text-foreground">
-                      +{latestProjected.totalAddedMW} MW avg
+                      +{latestProjected.totalAddedMW} MW avg new
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Expected new load in {latestProjected.year} if recent permit and EV trends continue.
+                      Projected total demand: ~{latestProjected.totalDemandMW.toLocaleString()} MW avg if recent trends continue.
                     </p>
                   </div>
                 </div>
