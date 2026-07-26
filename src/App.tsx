@@ -36,6 +36,7 @@ import EVProgress from "./pages/EVProgress";
 import CleanEnergyPlan from "./pages/CleanEnergyPlan";
 import PropertyViewer from "./pages/PropertyViewer";
 import PropertyPage from "./pages/PropertyPage";
+import BuildingEnergyUse from "./pages/BuildingEnergyUse";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/join-the-community" element={<JoinCommunity />} />
+            <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
           </Route>
 
           {/* Pages without footer */}

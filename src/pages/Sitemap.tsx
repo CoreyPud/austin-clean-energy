@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
@@ -44,6 +44,12 @@ const publicPages = [
     title: "Data Sources & Methodology",
     description: "Detailed documentation of data sources, calculation methods, and update frequencies used across the site.",
     icon: Database,
+  },
+  {
+    path: "/building-energy-use",
+    title: "Commercial Building Energy Use",
+    description: "How Austin tracks commercial building energy performance through the ECAD ordinance.",
+    icon: Gauge,
   },
   {
     path: "/join-the-community",
