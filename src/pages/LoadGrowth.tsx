@@ -24,8 +24,10 @@ const KWH_PER_NEW_COMMERCIAL_UNIT = 45000; // avg for a new commercial permit un
 const KWH_PER_EV = 3500; // avg light-duty EV annual charging
 const BASELINE_YEAR = 2020;
 
-// City of Austin baseline peak demand (MW) — reference point only
-const BASELINE_PEAK_MW_2020 = 2800;
+// Austin Energy system-wide average load in the baseline year (MW).
+// Derived from ~13 TWh annual retail sales ÷ 8,760 hrs ≈ 1,500 MW average.
+// (Peak demand is roughly 2× this but is not shown on this page.)
+const BASELINE_AVG_MW_2020 = 1500;
 
 const kWhToAvgMW = (kwh: number) => kwh / 8760;
 
