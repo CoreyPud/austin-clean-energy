@@ -117,7 +117,7 @@ const LoadGrowth = () => {
         evsMW: +evMW.toFixed(1),
         totalAddedMW: +(homeMW + commMW + evMW).toFixed(1),
         totalPeakMW: +(BASELINE_PEAK_MW_2020 + homeMW + commMW + evMW).toFixed(0),
-        projection: false as const,
+        projection: false,
       };
     });
 
