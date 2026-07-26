@@ -147,7 +147,7 @@ const LoadGrowth = () => {
           evsMW,
           totalAddedMW,
           totalPeakMW: +(BASELINE_PEAK_MW_2020 + totalAddedMW).toFixed(0),
-          projection: true as const,
+          projection: true,
         };
         historical.push(point);
         prev = point;
