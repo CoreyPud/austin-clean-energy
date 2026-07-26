@@ -46,6 +46,12 @@ const publicPages = [
     icon: Database,
   },
   {
+    path: "/building-energy-use",
+    title: "Commercial Building Energy Use",
+    description: "How Austin tracks commercial building energy performance through the ECAD ordinance.",
+    icon: Gauge,
+  },
+  {
     path: "/join-the-community",
     title: "Join the Community",
     description: "Sign up to join the Austin Clean Energy volunteer Slack community.",
