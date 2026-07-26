@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp, Activity } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
@@ -56,6 +56,12 @@ const publicPages = [
     title: "Austin Load Growth Projections",
     description: "How building permits and EV registrations are driving Austin's electric load growth since 2020.",
     icon: TrendingUp,
+  },
+  {
+    path: "/import-capacity",
+    title: "Austin Energy Import Capacity",
+    description: "Model Austin's Total Transfer Capability (TTC) and see when ERCOT price separation triggers.",
+    icon: Activity,
   },
   {
     path: "/join-the-community",
