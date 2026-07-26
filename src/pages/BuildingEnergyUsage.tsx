@@ -6,6 +6,8 @@ import {
   Area,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -23,6 +25,9 @@ import {
   stackByYear,
   byPropertyType,
   totals,
+  peakMwByYear,
+  systemContext,
+  AUSTIN_ENERGY_PEAK_MW,
   type BuildingEnergyRow,
 } from "@/lib/building-energy";
 
@@ -78,6 +83,8 @@ const BuildingEnergyUsage = () => {
   const stacked = useMemo(() => stackByYear(rows), [rows]);
   const typeAgg = useMemo(() => byPropertyType(rows), [rows]);
   const kpis = useMemo(() => totals(rows), [rows]);
+  const mwSeries = useMemo(() => peakMwByYear(rows), [rows]);
+  const ctx = useMemo(() => systemContext(rows), [rows]);
 
   const sortedRows = useMemo(() => {
     const copy = [...rows];
@@ -241,13 +248,89 @@ const BuildingEnergyUsage = () => {
           </CardContent>
         </Card>
 
+        {/* Peak MW chart */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Estimated peak MW added per year
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Rough peak-demand contribution from newly permitted buildings each
+              year, converted from annual kWh using a 0.5 load factor. Per-year
+              additions, not cumulative.
+            </p>
+          </div>
+          <Card>
+            <CardContent className="pt-6">
+              {loading ? (
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                  Loading…
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={mwSeries} margin={{ left: 8, right: 12, top: 8, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="year"
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                      label={{
+                        value: "MW (peak)",
+                        angle: -90,
+                        position: "insideLeft",
+                        style: {
+                          fill: "hsl(var(--muted-foreground))",
+                          fontSize: 12,
+                          textAnchor: "middle",
+                        },
+                      }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                      formatter={(v: number) => [`${v.toFixed(2)} MW`, "Peak"]}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="peak_mw"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
         {/* KPI strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
-            { label: "Permits", value: nf.format(kpis.permits) },
-            { label: "Total permitted sqft", value: nf.format(kpis.sqft) },
-            { label: "Est. annual MWh", value: nf.format(kpis.mwh) },
-            { label: "Top property type", value: kpis.topType },
+            { label: "Permits", value: nf.format(kpis.permits), sub: "" },
+            { label: "Total permitted sqft", value: nf.format(kpis.sqft), sub: "" },
+            { label: "Est. annual MWh", value: nf.format(kpis.mwh), sub: "" },
+            {
+              label: "Top property type",
+              value: kpis.topType,
+              sub: "",
+            },
+            {
+              label: "Est. peak MW added",
+              value: `${ctx.roughPeakMw.toFixed(1)} MW`,
+              sub: `${ctx.pctOfSystemPeak.toFixed(2)}% of AE ${nf.format(AUSTIN_ENERGY_PEAK_MW)} MW peak`,
+            },
+            {
+              label: "% of AE annual sales",
+              value: `${ctx.pctOfAnnualSales.toFixed(2)}%`,
+              sub: "vs. 14 TWh FY2024",
+            },
           ].map((k) => (
             <Card key={k.label}>
               <CardContent className="pt-6">
@@ -257,10 +340,14 @@ const BuildingEnergyUsage = () => {
                 <div className="mt-1 text-2xl font-bold text-foreground tabular-nums break-words">
                   {k.value}
                 </div>
+                {k.sub && (
+                  <div className="mt-1 text-xs text-muted-foreground">{k.sub}</div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
+
 
         {/* By property type */}
         <section className="space-y-4">
@@ -410,6 +497,27 @@ const BuildingEnergyUsage = () => {
               </p>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="pt-6 space-y-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                Annual kWh → peak MW
+              </div>
+              <pre className="rounded-md bg-muted/50 border border-border p-4 text-sm font-mono overflow-x-auto">
+{`avg_kw      = total_annual_kwh / 8760
+peak_mw     = (avg_kw / load_factor) / 1000
+load_factor = 0.5   // mixed-use rough assumption`}
+              </pre>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Load factor converts average load to a rough peak-demand estimate.
+                A 0.5 factor is a mixed-use approximation — adjust if a better
+                basis is available. System context: Austin Energy sold ~14 TWh
+                in FY2024 and set a record system peak of {nf.format(AUSTIN_ENERGY_PEAK_MW)} MW in
+                August 2023.
+              </p>
+            </CardContent>
+          </Card>
+
 
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground">

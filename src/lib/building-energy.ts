@@ -26,6 +26,53 @@ export interface Totals {
   topType: string;
 }
 
+export const AUSTIN_ENERGY_ANNUAL_SALES_KWH = 14_000_000_000;
+export const AUSTIN_ENERGY_PEAK_MW = 3067;
+export const LOAD_FACTOR = 0.5;
+export const HOURS_PER_YEAR = 8760;
+
+export interface PeakMwPoint {
+  year: number;
+  peak_mw: number;
+}
+
+export interface SystemContext {
+  totalKwh: number;
+  pctOfAnnualSales: number;
+  roughPeakMw: number;
+  pctOfSystemPeak: number;
+}
+
+export function peakMwByYear(rows: BuildingEnergyRow[]): PeakMwPoint[] {
+  const byYear = new Map<number, number>();
+  for (const r of rows) {
+    const year = Number((r.issued_date || "").slice(0, 4));
+    if (!Number.isFinite(year) || year <= 0) continue;
+    byYear.set(year, (byYear.get(year) ?? 0) + r.est_annual_kwh);
+  }
+  return Array.from(byYear.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([year, kwh]) => {
+      const avgKw = kwh / HOURS_PER_YEAR;
+      const peakMw = avgKw / LOAD_FACTOR / 1000;
+      return { year, peak_mw: Math.round(peakMw * 100) / 100 };
+    });
+}
+
+export function systemContext(rows: BuildingEnergyRow[]): SystemContext {
+  let totalKwh = 0;
+  for (const r of rows) totalKwh += r.est_annual_kwh;
+  const roughPeakMw = totalKwh / HOURS_PER_YEAR / LOAD_FACTOR / 1000;
+  return {
+    totalKwh,
+    pctOfAnnualSales: (totalKwh / AUSTIN_ENERGY_ANNUAL_SALES_KWH) * 100,
+    roughPeakMw,
+    pctOfSystemPeak: (roughPeakMw / AUSTIN_ENERGY_PEAK_MW) * 100,
+  };
+}
+
+
+
 // Minimal CSV parser handling quoted fields with commas and escaped quotes ("").
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];

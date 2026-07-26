@@ -1,36 +1,51 @@
-## Build the Austin Building Energy Usage page
+## Add MW peak demand time-series to `/building-energy-usage`
 
-Add a new public page at `/building-energy-usage` (distinct from existing `/building-energy-use` ECAD explainer) that visualizes estimated annual electricity load for newly permitted Austin buildings.
+Add a second chart below the existing MWh stacked area chart on `src/pages/BuildingEnergyUsage.tsx`, showing estimated peak MW contribution per year from newly permitted buildings, plus context KPIs comparing to Austin Energy's system totals.
 
-### Files to create
+### Constants (module-level in `src/lib/building-energy.ts`)
 
-1. **`public/data/building-energy-usage.csv`** — placeholder with the 6-column header (`permit_id,issued_date,property_type,sqft,est_annual_kwh,permit_class`) and 3–4 sample rows. User will upload real CSV after (they've uploaded a larger raw file already; we'll leave replacement to them since column names differ).
+```
+AUSTIN_ENERGY_ANNUAL_SALES_KWH = 14_000_000_000  // FY2024 AE annual report
+AUSTIN_ENERGY_PEAK_MW          = 3067            // Aug 2023 record summer peak
+LOAD_FACTOR                    = 0.5             // mixed-use assumption
+HOURS_PER_YEAR                 = 8760
+```
 
-2. **`src/lib/building-energy.ts`** — types + zero-dep CSV parser (handles quoted fields with commas) + `loadBuildingEnergyCsv`, `stackByYear`, `byPropertyType`, `totals` helpers.
+### New helper in `src/lib/building-energy.ts`
 
-3. **`src/pages/BuildingEnergyUsage.tsx`** — full page:
-   - `useSeo` with specified title/description
-   - Header: back link, "Austin at a Glance" eyebrow, H1, subtitle
-   - Hero `Card` with 320px stacked `AreaChart` (recharts), Y-axis label "MWh / yr", loading + error states, 8-color palette from semantic tokens
-   - 4-card KPI strip (permits, sqft, MWh, top type)
-   - Horizontal `BarChart` by property type with `LabelList` showing "X MWh"
-   - Permit table: top 10 rows sorted by `est_annual_kwh` desc, sortable headers, download CSV button, "Showing 10 of N" footer
-   - Methodology: formula callout card, literature benchmarks table (single_family 6.48, residential_other 6.48, adu_accessory 8.94, personal_services 14.04, pool_spa n/a), sources with 4 external links, limitations `Alert`
-   - Layout `max-w-6xl px-4`, shadcn components, tabular-nums, `Intl.NumberFormat`
+`peakMwByYear(rows)` → returns `{ year, peak_mw }[]`:
+- For each year, sum `est_annual_kwh` across permits issued that year.
+- `avg_kw = total_kwh / 8760`
+- `peak_mw = (avg_kw / LOAD_FACTOR) / 1000`
+- Round to 2 decimals.
 
-### Files to modify
+Also extend `totals()` (or add `systemContext(rows)`) to return:
+- `totalKwh`
+- `pctOfAnnualSales = totalKwh / AUSTIN_ENERGY_ANNUAL_SALES_KWH * 100`
+- `roughPeakMw = ((totalKwh / 8760) / LOAD_FACTOR) / 1000`
+- `pctOfSystemPeak = roughPeakMw / AUSTIN_ENERGY_PEAK_MW * 100`
 
-4. **`src/App.tsx`** — import `BuildingEnergyUsage`, add `<Route path="/building-energy-usage" ...>` inside `PublicLayout`.
+### UI changes in `src/pages/BuildingEnergyUsage.tsx`
 
-5. **`src/pages/Index.tsx`** — add a 4th `FeatureCard` in the "Austin at a Glance" grid with a small stacked `AreaChart` preview (years 2023–2025, 8 property types, semantic colors, fillOpacity ~0.5).
+1. **New section** below the existing MWh area chart, titled "Estimated peak MW added per year":
+   - Recharts `LineChart` (single series) using `peakMwByYear` data.
+   - Y-axis label "MW (peak)", tooltip formats to 2 decimals + " MW".
+   - Short caption explaining this is per-year new-permit contribution, not cumulative.
 
-6. **`src/pages/Sitemap.tsx`** — add entry with `Gauge` icon, title "Building Energy Usage", specified description.
+2. **Extend KPI strip** (or add a second row) with two context cards:
+   - "Est. peak MW added" — `roughPeakMw.toFixed(1)` MW, subtitle `"{pctOfSystemPeak.toFixed(2)}% of AE 3,067 MW peak"`.
+   - "% of AE annual sales" — `pctOfAnnualSales.toFixed(2)}%`, subtitle "vs. 14 TWh FY2024".
 
-### Notes
+3. **Methodology addendum** — new card in the existing "How this is calculated" section documenting the MW conversion:
+   ```
+   avg_kw     = total_annual_kwh / 8760
+   peak_mw    = (avg_kw / load_factor) / 1000
+   load_factor = 0.5   // mixed-use rough assumption
+   ```
+   Plus a note: AE annual sales ~14 TWh (FY2024 annual report), record system peak 3,067 MW (Aug 2023).
 
-- Existing `/building-energy-use` page and its sitemap entry stay untouched.
-- Chart palette uses `hsl(var(--primary))`, `hsl(var(--accent))`, plus fixed semantic-friendly hues for blue/amber/emerald/purple/red/cyan.
-- No backend/database changes — CSV lives in `public/` and is fetched client-side.
-- I'll skip updating `public/sitemap.xml` unless you want it included (it's a static XML file maintained manually per project memory).
+### Out of scope
 
-Ready to implement on approval.
+- No new data file / no CSV changes.
+- No changes to `/building-energy-use` (the separate ECAD explainer).
+- No sitemap or homepage changes.
