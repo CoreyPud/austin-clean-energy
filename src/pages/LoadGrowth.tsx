@@ -355,8 +355,7 @@ const LoadGrowth = () => {
                 thousands of EVs since {BASELINE_YEAR}.
               </p>
               <p>
-                EV load is time-shifted — most charging happens overnight, which softens its peak
-                impact but grows shoulder-hour baseload.
+                EV load is time-shifted — most charging happens overnight, so it primarily grows shoulder-hour baseload rather than midday demand.
               </p>
             </CardContent>
           </Card>
