@@ -146,7 +146,9 @@ const LoadGrowth = () => {
     return historical;
   }, [permits, historicalYears, currentYear]);
 
-  const latestActual = chartData.filter((d) => !d.projection).slice(-1)[0];
+  // Use last complete (prior) year as "latest actual" since current year permits are still trickling in.
+  const completeActuals = chartData.filter((d) => !d.projection && d.year < currentYear);
+  const latestActual = completeActuals.slice(-1)[0];
   const latestProjected = chartData.slice(-1)[0];
 
   const totalPermitsToDate = permits
