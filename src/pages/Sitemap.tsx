@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
@@ -50,6 +50,12 @@ const publicPages = [
     title: "Commercial Building Energy Use",
     description: "How Austin tracks commercial building energy performance through the ECAD ordinance.",
     icon: Gauge,
+  },
+  {
+    path: "/load-growth",
+    title: "Austin Load Growth Projections",
+    description: "How building permits and EV registrations are driving Austin's electric load growth since 2020.",
+    icon: TrendingUp,
   },
   {
     path: "/join-the-community",

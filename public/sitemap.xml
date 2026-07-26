@@ -46,6 +46,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://austin-clean-energy.lovable.app/load-growth</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://austin-clean-energy.lovable.app/guides</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
