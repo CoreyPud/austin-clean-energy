@@ -6,6 +6,7 @@ import { Info, TrendingUp, Home, Car, Zap, Building2 } from "lucide-react";
 import {
   ResponsiveContainer,
   ComposedChart,
+  Bar,
   Line,
   Area,
   XAxis,
