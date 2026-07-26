@@ -37,6 +37,7 @@ import CleanEnergyPlan from "./pages/CleanEnergyPlan";
 import PropertyViewer from "./pages/PropertyViewer";
 import PropertyPage from "./pages/PropertyPage";
 import BuildingEnergyUse from "./pages/BuildingEnergyUse";
+import BuildingEnergyUsage from "./pages/BuildingEnergyUsage";
 import LoadGrowth from "./pages/LoadGrowth";
 import ImportCapacity from "./pages/ImportCapacity";
 
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/join-the-community" element={<JoinCommunity />} />
             <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
+            <Route path="/building-energy-usage" element={<BuildingEnergyUsage />} />
             <Route path="/load-growth" element={<LoadGrowth />} />
             <Route path="/import-capacity" element={<ImportCapacity />} />
           </Route>

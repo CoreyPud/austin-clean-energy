@@ -1,0 +1,11 @@
+permit_id,issued_date,property_type,sqft,est_annual_kwh,permit_class
+2023-000001,2023-02-14,Office,45000,2340000,Commercial New
+2023-000002,2023-04-09,Multifamily,82000,4182000,Residential New
+2023-000003,2023-06-22,Retail,18000,756000,Commercial New
+2024-000004,2024-01-30,Warehouse,120000,2880000,Commercial New
+2024-000005,2024-03-15,Hotel,64000,4736000,Commercial New
+2024-000006,2024-07-08,Multifamily,95000,4845000,Residential New
+2025-000007,2025-02-11,Hospital,52000,10192000,Commercial New
+2025-000008,2025-04-27,School,38000,1710000,Institutional
+2025-000009,2025-05-19,Grocery,42000,8190000,Commercial New
+2025-000010,2025-06-04,Office,58000,3016000,Commercial New
