@@ -86,29 +86,24 @@ const LoadGrowth = () => {
   }, [currentYear]);
 
   const chartData = useMemo(() => {
-    // Cumulative added load (MW avg) vs baseline year, plus projection through +5 years.
-    let cumHomes = 0;
-    let cumCommercial = 0;
-    const baselineEV = evCountAtYearEnd(BASELINE_YEAR);
-
+    // Per-year added load (MW avg) from that year's new permits + net new EVs.
     type Point = {
       year: number;
       newHomesMW: number;
       newCommercialMW: number;
       evsMW: number;
       totalAddedMW: number;
-      totalPeakMW: number;
       projection: boolean;
     };
-    const historical: Point[] = historicalYears.map((year) => {
-      const p = permits?.[year] ?? { residential: 0, commercial: 0 };
-      cumHomes += p.residential;
-      cumCommercial += p.commercial;
-      const evs = evCountAtYearEnd(year) - baselineEV;
 
-      const homeMW = kWhToAvgMW(cumHomes * KWH_PER_NEW_HOME);
-      const commMW = kWhToAvgMW(cumCommercial * KWH_PER_NEW_COMMERCIAL_UNIT);
-      const evMW = kWhToAvgMW(evs * KWH_PER_EV);
+    const historical: Point[] = historicalYears.map((year, i) => {
+      const p = permits?.[year] ?? { residential: 0, commercial: 0 };
+      const prevYear = historicalYears[i - 1] ?? year - 1;
+      const evsThisYear = evCountAtYearEnd(year) - evCountAtYearEnd(prevYear);
+
+      const homeMW = kWhToAvgMW(p.residential * KWH_PER_NEW_HOME);
+      const commMW = kWhToAvgMW(p.commercial * KWH_PER_NEW_COMMERCIAL_UNIT);
+      const evMW = kWhToAvgMW(Math.max(0, evsThisYear) * KWH_PER_EV);
 
       return {
         year,
@@ -116,41 +111,35 @@ const LoadGrowth = () => {
         newCommercialMW: +commMW.toFixed(1),
         evsMW: +evMW.toFixed(1),
         totalAddedMW: +(homeMW + commMW + evMW).toFixed(1),
-        totalPeakMW: +(BASELINE_PEAK_MW_2020 + homeMW + commMW + evMW).toFixed(0),
         projection: false,
       };
     });
 
-    // Simple projection: average YoY delta of last 3 available years for each driver
-    const last3 = historical.slice(-3);
-    if (last3.length >= 2) {
-      const yoy = (key: "newHomesMW" | "newCommercialMW" | "evsMW") => {
-        const deltas: number[] = [];
-        for (let i = 1; i < last3.length; i++) deltas.push(last3[i][key] - last3[i - 1][key]);
-        return deltas.reduce((s, d) => s + d, 0) / deltas.length;
-      };
-      const dH = yoy("newHomesMW");
-      const dC = yoy("newCommercialMW");
-      const dE = yoy("evsMW");
+    // Projection: average of last 3 complete years' annual additions, held forward.
+    // Skip the current year if permits are still coming in (partial year).
+    const complete = historical.filter((h) => h.year < currentYear);
+    const last3 = complete.slice(-3);
+    if (last3.length >= 1) {
+      const avg = (key: "newHomesMW" | "newCommercialMW" | "evsMW") =>
+        last3.reduce((s, d) => s + d[key], 0) / last3.length;
+      const aH = avg("newHomesMW");
+      const aC = avg("newCommercialMW");
+      const aE = avg("evsMW");
 
-      let prev = historical[historical.length - 1];
       for (let i = 1; i <= 5; i++) {
         const year = currentYear + i;
-        const newHomesMW = +(prev.newHomesMW + dH).toFixed(1);
-        const newCommercialMW = +(prev.newCommercialMW + dC).toFixed(1);
-        const evsMW = +(prev.evsMW + dE).toFixed(1);
+        const newHomesMW = +aH.toFixed(1);
+        const newCommercialMW = +aC.toFixed(1);
+        const evsMW = +aE.toFixed(1);
         const totalAddedMW = +(newHomesMW + newCommercialMW + evsMW).toFixed(1);
-        const point = {
+        historical.push({
           year,
           newHomesMW,
           newCommercialMW,
           evsMW,
           totalAddedMW,
-          totalPeakMW: +(BASELINE_PEAK_MW_2020 + totalAddedMW).toFixed(0),
           projection: true,
-        };
-        historical.push(point);
-        prev = point;
+        });
       }
     }
 
