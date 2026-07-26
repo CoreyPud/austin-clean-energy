@@ -405,6 +405,87 @@ export default function ImportCapacity() {
             </a>
           </CardContent>
         </Card>
+
+        {/* Formula details */}
+        <Card>
+          <CardContent className="pt-6">
+            <details className="group">
+              <summary className="cursor-pointer list-none flex items-center justify-between font-semibold text-foreground">
+                <span>Details — formulas &amp; calculations</span>
+                <span className="text-muted-foreground text-sm group-open:rotate-180 transition-transform">▾</span>
+              </summary>
+              <div className="mt-4 space-y-6 text-sm">
+                <section>
+                  <h4 className="font-semibold mb-1">1. Thermal Import Limit</h4>
+                  <p className="text-muted-foreground mb-2">
+                    Sum of the real-power carrying capacity of every tie-line
+                    entering LZ_AUSTIN. MVA is apparent power; multiplying by
+                    the power factor converts it to real MW.
+                  </p>
+                  <pre className="font-mono text-xs bg-muted p-3 rounded overflow-x-auto">
+{`Thermal_boundary (MW) = Σᵢ ( MVAᵢ × PFᵢ )
+
+Current values:
+${lines.map((l) => `  ${l.name}: ${l.mva} MVA × ${l.pf} = ${(l.mva * l.pf).toFixed(0)} MW`).join("\n")}
+  ────────────────────────────
+  Σ = ${thermalBoundary.toFixed(0)} MW`}
+                  </pre>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold mb-1">2. GTC / Stability Limit</h4>
+                  <p className="text-muted-foreground mb-2">
+                    ERCOT clamps flows below the thermal boundary when a
+                    Generic Transmission Constraint binds. The derate slider
+                    represents the effective reduction from all binding
+                    shadow-priced constraints on the LZ_AUSTIN corridor.
+                  </p>
+                  <pre className="font-mono text-xs bg-muted p-3 rounded overflow-x-auto">
+{`GTC_limit (MW) = Thermal_boundary × ( 1 − derate% / 100 )
+
+  = ${thermalBoundary.toFixed(0)} × ( 1 − ${gtcDerate} / 100 )
+  = ${thermalBoundary.toFixed(0)} × ${(1 - gtcDerate / 100).toFixed(2)}
+  = ${gtcLimit.toFixed(0)} MW
+
+Effective_import_capacity = min( Thermal_boundary, GTC_limit )
+                          = min( ${thermalBoundary.toFixed(0)}, ${gtcLimit.toFixed(0)} )
+                          = ${importCapacity.toFixed(0)} MW   [binding: ${binding}]`}
+                  </pre>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold mb-1">3. PSA Imbalance</h4>
+                  <p className="text-muted-foreground mb-2">
+                    Whether cheap imported power can serve Austin's load this
+                    hour, or whether local generation must be dispatched and
+                    LZ_AUSTIN price separates from the ERCOT hub.
+                  </p>
+                  <pre className="font-mono text-xs bg-muted p-3 rounded overflow-x-auto">
+{`Imbalance (MW) = Local_demand − ( Import_capacity + Local_generation )
+
+  = ${localDemand} − ( ${importCapacity.toFixed(0)} + ${localGen} )
+  = ${localDemand} − ${(importCapacity + localGen).toFixed(0)}
+  = ${imbalance >= 0 ? "+" : ""}${imbalance.toFixed(0)} MW
+
+Price separation triggers when Imbalance > 0.
+Current status: ${priceSeparation ? "TRIGGERED" : "within capacity"}.`}
+                  </pre>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold mb-1">Notation</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                    <li><span className="font-mono">MVA</span> — nameplate apparent power rating of a tie-line.</li>
+                    <li><span className="font-mono">PF</span> — power factor; ratio of real power (MW) to apparent power (MVA).</li>
+                    <li><span className="font-mono">GTC derate</span> — % reduction from thermal capacity imposed by binding stability constraints (from ERCOT shift factors and shadow prices).</li>
+                    <li><span className="font-mono">Local generation</span> — MW dispatched from plants inside LZ_AUSTIN (Sand Hill, Decker, Austin's Fayette share, distributed solar, etc.).</li>
+                    <li><span className="font-mono">Local demand</span> — real-time MW load in LZ_AUSTIN from ERCOT's Hourly Load Profile.</li>
+                  </ul>
+                </section>
+              </div>
+            </details>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
