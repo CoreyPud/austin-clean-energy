@@ -52,6 +52,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/load-growth",
+    title: "Austin Load Growth Projections",
+    description: "How building permits and EV registrations are driving Austin's electric load growth since 2020.",
+    icon: TrendingUp,
+  },
+  {
     path: "/join-the-community",
     title: "Join the Community",
     description: "Sign up to join the Austin Clean Energy volunteer Slack community.",
