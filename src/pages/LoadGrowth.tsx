@@ -302,25 +302,24 @@ const LoadGrowth = () => {
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Today ({latestActual.year})
+                      Last full year ({latestActual.year})
                     </p>
                     <p className="text-2xl font-bold text-foreground">
                       +{latestActual.totalAddedMW} MW avg
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      ≈ {(latestActual.totalAddedMW * 1.75).toFixed(0)} MW of new peak demand added
-                      since {BASELINE_YEAR}.
+                      ≈ {(latestActual.totalAddedMW * 1.75).toFixed(0)} MW of new peak demand added in {latestActual.year} alone.
                     </p>
                   </div>
                   <div className="rounded-lg border border-dashed border-border p-4">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Projected {latestProjected.year}
+                      Projected annual add — {latestProjected.year}
                     </p>
                     <p className="text-2xl font-bold text-foreground">
                       +{latestProjected.totalAddedMW} MW avg
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      If recent growth in permits and EV registrations continues.
+                      Expected new load in {latestProjected.year} if recent permit and EV trends continue.
                     </p>
                   </div>
                 </div>
