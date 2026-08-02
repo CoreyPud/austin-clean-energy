@@ -1164,11 +1164,13 @@ export type Database = {
         Args: { _lat: number; _lon: number; _radius_deg?: number }
         Returns: string
       }
+      get_council_cron_secret: { Args: never; Returns: string }
       get_sync_solar_cron_secret: { Args: never; Returns: string }
       haversine_mi: {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
+      set_council_cron_secret: { Args: { _val: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
