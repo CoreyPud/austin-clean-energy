@@ -1,52 +1,76 @@
-# Council climate-vote classification spec (v0 — refine this)
+# Council climate-vote classification spec (v1)
 
 The LLM (backfill here, then sync for new items only) reads each agenda item's
 `item_description` and returns:
 
 ```json
 { "is_climate": true,
-  "category": "energy_supply | buildings_efficiency | transportation | climate_planning | water_resilience | natural_systems | waste | environmental_justice | none",
-  "item_kind": "policy | contract | proclamation | executive_session",
+  "category": "energy_supply | buildings_efficiency | transportation | land_use | water | natural_systems | waste | climate_planning | environmental_justice | none",
+  "item_kind": "policy | resolution | decision | routine | proclamation | executive_session",
   "summary": "one plain-English sentence",
   "confidence": "high | medium | low" }
 ```
 
-## Inclusion rule
-`is_climate = true` only if the item **substantively concerns** climate, clean
-energy, emissions, environmental sustainability, or climate resilience — as
-policy, funding, or a binding action.
+`category` is the topical bucket — the "beyond yes/no" classifier. It groups the
+(deliberately wide) climate set so the page can organize it.
 
-## Exclusions (the noise this must reject)
-- **Vendor-name collisions** — the word is in a company name, not the subject:
-  SolarWinds (IT), Wind Services (trucks), "Coalition" (matches "coal"), Carbon
-  Activated Corp (chemicals), Climatec (HVAC). → `is_climate:false`.
-- **Routine watershed drainage / waterline / stormwater construction** — utility
-  ops, not climate policy. → false (unless framed as climate resilience/flood adaptation).
-- **Routine electric-utility supply/software contracts** (transformers, meters,
-  base-rate corrections) — `is_climate` may be false, or true+`item_kind:contract`
-  if it's genuinely a clean-energy program (e.g. solar incentives, EV charging).
+## Inclusion rule (resolved)
+`is_climate = true` when the item is a **substantive decision** that relates —
+**directly OR indirectly** — to climate, clean energy, emissions, sustainability,
+or resilience. Indirect counts: transportation mode-shift / transit / bike-ped /
+VMT, land-use density and zoning, water conservation and **watershed protection**,
+tree canopy / natural systems, waste / recycling.
 
-## `item_kind` matters
-Separate **policy/resolutions** (stances: climate plan, GHG targets, gas-plant
-decisions, low-carbon mandates) from **routine contracts** (incentive issuances,
-service agreements). The report card centers on policy; contracts are secondary.
+## Exclusions
+- **Routine / administrative / procurement items** — even when energy-related —
+  are NOT climate decisions. A solar-incentive *issuance*, an electric-utility
+  *supply contract*, a base-rate correction → `is_climate:false`, `item_kind:routine`.
+  Only actual decisions (policy, resolutions, ordinances, plan adoptions,
+  significant agreements/PPAs, direction to staff) count. *(Q2: only decisions,
+  not routine stuff.)*
+- **Vendor-name collisions** — the term is only in a company name: SolarWinds
+  (IT), Wind Services (trucks), "Coalition" (matches coal), Carbon Activated Corp
+  (chemicals), Climatec (HVAC) → `is_climate:false`.
+
+## Resolved scope questions
+1. **Transit / bike-ped** → IN, direct or indirect (`transportation`).
+   **Land use** → POLICY ONLY (`land_use`): citywide code changes and explicit
+   density / transit-oriented / sustainability initiatives (e.g. HOME, TOD,
+   compatibility/density reform). **EXCLUDE individual case-by-case rezonings** —
+   `C14-…`, `C814-…`, `NPA-…` site cases, single-parcel or site-specific zoning
+   and neighborhood-plan amendments are routine land development, `is_climate:false`,
+   `item_kind:routine`, even though they change what can be built on one site.
+2. **Routine clean-energy contracts** → OUT. Only decisions, not routine procurement.
+3. **Watershed / water conservation** → IN. (category `water`.)
+
+## `item_kind`
+`policy` / `resolution` / `decision` = substantive (the record shows these).
+`routine` = procurement/admin/contract (excluded). `proclamation`,
+`executive_session` = noted but not decisions.
 
 ## Worked examples
-| description (truncated) | is_climate | category | kind |
+| description (truncated) | is_climate | category | item_kind |
 |---|---|---|---|
 | transition City to low-embodied-carbon concrete | yes | buildings_efficiency | policy |
-| Fossil Fuel Non-Proliferation Treaty resolution (9-1) | yes | climate_planning | policy |
-| I-35 project & transportation GHG emissions (7-3) | yes | transportation | policy |
-| Climate Vulnerability Analysis for Parks natural areas | yes | natural_systems | policy |
-| Fayette Power Project legal consultation | yes | energy_supply | executive_session |
-| Austin Energy commercial/multifamily solar incentives $7M | yes | energy_supply | contract |
-| SolarWinds software maintenance contract | no | none | contract |
-| TGM Wind Services skylift vehicle maintenance | no | none | contract |
-| Ending Community Homelessness Coalition agreement | no | none | contract |
-| Carbon Activated Corporation SulfaTreat chemical contract | no | none | contract |
-| routine watershed waterline extension construction | no | none | contract |
+| Fossil Fuel Non-Proliferation Treaty resolution (9-1) | yes | climate_planning | resolution |
+| I-35 project & transportation GHG emissions (7-3) | yes | transportation | resolution |
+| resolution expanding the bike/pedestrian network | yes | transportation | resolution |
+| land-use change increasing density near transit | yes | land_use | policy |
+| Climate Vulnerability Analysis for Parks natural areas | yes | natural_systems | decision |
+| watershed protection ordinance | yes | water | policy |
+| adopt Austin Energy Resource / generation plan | yes | energy_supply | policy |
+| Fayette Power Project (coal) legal consultation | yes | energy_supply | executive_session |
+| Austin Energy solar-incentive issuance $7M | no | none | routine |
+| electric-utility transformer supply contract | no | none | routine |
+| SolarWinds software maintenance contract | no | none | routine |
+| Ending Community Homelessness Coalition agreement | no | none | routine |
+| routine watershed waterline construction contract | no | none | routine |
 
-## Open questions to settle before full backfill
-1. Do **transit / bike-ped / land-use density** items count as climate (mode-shift / VMT)? Currently only when emissions are explicitly named.
-2. Do **routine clean-energy contracts** (solar incentive issuances) belong in the record, or only policy/resolutions?
-3. Is **watershed protection / water conservation** in scope, or only when climate-framed?
+## Backfill + accuracy plan
+1. Hand-label a stratified ~150-item gold sample here (independent of the model).
+2. Update the classify-new-votes prompt to this spec; run it over all 6,535 rows
+   (all currently is_climate NULL) — the one-time backfill.
+3. Compare model output to the gold sample → precision / recall; review
+   disagreements. Two independent models agreeing (Claude gold vs. Gemini run) +
+   human spot-check is the accuracy evidence.
+4. Refine prompt and re-run if needed; then enable the sync cron for new items only.

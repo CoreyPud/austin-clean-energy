@@ -26,8 +26,15 @@ const SYSTEM_PROMPT = `You classify Austin City Council agenda items for a clima
 is_climate = true ONLY when the item is a SUBSTANTIVE DECISION that relates —
 directly OR indirectly — to climate, clean energy, emissions, sustainability, or
 resilience. Indirect counts: transportation mode-shift / transit / bike-ped / VMT,
-land-use density and zoning, water conservation and watershed protection, tree
-canopy / natural systems, waste / recycling.
+water conservation and watershed protection, tree canopy / natural systems, waste
+/ recycling.
+
+LAND USE is POLICY ONLY: citywide code changes and explicit density /
+transit-oriented / sustainability initiatives (e.g. HOME, TOD, density reform) →
+category "land_use". But INDIVIDUAL CASE-BY-CASE REZONINGS are routine land
+development, NOT climate — item ids like "C14-...", "C814-...", "NPA-..." or a
+single named site/parcel rezoning or neighborhood-plan amendment →
+is_climate:false, item_kind:"routine", even though they change what a lot can build.
 
 Substantive decisions = policy, resolutions, ordinances, plan adoptions, significant
 agreements/PPAs, or direction to staff. Set item_kind accordingly.
