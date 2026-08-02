@@ -566,7 +566,10 @@ export type Database = {
           comp_category: string | null
           created_at: string
           id: string
-          registrant: string
+          registrant: string | null
+          registrant_id: string | null
+          report_id: string | null
+          row_id: string | null
           sector_tag: string | null
           updated_at: string
           year: number | null
@@ -577,7 +580,10 @@ export type Database = {
           comp_category?: string | null
           created_at?: string
           id?: string
-          registrant: string
+          registrant?: string | null
+          registrant_id?: string | null
+          report_id?: string | null
+          row_id?: string | null
           sector_tag?: string | null
           updated_at?: string
           year?: number | null
@@ -588,7 +594,10 @@ export type Database = {
           comp_category?: string | null
           created_at?: string
           id?: string
-          registrant?: string
+          registrant?: string | null
+          registrant_id?: string | null
+          report_id?: string | null
+          row_id?: string | null
           sector_tag?: string | null
           updated_at?: string
           year?: number | null
