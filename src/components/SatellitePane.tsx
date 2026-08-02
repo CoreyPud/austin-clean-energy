@@ -54,9 +54,13 @@ function panelPolygon(
   ]);
 }
 
-function fillOpacityExpr(opacity: number, hasFilter: boolean): any {
-  if (!hasFilter) return opacity;
-  return ["case", ["boolean", ["get", "selected"], true], opacity, Math.max(0.07, opacity * 0.18)];
+// Panels are dimmed by comparing each feature's baked "rank" against the number
+// selected. Because the threshold is a paint expression, changing the selected count
+// (e.g. dragging a system-size slider) is a one-line setPaintProperty — no geojson
+// rebuild and no re-run of the O(n²) selection ordering.
+function fillOpacityExpr(opacity: number, selectedCount: number | undefined): any {
+  if (selectedCount == null) return opacity;
+  return ["case", ["<", ["get", "rank"], selectedCount], opacity, Math.max(0.07, opacity * 0.18)];
 }
 
 interface MapProps extends Omit<Props, "className"> {
@@ -78,11 +82,6 @@ function SatelliteMap({
   const azimuthsRef  = useRef<Record<number, number>>({});
   const fitKeyRef    = useRef<string | number | undefined>(undefined);
   // Refs so the visibility effect can rebuild the correct opacity expression
-  const selCountRef  = useRef<number | undefined>(selectedPanelCount);
-  const panelsLenRef = useRef<number>(panels?.length ?? 0);
-
-  useEffect(() => { selCountRef.current  = selectedPanelCount; }, [selectedPanelCount]);
-  useEffect(() => { panelsLenRef.current = panels?.length ?? 0; }, [panels]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -204,9 +203,11 @@ function SatelliteMap({
       }
     }
 
-    const nSel = selectedPanelCount ?? panels.length;
-    const selectedSet = new Set([...greedyOrder, ...lowQ].slice(0, Math.min(nSel, panels.length)).map(x => x.i));
-    const hasFilter = selectedPanelCount != null && selectedPanelCount < panels.length;
+    // Selection priority (best-first): the greedy proximity chain, then remaining low
+    // panels by production. Baking each panel's rank lets the fill layer decide which
+    // are "in the system" purely from the selected-count threshold.
+    const rankOf = new Int32Array(panels.length);
+    [...greedyOrder, ...lowQ].forEach((x, r) => { rankOf[x.i] = r; });
 
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
@@ -218,7 +219,7 @@ function SatelliteMap({
         return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] },
-          properties: { id: i, tsrf, selected: selectedSet.has(i) },
+          properties: { id: i, tsrf, rank: rankOf[i] },
         };
       }),
     };
@@ -250,7 +251,7 @@ function SatelliteMap({
       }
     };
 
-    const opacityExpr = fillOpacityExpr(PANEL_OPACITY, hasFilter);
+    const opacityExpr = fillOpacityExpr(PANEL_OPACITY, selectedPanelCount);
 
     // Walkway GeoJSON (gray tiles for removed walkway panels)
     const walkwayGeojson: GeoJSON.FeatureCollection = {
@@ -390,7 +391,15 @@ function SatelliteMap({
 
     if (map.isStyleLoaded()) addLayers();
     else map.once("load", addLayers);
-  }, [panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths, selectedPanelCount]);
+  }, [panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths]);
+
+  // Selected-count changes (e.g. a system-size slider) only move the dim threshold,
+  // so update the paint expression in place rather than rebuilding the overlay.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.getLayer("panels-fill")) return;
+    map.setPaintProperty("panels-fill", "fill-opacity", fillOpacityExpr(PANEL_OPACITY, selectedPanelCount));
+  }, [selectedPanelCount]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -36,12 +36,22 @@ export interface SolarRecommendation {
   paybackYears: number;
 }
 
-export function computeRecommendation(p: {
-  solar_max_panels: number | null;
-  solar_panel_capacity_w: number | null;
-  solar_sunshine_hrs: number | null;
-  property_type: string | null;
-}): SolarRecommendation | null {
+export function computeRecommendation(
+  p: {
+    solar_max_panels: number | null;
+    solar_panel_capacity_w: number | null;
+    solar_sunshine_hrs: number | null;
+    property_type: string | null;
+  },
+  opts: {
+    /** Residential: size the default system to offset this yearly consumption
+     *  (from the user's bill). Falls back to the Austin average when omitted. */
+    annualUsageKwh?: number | null;
+    /** User-chosen system size in kW. Overrides the default sizing, clamped to
+     *  the roof's maximum. */
+    systemKwOverride?: number | null;
+  } = {},
+): SolarRecommendation | null {
   if (!p.solar_max_panels || !p.solar_panel_capacity_w) return null;
 
   const maxKw = (p.solar_max_panels * p.solar_panel_capacity_w) / 1000;
@@ -51,10 +61,15 @@ export function computeRecommendation(p: {
     : 1500;
 
   const cls = classifyProperty(p.property_type);
+  const usageKwh = opts.annualUsageKwh ?? RESIDENTIAL_ANNUAL_USAGE_KWH;
   let recommendedKw =
     cls === "residential"
-      ? Math.min(RESIDENTIAL_ANNUAL_USAGE_KWH / productionPerKw, maxKw)
+      ? Math.min(usageKwh / productionPerKw, maxKw)
       : maxKw;
+  // A manual size selection wins over the default, clamped to the roof capacity.
+  if (opts.systemKwOverride != null) {
+    recommendedKw = Math.max(0, Math.min(opts.systemKwOverride, maxKw));
+  }
   recommendedKw = Math.round(recommendedKw * 10) / 10;
 
   const annualProductionKwh = Math.round(recommendedKw * productionPerKw);

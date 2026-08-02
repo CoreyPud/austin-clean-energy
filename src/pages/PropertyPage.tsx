@@ -289,6 +289,8 @@ export default function PropertyPage() {
   const [loading, setLoading]   = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState(150);
+  // null = follow the default sizing; a number = user has chosen a system size.
+  const [systemKwOverride, setSystemKwOverride] = useState<number | null>(null);
   const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
   const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
   const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
@@ -298,6 +300,7 @@ export default function PropertyPage() {
   useEffect(() => {
     if (!pid) return;
     setLoading(true);
+    setSystemKwOverride(null); // a new property starts at its own recommended size
     Promise.all([
       supabase
         .from("tcad_properties")
@@ -358,11 +361,25 @@ export default function PropertyPage() {
   }
 
   const cls      = classifyProperty(property.property_type);
+  const isResidential  = cls === "residential";
+  const isMultifamily  = cls === "multifamily";
+  const isCommercial   = !isResidential && !isMultifamily;
+
+  // Residential sizing tracks the user's bill; the recommendation reads it directly.
+  const residentialAnnualUsage = billToMonthlyKwh(monthlyBill) * 12;
+
   // Size the system off the buildable layout (setbacks, low-TSRF panels and rooftop
   // walkways removed) rather than Google's raw maximum, so every figure downstream —
   // kW, cost, rebate, production, payback, SSO — reflects what can actually be built.
+  // Bill and manual override both feed in here so the stat cards stay in sync.
   const buildablePanels = solarFilter.filteredPanelCount ?? property.solar_max_panels;
-  const rec      = computeRecommendation({ ...property, solar_max_panels: buildablePanels });
+  const rec = computeRecommendation(
+    { ...property, solar_max_panels: buildablePanels },
+    {
+      annualUsageKwh: isResidential ? residentialAnnualUsage : null,
+      systemKwOverride,
+    },
+  );
   const hasSolar = !!property.solar_fetched_at && property.solar_max_panels != null;
   const address  = formatAssessorAddress(property.situs_address) || `Property ${property.pid}`;
   const typeLabel = TYPE_LABEL[property.property_type ?? ""] ?? "Other";
@@ -373,13 +390,10 @@ export default function PropertyPage() {
     ? Math.round(property.estimated_roof_sqft).toLocaleString()
     : null;
 
-  const isResidential  = cls === "residential";
-  const isMultifamily  = cls === "multifamily";
-  const isCommercial   = !isResidential && !isMultifamily;
   const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_MIN_KW;
 
   const annualUsageKwh = isResidential
-    ? billToMonthlyKwh(monthlyBill) * 12
+    ? residentialAnnualUsage
     : (rec?.annualProductionKwh ?? DEFAULT_MONTHLY_USAGE_KWH * 12);
 
   const ctaTitle = isResidential
@@ -422,6 +436,9 @@ export default function PropertyPage() {
               panelWidthM={panelDims?.w}
               segmentAzimuths={segmentAzimuths}
               segmentPitches={segmentPitches}
+              selectedPanelCount={rec
+                ? Math.round((rec.recommendedKw * 1000) / (property.solar_panel_capacity_w ?? 400))
+                : undefined}
             />
           </div>
         )}
@@ -532,6 +549,39 @@ export default function PropertyPage() {
                     ? `${fmt$(rec.annualSavings)}/yr revenue`
                     : `${fmt$(rec.annualSavings)}/yr savings`}
                 />
+              </div>
+
+              {/* Adjust system size away from the default */}
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <div className="flex justify-between items-baseline">
+                  <p className="text-sm font-medium">System size</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold tabular-nums">{rec.recommendedKw} kW</span>
+                    {systemKwOverride != null && (
+                      <button
+                        type="button"
+                        onClick={() => setSystemKwOverride(null)}
+                        className="text-xs text-primary underline"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <Slider
+                  min={1}
+                  max={Math.max(1, Math.ceil(rec.maxKw))}
+                  step={rec.maxKw > 50 ? 1 : 0.5}
+                  value={[rec.recommendedKw]}
+                  onValueChange={([v]) => setSystemKwOverride(v)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {systemKwOverride != null
+                    ? `Custom size · up to ${rec.maxKw} kW buildable`
+                    : isResidential
+                    ? `Sized to your bill · up to ${rec.maxKw} kW buildable`
+                    : `Maximum buildable roof capacity (${rec.maxKw} kW)`}
+                </p>
               </div>
             </div>
 
