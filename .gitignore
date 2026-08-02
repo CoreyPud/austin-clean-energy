@@ -27,3 +27,4 @@ supabase/.env
 /data/google_solar
 /data/solar_targets.json
 /supabase/migrations
+/data/council/*.json

@@ -1,5 +1,14 @@
 project_id = "tnalryxoxswjofmtdtaf"
 
+[functions.sync-council-data]
+verify_jwt = false
+
+[functions.classify-new-votes]
+verify_jwt = false
+
+[functions.council-data-import]
+verify_jwt = false
+
 [functions.area-analysis]
 verify_jwt = false
 
