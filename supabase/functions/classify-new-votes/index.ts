@@ -22,23 +22,29 @@ const BATCH = 30;
 
 // Keep this prompt in sync with data/council/classification_spec.md.
 const SYSTEM_PROMPT = `You classify Austin City Council agenda items for a climate-accountability project.
-For each item, decide if it SUBSTANTIVELY concerns climate, clean energy, emissions,
-environmental sustainability, or climate resilience — as policy, funding, or a binding action.
 
-Reject noise:
-- Vendor-name collisions (the term is only in a company name): "SolarWinds" (IT),
-  "Wind Services" (trucks), "Coalition" (matches coal), "Carbon Activated Corp"
-  (chemicals), "Climatec" (HVAC) → is_climate:false.
-- Routine watershed drainage / waterline / stormwater construction → false unless
-  explicitly framed as climate resilience or flood adaptation.
-- Routine electric-utility supply/software/base-rate contracts → false, unless it is
-  a genuine clean-energy program (solar incentives, EV charging), which is true with
-  item_kind "contract".
+is_climate = true ONLY when the item is a SUBSTANTIVE DECISION that relates —
+directly OR indirectly — to climate, clean energy, emissions, sustainability, or
+resilience. Indirect counts: transportation mode-shift / transit / bike-ped / VMT,
+land-use density and zoning, water conservation and watershed protection, tree
+canopy / natural systems, waste / recycling.
+
+Substantive decisions = policy, resolutions, ordinances, plan adoptions, significant
+agreements/PPAs, or direction to staff. Set item_kind accordingly.
+
+Reject (is_climate:false, item_kind:"routine"):
+- Routine / administrative / procurement items, EVEN when energy-related: a
+  solar-incentive issuance, an electric-utility supply contract, a base-rate
+  correction, routine watershed drainage/waterline construction. These are not
+  climate decisions — only actual decisions count.
+- Vendor-name collisions where the term is only in a company name: "SolarWinds"
+  (IT), "Wind Services" (trucks), "Coalition" (matches coal), "Carbon Activated
+  Corp" (chemicals), "Climatec" (HVAC).
 
 Return ONLY a JSON array, one object per input item, no prose:
 [{"item_id": "...", "is_climate": true|false,
-  "category": "energy_supply|buildings_efficiency|transportation|climate_planning|water_resilience|natural_systems|waste|environmental_justice|none",
-  "item_kind": "policy|contract|proclamation|executive_session",
+  "category": "energy_supply|buildings_efficiency|transportation|land_use|water|natural_systems|waste|climate_planning|environmental_justice|none",
+  "item_kind": "policy|resolution|decision|routine|proclamation|executive_session",
   "summary": "one plain-English sentence",
   "confidence": "high|medium|low"}]`;
 
@@ -69,8 +75,8 @@ async function classifyBatch(apiKey: string, items: { item_id: string; item_desc
   return JSON.parse(text.slice(start, end + 1)) as any[];
 }
 
-const CATS = new Set(["energy_supply","buildings_efficiency","transportation","climate_planning","water_resilience","natural_systems","waste","environmental_justice","none"]);
-const KINDS = new Set(["policy","contract","proclamation","executive_session"]);
+const CATS = new Set(["energy_supply","buildings_efficiency","transportation","land_use","water","natural_systems","waste","climate_planning","environmental_justice","none"]);
+const KINDS = new Set(["policy","resolution","decision","routine","proclamation","executive_session"]);
 const CONF = new Set(["high","medium","low"]);
 
 function validate(o: any): o is { item_id: string; is_climate: boolean; category: string; item_kind: string; summary: string; confidence: string } {
