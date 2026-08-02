@@ -59,6 +59,167 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_finance_summary: {
+        Row: {
+          contribution_count: number | null
+          created_at: string
+          cycle_year: number
+          in_district_amount: number | null
+          out_district_amount: number | null
+          recipient: string
+          sector_breakdown: Json | null
+          top_employers: Json | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          contribution_count?: number | null
+          created_at?: string
+          cycle_year: number
+          in_district_amount?: number | null
+          out_district_amount?: number | null
+          recipient: string
+          sector_breakdown?: Json | null
+          top_employers?: Json | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          contribution_count?: number | null
+          created_at?: string
+          cycle_year?: number
+          in_district_amount?: number | null
+          out_district_amount?: number | null
+          recipient?: string
+          sector_breakdown?: Json | null
+          top_employers?: Json | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      council_members: {
+        Row: {
+          active: boolean
+          created_at: string
+          district: number
+          finance_alias: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          district: number
+          finance_alias?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          district?: number
+          finance_alias?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      council_vote_dissents: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          vote_cast: string | null
+          voter_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          vote_cast?: string | null
+          voter_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          vote_cast?: string | null
+          voter_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "council_vote_dissents_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "council_votes"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
+      council_votes: {
+        Row: {
+          abstain_count: number | null
+          action_taken: string | null
+          category: string | null
+          classification_version: number | null
+          classified_at: string | null
+          confidence: string | null
+          created_at: string
+          is_climate: boolean | null
+          item_description: string | null
+          item_id: string
+          item_kind: string | null
+          meeting_date: string | null
+          no_count: number | null
+          other_counts: Json | null
+          source_url: string | null
+          summary: string | null
+          updated_at: string
+          yes_count: number | null
+        }
+        Insert: {
+          abstain_count?: number | null
+          action_taken?: string | null
+          category?: string | null
+          classification_version?: number | null
+          classified_at?: string | null
+          confidence?: string | null
+          created_at?: string
+          is_climate?: boolean | null
+          item_description?: string | null
+          item_id: string
+          item_kind?: string | null
+          meeting_date?: string | null
+          no_count?: number | null
+          other_counts?: Json | null
+          source_url?: string | null
+          summary?: string | null
+          updated_at?: string
+          yes_count?: number | null
+        }
+        Update: {
+          abstain_count?: number | null
+          action_taken?: string | null
+          category?: string | null
+          classification_version?: number | null
+          classified_at?: string | null
+          confidence?: string | null
+          created_at?: string
+          is_climate?: boolean | null
+          item_description?: string | null
+          item_id?: string
+          item_kind?: string | null
+          meeting_date?: string | null
+          no_count?: number | null
+          other_counts?: Json | null
+          source_url?: string | null
+          summary?: string | null
+          updated_at?: string
+          yes_count?: number | null
+        }
+        Relationships: []
+      }
       data_match_results: {
         Row: {
           created_at: string
@@ -114,6 +275,71 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "solar_installations_view"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      election_calendar: {
+        Row: {
+          created_at: string
+          districts_up: number[] | null
+          election_date: string
+          filing_close: string | null
+          filing_open: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          districts_up?: number[] | null
+          election_date: string
+          filing_close?: string | null
+          filing_open?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          districts_up?: number[] | null
+          election_date?: string
+          filing_close?: string | null
+          filing_open?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      election_candidates: {
+        Row: {
+          candidate_name: string
+          created_at: string
+          district: number | null
+          election_date: string
+          finance_alias: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_name: string
+          created_at?: string
+          district?: number | null
+          election_date: string
+          finance_alias?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_name?: string
+          created_at?: string
+          district?: number | null
+          election_date?: string
+          finance_alias?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "election_candidates_election_date_fkey"
+            columns: ["election_date"]
+            isOneToOne: false
+            referencedRelation: "election_calendar"
+            referencedColumns: ["election_date"]
           },
         ]
       }
@@ -330,6 +556,42 @@ export type Database = {
           name?: string
           updated_at?: string | null
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      lobbyist_clients: {
+        Row: {
+          business_desc: string | null
+          client_name: string | null
+          comp_category: string | null
+          created_at: string
+          id: string
+          registrant: string
+          sector_tag: string | null
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          business_desc?: string | null
+          client_name?: string | null
+          comp_category?: string | null
+          created_at?: string
+          id?: string
+          registrant: string
+          sector_tag?: string | null
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          business_desc?: string | null
+          client_name?: string | null
+          comp_category?: string | null
+          created_at?: string
+          id?: string
+          registrant?: string
+          sector_tag?: string | null
+          updated_at?: string
+          year?: number | null
         }
         Relationships: []
       }
