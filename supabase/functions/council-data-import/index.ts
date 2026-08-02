@@ -11,8 +11,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CATS = new Set(["energy_supply","buildings_efficiency","transportation","climate_planning","water_resilience","natural_systems","waste","environmental_justice","none"]);
-const KINDS = new Set(["policy","contract","proclamation","executive_session"]);
+const CATS = new Set(["energy_supply","buildings_efficiency","transportation","land_use","water","natural_systems","waste","climate_planning","environmental_justice","none"]);
+const KINDS = new Set(["policy","resolution","decision","routine","proclamation","executive_session"]);
 const CONF = new Set(["high","medium","low"]);
 
 function json(status: number, body: unknown) {
