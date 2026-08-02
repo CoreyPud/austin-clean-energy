@@ -80,14 +80,14 @@ async function syncVotes(supabase: any) {
 
   // Dissent detail (non-Yes recorded positions) — small; replace wholesale.
   const dissentRows = await sodaAll(VOTES, {
-    $select: "item_id,voter_name,voter_district,vote_cast",
+    $select: "item_id,voter_name,vote_cast",
     $where:  "vote_cast in('No','Abstain','Recused')",
     $order:  "item_id",
   });
+  // district is not stored here — join voter_name to council_members when needed
   const dissents = dissentRows.map((r: any) => ({
     item_id: r.item_id,
     voter_name: r.voter_name,
-    voter_district: r.voter_district ? Number(r.voter_district) : null,
     vote_cast: r.vote_cast,
   }));
   // idempotent: clear + reload (bounded set, a few hundred rows)
@@ -175,19 +175,24 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  try {
-    const votes = await syncVotes(supabase);
-    const finance = await syncFinance(supabase);
-    const lobby = await syncLobbyists(supabase);
-    const result = { ok: true, ...votes, ...finance, ...lobby, synced_at: new Date().toISOString() };
-    console.log("sync-council-data", result);
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    console.error("sync-council-data error:", err);
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  // Each section is isolated so one failure (e.g. a schema drift) doesn't block
+  // the others — the response reports per-section results and errors.
+  const result: Record<string, unknown> = { synced_at: new Date().toISOString() };
+  const errors: Record<string, string> = {};
+  for (const [name, fn] of [
+    ["votes", syncVotes], ["finance", syncFinance], ["lobbyists", syncLobbyists],
+  ] as const) {
+    try {
+      Object.assign(result, await fn(supabase));
+    } catch (err) {
+      errors[name] = String(err);
+      console.error(`sync-council-data ${name} error:`, err);
+    }
   }
+  const ok = Object.keys(errors).length === 0;
+  console.log("sync-council-data", { ok, ...result, errors });
+  return new Response(JSON.stringify({ ok, ...result, errors }), {
+    status: ok ? 200 : 207,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 });
