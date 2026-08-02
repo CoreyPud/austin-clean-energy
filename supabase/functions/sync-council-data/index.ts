@@ -161,8 +161,9 @@ async function syncLobbyists(supabase: any) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Guard: manual runs and cron both pass the shared secret.
-  const secret = Deno.env.get("COUNCIL_SYNC_SECRET");
+  // Guard: manual runs and cron both pass the shared import secret (reused from
+  // solar-data-import, so no new secret is needed).
+  const secret = Deno.env.get("SOLAR_IMPORT_SECRET");
   if (!secret || req.headers.get("x-sync-secret") !== secret) {
     return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -25,7 +25,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: "POST only" });
 
-  const secret = Deno.env.get("COUNCIL_IMPORT_SECRET");
+  // Reuses the existing shared import secret (same one solar-data-import uses),
+  // so no new secret needs provisioning.
+  const secret = Deno.env.get("SOLAR_IMPORT_SECRET");
   const auth = req.headers.get("authorization") ?? "";
   if (!secret || auth !== `Bearer ${secret}`) return json(401, { ok: false, error: "Unauthorized" });
 
