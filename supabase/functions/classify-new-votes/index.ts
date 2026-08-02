@@ -82,7 +82,8 @@ function validate(o: any): o is { item_id: string; is_climate: boolean; category
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const secret = Deno.env.get("COUNCIL_SYNC_SECRET");
+  // Reuses the shared import secret (same as solar-data-import) — no new secret needed.
+  const secret = Deno.env.get("SOLAR_IMPORT_SECRET");
   if (!secret || req.headers.get("x-sync-secret") !== secret) {
     return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
