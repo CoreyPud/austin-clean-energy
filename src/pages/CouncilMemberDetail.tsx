@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { memberBySlug, fmtUSD, SECTOR_LABEL } from "@/lib/council-members";
+import { memberBySlug, fmtUSD } from "@/lib/council-members";
+import SectorBar from "@/components/SectorBar";
 
 interface FinRow { cycle_year: number; total_amount: number; contribution_count: number; in_district_amount: number; out_district_amount: number; sector_breakdown: Record<string, number> | null; top_employers: { name: string; amount: number }[] | null }
 interface DissentVote { item_id: string; vote_cast: string; item_description: string; summary: string | null; category: string; meeting_date: string | null; yes_count: number; no_count: number }
@@ -61,12 +62,12 @@ export default function CouncilMemberDetail() {
     return { total, inD, outD: total - inD, count, inPct: total ? Math.round((inD / total) * 100) : 0 };
   }, [fin]);
 
-  const sectors = useMemo(() => {
+  const sectorBreakdown = useMemo(() => {
     const acc: Record<string, number> = {};
     for (const r of fin ?? []) for (const [k, v] of Object.entries(r.sector_breakdown ?? {})) acc[k] = (acc[k] ?? 0) + (Number(v) || 0);
-    const total = Object.values(acc).reduce((s, v) => s + v, 0);
-    return { rows: Object.entries(acc).sort((a, b) => b[1] - a[1]), total };
+    return acc;
   }, [fin]);
+  const sectorTotal = useMemo(() => Object.values(sectorBreakdown).reduce((s, v) => s + v, 0), [sectorBreakdown]);
 
   const topEmployers = useMemo(() => {
     const acc: Record<string, number> = {};
@@ -123,23 +124,10 @@ export default function CouncilMemberDetail() {
                 </table>
               </div>
               {/* Sector breakdown */}
-              {sectors.total > 0 && (
+              {sectorTotal > 0 && (
                 <div className="space-y-2 pt-2">
                   <p className="text-sm font-medium">Who's funding them, by sector</p>
-                  <div className="space-y-1.5">
-                    {sectors.rows.map(([sec, amt]) => {
-                      const pct = Math.round((amt / sectors.total) * 100);
-                      return (
-                        <div key={sec} className="flex items-center gap-2 text-xs">
-                          <span className="w-44 shrink-0 text-muted-foreground">{SECTOR_LABEL[sec] ?? sec}</span>
-                          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full bg-primary/70" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="w-20 text-right tabular-nums">{fmtUSD(amt)} · {pct}%</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <SectorBar breakdown={sectorBreakdown} height={14} showLegend />
                 </div>
               )}
 
@@ -158,7 +146,7 @@ export default function CouncilMemberDetail() {
                 </div>
               )}
 
-              {sectors.total === 0 && (
+              {sectorTotal === 0 && (
                 <p className="text-xs text-muted-foreground">
                   Sector breakdown pending the donor-classification run.
                 </p>

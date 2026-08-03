@@ -48,3 +48,25 @@ export const SECTOR_LABEL: Record<string, string> = {
   other: "Other",
 };
 
+// Stacking order (influence-relevant sectors first) and colors for the sector bar.
+export const SECTOR_ORDER = [
+  "real_estate", "legal_lobbying", "energy_fossil", "clean_energy", "finance",
+  "labor", "tech", "healthcare", "hospitality_retail", "nonprofit",
+  "public_education", "unaffiliated", "other",
+];
+export const SECTOR_COLOR: Record<string, string> = {
+  real_estate: "#f97316",       // orange — the key Austin influence sector
+  legal_lobbying: "#a855f7",    // purple
+  energy_fossil: "#64748b",     // slate
+  clean_energy: "#22c55e",      // green
+  finance: "#14b8a6",           // teal
+  labor: "#3b82f6",             // blue
+  tech: "#06b6d4",              // cyan
+  healthcare: "#ec4899",        // pink
+  hospitality_retail: "#eab308",// yellow
+  nonprofit: "#84cc16",         // lime
+  public_education: "#94a3b8",  // light slate
+  unaffiliated: "#d1d5db",      // gray (retired/self)
+  other: "#e5e7eb",             // light gray
+};
+
