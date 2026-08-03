@@ -31,7 +31,7 @@ export const KEY_SECTORS: Sector[] = ["real_estate", "energy_fossil", "clean_ene
 const RULES: [Sector, RegExp][] = [
   ["unaffiliated",     /\b(retired|not employed|unemployed|self[- ]?employed|self|homemaker|none|n\/a)\b|^self$/i],
   ["clean_energy",     /\b(solar|renewable|photovoltaic|wind energy|geothermal|clean energy|ev charging|electric vehicle|battery storage)\b/i],
-  ["real_estate",      /\b(real estate|realty|realtor|develop(er|ment)|homebuilder|home build|construction|properties|property manage|brokerage|land use|endeavor|commercial real|residential real|builder)\b/i],
+  ["real_estate",      /\b(real estate|realty|realtor|develop(er|ment|ment)|homebuilder|home build|construction|propert(y|ies)|land ?develop|land use|brokerage|endeavor|commercial real|residential real|builder|investment\/develop)\b/i],
   ["legal_lobbying",   /\b(law|lawyer|attorney|legal|llp|counsel|lobby|government (affairs|relations)|public affairs|consult(ant|ing))\b/i],
   ["energy_fossil",    /\b(oil|gas|petroleum|pipeline|refin(e|ing)|utility|utilities|energy|power (company|plant)|electric coop|exxon|chevron|nrg|vistra)\b/i],
   ["labor",            /\b(union|afl[- ]?cio|firefighters?( association)?|police (association|union)|ibew|teamsters|labor|afscme|laborers)\b/i],
