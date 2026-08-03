@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.council-data-import]
 verify_jwt = false
 
+[functions.aggregate-finance-sectors]
+verify_jwt = false
+
 [functions.area-analysis]
 verify_jwt = false
 

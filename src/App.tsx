@@ -40,6 +40,9 @@ import BuildingEnergyUse from "./pages/BuildingEnergyUse";
 import BuildingEnergyUsage from "./pages/BuildingEnergyUsage";
 import LoadGrowth from "./pages/LoadGrowth";
 import ImportCapacity from "./pages/ImportCapacity";
+import CouncilClimateRecord from "./pages/CouncilClimateRecord";
+import CouncilMembers from "./pages/CouncilMembers";
+import CouncilMemberDetail from "./pages/CouncilMemberDetail";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +77,9 @@ const App = () => (
             <Route path="/ev-comparison" element={<EVComparison />} />
             <Route path="/ev-progress" element={<EVProgress />} />
             <Route path="/clean-energy-plan" element={<CleanEnergyPlan />} />
+            <Route path="/council-climate-record" element={<CouncilClimateRecord />} />
+            <Route path="/council-members" element={<CouncilMembers />} />
+            <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
 
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />
