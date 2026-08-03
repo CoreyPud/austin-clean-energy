@@ -48,25 +48,32 @@ export const SECTOR_LABEL: Record<string, string> = {
   other: "Other",
 };
 
-// Stacking order (influence-relevant sectors first) and colors for the sector bar.
+// Colors encode CLIMATE relevance: green = climate-positive (clean energy),
+// red = climate-negative (fossil/utilities), amber = development/land-use
+// pressure (real estate), purple = lobbying/influence. Every climate-neutral
+// sector is a muted gray so the climate-relevant money visually pops.
+// Stacking order puts the climate-relevant sectors first.
 export const SECTOR_ORDER = [
-  "real_estate", "legal_lobbying", "energy_fossil", "clean_energy", "finance",
-  "labor", "tech", "healthcare", "hospitality_retail", "nonprofit",
-  "public_education", "unaffiliated", "other",
+  "clean_energy", "energy_fossil", "real_estate", "legal_lobbying",
+  "labor", "finance", "tech", "healthcare", "hospitality_retail",
+  "nonprofit", "public_education", "unaffiliated", "other",
 ];
 export const SECTOR_COLOR: Record<string, string> = {
-  real_estate: "#f97316",       // orange — the key Austin influence sector
-  legal_lobbying: "#a855f7",    // purple
-  energy_fossil: "#64748b",     // slate
-  clean_energy: "#22c55e",      // green
-  finance: "#14b8a6",           // teal
-  labor: "#3b82f6",             // blue
-  tech: "#06b6d4",              // cyan
-  healthcare: "#ec4899",        // pink
-  hospitality_retail: "#eab308",// yellow
-  nonprofit: "#84cc16",         // lime
-  public_education: "#94a3b8",  // light slate
-  unaffiliated: "#d1d5db",      // gray (retired/self)
-  other: "#e5e7eb",             // light gray
+  clean_energy:   "#16a34a",  // green  — climate-positive
+  energy_fossil:  "#dc2626",  // red    — fossil / utilities
+  real_estate:    "#f59e0b",  // amber  — development / land-use pressure
+  legal_lobbying: "#9333ea",  // purple — lobbying / influence
+  // climate-neutral sectors — muted, progressively lighter slate
+  finance:            "#7c8697",
+  tech:               "#8b95a5",
+  healthcare:         "#9aa3b2",
+  labor:              "#a9b1be",
+  hospitality_retail: "#b8bfca",
+  nonprofit:          "#c7ccd5",
+  public_education:   "#d3d8de",
+  unaffiliated:       "#dfe3e8",
+  other:              "#eaecef",
 };
+// Sectors that carry a climate meaning — highlighted in legends.
+export const CLIMATE_SECTORS = new Set(["clean_energy", "energy_fossil", "real_estate", "legal_lobbying"]);
 

@@ -57,9 +57,8 @@ export default function CouncilMemberDetail() {
   const totals = useMemo(() => {
     const rows = fin ?? [];
     const total = rows.reduce((s, r) => s + (Number(r.total_amount) || 0), 0);
-    const inD = rows.reduce((s, r) => s + (Number(r.in_district_amount) || 0), 0);
     const count = rows.reduce((s, r) => s + (Number(r.contribution_count) || 0), 0);
-    return { total, inD, outD: total - inD, count, inPct: total ? Math.round((inD / total) * 100) : 0 };
+    return { total, count };
   }, [fin]);
 
   const sectorBreakdown = useMemo(() => {
@@ -93,11 +92,9 @@ export default function CouncilMemberDetail() {
             <p className="text-sm text-muted-foreground">No campaign finance on record for this name.</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Stat label="Total raised" value={fmtUSD(totals.total)} />
                 <Stat label="Contributions" value={totals.count.toLocaleString()} />
-                <Stat label="From within Austin" value={`${totals.inPct}%`} />
-                <Stat label="From outside" value={`${100 - totals.inPct}%`} />
               </div>
               <div className="rounded-lg border border-border bg-card overflow-hidden">
                 <table className="w-full text-sm">
@@ -106,7 +103,6 @@ export default function CouncilMemberDetail() {
                       <th className="text-left font-medium px-4 py-2">Cycle</th>
                       <th className="text-right font-medium px-4 py-2">Raised</th>
                       <th className="text-right font-medium px-4 py-2"># gifts</th>
-                      <th className="text-right font-medium px-4 py-2">In-Austin</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -115,9 +111,6 @@ export default function CouncilMemberDetail() {
                         <td className="px-4 py-2">{r.cycle_year}</td>
                         <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(Number(r.total_amount) || 0)}</td>
                         <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{(Number(r.contribution_count) || 0).toLocaleString()}</td>
-                        <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
-                          {r.total_amount ? Math.round((Number(r.in_district_amount) / Number(r.total_amount)) * 100) : 0}%
-                        </td>
                       </tr>
                     ))}
                   </tbody>
