@@ -28,6 +28,14 @@ export const COUNCIL_MEMBERS: CouncilMember[] = [
 export const memberByDistrict = (d: number) => COUNCIL_MEMBERS.find(m => m.district === d);
 export const memberBySlug = (s: string) => COUNCIL_MEMBERS.find(m => m.slug === s);
 
+// Mirror of normOrg() in supabase/functions/lobbying-summary — normalize an org
+// name so donor employers and lobby clients match across datasets.
+export const normOrg = (name: string): string =>
+  name.toLowerCase()
+    .replace(/[.,&']/g, " ")
+    .replace(/\b(llc|inc|lp|llp|pllc|ltd|co|company|corp|corporation|group|holdings|partners|management|properties|the)\b/g, " ")
+    .replace(/\s+/g, " ").trim();
+
 export const fmtUSD = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1e6).toFixed(2)}M` : n >= 1_000 ? `$${Math.round(n / 1e3)}K` : `$${Math.round(n)}`;
 

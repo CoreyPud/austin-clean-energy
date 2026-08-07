@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { memberBySlug, fmtUSD } from "@/lib/council-members";
+import { memberBySlug, fmtUSD, normOrg } from "@/lib/council-members";
 import SectorBar from "@/components/SectorBar";
 
 interface FinRow { cycle_year: number; total_amount: number; contribution_count: number; in_district_amount: number; out_district_amount: number; sector_breakdown: Record<string, number> | null; top_employers: { name: string; amount: number }[] | null }
@@ -16,6 +16,27 @@ export default function CouncilMemberDetail() {
 
   const [fin, setFin] = useState<FinRow[] | null>(null);
   const [dissents, setDissents] = useState<DissentVote[] | null>(null);
+  const [lobbyNames, setLobbyNames] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Donor employers for THIS member that also lobby the city (from the cached nexus).
+    if (!member) return;
+    (async () => {
+      const { data: row } = await supabase
+        .from("cached_stats").select("value").eq("stat_type", "council_lobbying_v1").maybeSingle();
+      if (!row?.value) return;
+      try {
+        const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+        const names = new Set<string>();
+        for (const n of parsed.nexus ?? []) {
+          if ((n.recipients ?? []).some((r: string) => r.startsWith(member.financePrefix))) {
+            names.add(normOrg(n.name));
+          }
+        }
+        setLobbyNames(names);
+      } catch { /* ignore */ }
+    })();
+  }, [member?.slug]);
 
   useEffect(() => {
     if (!member) return;
@@ -124,20 +145,43 @@ export default function CouncilMemberDetail() {
                 </div>
               )}
 
-              {/* Top employers */}
-              {topEmployers.length > 0 && (
-                <div className="space-y-1 pt-2">
-                  <p className="text-sm font-medium">Top donor employers</p>
-                  <ul className="text-xs text-muted-foreground space-y-0.5">
-                    {topEmployers.map(([name, amt]) => (
-                      <li key={name} className="flex justify-between gap-4">
-                        <span className="truncate">{name}</span>
-                        <span className="tabular-nums shrink-0">{fmtUSD(amt)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {/* Top employers, flagging those that also lobby the city */}
+              {topEmployers.length > 0 && (() => {
+                const lobbyCount = topEmployers.filter(([name]) => lobbyNames.has(normOrg(name))).length;
+                return (
+                  <div className="space-y-1 pt-2">
+                    <p className="text-sm font-medium">Top donor employers</p>
+                    {lobbyCount > 0 && (
+                      <p className="text-xs text-amber-600">
+                        {lobbyCount} of these {lobbyCount === 1 ? "also lobbies" : "also lobby"} Austin City Hall.
+                      </p>
+                    )}
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      {topEmployers.map(([name, amt]) => {
+                        const lobbies = lobbyNames.has(normOrg(name));
+                        return (
+                          <li key={name} className="flex justify-between gap-4">
+                            <span className="truncate">
+                              {name}
+                              {lobbies && (
+                                <span className="ml-1.5 inline-flex items-center rounded-sm bg-amber-500/15 px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-500 align-middle">
+                                  lobbies the city
+                                </span>
+                              )}
+                            </span>
+                            <span className="tabular-nums shrink-0">{fmtUSD(amt)}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {lobbyCount > 0 && (
+                      <Link to="/council-lobbying" className="text-xs text-primary underline inline-block pt-1">
+                        See who lobbies City Hall →
+                      </Link>
+                    )}
+                  </div>
+                );
+              })()}
 
               {sectorTotal === 0 && (
                 <p className="text-xs text-muted-foreground">
