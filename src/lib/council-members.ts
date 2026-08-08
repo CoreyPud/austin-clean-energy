@@ -9,20 +9,21 @@ export interface CouncilMember {
   slug: string;
   financePrefix: string;   // matches campaign_finance_summary.recipient (startsWith)
   voterName: string;       // matches council_vote_dissents.voter_name (exact)
+  since: string;           // continuous tenure start (display)
 }
 
 export const COUNCIL_MEMBERS: CouncilMember[] = [
-  { district: 0,  name: "Kirk Watson",            title: "Mayor",          slug: "kirk-watson",            financePrefix: "Watson, Kirk",          voterName: "Kirk Watson" },
-  { district: 1,  name: "Natasha Harper-Madison",  title: "Council Member", slug: "natasha-harper-madison", financePrefix: "Harper-Madison",        voterName: "Natasha Harper-Madison" },
-  { district: 2,  name: "Vanessa Fuentes",         title: "Council Member", slug: "vanessa-fuentes",        financePrefix: "Fuentes, Vanessa",      voterName: "Vanessa Fuentes" },
-  { district: 3,  name: "José Velásquez",          title: "Council Member", slug: "jose-velasquez",         financePrefix: "Velasquez, Jose",       voterName: "José Velásquez" },
-  { district: 4,  name: "José \"Chito\" Vela",     title: "Council Member", slug: "jose-vela",              financePrefix: "Vela, Jose",            voterName: "José \"Chito\" Vela" },
-  { district: 5,  name: "Ryan Alter",              title: "Council Member", slug: "ryan-alter",             financePrefix: "Alter, Ryan",           voterName: "Ryan Alter" },
-  { district: 6,  name: "Krista Laine",            title: "Council Member", slug: "krista-laine",           financePrefix: "Laine, Krista",         voterName: "Krista Laine" },
-  { district: 7,  name: "Mike Siegel",             title: "Council Member", slug: "mike-siegel",            financePrefix: "Siegel, Mike",          voterName: "Mike Siegel" },
-  { district: 8,  name: "Paige Ellis",             title: "Council Member", slug: "paige-ellis",            financePrefix: "Ellis, Paige",          voterName: "Paige Ellis" },
-  { district: 9,  name: "Zohaib \"Zo\" Qadri",     title: "Council Member", slug: "zohaib-qadri",           financePrefix: "Qadri, Zohaib",         voterName: "Zohaib \"Zo\" Qadri" },
-  { district: 10, name: "Marc Duchen",             title: "Council Member", slug: "marc-duchen",            financePrefix: "Duchen, Marc",          voterName: "Marc Duchen" },
+  { district: 0,  name: "Kirk Watson",            title: "Mayor",          slug: "kirk-watson",            financePrefix: "Watson, Kirk",          voterName: "Kirk Watson",                since: "Jan 2023" },
+  { district: 1,  name: "Natasha Harper-Madison",  title: "Council Member", slug: "natasha-harper-madison", financePrefix: "Harper-Madison",        voterName: "Natasha Harper-Madison",     since: "Jan 2019" },
+  { district: 2,  name: "Vanessa Fuentes",         title: "Council Member", slug: "vanessa-fuentes",        financePrefix: "Fuentes, Vanessa",      voterName: "Vanessa Fuentes",            since: "Jan 2021" },
+  { district: 3,  name: "José Velásquez",          title: "Council Member", slug: "jose-velasquez",         financePrefix: "Velasquez, Jose",       voterName: "José Velásquez",             since: "Jan 2023" },
+  { district: 4,  name: "José \"Chito\" Vela",     title: "Council Member", slug: "jose-vela",              financePrefix: "Vela, Jose",            voterName: "José \"Chito\" Vela",        since: "Jan 2022" },
+  { district: 5,  name: "Ryan Alter",              title: "Council Member", slug: "ryan-alter",             financePrefix: "Alter, Ryan",           voterName: "Ryan Alter",                 since: "Jan 2023" },
+  { district: 6,  name: "Krista Laine",            title: "Council Member", slug: "krista-laine",           financePrefix: "Laine, Krista",         voterName: "Krista Laine",               since: "Jan 2025" },
+  { district: 7,  name: "Mike Siegel",             title: "Council Member", slug: "mike-siegel",            financePrefix: "Siegel, Mike",          voterName: "Mike Siegel",                since: "Jan 2025" },
+  { district: 8,  name: "Paige Ellis",             title: "Council Member", slug: "paige-ellis",            financePrefix: "Ellis, Paige",          voterName: "Paige Ellis",                since: "Jan 2019" },
+  { district: 9,  name: "Zohaib \"Zo\" Qadri",     title: "Council Member", slug: "zohaib-qadri",           financePrefix: "Qadri, Zohaib",         voterName: "Zohaib \"Zo\" Qadri",        since: "Jan 2023" },
+  { district: 10, name: "Marc Duchen",             title: "Council Member", slug: "marc-duchen",            financePrefix: "Duchen, Marc",          voterName: "Marc Duchen",                since: "Jan 2025" },
 ];
 
 export const memberByDistrict = (d: number) => COUNCIL_MEMBERS.find(m => m.district === d);
