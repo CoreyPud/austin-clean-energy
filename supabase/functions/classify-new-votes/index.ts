@@ -39,14 +39,24 @@ is_climate:false, item_kind:"routine", even though they change what a lot can bu
 Substantive decisions = policy, resolutions, ordinances, plan adoptions, significant
 agreements/PPAs, or direction to staff. Set item_kind accordingly.
 
+A "substantive decision" means policy, a resolution, an ordinance, a plan/target
+adoption, direction to staff, a significant land acquisition for conservation, or
+a major agreement/PPA. Operational spending and procedure are NOT substantive.
+
 Reject (is_climate:false, item_kind:"routine"):
-- Routine / administrative / procurement items, EVEN when energy-related: a
-  solar-incentive issuance, an electric-utility supply contract, a base-rate
-  correction, routine watershed drainage/waterline construction. These are not
-  climate decisions — only actual decisions count.
+- Procedural / scheduling items: "set a public hearing", postponements, minor
+  code cleanups, board/commission appointments.
+- Operational procurement & spending, EVEN when climate-topical: authorizing or
+  amending contracts for construction, maintenance, equipment, metering (AMI),
+  service agreements, encroachment agreements, water/utility line work,
+  solar-incentive issuances, electric-utility supply, base-rate corrections.
+  These execute existing policy; they are not policy decisions.
 - Vendor-name collisions where the term is only in a company name: "SolarWinds"
   (IT), "Wind Services" (trucks), "Coalition" (matches coal), "Carbon Activated
   Corp" (chemicals), "Climatec" (HVAC).
+
+Keep item_kind "decision" only for substantive one-off decisions (e.g. acquiring
+land for open space, adopting a plan, a major power-purchase agreement).
 
 Return ONLY a JSON array, one object per input item, no prose:
 [{"item_id": "...", "is_climate": true|false,
