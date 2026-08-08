@@ -40,10 +40,9 @@ import BuildingEnergyUse from "./pages/BuildingEnergyUse";
 import BuildingEnergyUsage from "./pages/BuildingEnergyUsage";
 import LoadGrowth from "./pages/LoadGrowth";
 import ImportCapacity from "./pages/ImportCapacity";
-import CouncilClimateRecord from "./pages/CouncilClimateRecord";
+import CouncilOverview from "./pages/CouncilOverview";
 import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
-import CouncilLobbying from "./pages/CouncilLobbying";
 
 const queryClient = new QueryClient();
 
@@ -78,10 +77,11 @@ const App = () => (
             <Route path="/ev-comparison" element={<EVComparison />} />
             <Route path="/ev-progress" element={<EVProgress />} />
             <Route path="/clean-energy-plan" element={<CleanEnergyPlan />} />
-            <Route path="/council-climate-record" element={<CouncilClimateRecord />} />
+            <Route path="/council" element={<CouncilOverview />} />
             <Route path="/council-members" element={<CouncilMembers />} />
             <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
-            <Route path="/council-lobbying" element={<CouncilLobbying />} />
+            <Route path="/council-climate-record" element={<Navigate to="/council" replace />} />
+            <Route path="/council-lobbying" element={<Navigate to="/council" replace />} />
 
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />

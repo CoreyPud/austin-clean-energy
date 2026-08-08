@@ -1,9 +1,8 @@
 import { NavLink } from "react-router-dom";
 
 const TABS = [
-  { to: "/council-climate-record", label: "Climate record" },
-  { to: "/council-members",        label: "Who funds council" },
-  { to: "/council-lobbying",       label: "Who lobbies" },
+  { to: "/council",         label: "Overview" },
+  { to: "/council-members", label: "Report card" },
 ];
 
 // Shared sub-nav across the council accountability pages.
