@@ -22,12 +22,16 @@ VMT, land-use density and zoning, water conservation and **watershed protection*
 tree canopy / natural systems, waste / recycling.
 
 ## Exclusions
-- **Routine / administrative / procurement items** — even when energy-related —
-  are NOT climate decisions. A solar-incentive *issuance*, an electric-utility
-  *supply contract*, a base-rate correction → `is_climate:false`, `item_kind:routine`.
-  Only actual decisions (policy, resolutions, ordinances, plan adoptions,
-  significant agreements/PPAs, direction to staff) count. *(Q2: only decisions,
-  not routine stuff.)*
+- **Procedural / scheduling** — "set a public hearing", postponements, minor code
+  cleanups, board appointments → `is_climate:false`, `item_kind:routine`.
+- **Operational procurement & spending** — even when climate-topical — are NOT
+  climate decisions: authorizing/amending contracts for construction, maintenance,
+  equipment, metering (AMI), service agreements, encroachment agreements,
+  water/utility line work, solar-incentive issuances, electric-utility supply,
+  base-rate corrections → `routine`. These execute policy; they aren't policy.
+- Only **substantive decisions** count: policy, resolutions, ordinances, plan/target
+  adoptions, direction to staff, significant land acquisition for conservation,
+  major agreements/PPAs. *(Q2 + consequentiality trim.)*
 - **Vendor-name collisions** — the term is only in a company name: SolarWinds
   (IT), Wind Services (trucks), "Coalition" (matches coal), Carbon Activated Corp
   (chemicals), Climatec (HVAC) → `is_climate:false`.
