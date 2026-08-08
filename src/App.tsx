@@ -43,6 +43,7 @@ import ImportCapacity from "./pages/ImportCapacity";
 import CouncilClimateRecord from "./pages/CouncilClimateRecord";
 import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
+import CouncilLobbying from "./pages/CouncilLobbying";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/council-climate-record" element={<CouncilClimateRecord />} />
             <Route path="/council-members" element={<CouncilMembers />} />
             <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
+            <Route path="/council-lobbying" element={<CouncilLobbying />} />
 
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />

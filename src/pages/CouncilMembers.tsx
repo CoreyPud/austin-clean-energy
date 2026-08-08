@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { COUNCIL_MEMBERS, fmtUSD } from "@/lib/council-members";
+import SectorBar from "@/components/SectorBar";
+import CouncilNav from "@/components/CouncilNav";
 
-interface MemberStat { raised: number; climateDissents: number }
+interface MemberStat { raised: number; climateDissents: number; sectors: Record<string, number> }
 
 export default function CouncilMembers() {
   const [stats, setStats] = useState<Record<number, MemberStat>>({});
@@ -12,19 +14,20 @@ export default function CouncilMembers() {
   useEffect(() => {
     (async () => {
       const [fin, dis, split] = await Promise.all([
-        supabase.from("campaign_finance_summary").select("recipient,total_amount"),
+        supabase.from("campaign_finance_summary").select("recipient,total_amount,sector_breakdown"),
         supabase.from("council_vote_dissents").select("voter_name,item_id"),
         supabase.from("council_votes").select("item_id").eq("is_climate", true).gt("no_count", 0),
       ]);
       const splitIds = new Set((split.data ?? []).map((r: any) => r.item_id));
       const out: Record<number, MemberStat> = {};
       for (const m of COUNCIL_MEMBERS) {
-        const raised = (fin.data ?? [])
-          .filter((r: any) => (r.recipient ?? "").startsWith(m.financePrefix))
-          .reduce((s: number, r: any) => s + (Number(r.total_amount) || 0), 0);
+        const rows = (fin.data ?? []).filter((r: any) => (r.recipient ?? "").startsWith(m.financePrefix));
+        const raised = rows.reduce((s: number, r: any) => s + (Number(r.total_amount) || 0), 0);
+        const sectors: Record<string, number> = {};
+        for (const r of rows) for (const [k, v] of Object.entries(r.sector_breakdown ?? {})) sectors[k] = (sectors[k] ?? 0) + (Number(v) || 0);
         const climateDissents = (dis.data ?? [])
           .filter((r: any) => r.voter_name === m.voterName && splitIds.has(r.item_id)).length;
-        out[m.district] = { raised, climateDissents };
+        out[m.district] = { raised, climateDissents, sectors };
       }
       setStats(out);
       setLoading(false);
@@ -34,6 +37,7 @@ export default function CouncilMembers() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
+        <CouncilNav />
         <header className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
           <h1 className="text-3xl font-bold tracking-tight">Who funds your council</h1>
@@ -64,9 +68,12 @@ export default function CouncilMembers() {
                 {loading || !s ? (
                   <p className="text-xs text-muted-foreground">Loading…</p>
                 ) : (
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span><span className="font-bold tabular-nums">{fmtUSD(s.raised)}</span> <span className="text-muted-foreground text-xs">raised</span></span>
-                    <span className="text-xs text-muted-foreground">{s.climateDissents} climate dissent{s.climateDissents === 1 ? "" : "s"}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-baseline justify-between text-sm">
+                      <span><span className="font-bold tabular-nums">{fmtUSD(s.raised)}</span> <span className="text-muted-foreground text-xs">raised</span></span>
+                      <span className="text-xs text-muted-foreground">{s.climateDissents} climate dissent{s.climateDissents === 1 ? "" : "s"}</span>
+                    </div>
+                    <SectorBar breakdown={s.sectors} height={8} />
                   </div>
                 )}
               </Link>

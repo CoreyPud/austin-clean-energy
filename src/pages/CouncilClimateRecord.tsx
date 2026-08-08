@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import CouncilNav from "@/components/CouncilNav";
 
 // ---- Category presentation ----
 const CATEGORY_META: Record<string, { label: string; blurb: string }> = {
@@ -85,6 +86,7 @@ export default function CouncilClimateRecord() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
+        <CouncilNav />
 
         {/* Header */}
         <header className="space-y-3">

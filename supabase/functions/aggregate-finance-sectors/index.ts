@@ -15,6 +15,14 @@ const corsHeaders = {
 const FIN = "https://data.austintexas.gov/resource/3kfv-biw6.json";
 const PAGE = 5000;
 
+// Placeholders donors write in the employer field that aren't real companies —
+// kept out of the "top donor employers" list.
+function isGenericEmployer(emp: string): boolean {
+  const e = emp.trim().toLowerCase().replace(/[.\-]/g, "");
+  if (e.length <= 2) return true;
+  return /^(self|self ?employed|selfemployed|unemployed|not ?employed|retired|homemaker|home maker|none|na|n\/a|not ?applicable|not ?provided|not ?listed|not ?given|info(rmation)? ?requested|requested|unknown|various|no employer|individual|citizen|resident)$/i.test(e);
+}
+
 async function sodaAll(params: Record<string, string>) {
   const out: any[] = [];
   let offset = 0;
@@ -72,7 +80,7 @@ serve(async (req) => {
         const y = byYear.get(year) ?? { sectors: {}, employers: {} };
         y.sectors[sector] = (y.sectors[sector] ?? 0) + amt;
         const emp = (r.donor_reported_employer ?? "").trim();
-        if (emp && !/^(self|none|n\/a|retired|not employed)$/i.test(emp)) {
+        if (emp && !isGenericEmployer(emp)) {
           y.employers[emp] = (y.employers[emp] ?? 0) + amt;
         }
         byYear.set(year, y);

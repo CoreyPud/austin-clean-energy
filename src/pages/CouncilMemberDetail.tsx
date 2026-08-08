@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { memberBySlug, fmtUSD, SECTOR_LABEL } from "@/lib/council-members";
+import { memberBySlug, fmtUSD, normOrg } from "@/lib/council-members";
+import SectorBar from "@/components/SectorBar";
 
 interface FinRow { cycle_year: number; total_amount: number; contribution_count: number; in_district_amount: number; out_district_amount: number; sector_breakdown: Record<string, number> | null; top_employers: { name: string; amount: number }[] | null }
 interface DissentVote { item_id: string; vote_cast: string; item_description: string; summary: string | null; category: string; meeting_date: string | null; yes_count: number; no_count: number }
@@ -15,6 +16,36 @@ export default function CouncilMemberDetail() {
 
   const [fin, setFin] = useState<FinRow[] | null>(null);
   const [dissents, setDissents] = useState<DissentVote[] | null>(null);
+  const [totalClimate, setTotalClimate] = useState<number | null>(null);
+  const [lobbyNames, setLobbyNames] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Total climate decisions the council has taken (denominator for context).
+    supabase.from("council_votes")
+      .select("item_id", { count: "exact", head: true })
+      .eq("is_climate", true).neq("item_kind", "routine")
+      .then(({ count }) => setTotalClimate(count ?? null));
+  }, []);
+
+  useEffect(() => {
+    // Donor employers for THIS member that also lobby the city (from the cached nexus).
+    if (!member) return;
+    (async () => {
+      const { data: row } = await supabase
+        .from("cached_stats").select("value").eq("stat_type", "council_lobbying_v1").maybeSingle();
+      if (!row?.value) return;
+      try {
+        const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+        const names = new Set<string>();
+        for (const n of parsed.nexus ?? []) {
+          if ((n.recipients ?? []).some((r: string) => r.startsWith(member.financePrefix))) {
+            names.add(normOrg(n.name));
+          }
+        }
+        setLobbyNames(names);
+      } catch { /* ignore */ }
+    })();
+  }, [member?.slug]);
 
   useEffect(() => {
     if (!member) return;
@@ -56,17 +87,16 @@ export default function CouncilMemberDetail() {
   const totals = useMemo(() => {
     const rows = fin ?? [];
     const total = rows.reduce((s, r) => s + (Number(r.total_amount) || 0), 0);
-    const inD = rows.reduce((s, r) => s + (Number(r.in_district_amount) || 0), 0);
     const count = rows.reduce((s, r) => s + (Number(r.contribution_count) || 0), 0);
-    return { total, inD, outD: total - inD, count, inPct: total ? Math.round((inD / total) * 100) : 0 };
+    return { total, count };
   }, [fin]);
 
-  const sectors = useMemo(() => {
+  const sectorBreakdown = useMemo(() => {
     const acc: Record<string, number> = {};
     for (const r of fin ?? []) for (const [k, v] of Object.entries(r.sector_breakdown ?? {})) acc[k] = (acc[k] ?? 0) + (Number(v) || 0);
-    const total = Object.values(acc).reduce((s, v) => s + v, 0);
-    return { rows: Object.entries(acc).sort((a, b) => b[1] - a[1]), total };
+    return acc;
   }, [fin]);
+  const sectorTotal = useMemo(() => Object.values(sectorBreakdown).reduce((s, v) => s + v, 0), [sectorBreakdown]);
 
   const topEmployers = useMemo(() => {
     const acc: Record<string, number> = {};
@@ -92,11 +122,9 @@ export default function CouncilMemberDetail() {
             <p className="text-sm text-muted-foreground">No campaign finance on record for this name.</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Stat label="Total raised" value={fmtUSD(totals.total)} />
                 <Stat label="Contributions" value={totals.count.toLocaleString()} />
-                <Stat label="From within Austin" value={`${totals.inPct}%`} />
-                <Stat label="From outside" value={`${100 - totals.inPct}%`} />
               </div>
               <div className="rounded-lg border border-border bg-card overflow-hidden">
                 <table className="w-full text-sm">
@@ -105,7 +133,6 @@ export default function CouncilMemberDetail() {
                       <th className="text-left font-medium px-4 py-2">Cycle</th>
                       <th className="text-right font-medium px-4 py-2">Raised</th>
                       <th className="text-right font-medium px-4 py-2"># gifts</th>
-                      <th className="text-right font-medium px-4 py-2">In-Austin</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -114,51 +141,58 @@ export default function CouncilMemberDetail() {
                         <td className="px-4 py-2">{r.cycle_year}</td>
                         <td className="px-4 py-2 text-right tabular-nums">{fmtUSD(Number(r.total_amount) || 0)}</td>
                         <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{(Number(r.contribution_count) || 0).toLocaleString()}</td>
-                        <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
-                          {r.total_amount ? Math.round((Number(r.in_district_amount) / Number(r.total_amount)) * 100) : 0}%
-                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               {/* Sector breakdown */}
-              {sectors.total > 0 && (
+              {sectorTotal > 0 && (
                 <div className="space-y-2 pt-2">
                   <p className="text-sm font-medium">Who's funding them, by sector</p>
-                  <div className="space-y-1.5">
-                    {sectors.rows.map(([sec, amt]) => {
-                      const pct = Math.round((amt / sectors.total) * 100);
-                      return (
-                        <div key={sec} className="flex items-center gap-2 text-xs">
-                          <span className="w-44 shrink-0 text-muted-foreground">{SECTOR_LABEL[sec] ?? sec}</span>
-                          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full bg-primary/70" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="w-20 text-right tabular-nums">{fmtUSD(amt)} · {pct}%</span>
-                        </div>
-                      );
-                    })}
+                  <SectorBar breakdown={sectorBreakdown} height={14} showLegend />
+                </div>
+              )}
+
+              {/* Top employers, flagging those that also lobby the city */}
+              {topEmployers.length > 0 && (() => {
+                const lobbyCount = topEmployers.filter(([name]) => lobbyNames.has(normOrg(name))).length;
+                return (
+                  <div className="space-y-1 pt-2">
+                    <p className="text-sm font-medium">Top donor employers</p>
+                    {lobbyCount > 0 && (
+                      <p className="text-xs text-amber-600">
+                        {lobbyCount} of these {lobbyCount === 1 ? "also lobbies" : "also lobby"} Austin City Hall.
+                      </p>
+                    )}
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      {topEmployers.map(([name, amt]) => {
+                        const lobbies = lobbyNames.has(normOrg(name));
+                        return (
+                          <li key={name} className="flex justify-between gap-4">
+                            <span className="truncate">
+                              {name}
+                              {lobbies && (
+                                <span className="ml-1.5 inline-flex items-center rounded-sm bg-amber-500/15 px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-500 align-middle">
+                                  lobbies the city
+                                </span>
+                              )}
+                            </span>
+                            <span className="tabular-nums shrink-0">{fmtUSD(amt)}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {lobbyCount > 0 && (
+                      <Link to="/council-lobbying" className="text-xs text-primary underline inline-block pt-1">
+                        See who lobbies City Hall →
+                      </Link>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
-              {/* Top employers */}
-              {topEmployers.length > 0 && (
-                <div className="space-y-1 pt-2">
-                  <p className="text-sm font-medium">Top donor employers</p>
-                  <ul className="text-xs text-muted-foreground space-y-0.5">
-                    {topEmployers.map(([name, amt]) => (
-                      <li key={name} className="flex justify-between gap-4">
-                        <span className="truncate">{name}</span>
-                        <span className="tabular-nums shrink-0">{fmtUSD(amt)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {sectors.total === 0 && (
+              {sectorTotal === 0 && (
                 <p className="text-xs text-muted-foreground">
                   Sector breakdown pending the donor-classification run.
                 </p>
@@ -169,13 +203,21 @@ export default function CouncilMemberDetail() {
 
         {/* Climate dissents */}
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Climate votes against the majority</h2>
+          <div>
+            <h2 className="text-lg font-semibold">Climate votes against the majority</h2>
+            {dissents != null && totalClimate != null && (
+              <p className="text-sm text-muted-foreground">
+                {dissents.length === 0
+                  ? `No climate votes against the majority on record. The council has taken ${totalClimate.toLocaleString()} climate decisions since 2023 — nearly all unanimous.`
+                  : `Broke from the majority on ${dissents.length} of the ${totalClimate.toLocaleString()} climate decisions the council has taken since 2023.`}
+              </p>
+            )}
+          </div>
           {dissents == null ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : dissents.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No recorded climate dissents — {member.name} voted with the council majority on every
-              climate decision in the record (2023–present). That's the norm here: near-unanimous.
+              That's the norm here — Austin council decides climate items by near-total consensus.
             </p>
           ) : (
             <div className="divide-y divide-border rounded-lg border border-border bg-card">
