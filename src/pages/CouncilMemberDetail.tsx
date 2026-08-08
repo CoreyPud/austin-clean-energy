@@ -16,7 +16,16 @@ export default function CouncilMemberDetail() {
 
   const [fin, setFin] = useState<FinRow[] | null>(null);
   const [dissents, setDissents] = useState<DissentVote[] | null>(null);
+  const [totalClimate, setTotalClimate] = useState<number | null>(null);
   const [lobbyNames, setLobbyNames] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Total climate decisions the council has taken (denominator for context).
+    supabase.from("council_votes")
+      .select("item_id", { count: "exact", head: true })
+      .eq("is_climate", true).neq("item_kind", "routine")
+      .then(({ count }) => setTotalClimate(count ?? null));
+  }, []);
 
   useEffect(() => {
     // Donor employers for THIS member that also lobby the city (from the cached nexus).
@@ -194,13 +203,21 @@ export default function CouncilMemberDetail() {
 
         {/* Climate dissents */}
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Climate votes against the majority</h2>
+          <div>
+            <h2 className="text-lg font-semibold">Climate votes against the majority</h2>
+            {dissents != null && totalClimate != null && (
+              <p className="text-sm text-muted-foreground">
+                {dissents.length === 0
+                  ? `No climate votes against the majority on record. The council has taken ${totalClimate.toLocaleString()} climate decisions since 2023 — nearly all unanimous.`
+                  : `Broke from the majority on ${dissents.length} of the ${totalClimate.toLocaleString()} climate decisions the council has taken since 2023.`}
+              </p>
+            )}
+          </div>
           {dissents == null ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : dissents.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No recorded climate dissents — {member.name} voted with the council majority on every
-              climate decision in the record (2023–present). That's the norm here: near-unanimous.
+              That's the norm here — Austin council decides climate items by near-total consensus.
             </p>
           ) : (
             <div className="divide-y divide-border rounded-lg border border-border bg-card">

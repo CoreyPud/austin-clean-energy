@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import SectorBar from "@/components/SectorBar";
 import { SECTOR_LABEL, SECTOR_COLOR, fmtUSD, COUNCIL_MEMBERS } from "@/lib/council-members";
+import CouncilNav from "@/components/CouncilNav";
 
 interface NexusRow { name: string; sector: string; donor_amount: number; recipients: string[] }
 interface LobbySummary {
@@ -40,6 +41,7 @@ export default function CouncilLobbying() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
+        <CouncilNav />
         <header className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
           <h1 className="text-3xl font-bold tracking-tight">Who lobbies City Hall</h1>

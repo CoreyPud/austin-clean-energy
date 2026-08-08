@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { COUNCIL_MEMBERS, fmtUSD } from "@/lib/council-members";
 import SectorBar from "@/components/SectorBar";
+import CouncilNav from "@/components/CouncilNav";
 
 interface MemberStat { raised: number; climateDissents: number; sectors: Record<string, number> }
 
@@ -36,6 +37,7 @@ export default function CouncilMembers() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
+        <CouncilNav />
         <header className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
           <h1 className="text-3xl font-bold tracking-tight">Who funds your council</h1>
