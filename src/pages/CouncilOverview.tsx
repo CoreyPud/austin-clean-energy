@@ -5,6 +5,7 @@ import SectorBar from "@/components/SectorBar";
 import { SECTOR_LABEL, SECTOR_COLOR, fmtUSD, COUNCIL_MEMBERS } from "@/lib/council-members";
 import CouncilNav from "@/components/CouncilNav";
 import companiesData from "@/data/council-companies.json";
+import { noteFor } from "@/data/council-company-notes";
 
 const CATEGORY_META: Record<string, { label: string; blurb: string }> = {
   energy_supply:         { label: "Energy supply",          blurb: "Generation, the grid, Austin Energy resource decisions, coal/gas, renewables." },
@@ -178,20 +179,23 @@ export default function CouncilOverview() {
           </div>
 
           <div className="divide-y divide-border rounded-lg border border-border bg-card">
-            {companiesData.companies.map((c) => (
-              <div key={c.name} className="p-4 flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {cleanBusiness(c.business)} · lobbies the city · funded {c.members_funded} of 11 members
-                  </p>
+            {companiesData.companies.map((c) => {
+              const note = noteFor(c.name);
+              return (
+                <div key={c.name} className="p-4 flex items-start justify-between gap-4">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="text-sm font-medium text-foreground">{note?.display ?? c.name}</p>
+                    <p className="text-xs text-muted-foreground">{note?.what ?? cleanBusiness(c.business)}</p>
+                    {note?.why && <p className="text-xs text-muted-foreground"><span className="text-foreground/70">Interest before the city:</span> {note.why}</p>}
+                    <p className="text-[11px] text-muted-foreground pt-0.5">Registered lobbyist · funded {c.members_funded} of 11 members</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-semibold tabular-nums">{fmtUSD(c.donated)}</p>
+                    <p className="text-xs text-muted-foreground">{c.donors} donors</p>
+                  </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold tabular-nums">{fmtUSD(c.donated)}</p>
-                  <p className="text-xs text-muted-foreground">{c.donors} donors</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <p className="text-xs text-muted-foreground">
             {companiesData.note}
