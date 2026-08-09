@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SectorBar from "@/components/SectorBar";
 import { SECTOR_LABEL, SECTOR_COLOR, fmtUSD, COUNCIL_MEMBERS } from "@/lib/council-members";
 import CouncilNav from "@/components/CouncilNav";
+import companiesData from "@/data/council-companies.json";
 
 const CATEGORY_META: Record<string, { label: string; blurb: string }> = {
   energy_supply:         { label: "Energy supply",          blurb: "Generation, the grid, Austin Energy resource decisions, coal/gas, renewables." },
@@ -31,6 +32,19 @@ interface LobbySummary { total_clients: number; sector_breakdown: Record<string,
 const fmtDate = (d: string | null) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "";
 const recipientToMember = (r: string) => COUNCIL_MEMBERS.find(m => r.startsWith(m.financePrefix))?.name ?? r;
+
+// Tidy the messy self-reported business descriptions into clean labels.
+const cleanBusiness = (b: string): string => {
+  const s = (b || "").toLowerCase();
+  if (/law|attorney|legal/.test(s)) return "Law / lobbying firm";
+  if (/real estate|develop|property|land/.test(s)) return "Real estate / development";
+  if (/tech/.test(s)) return "Technology";
+  if (/engineer|architect/.test(s)) return "Engineering / architecture";
+  if (/disposal|waste|recycl/.test(s)) return "Waste / recycling";
+  if (/nonprofit|housing organ/.test(s)) return "Nonprofit";
+  if (/music|hotel|hospitality|event/.test(s)) return "Hospitality / events";
+  return b ? b.charAt(0).toUpperCase() + b.slice(1).toLowerCase() : "Other";
+};
 
 export default function CouncilOverview() {
   const [items, setItems] = useState<VoteRow[] | null>(null);
@@ -140,6 +154,48 @@ export default function CouncilOverview() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* How influence works + companies of interest (static prototype data) */}
+        <section className="space-y-4">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold">How influence actually works here</h2>
+            <div className="text-sm text-muted-foreground max-w-2xl space-y-2">
+              <p>
+                In Texas, <strong className="text-foreground">companies can't donate to campaigns directly</strong>,
+                and Austin caps individual gifts at roughly $450. So the money doesn't come as
+                corporate checks — it comes as <strong className="text-foreground">bundling</strong>: firms
+                with business before the city have dozens of their employees each donate, often at the
+                max, to most of the council at once.
+              </p>
+              <p>
+                The same firms <strong className="text-foreground">register to lobby</strong> the city. So the
+                campaign money and the lobbying come from the same interests — overwhelmingly real
+                estate and development. Below are the registered lobbying organizations whose employees
+                gave the most to current council members.
+              </p>
+            </div>
+          </div>
+
+          <div className="divide-y divide-border rounded-lg border border-border bg-card">
+            {companiesData.companies.map((c) => (
+              <div key={c.name} className="p-4 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{c.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {cleanBusiness(c.business)} · lobbies the city · funded {c.members_funded} of 11 members
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold tabular-nums">{fmtUSD(c.donated)}</p>
+                  <p className="text-xs text-muted-foreground">{c.donors} donors</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {companiesData.note}
+          </p>
         </section>
 
         {/* Report card entry */}
