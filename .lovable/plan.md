@@ -1,37 +1,42 @@
-# Standard Offer Pro Forma with After-Tax IRR
+# Standard Offer Pro Forma with IRR
 
-Add a detailed Standard Offer (SSO) pro forma section to the property assessment page, showing a full 30-year cash flow with O&M expenses, depreciation, and an after-tax IRR — driven by the assumptions in your spreadsheet.
+Add a detailed Standard Offer pro forma section to the property assessment page that mirrors the uploaded `Standard_offer_financial_model_stand_alone.xlsx` — third-party-owner (TPO) economics with lease payment, O&M, inverter replacement, ITC and depreciation credit, and an IRR to the TPO. The existing simple Standard Offer payback view stays as is.
 
-## First: the spreadsheet
+## Two scenarios from the spreadsheet
 
-No spreadsheet came through with the last message. Attach the .xlsx (or Google Sheet link) and I'll read its SSO tab to pull the exact assumptions and formula structure:
+The scenario is picked automatically from the system size, matching the two tabs:
 
-- O&M cost basis ($/kW-yr or % of capex) and annual escalation
-- Depreciation method and schedule (MACRS 5-yr, straight line, bonus depreciation %)
-- Tax rate, inflation/degradation, insurance, inverter replacement, analysis term
-- Whether IRR is levered (with debt) or unlevered, and any terminal/salvage value
+| Assumption | Under 1,300 kWdc ("Ground") | 1,300 kWdc and above ("Large") |
+|---|---|---|
+| Cost per watt | $1.85 | $1.90 |
+| Watts per panel | 550 | 400 |
+| Annual yield | 1,350 kWh-ac per kWdc | 1,450 kWh-ac per kWdc |
+| Standard Offer rate | $0.11 / kWh | $0.08 / kWh |
+| Lease payment to property owner | $30,000 / yr | $16,000 / yr |
 
-Until it arrives I can't lock the numbers. If you'd rather start now, I'll build the structure with clearly labeled industry-standard placeholders (MACRS 5-yr + 21% tax rate + $15/kW-yr O&M at 2.5% escalation) and swap in your spreadsheet values as a follow-up.
+Shared assumptions: 0.5% annual production degradation; SSO rate steps up $0.02 in year 6, $0.04 in year 11, $0.06 in year 16; O&M $10 per kWdc-yr escalating 2%; inverter replacement of $8,000 per 125 kW (rounded up) in year 14; property taxes $0 (flagged as unknown, per the spreadsheet note); 25-year term.
 
-## What gets built
+Incentives: 30% ITC plus a simplified depreciation credit of 21% of (system cost less ITC), both received in year 2 — exactly as the spreadsheet models them. Both are clearly labeled as commercial/TPO incentives (this is separate from the residential tax credit the site never claims), with the "if commissioned before 12/31/2027" caveat shown.
 
-A new "Standard Offer pro forma" section, shown only when the Standard Offer billing mode is active (commercial, roof capacity above the program threshold). The existing simple payback view and revenue chart stay exactly as they are.
+IRR is computed on the same cash flow series the spreadsheet uses: year 1 includes the full capex outflow, year 2 adds the ITC and depreciation credit, and every year nets revenue less lease, O&M, and property taxes.
 
-The section contains:
+## What the page shows
 
-1. **Headline metrics row** — After-tax IRR, NPV at the spreadsheet's discount rate, simple payback year, and 30-year net after-tax cash flow.
-2. **Cash flow table** — year-by-year rows: production (kWh, degraded), SSO revenue, O&M expense, EBITDA, depreciation, taxable income, tax, after-tax cash flow, cumulative cash flow.
-3. **Cumulative after-tax cash flow chart** — replaces/complements the current pre-tax cumulative line inside this section, with the break-even crossing marked.
-4. **Assumptions panel** — every fixed input listed with its value and a source note citing the spreadsheet, per the project's data-transparency rule. Includes a disclaimer that these are estimates, not a tax opinion.
+A new "Standard Offer pro forma (third-party owner)" section, rendered only when Standard Offer mode is active on a commercial property:
+
+1. **Headline metrics** — IRR to TPO, net cost after incentives, total system cost, annual year-1 revenue, and the lease income to the property owner.
+2. **Cash flow table** — year, production kWh-ac, Standard Offer revenue, lease payment, O&M, annual expenses, incentives, and net cash flow to TPO, with a cumulative column.
+3. **Cumulative cash flow chart** with the break-even crossing marked.
+4. **Assumptions panel** listing every input, its value, the active scenario, and a source note citing the uploaded model, plus a disclaimer that these are estimates and not tax or investment advice.
 
 ## Technical notes
 
-- New module `src/lib/sso-proforma.ts`:
-  - `buildSsoProForma(systemKw, productionPerKw, installCost)` returning typed yearly rows plus `irr`, `npv`, `paybackYear`, `totalAfterTaxCashFlow`.
-  - Depreciation schedule helper (MACRS 5-yr table or straight line, per spreadsheet) applied to the depreciable basis (capex less any rebate/incentive treatment the spreadsheet specifies).
-  - `irr()` via Newton–Raphson with bisection fallback, guarding the no-solution case (returns null, UI shows "n/a" rather than a bogus number).
-  - Assumption constants exported in one `SSO_PROFORMA_ASSUMPTIONS` object so the UI can render the assumptions panel from a single source.
-- New component `src/components/assessment/SsoProForma.tsx` using existing Card/Table/Recharts patterns and semantic design tokens only.
-- Rendered from `src/pages/PropertyAssessment.tsx` next to `SolarCalculator`, gated on the same `ssoEligible` / `billingMode === "sso"` condition already in that file.
-- `src/lib/solar-model.ts` and `buildSsoModel` are left untouched, so nothing on `PropertyPage` changes.
-- Frontend-only; no database or edge function changes.
+- New `src/lib/sso-proforma.ts`:
+  - `SSO_SCENARIOS` with the two parameter sets above and a `pickScenario(systemKw)` helper at the 1,300 kWdc boundary.
+  - `buildSsoProForma(systemKw)` returning `{ scenario, systemCost, itc, depreciationCredit, netCost, rows[], irr, paybackYear, cumulative[] }` where each row holds production, revenue, lease, O&M, expenses, incentives, and net cash flow.
+  - `irr(cashflows)` via bisection over a bracketed rate range, returning `null` when no sign change exists so the UI can show "n/a" instead of a fabricated number.
+  - Cleaned-up escalation: the spreadsheet's O&M column has a few stray references that break the 2% chain in later years (rows mixing 1.02 and 1.04 off different base cells); the port applies the stated 2% escalation consistently and notes that in the assumptions panel. Same for two off-by-one revenue references in the spreadsheet's cash-flow column.
+- New `src/components/assessment/SsoProForma.tsx` using existing Card / Table / Recharts patterns and semantic design tokens only.
+- Rendered from `src/pages/PropertyAssessment.tsx` beside `SolarCalculator`, gated on the existing `ssoEligible` / `billingMode === "sso"` state.
+- `src/lib/solar-model.ts` and `buildSsoModel` are untouched, so `PropertyPage` behavior does not change.
+- Frontend only — no database, edge function, or schema changes.
