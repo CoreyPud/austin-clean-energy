@@ -184,7 +184,7 @@ export function buildSsoProForma(systemKwInput: number): SsoProForma {
     netCostUsd,
     year1ProductionKwh: year1Production,
     year1RevenueUsd: rows[0]?.revenue ?? 0,
-    annualLeaseUsd: scenario.leasePaymentUsd,
+    annualLeaseUsd,
     inverterReplacementUsd,
     rows,
     // Excel IRR() treats the first value as occurring at t=0
