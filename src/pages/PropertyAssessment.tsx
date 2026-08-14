@@ -783,6 +783,11 @@ const PropertyAssessment = () => {
                       costPerW={costPerW}
                       onCostPerWChange={setCostPerW}
                     />
+
+                    {ssoEligible && billingMode === "sso" && (
+                      <SsoProForma systemKw={systemKw} />
+                    )}
+
                   </>
                 )}
 
