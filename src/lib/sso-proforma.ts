@@ -135,6 +135,8 @@ export function buildSsoProForma(systemKwInput: number): SsoProForma {
   const inverterReplacementUsd = ssoInverterReplacementCost(systemKw);
 
   const year1Production = systemKw * scenario.yieldKwhPerKw;
+  const year1Revenue = year1Production * ssoRateForYear(scenario.baseRate, 1);
+  const annualLeaseUsd = year1Revenue * SSO_LEASE_REVENUE_SHARE;
   const rows: SsoProFormaRow[] = [];
   let cumulative = 0;
   let paybackYear: number | null = null;
@@ -143,7 +145,7 @@ export function buildSsoProForma(systemKwInput: number): SsoProForma {
     const productionKwh = year1Production * Math.pow(1 - SSO_DEGRADATION_RATE, year - 1);
     const rate = ssoRateForYear(scenario.baseRate, year);
     const revenue = productionKwh * rate;
-    const lease = scenario.leasePaymentUsd;
+    const lease = annualLeaseUsd;
     const om =
       SSO_OM_PER_KW_YEAR * systemKw * Math.pow(1 + SSO_OM_ESCALATION, year - 1) +
       (year === SSO_INVERTER_REPLACEMENT_YEAR ? inverterReplacementUsd : 0);
