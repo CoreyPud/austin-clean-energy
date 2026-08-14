@@ -32,6 +32,8 @@ import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
+import SsoProForma from "@/components/assessment/SsoProForma";
+
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -783,6 +785,11 @@ const PropertyAssessment = () => {
                       costPerW={costPerW}
                       onCostPerWChange={setCostPerW}
                     />
+
+                    {ssoEligible && billingMode === "sso" && (
+                      <SsoProForma systemKw={systemKw} />
+                    )}
+
                   </>
                 )}
 
