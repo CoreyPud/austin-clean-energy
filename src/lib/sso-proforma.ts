@@ -12,8 +12,10 @@ export interface SsoScenario {
   wattsPerPanel: number;
   yieldKwhPerKw: number;      // kWh-ac per kWdc-year
   baseRate: number;           // $/kWh Standard Offer payment
-  leasePaymentUsd: number;    // annual lease to property owner
 }
+
+/** Roof/land lease = 20% of year-1 solar revenue, held flat for the full term. */
+export const SSO_LEASE_REVENUE_SHARE = 0.20;
 
 export const SSO_SCENARIOS: Record<SsoScenario["id"], SsoScenario> = {
   ground: {
@@ -23,7 +25,6 @@ export const SSO_SCENARIOS: Record<SsoScenario["id"], SsoScenario> = {
     wattsPerPanel: 550,
     yieldKwhPerKw: 1350,
     baseRate: 0.11,
-    leasePaymentUsd: 30000,
   },
   large: {
     id: "large",
@@ -32,7 +33,6 @@ export const SSO_SCENARIOS: Record<SsoScenario["id"], SsoScenario> = {
     wattsPerPanel: 400,
     yieldKwhPerKw: 1450,
     baseRate: 0.08,
-    leasePaymentUsd: 16000,
   },
 };
 
