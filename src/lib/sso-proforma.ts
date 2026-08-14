@@ -12,8 +12,10 @@ export interface SsoScenario {
   wattsPerPanel: number;
   yieldKwhPerKw: number;      // kWh-ac per kWdc-year
   baseRate: number;           // $/kWh Standard Offer payment
-  leasePaymentUsd: number;    // annual lease to property owner
 }
+
+/** Roof/land lease = 20% of year-1 solar revenue, held flat for the full term. */
+export const SSO_LEASE_REVENUE_SHARE = 0.20;
 
 export const SSO_SCENARIOS: Record<SsoScenario["id"], SsoScenario> = {
   ground: {
@@ -23,7 +25,6 @@ export const SSO_SCENARIOS: Record<SsoScenario["id"], SsoScenario> = {
     wattsPerPanel: 550,
     yieldKwhPerKw: 1350,
     baseRate: 0.11,
-    leasePaymentUsd: 30000,
   },
   large: {
     id: "large",
@@ -32,7 +33,6 @@ export const SSO_SCENARIOS: Record<SsoScenario["id"], SsoScenario> = {
     wattsPerPanel: 400,
     yieldKwhPerKw: 1450,
     baseRate: 0.08,
-    leasePaymentUsd: 16000,
   },
 };
 
@@ -135,6 +135,8 @@ export function buildSsoProForma(systemKwInput: number): SsoProForma {
   const inverterReplacementUsd = ssoInverterReplacementCost(systemKw);
 
   const year1Production = systemKw * scenario.yieldKwhPerKw;
+  const year1Revenue = year1Production * ssoRateForYear(scenario.baseRate, 1);
+  const annualLeaseUsd = year1Revenue * SSO_LEASE_REVENUE_SHARE;
   const rows: SsoProFormaRow[] = [];
   let cumulative = 0;
   let paybackYear: number | null = null;
@@ -143,7 +145,7 @@ export function buildSsoProForma(systemKwInput: number): SsoProForma {
     const productionKwh = year1Production * Math.pow(1 - SSO_DEGRADATION_RATE, year - 1);
     const rate = ssoRateForYear(scenario.baseRate, year);
     const revenue = productionKwh * rate;
-    const lease = scenario.leasePaymentUsd;
+    const lease = annualLeaseUsd;
     const om =
       SSO_OM_PER_KW_YEAR * systemKw * Math.pow(1 + SSO_OM_ESCALATION, year - 1) +
       (year === SSO_INVERTER_REPLACEMENT_YEAR ? inverterReplacementUsd : 0);
@@ -182,7 +184,7 @@ export function buildSsoProForma(systemKwInput: number): SsoProForma {
     netCostUsd,
     year1ProductionKwh: year1Production,
     year1RevenueUsd: rows[0]?.revenue ?? 0,
-    annualLeaseUsd: scenario.leasePaymentUsd,
+    annualLeaseUsd,
     inverterReplacementUsd,
     rows,
     // Excel IRR() treats the first value as occurring at t=0

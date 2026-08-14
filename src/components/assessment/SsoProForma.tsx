@@ -163,7 +163,7 @@ const SsoProForma = ({ systemKw }: Props) => {
             <Row k="System cost" v={`$${model.scenario.costPerWatt.toFixed(2)} per Wdc`} />
             <Row k="Production" v={`${model.scenario.yieldKwhPerKw.toLocaleString()} kWh-ac per kWdc-year, ${(SSO_DEGRADATION_RATE * 100).toFixed(1)}% annual degradation`} />
             <Row k="Standard Offer rate" v={`$${model.scenario.baseRate.toFixed(2)}/kWh, stepping up $0.02 in year 6, $0.04 in year 11, $0.06 in year 16`} />
-            <Row k="Lease payment" v={`${fmt$(model.annualLeaseUsd)} per year to the property owner, flat`} />
+            <Row k="Lease payment" v={`${fmt$(model.annualLeaseUsd)} per year to the property owner — 20% of year-1 solar revenue, held flat for all ${SSO_PROFORMA_TERM_YEARS} years`} />
             <Row k="O&M" v={`$${SSO_OM_PER_KW_YEAR}/kWdc-year for insurance, monitoring and maintenance, escalating ${(SSO_OM_ESCALATION * 100).toFixed(0)}% per year`} />
             <Row k="Inverter replacement" v={`${fmt$(model.inverterReplacementUsd)} in year ${SSO_INVERTER_REPLACEMENT_YEAR} ($8,000 per 125 kW block)`} />
             <Row k="Property taxes" v="Modeled as $0 — treatment for third-party-owned solar is unresolved, so this is a known omission" />
