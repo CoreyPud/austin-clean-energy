@@ -328,7 +328,7 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
 
 // ── Solar Standard Offer (SSO) ───────────────────────────────────────────────
 
-export const SSO_RATE_UNDER_1MW = 0.1124;  // $/kWh, systems < 1 MW-ac
+export const SSO_RATE_UNDER_1MW = 0.11;    // $/kWh, systems < 1 MW-ac
 export const SSO_RATE_OVER_1MW  = 0.0841;  // $/kWh, systems >= 1 MW-ac
 export const SSO_MIN_KW         = 50;       // program minimum
 export const SSO_SHOW_THRESHOLD_KW = 75;   // show option when roof can fit this much
