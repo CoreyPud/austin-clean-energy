@@ -1,51 +1,37 @@
-## Add MW peak demand time-series to `/building-energy-usage`
+# Standard Offer Pro Forma with After-Tax IRR
 
-Add a second chart below the existing MWh stacked area chart on `src/pages/BuildingEnergyUsage.tsx`, showing estimated peak MW contribution per year from newly permitted buildings, plus context KPIs comparing to Austin Energy's system totals.
+Add a detailed Standard Offer (SSO) pro forma section to the property assessment page, showing a full 30-year cash flow with O&M expenses, depreciation, and an after-tax IRR — driven by the assumptions in your spreadsheet.
 
-### Constants (module-level in `src/lib/building-energy.ts`)
+## First: the spreadsheet
 
-```
-AUSTIN_ENERGY_ANNUAL_SALES_KWH = 14_000_000_000  // FY2024 AE annual report
-AUSTIN_ENERGY_PEAK_MW          = 3067            // Aug 2023 record summer peak
-LOAD_FACTOR                    = 0.5             // mixed-use assumption
-HOURS_PER_YEAR                 = 8760
-```
+No spreadsheet came through with the last message. Attach the .xlsx (or Google Sheet link) and I'll read its SSO tab to pull the exact assumptions and formula structure:
 
-### New helper in `src/lib/building-energy.ts`
+- O&M cost basis ($/kW-yr or % of capex) and annual escalation
+- Depreciation method and schedule (MACRS 5-yr, straight line, bonus depreciation %)
+- Tax rate, inflation/degradation, insurance, inverter replacement, analysis term
+- Whether IRR is levered (with debt) or unlevered, and any terminal/salvage value
 
-`peakMwByYear(rows)` → returns `{ year, peak_mw }[]`:
-- For each year, sum `est_annual_kwh` across permits issued that year.
-- `avg_kw = total_kwh / 8760`
-- `peak_mw = (avg_kw / LOAD_FACTOR) / 1000`
-- Round to 2 decimals.
+Until it arrives I can't lock the numbers. If you'd rather start now, I'll build the structure with clearly labeled industry-standard placeholders (MACRS 5-yr + 21% tax rate + $15/kW-yr O&M at 2.5% escalation) and swap in your spreadsheet values as a follow-up.
 
-Also extend `totals()` (or add `systemContext(rows)`) to return:
-- `totalKwh`
-- `pctOfAnnualSales = totalKwh / AUSTIN_ENERGY_ANNUAL_SALES_KWH * 100`
-- `roughPeakMw = ((totalKwh / 8760) / LOAD_FACTOR) / 1000`
-- `pctOfSystemPeak = roughPeakMw / AUSTIN_ENERGY_PEAK_MW * 100`
+## What gets built
 
-### UI changes in `src/pages/BuildingEnergyUsage.tsx`
+A new "Standard Offer pro forma" section, shown only when the Standard Offer billing mode is active (commercial, roof capacity above the program threshold). The existing simple payback view and revenue chart stay exactly as they are.
 
-1. **New section** below the existing MWh area chart, titled "Estimated peak MW added per year":
-   - Recharts `LineChart` (single series) using `peakMwByYear` data.
-   - Y-axis label "MW (peak)", tooltip formats to 2 decimals + " MW".
-   - Short caption explaining this is per-year new-permit contribution, not cumulative.
+The section contains:
 
-2. **Extend KPI strip** (or add a second row) with two context cards:
-   - "Est. peak MW added" — `roughPeakMw.toFixed(1)` MW, subtitle `"{pctOfSystemPeak.toFixed(2)}% of AE 3,067 MW peak"`.
-   - "% of AE annual sales" — `pctOfAnnualSales.toFixed(2)}%`, subtitle "vs. 14 TWh FY2024".
+1. **Headline metrics row** — After-tax IRR, NPV at the spreadsheet's discount rate, simple payback year, and 30-year net after-tax cash flow.
+2. **Cash flow table** — year-by-year rows: production (kWh, degraded), SSO revenue, O&M expense, EBITDA, depreciation, taxable income, tax, after-tax cash flow, cumulative cash flow.
+3. **Cumulative after-tax cash flow chart** — replaces/complements the current pre-tax cumulative line inside this section, with the break-even crossing marked.
+4. **Assumptions panel** — every fixed input listed with its value and a source note citing the spreadsheet, per the project's data-transparency rule. Includes a disclaimer that these are estimates, not a tax opinion.
 
-3. **Methodology addendum** — new card in the existing "How this is calculated" section documenting the MW conversion:
-   ```
-   avg_kw     = total_annual_kwh / 8760
-   peak_mw    = (avg_kw / load_factor) / 1000
-   load_factor = 0.5   // mixed-use rough assumption
-   ```
-   Plus a note: AE annual sales ~14 TWh (FY2024 annual report), record system peak 3,067 MW (Aug 2023).
+## Technical notes
 
-### Out of scope
-
-- No new data file / no CSV changes.
-- No changes to `/building-energy-use` (the separate ECAD explainer).
-- No sitemap or homepage changes.
+- New module `src/lib/sso-proforma.ts`:
+  - `buildSsoProForma(systemKw, productionPerKw, installCost)` returning typed yearly rows plus `irr`, `npv`, `paybackYear`, `totalAfterTaxCashFlow`.
+  - Depreciation schedule helper (MACRS 5-yr table or straight line, per spreadsheet) applied to the depreciable basis (capex less any rebate/incentive treatment the spreadsheet specifies).
+  - `irr()` via Newton–Raphson with bisection fallback, guarding the no-solution case (returns null, UI shows "n/a" rather than a bogus number).
+  - Assumption constants exported in one `SSO_PROFORMA_ASSUMPTIONS` object so the UI can render the assumptions panel from a single source.
+- New component `src/components/assessment/SsoProForma.tsx` using existing Card/Table/Recharts patterns and semantic design tokens only.
+- Rendered from `src/pages/PropertyAssessment.tsx` next to `SolarCalculator`, gated on the same `ssoEligible` / `billingMode === "sso"` condition already in that file.
+- `src/lib/solar-model.ts` and `buildSsoModel` are left untouched, so nothing on `PropertyPage` changes.
+- Frontend-only; no database or edge function changes.
