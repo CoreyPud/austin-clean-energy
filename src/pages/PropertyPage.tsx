@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import {
   BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -25,7 +26,15 @@ import {
   type CalcInputs,
   DEFAULT_MONTHLY_USAGE_KWH,
   SSO_RATE_UNDER_1MW,
+  SSO_RATE_OVER_1MW,
+  SSO_RATE_STEP,
+  SSO_RATE_STEP_YEARS,
+  SSO_OM_PER_KW_YEAR,
+  SSO_OM_ESCALATION,
+  SSO_INVERTER_REPLACEMENT_PER_KW,
+  SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
+  AUSTIN_INSTALL_COST_PER_KW,
 } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
@@ -291,6 +300,7 @@ export default function PropertyPage() {
   const [monthlyBill, setMonthlyBill] = useState(150);
   // null = follow the default sizing; a number = user has chosen a system size.
   const [systemKwOverride, setSystemKwOverride] = useState<number | null>(null);
+  const [showCalcDetails, setShowCalcDetails] = useState(false);
   const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
   const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
   const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
@@ -398,6 +408,12 @@ export default function PropertyPage() {
   const sso = ssoEligible && rec
     ? buildSsoModel(rec.recommendedKw, productionPerKw, rec.netCost)
     : null;
+
+  // SSO rate schedule for the calculation-details section below.
+  const ssoRateSteps = [1, ...SSO_RATE_STEP_YEARS].map((year, i) => ({
+    year,
+    rate: SSO_RATE_UNDER_1MW + i * SSO_RATE_STEP,
+  }));
 
   const annualUsageKwh = isResidential
     ? residentialAnnualUsage
@@ -652,6 +668,62 @@ export default function PropertyPage() {
                 {isCommercial && !ssoEligible && <li>System sized to maximum roof capacity</li>}
               </ul>
             </div>
+
+            {/* Commercial calculation details — expandable, full math behind the numbers above */}
+            {isCommercial && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCalcDetails(v => !v)}
+                  className="flex items-center gap-1.5 text-sm font-medium w-full text-left"
+                >
+                  <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${showCalcDetails ? "rotate-180" : ""}`} />
+                  Commercial calculation details
+                </button>
+                {showCalcDetails && (
+                  <div className="mt-4 space-y-4 text-sm text-muted-foreground">
+                    <div>
+                      <p className="font-medium text-foreground mb-1">System size &amp; production</p>
+                      <ul className="space-y-1 list-disc list-inside">
+                        <li>Sized to maximum buildable roof capacity: {rec.maxKw} kW ({buildablePanels?.toLocaleString()} panels) — after removing panels within 4 ft of the roof edge, panels with too little sun exposure, and rooftop walkways for HVAC access</li>
+                        <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
+                        <li>Output degrades 0.5%/year</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground mb-1">Cost</p>
+                      <ul className="space-y-1 list-disc list-inside">
+                        <li>Install cost: ${AUSTIN_INSTALL_COST_PER_KW.toLocaleString()}/kW (Berkeley Lab 2024 regression — for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify)</li>
+                        <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
+                        <li>No federal Investment Tax Credit or depreciation benefit is included — the ITC's commissioning-deadline eligibility has changed, so confirm current federal rules before assuming a tax credit applies</li>
+                        <li>Assumes you install and own the system directly, with no lease payment to a third-party owner</li>
+                      </ul>
+                    </div>
+                    {ssoEligible ? (
+                      <div>
+                        <p className="font-medium text-foreground mb-1">Standard Offer revenue</p>
+                        <ul className="space-y-1 list-disc list-inside">
+                          <li>
+                            Rate: {ssoRateSteps.map(s => `${(s.rate * 100).toFixed(2)}¢/kWh from year ${s.year}`).join(" → ")}, then holds through year 25. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same step schedule.
+                          </li>
+                          <li>O&amp;M: ${SSO_OM_PER_KW_YEAR}/kW/year, escalating {(SSO_OM_ESCALATION * 100).toFixed(0)}%/year (insurance, monitoring, maintenance)</li>
+                          <li>Inverter replacement: ~${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)}/kW, one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
+                          <li>Minimum system size for the program is {SSO_MIN_KW} kW</li>
+                        </ul>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-medium text-foreground mb-1">Value of Solar revenue</p>
+                        <ul className="space-y-1 list-disc list-inside">
+                          <li>Rate: $0.126/kWh on all production; unused monthly credits carry forward and AE pays out any remaining balance</li>
+                          <li>Below the {SSO_MIN_KW} kW Standard Offer program minimum, so billed under Value of Solar instead</li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
