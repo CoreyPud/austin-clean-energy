@@ -392,6 +392,13 @@ export default function PropertyPage() {
 
   const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_MIN_KW;
 
+  // Real SSO economics (escalating rate, O&M, inverter replacement) for the stat cards
+  // below — rec.annualSavings/paybackYears are VoS-rate figures and don't apply here.
+  const productionPerKw = property.solar_sunshine_hrs ? property.solar_sunshine_hrs * 0.86 : 1500;
+  const sso = ssoEligible && rec
+    ? buildSsoModel(rec.recommendedKw, productionPerKw, rec.netCost)
+    : null;
+
   const annualUsageKwh = isResidential
     ? residentialAnnualUsage
     : (rec?.annualProductionKwh ?? DEFAULT_MONTHLY_USAGE_KWH * 12);
@@ -514,7 +521,7 @@ export default function PropertyPage() {
                   <p className="text-sm text-muted-foreground mt-1">
                     Under Austin Energy's{" "}
                     <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline">Standard Offer program</a>
-                    , AE pays you a fixed rate ({(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh) for every kilowatt-hour your system produces — regardless of what you consume. Unlike bill-offset solar, this is a standalone revenue stream: your electricity bill stays the same and you simply earn on top of it. Because revenue scales directly with output, there's no ceiling on useful system size — maximum roof capacity is the right starting point. Minimum system size is {SSO_MIN_KW} kW.
+                    , AE pays you a locked-in rate — starting at {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh and stepping up roughly every 5 years — for every kilowatt-hour your system produces — regardless of what you consume. Unlike bill-offset solar, this is a standalone revenue stream: your electricity bill stays the same and you simply earn on top of it. Because revenue scales directly with output, there's no ceiling on useful system size — maximum roof capacity is the right starting point. Minimum system size is {SSO_MIN_KW} kW.
                   </p>
                 )}
                 {isCommercial && !ssoEligible && (
@@ -539,14 +546,14 @@ export default function PropertyPage() {
                 <StatCard
                   label={ssoEligible ? "Annual revenue (est.)" : "Annual production"}
                   value={ssoEligible
-                    ? fmt$(rec.annualProductionKwh * SSO_RATE_UNDER_1MW)
+                    ? fmt$(sso?.annualRevenue ?? 0)
                     : fmtKwh(rec.annualProductionKwh)}
                 />
                 <StatCard
                   label="Est. payback"
-                  value={`${rec.paybackYears} yr`}
+                  value={`${(ssoEligible ? sso?.paybackYear : rec.paybackYears) ?? "30+"} yr`}
                   sub={ssoEligible
-                    ? `${fmt$(rec.annualSavings)}/yr revenue`
+                    ? `${fmt$(sso?.annualRevenue ?? 0)}/yr revenue`
                     : `${fmt$(rec.annualSavings)}/yr savings`}
                 />
               </div>

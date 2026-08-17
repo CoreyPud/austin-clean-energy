@@ -167,7 +167,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
             </div>
             <p className="text-xs text-muted-foreground">
               {billingMode === "sso"
-                ? `Based on ${(sso.rate * 100).toFixed(2)}¢ Standard Offer rate`
+                ? `Starting at ${(sso.rate * 100).toFixed(2)}¢/kWh Standard Offer rate; steps up roughly every 5 years`
                 : `Based on ${(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢ Value of Solar rate`}
             </p>
           </div>
