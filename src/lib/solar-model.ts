@@ -339,6 +339,15 @@ export const SSO_SHOW_THRESHOLD_KW = 75;   // show option when roof can fit this
 // owns the system outright, so no lease payment and no ITC/depreciation modeled here —
 // the federal ITC's commissioning-deadline status is not something to hardcode as a
 // live constant.
+//
+// The rate-step schedule below is the pro forma author's own projection, not Austin
+// Energy policy — confirmed against AE's actual Solar Standard Offer Rider tariff
+// (effective 11/1/2025). The real mechanism: the rate holds for 3 years, then resets
+// based on the trailing 5-year average of ERCOT-market-derived avoided energy,
+// transmission, and ancillary-services costs — it can rise or fall, and there's no
+// guaranteed floor beyond the currently published rate. Kept as a fixed step-up here
+// as a simplifying stand-in so the SSO model isn't flat forever, not because we
+// believe the rate is contractually guaranteed to rise on this schedule.
 export const SSO_RATE_STEP = 0.02;               // $/kWh added at each escalation year
 export const SSO_RATE_STEP_YEARS = [6, 11, 16];  // 1-indexed year each step starts, then holds
 

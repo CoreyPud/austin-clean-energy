@@ -130,7 +130,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
-function CostBreakdown({ rec }: { rec: SolarRecommendation }) {
+function CostBreakdown({ rec, isSSO }: { rec: SolarRecommendation; isSSO: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
       <p className="text-sm font-medium">Cost breakdown</p>
@@ -139,15 +139,20 @@ function CostBreakdown({ rec }: { rec: SolarRecommendation }) {
           <dt className="text-muted-foreground">Gross install cost</dt>
           <dd>{fmt$(rec.grossCost)}</dd>
         </div>
-        {rec.aeRebate > 0 && (
+        {!isSSO && rec.aeRebate > 0 && (
           <div className="flex justify-between text-green-600 dark:text-green-400">
             <dt>Austin Energy rebate</dt>
             <dd>−{fmt$(rec.aeRebate)}</dd>
           </div>
         )}
+        {isSSO && (
+          <p className="text-xs text-muted-foreground">
+            Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate — it's only available to Value of Solar-billed systems.
+          </p>
+        )}
         <div className="flex justify-between font-medium border-t border-border pt-2">
           <dt>Net cost</dt>
-          <dd>{fmt$(rec.netCost)}</dd>
+          <dd>{fmt$(isSSO ? rec.grossCost : rec.netCost)}</dd>
         </div>
       </dl>
     </div>
@@ -183,7 +188,8 @@ function SolarCharts({
 
   const yearOne    = useMemo(() => buildYearModel(inputs, 0), [inputs]);
   const thirtyYear = useMemo(() => buildThirtyYearModel(inputs, rec.netCost), [inputs, rec.netCost]);
-  const sso        = useMemo(() => buildSsoModel(rec.recommendedKw, productionPerKw, rec.netCost), [rec.recommendedKw, productionPerKw, rec.netCost]);
+  // Gross cost, not netCost: SSO systems don't qualify for the AE capacity rebate baked into netCost.
+  const sso        = useMemo(() => buildSsoModel(rec.recommendedKw, productionPerKw, rec.grossCost), [rec.recommendedKw, productionPerKw, rec.grossCost]);
 
   const billData = yearOne.monthlyRows.map(r => ({
     month: r.month,
@@ -404,9 +410,10 @@ export default function PropertyPage() {
 
   // Real SSO economics (escalating rate, O&M, inverter replacement) for the stat cards
   // below — rec.annualSavings/paybackYears are VoS-rate figures and don't apply here.
+  // Gross cost, not netCost: SSO systems don't qualify for the AE capacity rebate.
   const productionPerKw = property.solar_sunshine_hrs ? property.solar_sunshine_hrs * 0.86 : 1500;
   const sso = ssoEligible && rec
-    ? buildSsoModel(rec.recommendedKw, productionPerKw, rec.netCost)
+    ? buildSsoModel(rec.recommendedKw, productionPerKw, rec.grossCost)
     : null;
 
   // SSO rate schedule for the calculation-details section below.
@@ -556,8 +563,8 @@ export default function PropertyPage() {
                 />
                 <StatCard
                   label="Net cost"
-                  value={fmt$(rec.netCost)}
-                  sub={rec.aeRebate > 0 ? "after AE rebate" : undefined}
+                  value={fmt$(ssoEligible ? rec.grossCost : rec.netCost)}
+                  sub={!ssoEligible && rec.aeRebate > 0 ? "after AE rebate" : undefined}
                 />
                 <StatCard
                   label={ssoEligible ? "Annual revenue (est.)" : "Annual production"}
@@ -608,7 +615,7 @@ export default function PropertyPage() {
               </div>
             </div>
 
-            <CostBreakdown rec={rec} />
+            <CostBreakdown rec={rec} isSSO={ssoEligible} />
 
             {/* Charts */}
             <div className="rounded-lg border border-border bg-card p-6">
@@ -663,7 +670,7 @@ export default function PropertyPage() {
                 {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
                 {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
                 {isCommercial && ssoEligible && <li>Revenue rate: Austin Energy Standard Offer ({(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh, systems under 1 MW)</li>}
-                {isCommercial && ssoEligible && <li>System sized to maximum roof capacity; AE commercial capacity rebate ($0.70/W, up to 100 kW) applied</li>}
+                {isCommercial && ssoEligible && <li>System sized to maximum roof capacity; not eligible for AE's commercial capacity rebate (that program requires Value of Solar billing)</li>}
                 {isCommercial && !ssoEligible && <li>Rate: Austin Energy Value of Solar ($0.126/kWh on all production, unused credits carry forward); AE commercial capacity rebate ($0.70/W, up to 100 kW) applied</li>}
                 {isCommercial && !ssoEligible && <li>System sized to maximum roof capacity</li>}
               </ul>
@@ -694,7 +701,11 @@ export default function PropertyPage() {
                       <p className="font-medium text-foreground mb-1">Cost</p>
                       <ul className="space-y-1 list-disc list-inside">
                         <li>Install cost: ${AUSTIN_INSTALL_COST_PER_KW.toLocaleString()}/kW (Berkeley Lab 2024 regression — for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify)</li>
-                        <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
+                        {ssoEligible ? (
+                          <li>Not eligible for Austin Energy's commercial capacity rebate — that rebate is only available to Value of Solar-billed systems sized to roughly the property's own usage, neither of which applies here</li>
+                        ) : (
+                          <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
+                        )}
                         <li>No federal Investment Tax Credit or depreciation benefit is included — the ITC's commissioning-deadline eligibility has changed, so confirm current federal rules before assuming a tax credit applies</li>
                         <li>Assumes you install and own the system directly, with no lease payment to a third-party owner</li>
                       </ul>
@@ -704,7 +715,7 @@ export default function PropertyPage() {
                         <p className="font-medium text-foreground mb-1">Standard Offer revenue</p>
                         <ul className="space-y-1 list-disc list-inside">
                           <li>
-                            Rate: {ssoRateSteps.map(s => `${(s.rate * 100).toFixed(2)}¢/kWh from year ${s.year}`).join(" → ")}, then holds through year 25. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same step schedule.
+                            Rate: {ssoRateSteps.map(s => `${(s.rate * 100).toFixed(2)}¢/kWh from year ${s.year}`).join(" → ")}, then holds through year 25. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same step schedule. This step-up is our own simplifying assumption, not a rate Austin Energy has committed to — the actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
                           </li>
                           <li>O&amp;M: ${SSO_OM_PER_KW_YEAR}/kW/year, escalating {(SSO_OM_ESCALATION * 100).toFixed(0)}%/year (insurance, monitoring, maintenance)</li>
                           <li>Inverter replacement: ~${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)}/kW, one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
