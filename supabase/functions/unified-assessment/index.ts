@@ -17,6 +17,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
+import { applySolarFilters, type SolarPanel } from "../_shared/solar-filters.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -191,10 +192,32 @@ serve(async (req) => {
     const locations = [targetMarker, ...dbMarkers];
 
     // 3. Solar insights (deterministic numbers)
+    // Size off the *buildable* panel count — same setback/TSRF/walkway derate the
+    // property viewer applies — not Google's raw theoretical max, so the calculator's
+    // kW, cost, rebate, production, and payback figures reflect what can actually be
+    // built. Falls back to the raw count when we don't have individual panel positions
+    // to derate (e.g. Google returned only aggregate roof stats).
     let solarInsights: any = null;
     if (solarApiResp?.solarPotential) {
       const sp = solarApiResp.solarPotential;
-      const maxPanels = sp.maxArrayPanelsCount;
+
+      let maxPanels = sp.maxArrayPanelsCount;
+      if (sp.solarPanels?.length) {
+        const azimuths: Record<number, number> = {};
+        (sp.roofSegmentStats ?? []).forEach((seg: any, i: number) => {
+          if (seg.azimuthDegrees != null) azimuths[i] = seg.azimuthDegrees;
+        });
+        const panels: SolarPanel[] = sp.solarPanels.map((p: any) => ({
+          lat: p.center.latitude,
+          lon: p.center.longitude,
+          orientation: p.orientation === "LANDSCAPE" ? "LANDSCAPE" : "PORTRAIT",
+          yearlyEnergyDcKwh: p.yearlyEnergyDcKwh,
+          segmentIndex: p.segmentIndex,
+        }));
+        const buildable = applySolarFilters(panels, { propertyType, azimuths });
+        maxPanels = buildable.panels.length;
+      }
+
       const panelCapacityWatts = sp.panelCapacityWatts || 400;
       const sunshineHours = sp.maxSunshineHoursPerYear || 2000;
       const annualProductionKwh = maxPanels

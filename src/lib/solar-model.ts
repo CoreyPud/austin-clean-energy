@@ -333,13 +333,38 @@ export const SSO_RATE_OVER_1MW  = 0.0841;  // $/kWh, systems >= 1 MW-ac
 export const SSO_MIN_KW         = 50;       // program minimum
 export const SSO_SHOW_THRESHOLD_KW = 75;   // show option when roof can fit this much
 
-export function ssoRate(systemKw: number): number {
-  return systemKw >= 1000 ? SSO_RATE_OVER_1MW : SSO_RATE_UNDER_1MW;
+// Rate escalation, O&M, and inverter replacement, backed out of a TPO pro forma for a
+// sub-1MW commercial system. The pro forma prices third-party ownership (lease payment
+// out, tax benefits kept by the TPO); we instead assume the property owner installs and
+// owns the system outright, so no lease payment and no ITC/depreciation modeled here —
+// the federal ITC's commissioning-deadline status is not something to hardcode as a
+// live constant.
+//
+// The rate-step schedule below is the pro forma author's own projection, not Austin
+// Energy policy — confirmed against AE's actual Solar Standard Offer Rider tariff
+// (effective 11/1/2025). The real mechanism: the rate holds for 3 years, then resets
+// based on the trailing 5-year average of ERCOT-market-derived avoided energy,
+// transmission, and ancillary-services costs — it can rise or fall, and there's no
+// guaranteed floor beyond the currently published rate. Kept as a fixed step-up here
+// as a simplifying stand-in so the SSO model isn't flat forever, not because we
+// believe the rate is contractually guaranteed to rise on this schedule.
+export const SSO_RATE_STEP = 0.02;               // $/kWh added at each escalation year
+export const SSO_RATE_STEP_YEARS = [6, 11, 16];  // 1-indexed year each step starts, then holds
+
+export const SSO_OM_PER_KW_YEAR = 10;                          // $/kW/year: insurance, monitoring, maintenance
+export const SSO_OM_ESCALATION = 0.02;                         // per year
+export const SSO_INVERTER_REPLACEMENT_PER_KW = 88_000 / 1300;  // $/kW, one-time
+export const SSO_INVERTER_REPLACEMENT_YEAR = 14;               // 1-indexed year of the swap
+
+export function ssoRate(systemKw: number, year = 1): number {
+  const base = systemKw >= 1000 ? SSO_RATE_OVER_1MW : SSO_RATE_UNDER_1MW;
+  const steps = SSO_RATE_STEP_YEARS.filter(stepYear => year >= stepYear).length;
+  return base + steps * SSO_RATE_STEP;
 }
 
 export function buildSsoModel(systemKw: number, productionPerKw: number, installCost: number) {
-  const rate = ssoRate(systemKw);
   const annualKwh = systemKw * productionPerKw;
+  const rate = ssoRate(systemKw, 1);
   const annualRevenue = annualKwh * rate;
 
   let cumulative = -installCost;
@@ -347,10 +372,16 @@ export function buildSsoModel(systemKw: number, productionPerKw: number, install
   const cumulativeByYear: { year: number; cumulative: number }[] = [];
 
   for (let y = 0; y < FINANCIAL_HORIZON_YEARS; y++) {
+    const year = y + 1;
     const degradedKwh = annualKwh * Math.pow(0.995, y);
-    cumulative += degradedKwh * rate;
-    if (paybackYear === null && cumulative >= 0) paybackYear = y + 1;
-    cumulativeByYear.push({ year: y + 1, cumulative: Math.round(cumulative) });
+    const revenue = degradedKwh * ssoRate(systemKw, year);
+    const om = systemKw * SSO_OM_PER_KW_YEAR * Math.pow(1 + SSO_OM_ESCALATION, y);
+    const inverterCost = year === SSO_INVERTER_REPLACEMENT_YEAR
+      ? systemKw * SSO_INVERTER_REPLACEMENT_PER_KW
+      : 0;
+    cumulative += revenue - om - inverterCost;
+    if (paybackYear === null && cumulative >= 0) paybackYear = year;
+    cumulativeByYear.push({ year, cumulative: Math.round(cumulative) });
   }
 
   const monthlyRevenue = MONTHS.map((month, mi) => ({
