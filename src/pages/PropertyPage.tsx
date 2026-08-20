@@ -691,7 +691,9 @@ export default function PropertyPage() {
                       <p className="font-medium text-foreground mb-1">Cost</p>
                       <ul className="space-y-1 list-disc list-inside">
                         <li>Install cost: ${AUSTIN_INSTALL_COST_PER_KW.toLocaleString()}/kW (Berkeley Lab 2024 regression for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify)</li>
-                        {!ssoEligible && (
+                        {ssoEligible ? (
+                          <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
+                        ) : (
                           <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
                         )}
                       </ul>
