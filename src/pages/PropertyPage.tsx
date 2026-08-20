@@ -660,21 +660,19 @@ export default function PropertyPage() {
               </dl>
             </div>
 
-            {/* Assumptions */}
-            <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
-              <p className="font-medium text-foreground">How we calculated this</p>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average — get real quotes to verify)</li>
-                <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
-                {isResidential && <li>Savings rate: Austin Energy Value of Solar ($0.126/kWh on all production)</li>}
-                {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
-                {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
-                {isCommercial && ssoEligible && <li>Revenue rate: Austin Energy Standard Offer ({(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh, systems under 1 MW)</li>}
-                {isCommercial && ssoEligible && <li>System sized to maximum roof capacity; not eligible for AE's commercial capacity rebate (that program requires Value of Solar billing)</li>}
-                {isCommercial && !ssoEligible && <li>Rate: Austin Energy Value of Solar ($0.126/kWh on all production, unused credits carry forward); AE commercial capacity rebate ($0.70/W, up to 100 kW) applied</li>}
-                {isCommercial && !ssoEligible && <li>System sized to maximum roof capacity</li>}
-              </ul>
-            </div>
+            {/* Assumptions — commercial gets its own, richer version below instead */}
+            {!isCommercial && (
+              <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
+                <p className="font-medium text-foreground">How we calculated this</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average — get real quotes to verify)</li>
+                  <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
+                  {isResidential && <li>Savings rate: Austin Energy Value of Solar ($0.126/kWh on all production)</li>}
+                  {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
+                  {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
+                </ul>
+              </div>
+            )}
 
             {/* Commercial calculation details: expandable, full math behind the numbers above */}
             {isCommercial && (
@@ -690,24 +688,12 @@ export default function PropertyPage() {
                 {showCalcDetails && (
                   <div className="mt-4 space-y-4 text-sm text-muted-foreground">
                     <div>
-                      <p className="font-medium text-foreground mb-1">System size &amp; production</p>
-                      <ul className="space-y-1 list-disc list-inside">
-                        <li>Sized to maximum buildable roof capacity: {rec.maxKw} kW ({buildablePanels?.toLocaleString()} panels), after removing panels within 4 ft of the roof edge, panels with too little sun exposure, and rooftop walkways for HVAC access</li>
-                        <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
-                        <li>Output degrades 0.5%/year</li>
-                      </ul>
-                    </div>
-                    <div>
                       <p className="font-medium text-foreground mb-1">Cost</p>
                       <ul className="space-y-1 list-disc list-inside">
                         <li>Install cost: ${AUSTIN_INSTALL_COST_PER_KW.toLocaleString()}/kW (Berkeley Lab 2024 regression for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify)</li>
-                        {ssoEligible ? (
-                          <li>Not eligible for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems sized to roughly the property's own usage, and this system is neither</li>
-                        ) : (
+                        {!ssoEligible && (
                           <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
                         )}
-                        <li>No federal Investment Tax Credit or depreciation benefit is included. The ITC's commissioning-deadline eligibility has changed, so confirm current federal rules before assuming a tax credit applies</li>
-                        <li>Assumes you install and own the system directly, with no lease payment to a third-party owner</li>
                       </ul>
                     </div>
                     {ssoEligible ? (
@@ -717,9 +703,8 @@ export default function PropertyPage() {
                           <li>
                             Rate: {ssoRateSteps.map(s => `${(s.rate * 100).toFixed(2)}¢/kWh from year ${s.year}`).join(" → ")}, then holds through year 25. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same step schedule. This step-up is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
                           </li>
-                          <li>O&amp;M: ${SSO_OM_PER_KW_YEAR}/kW/year, escalating {(SSO_OM_ESCALATION * 100).toFixed(0)}%/year (insurance, monitoring, maintenance)</li>
-                          <li>Inverter replacement: ~${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)}/kW, one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
-                          <li>Minimum system size for the program is {SSO_MIN_KW} kW</li>
+                          <li>Ongoing operations and maintenance: ${SSO_OM_PER_KW_YEAR} per kilowatt per year, increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually (covers insurance, monitoring, and maintenance)</li>
+                          <li>Inverter replacement: about ${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)} per kilowatt, a one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
                         </ul>
                       </div>
                     ) : (
