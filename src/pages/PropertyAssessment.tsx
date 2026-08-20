@@ -661,7 +661,7 @@ const PropertyAssessment = () => {
                                   </>
                                 ) : (
                                   <>
-                                    Austin Energy buys all power your system generates at 11.24¢/kWh. Your electricity bill stays unchanged. Best when your roof capacity exceeds your load.{" "}
+                                    Austin Energy buys all power your system generates at a locked-in rate, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh and stepping up roughly every 5 years. Your electricity bill stays unchanged. Best when your roof capacity exceeds your load.{" "}
                                     <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
                                   </>
                                 )}

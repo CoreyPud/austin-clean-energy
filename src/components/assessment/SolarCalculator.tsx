@@ -16,6 +16,14 @@ import {
   buildSsoModel,
   austinEnergyRebate,
   AUSTIN_ENERGY_RATES,
+  SSO_RATE_UNDER_1MW,
+  SSO_RATE_OVER_1MW,
+  SSO_RATE_STEP,
+  SSO_RATE_STEP_YEARS,
+  SSO_OM_PER_KW_YEAR,
+  SSO_OM_ESCALATION,
+  SSO_INVERTER_REPLACEMENT_PER_KW,
+  SSO_INVERTER_REPLACEMENT_YEAR,
 } from "@/lib/solar-model";
 
 interface Props {
@@ -304,14 +312,33 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
 
             {showMethodology && (
               <div className="mt-3 space-y-3 text-xs text-muted-foreground">
-                <div>
-                  <p className="font-medium text-foreground/70 mb-0.5">Your bill model</p>
-                  <p>We calculate your Austin Energy bill using their actual 2025 tiered rate structure, including all per-kWh charges and the $16.50 fixed monthly customer charge. Your solar panels are credited at Austin Energy's Value of Solar rate ($0.126/kWh). Because of this, and because the fixed charge applies regardless of how much solar you produce, your bill won't drop to zero even with a large system.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground/70 mb-0.5">Install cost</p>
-                  <p>The default $2.95/W comes from Berkeley Lab's 2024 Tracking the Sun report for Austin residential installs. Use the slider to match quotes you actually receive — costs vary meaningfully by installer and system design.</p>
-                </div>
+                {billingMode === "sso" ? (
+                  <>
+                    <div>
+                      <p className="font-medium text-foreground/70 mb-0.5">Standard Offer rate</p>
+                      <p>Austin Energy pays a fixed rate per kilowatt-hour exported, separate from your electric bill (your bill stays the same either way). The rate starts at {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh for systems under 1 MW-AC, or {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh at 1 MW-AC and above, stepping up {(SSO_RATE_STEP * 100).toFixed(0)}¢/kWh at years {SSO_RATE_STEP_YEARS.join(", ")}, then holding through year 25. This step-up is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground/70 mb-0.5">Ongoing costs</p>
+                      <p>Operations and maintenance: ${SSO_OM_PER_KW_YEAR} per kilowatt per year, increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually. Inverter replacement: about ${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)} per kilowatt, a one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground/70 mb-0.5">Install cost</p>
+                      <p>The default $2.95/W comes from Berkeley Lab's 2024 Tracking the Sun report for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify. Standard Offer installs don't qualify for Austin Energy's capacity rebate, so this is the full cost with no rebate applied.</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="font-medium text-foreground/70 mb-0.5">Your bill model</p>
+                      <p>We calculate your Austin Energy bill using their actual 2025 tiered rate structure, including all per-kWh charges and the $16.50 fixed monthly customer charge. Your solar panels are credited at Austin Energy's Value of Solar rate ($0.126/kWh). Because of this, and because the fixed charge applies regardless of how much solar you produce, your bill won't drop to zero even with a large system.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground/70 mb-0.5">Install cost</p>
+                      <p>The default $2.95/W comes from Berkeley Lab's 2024 Tracking the Sun report for Austin residential installs. Use the slider to match quotes you actually receive; costs vary meaningfully by installer and system design.</p>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
