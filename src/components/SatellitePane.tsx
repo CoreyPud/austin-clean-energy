@@ -102,7 +102,19 @@ function SatelliteMap({
     // Auto-resize Mapbox canvas whenever the CSS container is resized (e.g., panel drag)
     const resizeObserver = new ResizeObserver(() => map.resize());
     resizeObserver.observe(containerRef.current);
-    return () => { resizeObserver.disconnect(); map.remove(); mapRef.current = null; markerRef.current = null; };
+    return () => {
+      resizeObserver.disconnect();
+      map.remove();
+      mapRef.current = null;
+      markerRef.current = null;
+      // Reset the fit-tracking refs so a freshly-created map (e.g. React StrictMode's
+      // dev-only double mount) doesn't inherit "already fit" state from the instance
+      // that just got torn down — otherwise the surviving map never gets fitView()
+      // called and stays parked at the initial parcel-centroid center.
+      panelsRef.current = undefined;
+      azimuthsRef.current = {};
+      fitKeyRef.current = undefined;
+    };
   }, []);
 
   useLayoutEffect(() => {
