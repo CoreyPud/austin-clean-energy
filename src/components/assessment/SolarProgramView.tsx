@@ -17,12 +17,14 @@ import {
   SSO_INVERTER_REPLACEMENT_PER_KW,
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
+  AUSTIN_ENERGY_RATES,
   ssoRate,
 } from "@/lib/solar-model";
 import { buildProgramFinancials, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const fmtKwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`;
+const VOS_RATE_DISPLAY = `$${AUSTIN_ENERGY_RATES.vosRate.toFixed(3)}/kWh`;
 
 const StickyKpi = ({
   label, value, href, highlight,
@@ -194,7 +196,7 @@ export default function SolarProgramView({
                     <>
                       Austin Energy's{" "}
                       <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                      {" "}credits your production at $0.126/kWh against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar -- see below." : ""}
+                      {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar -- see below." : ""}
                     </>
                   )}
                 </p>
@@ -206,7 +208,7 @@ export default function SolarProgramView({
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Austin Energy's{" "}
                   <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                  {" "}credits all your production at $0.126/kWh against your bill. Once credits cover your bill, additional production doesn't improve payback -- so we size to match your consumption.
+                  {" "}credits all your production at {VOS_RATE_DISPLAY} against your bill. Once credits cover your bill, additional production doesn't improve payback -- so we size to match your consumption.
                 </p>
               </div>
             )}
@@ -224,7 +226,7 @@ export default function SolarProgramView({
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Austin Energy's{" "}
                   <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                  {" "}credits your production at $0.126/kWh against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{isNonProfit ? "" : ` Your system is under the ${SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.`}
+                  {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{isNonProfit ? "" : ` Your system is under the ${SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.`}
                 </p>
               </div>
             )}
@@ -448,7 +450,7 @@ export default function SolarProgramView({
           <ul className="space-y-1 list-disc list-inside">
             <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average — get real quotes to verify)</li>
             <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
-            {isResidential && <li>Savings rate: Austin Energy Value of Solar ($0.126/kWh on all production)</li>}
+            {isResidential && <li>Savings rate: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production)</li>}
             {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
             {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
           </ul>
@@ -503,7 +505,7 @@ export default function SolarProgramView({
                 <div>
                   <p className="font-medium text-foreground mb-1">Value of Solar revenue</p>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li>Rate: $0.126/kWh on all production; unused monthly credits carry forward and AE pays out any remaining balance</li>
+                    <li>Rate: {VOS_RATE_DISPLAY} on all production, credited against your bill up to what you use each month -- production beyond your usage isn't credited or paid out</li>
                     {!ssoEligible && !isNonProfit && <li>Below the {SSO_MIN_KW} kW Standard Offer program minimum, so billed under Value of Solar instead</li>}
                   </ul>
                 </div>

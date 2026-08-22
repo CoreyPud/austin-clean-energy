@@ -1,6 +1,7 @@
 import {
   austinEnergyRebate,
   AUSTIN_INSTALL_COST_PER_KW,
+  AUSTIN_ENERGY_RATES,
   PBI_MIN_KW,
   buildPbiModel,
   billToMonthlyKwh,
@@ -44,7 +45,7 @@ const SYSTEM_DERATE = 0.86;                  // NREL PVWatts default performance
                                               // soiling/temperature losses on top of Google's geometry-
                                               // and-shading-adjusted sunshine hours. Not redundant with
                                               // anything Google already applies — a different loss category.
-const VOS_RATE = 0.126;                      // Austin Energy Value of Solar rate $/kWh
+const VOS_RATE = AUSTIN_ENERGY_RATES.vosRate; // single-sourced from solar-model.ts
 const MIN_SYSTEM_KW = 2;                     // floor for usage-based (VoS) default sizing
 // Default monthly bill assumption when no real usage is known, by AE property type (matches
 // the calculator's existing defaults) — used both as the static-render default and as the
