@@ -62,6 +62,10 @@ const PbiBreakdown = ({ systemKw, productionPerKw }: Props) => {
           </ResponsiveContainer>
         </div>
 
+        <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2.5 py-1.5 mb-2">
+          Unlike Value of Solar, PBI isn't capped at your bill. It's applied as a bill credit first, then to other Austin Energy account charges, and any balance still left over is paid out to you as a check (no more than once every 6 months).
+        </p>
+
         {/* Assumptions */}
         <button
           onClick={() => setShowAssumptions(v => !v)}
