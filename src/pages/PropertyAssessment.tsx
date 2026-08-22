@@ -32,8 +32,6 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarProgramView from "@/components/assessment/SolarProgramView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SsoProForma from "@/components/assessment/SsoProForma";
-import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import { pickSsoScenario } from "@/lib/sso-proforma";
 
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
@@ -703,14 +701,6 @@ const PropertyAssessment = () => {
                           </div>
                         )}
                       />
-                    )}
-
-                    {ssoEligible && billingMode === "sso" && (
-                      <SsoProForma systemKw={systemKw} />
-                    )}
-
-                    {billingMode === "vos" && rec?.pbiEligible && (
-                      <PbiBreakdown systemKw={systemKw} productionPerKw={productionPerKw} />
                     )}
 
                   </>

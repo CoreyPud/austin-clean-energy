@@ -7,6 +7,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
+import SsoProForma from "@/components/assessment/SsoProForma";
+import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import {
   SSO_RATE_UNDER_1MW,
   SSO_RATE_OVER_1MW,
@@ -516,6 +518,18 @@ export default function SolarProgramView({
       )}
 
       <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} carbonOffsetKgPerMwh={carbonOffsetKgPerMwh} />
+
+      {/* Performance-Based Incentive -- for-profit commercial >= PBI_MIN_KW on VoS billing.
+          Rendered here (not as a page-level sibling) so the sticky control card's scope
+          extends through it instead of releasing before it. */}
+      {isCommercial && !isSSO && rec.pbiEligible && (
+        <PbiBreakdown systemKw={rec.recommendedKw} productionPerKw={productionPerKw} />
+      )}
+
+      {/* Third-party-owner pro forma -- same reasoning: kept inside the sticky scope. */}
+      {isCommercial && isSSO && (
+        <SsoProForma systemKw={rec.recommendedKw} />
+      )}
     </div>
   );
 }

@@ -6,8 +6,6 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 import { useSolarFilter } from "@/components/SolarFilterPanel";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
-import SsoProForma from "@/components/assessment/SsoProForma";
-import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import {
   slugifyAddress,
@@ -233,10 +231,6 @@ export default function PropertyPage() {
   // Matches SolarProgramView's own internal ssoEligible formula exactly -- this page's
   // surrounding copy (bill input gating, CTA) needs to agree with what the shared view decides.
   const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_MIN_KW;
-  // ssoEligible = the roof qualifies for SSO at all; showSso = actually display SSO right now.
-  // Properties too small for SSO always show VoS (billingMode is only a meaningful choice
-  // once ssoEligible is true).
-  const showSso        = ssoEligible && billingMode === "sso";
 
   const productionPerKw = estimateProductionPerKw(property.solar_sunshine_hrs);
 
@@ -364,16 +358,6 @@ export default function PropertyPage() {
               imageryDate={property.solar_imagery_date}
               onCostPerWChange={setCostPerWOverride}
             />
-
-            {/* Performance-Based Incentive — for-profit commercial >= PBI_MIN_KW on VoS billing */}
-            {isCommercial && !showSso && rec.pbiEligible && (
-              <PbiBreakdown systemKw={rec.recommendedKw} productionPerKw={productionPerKw} />
-            )}
-
-            {/* Third-party-owner pro forma — same investor-side view shown on the calculator */}
-            {isCommercial && showSso && (
-              <SsoProForma systemKw={rec.recommendedKw} />
-            )}
           </>
         )}
 
