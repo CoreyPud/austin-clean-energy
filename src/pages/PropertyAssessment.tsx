@@ -31,7 +31,9 @@ import ZipSolarAdoptionTrend from "@/components/assessment/ZipSolarAdoptionTrend
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
-import SolarCalculator from "@/components/assessment/SolarCalculator";
+import SolarProgramView from "@/components/assessment/SolarProgramView";
+import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SsoProForma from "@/components/assessment/SsoProForma";
 import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import { pickSsoScenario } from "@/lib/sso-proforma";
@@ -43,16 +45,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import {
   billToMonthlyKwh,
   calculateAustinEnergyUsageBill,
-  buildYearModel,
-  buildThirtyYearModel,
-  buildSsoModel,
   AUSTIN_ENERGY_RATES,
   SSO_SHOW_THRESHOLD_KW,
   ssoRate,
-  buildPbiModel,
-  mergePbiIntoThirtyYear,
 } from "@/lib/solar-model";
-import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw } from "@/lib/property-solar";
+import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, buildProgramFinancials, classifyProperty, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
@@ -120,6 +117,10 @@ const PropertyAssessment = () => {
   const [systemKw, setSystemKw] = useState<number>(4);
   const [batteryKwh, setBatteryKwh] = useState<number>(0);
   const [billingMode, setBillingMode] = useState<"vos" | "sso">("vos");
+  const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
+  const [loanTermYears, setLoanTermYears] = useState(20);
+  const [loanRate, setLoanRate] = useState(6);
+  const effectiveLoanTerm = financeMode === "cash" ? 0 : loanTermYears;
   const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_SHOW_THRESHOLD_KW;
 
   // Reset to recommended only when a fresh assessment result loads
@@ -144,60 +145,53 @@ const PropertyAssessment = () => {
   }, [billingMode]);
 
   useEffect(() => {
-    const defaults: Record<string, number> = { commercial: 3000, "non-profit": 800 };
-    setMonthlyBill(defaults[propertyType] ?? 150);
+    setMonthlyBill(DEFAULT_MONTHLY_BILL[propertyType] ?? 150);
     setBillingMode(propertyType === "commercial" ? "sso" : "vos");
     // Real system size isn't known yet at this point (results haven't loaded) -- seed with
     // the smaller-tier rate; the [results] effect above refines it once size is known.
     setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : 2.95);
   }, [propertyType]);
 
-  // The single recommendation for whatever's currently selected (billing mode + manual size
-  // override, if any) -- rebate/PBI eligibility come from here; cost stays local since the
-  // cost-per-watt slider is a deliberate user override that computeRecommendation doesn't know about.
-  const rec = computeRecommendation(siteInput, { annualUsageKwh, systemKwOverride: systemKw, billingMode });
+  const isSSO = billingMode === "sso";
+
+  // The single recommendation for whatever's currently selected (billing mode, manual size
+  // override, and cost-per-watt override, if any) -- single-sourced with PropertyPage.tsx.
+  const rec = computeRecommendation(siteInput, {
+    annualUsageKwh, systemKwOverride: systemKw, billingMode, costPerWOverride: costPerW,
+  });
+
+  const financials = (si && rec) ? buildProgramFinancials(rec, {
+    annualUsageKwh,
+    productionPerKw,
+    isSSO,
+    batteryKwh,
+    loanTermYears: effectiveLoanTerm,
+    loanInterestRate: loanRate / 100,
+    monthlyUsageKwh: uploadedKwh ?? undefined,
+  }) : null;
 
   const liveSummary = (() => {
-    if (!si || systemKw <= 0 || !rec) return null;
-    const grossCost = systemKw * (costPerW * 1000) + batteryKwh * 1000;
-    const cost = Math.max(0, grossCost - rec.aeRebate);
+    if (!si || systemKw <= 0 || !rec || !financials) return null;
+    const cost = isSSO ? rec.grossCost : rec.netCost;
     const co2TonsPerYear = Math.round(systemKw * productionPerKw * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10;
 
-    if (billingMode === "sso") {
-      // SSO doesn't qualify for the AE Solar PV rebate — use gross cost
-      const sso = buildSsoModel(systemKw, productionPerKw, grossCost);
+    if (isSSO) {
       return {
-        monthlySavings: sso.annualRevenue / 12,
-        paybackYear: sso.paybackYear ?? null,
+        monthlySavings: financials.annualAmount / 12,
+        paybackYear: financials.paybackYear,
         roi: null,
         billOffsetPct: null,
         co2TonsPerYear,
-        installCost: grossCost,
+        installCost: cost,
       };
     }
 
-    const inputs = {
-      annualUsageKwh,
-      systemKw,
-      batteryKwh,
-      loanTermYears: 0,
-      loanInterestRate: 0,
-      productionPerKw,
-    };
-    const yr1 = buildYearModel(inputs, 0);
-    const yr30Base = buildThirtyYearModel(inputs, cost);
-    // For-profit commercial >= PBI_MIN_KW isn't CBI-eligible (cost above already reflects that
-    // via rec.aeRebate) but gets a 5-year on-bill credit on top of Value of Solar instead.
-    const yr30 = rec.pbiEligible
-      ? mergePbiIntoThirtyYear(yr30Base, buildPbiModel(systemKw, productionPerKw))
-      : yr30Base;
-    const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
     return {
-      monthlySavings: yr1.savings / 12,
-      paybackYear: yr30.paybackYear ?? null,
-      roi: cost > 0 ? Math.round((net25 / cost) * 100) : null,
-      billOffsetPct: yr1.billWithoutSolar > 0
-        ? Math.round((yr1.savings / yr1.billWithoutSolar) * 100)
+      monthlySavings: financials.annualAmount / 12,
+      paybackYear: financials.paybackYear,
+      roi: cost > 0 ? Math.round((financials.net25 / cost) * 100) : null,
+      billOffsetPct: financials.yearOne.billWithoutSolar > 0
+        ? Math.round((financials.yearOne.savings / financials.yearOne.billWithoutSolar) * 100)
         : 0,
       co2TonsPerYear,
       installCost: cost,
@@ -800,17 +794,55 @@ const PropertyAssessment = () => {
                       </CardContent>
                     </Card>
 
-                    <SolarCalculator
-                      solarInsights={si}
-                      annualUsageKwh={annualUsageKwh}
-                      uploadedKwh={uploadedKwh}
-                      propertyType={propertyType}
-                      systemKw={systemKw}
-                      batteryKwh={batteryKwh}
-                      billingMode={billingMode}
-                      costPerW={costPerW}
-                      onCostPerWChange={setCostPerW}
-                    />
+                    {rec && (
+                      <SolarProgramView
+                        rec={rec}
+                        propertyClass={classifyProperty(propertyType)}
+                        isNonProfit={propertyType === "non-profit"}
+                        isSSO={isSSO}
+                        ssoEligible={ssoEligible}
+                        annualUsageKwh={annualUsageKwh}
+                        productionPerKw={productionPerKw}
+                        batteryKwh={batteryKwh}
+                        loanTermYears={effectiveLoanTerm}
+                        loanInterestRate={loanRate / 100}
+                        monthlyUsageKwh={uploadedKwh ?? undefined}
+                        onCostPerWChange={setCostPerW}
+                        financingSlot={billingMode === "vos" && (
+                          <div className="rounded-lg border border-border bg-card p-4">
+                            <Tabs value={financeMode} onValueChange={(v) => setFinanceMode(v as "cash" | "finance")}>
+                              <div className="flex items-center gap-3 mb-4">
+                                <span className="text-sm text-muted-foreground shrink-0">Financing</span>
+                                <TabsList className="h-7">
+                                  <TabsTrigger value="cash" className="text-xs px-3 h-6">Cash</TabsTrigger>
+                                  <TabsTrigger value="finance" className="text-xs px-3 h-6">Finance</TabsTrigger>
+                                </TabsList>
+                              </div>
+                              <TabsContent value="finance" className="mt-0 space-y-4">
+                                <div>
+                                  <div className="flex justify-between text-sm mb-2">
+                                    <span className="text-muted-foreground">Loan term</span>
+                                    <span className="font-semibold">{loanTermYears} year</span>
+                                  </div>
+                                  <Slider min={5} max={30} step={5} value={[loanTermYears]} onValueChange={([v]) => setLoanTermYears(v)} />
+                                </div>
+                                <div>
+                                  <div className="flex justify-between text-sm mb-2">
+                                    <span className="text-muted-foreground">Interest rate</span>
+                                    <span className="font-semibold">{loanRate}%</span>
+                                  </div>
+                                  <Slider min={3} max={12} step={0.5} value={[loanRate]} onValueChange={([v]) => setLoanRate(v)} />
+                                </div>
+                              </TabsContent>
+                            </Tabs>
+                          </div>
+                        )}
+                      />
+                    )}
+
+                    <div id="section-environmental" className="scroll-mt-52">
+                      <EnvironmentalImpactCard annualSolarKwh={financials?.yearOne.solarTotal ?? 0} carbonOffsetKgPerMwh={si.carbonOffsetKgPerMwh} />
+                    </div>
 
                     {ssoEligible && billingMode === "sso" && (
                       <SsoProForma systemKw={systemKw} />

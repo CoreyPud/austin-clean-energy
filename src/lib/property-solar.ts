@@ -1,4 +1,17 @@
-import { austinEnergyRebate, AUSTIN_INSTALL_COST_PER_KW, PBI_MIN_KW, buildPbiModel, billToMonthlyKwh } from "@/lib/solar-model";
+import {
+  austinEnergyRebate,
+  AUSTIN_INSTALL_COST_PER_KW,
+  PBI_MIN_KW,
+  buildPbiModel,
+  billToMonthlyKwh,
+  buildYearModel,
+  buildThirtyYearModel,
+  buildSsoModel,
+  mergePbiIntoThirtyYear,
+  type CalcInputs,
+  type YearResult,
+  type ThirtyYearResult,
+} from "@/lib/solar-model";
 import { pickSsoScenario } from "@/lib/sso-proforma";
 
 export function slugifyAddress(address: string): string {
@@ -36,7 +49,7 @@ const MIN_SYSTEM_KW = 2;                     // floor for usage-based (VoS) defa
 // Default monthly bill assumption when no real usage is known, by AE property type (matches
 // the calculator's existing defaults) — used both as the static-render default and as the
 // starting point a user's own bill input overrides.
-const DEFAULT_MONTHLY_BILL: Record<string, number> = { commercial: 3000, "non-profit": 800 };
+export const DEFAULT_MONTHLY_BILL: Record<string, number> = { commercial: 3000, "non-profit": 800 };
 
 /** Normalized input both data sources (TCAD row, live Google Solar API response) map into. */
 export interface SolarSiteInput {
@@ -116,6 +129,9 @@ export function computeRecommendation(
     /** "vos" (default): size to usage, floor MIN_SYSTEM_KW, ceiling the roof max.
      *  "sso": bill-independent — size to the full buildable roof capacity. */
     billingMode?: "vos" | "sso";
+    /** User-supplied installer quote ($/W), overriding the default tiered/flat rate below.
+     *  A manual override, not a data-derived default — omit for the data-driven figure. */
+    costPerWOverride?: number | null;
   } = {},
 ): SolarRecommendation | null {
   if (!input) return null;
@@ -161,9 +177,9 @@ export function computeRecommendation(
   // aePropertyType, not cls, so nonprofits (which classify as "commercial" too) keep the
   // generic rate -- matches the calculator's existing costPerW default, which only special-cases
   // literal "commercial".
-  const costPerW = aePropertyType === "commercial"
+  const costPerW = opts.costPerWOverride ?? (aePropertyType === "commercial"
     ? pickSsoScenario(recommendedKw).costPerWatt
-    : AUSTIN_INSTALL_COST_PER_KW / 1000;
+    : AUSTIN_INSTALL_COST_PER_KW / 1000);
   const grossCost = Math.round(recommendedKw * costPerW * 1000);
 
   const aeRebate = Math.round(austinEnergyRebate(recommendedKw, aePropertyType));
@@ -192,4 +208,69 @@ export function computeRecommendation(
     pbiEligible,
     pbiAnnualCredit,
   };
+}
+
+export interface ProgramFinancials {
+  yearOne: YearResult;
+  /** VoS 30-year model, with PBI credits layered on when rec.pbiEligible. Computed
+   *  regardless of billing mode -- harmless when isSSO, and lets a caller show both. */
+  thirtyYear: ThirtyYearResult;
+  /** Standard Offer 30-year model, computed regardless of billing mode for the same reason. */
+  sso: ReturnType<typeof buildSsoModel>;
+  isSSO: boolean;
+  /** Net cumulative total at year 25, from whichever model (sso/thirtyYear) matches isSSO. */
+  net25: number;
+  paybackYear: number | null;
+  /** The single "$/yr" headline figure for whichever billing mode is active: SSO revenue,
+   *  or VoS savings plus PBI credit (year 1) when pbiEligible. */
+  annualAmount: number;
+}
+
+/** Single source for the year-by-year / cumulative financial modeling both PropertyPage.tsx
+ *  and PropertyAssessment.tsx chart and summarize from -- built once here instead of each
+ *  page separately calling buildYearModel/buildThirtyYearModel/buildSsoModel/buildPbiModel
+ *  and merging them by hand. */
+export function buildProgramFinancials(
+  rec: SolarRecommendation,
+  opts: {
+    annualUsageKwh: number;
+    productionPerKw: number;
+    isSSO: boolean;
+    batteryKwh?: number;
+    loanTermYears?: number;
+    loanInterestRate?: number;
+    monthlyUsageKwh?: number[];
+  },
+): ProgramFinancials {
+  const inputs: CalcInputs = {
+    annualUsageKwh: opts.annualUsageKwh,
+    systemKw: rec.recommendedKw,
+    batteryKwh: opts.batteryKwh ?? 0,
+    loanTermYears: opts.loanTermYears ?? 0,
+    loanInterestRate: opts.loanInterestRate ?? 0,
+    productionPerKw: opts.productionPerKw,
+    monthlyUsageKwh: opts.monthlyUsageKwh,
+  };
+  const yearOne = buildYearModel(inputs, 0);
+  const thirtyYearBase = buildThirtyYearModel(inputs, rec.netCost);
+  // rec.netCost already reflects CBI/PBI-threshold-aware rebate eligibility (see
+  // computeRecommendation above); PBI itself is a separate on-bill credit stream layered
+  // on top, not baked into netCost.
+  const thirtyYear = rec.pbiEligible
+    ? mergePbiIntoThirtyYear(thirtyYearBase, buildPbiModel(rec.recommendedKw, opts.productionPerKw))
+    : thirtyYearBase;
+  // Gross cost, not netCost: Standard Offer systems don't qualify for the AE capacity rebate.
+  const sso = buildSsoModel(rec.recommendedKw, opts.productionPerKw, rec.grossCost);
+
+  const cumulativeSource = opts.isSSO ? sso.cumulativeByYear : thirtyYear.cumulativeByYear;
+  const net25 = cumulativeSource[24]?.cumulative ?? 0;
+  const paybackYear = opts.isSSO ? sso.paybackYear : thirtyYear.paybackYear;
+  // yearOne.savings (the real month-by-month AE tiered-rate/credit-carryover simulation) is
+  // more accurate than rec.annualSavings (a flat production * VOS_RATE approximation used only
+  // for computeRecommendation's own quick payback estimate) -- use it for the headline figure.
+  const annualAmount = opts.isSSO
+    ? sso.annualRevenue
+    : yearOne.savings + (rec.pbiEligible ? rec.pbiAnnualCredit : 0);
+
+  return { yearOne, thirtyYear, sso, isSSO: opts.isSSO, net25, paybackYear, annualAmount };
 }

@@ -1,10 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
-import {
-  BarChart, Bar, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
 import MapTokenLoader from "@/components/MapTokenLoader";
@@ -19,28 +14,12 @@ import {
   classifyProperty,
   computeRecommendation,
   fromTcadProperty,
-  type SolarRecommendation,
+  estimateProductionPerKw,
+  DEFAULT_MONTHLY_BILL,
 } from "@/lib/property-solar";
+import SolarProgramView from "@/components/assessment/SolarProgramView";
 import { formatAssessorAddress } from "@/lib/address-utils";
-import {
-  buildYearModel,
-  buildThirtyYearModel,
-  buildSsoModel,
-  billToMonthlyKwh,
-  type CalcInputs,
-  DEFAULT_MONTHLY_USAGE_KWH,
-  SSO_RATE_UNDER_1MW,
-  SSO_RATE_OVER_1MW,
-  SSO_RATE_STEP,
-  SSO_RATE_STEP_YEARS,
-  SSO_OM_PER_KW_YEAR,
-  SSO_OM_ESCALATION,
-  SSO_INVERTER_REPLACEMENT_PER_KW,
-  SSO_INVERTER_REPLACEMENT_YEAR,
-  SSO_MIN_KW,
-  buildPbiModel,
-  mergePbiIntoThirtyYear,
-} from "@/lib/solar-model";
+import { billToMonthlyKwh, SSO_MIN_KW, SSO_RATE_UNDER_1MW } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -125,201 +104,15 @@ function useNeighborhoodStats(zip: string | null): NeighborhoodStats | null {
   return stats;
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-2xl font-semibold tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
-    </div>
-  );
-}
-
-function CostBreakdown({ rec, isSSO }: { rec: SolarRecommendation; isSSO: boolean }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-      <p className="text-sm font-medium">Cost breakdown</p>
-      <dl className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Gross install cost</dt>
-          <dd>{fmt$(rec.grossCost)}</dd>
-        </div>
-        {!isSSO && rec.aeRebate > 0 && (
-          <div className="flex justify-between text-green-600 dark:text-green-400">
-            <dt>Austin Energy rebate</dt>
-            <dd>−{fmt$(rec.aeRebate)}</dd>
-          </div>
-        )}
-        {isSSO && (
-          <p className="text-xs text-muted-foreground">
-            Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.
-          </p>
-        )}
-        <div className="flex justify-between font-medium border-t border-border pt-2">
-          <dt>Net cost</dt>
-          <dd>{fmt$(isSSO ? rec.grossCost : rec.netCost)}</dd>
-        </div>
-      </dl>
-    </div>
-  );
-}
-
-function SolarCharts({
-  rec,
-  property,
-  annualUsageKwh,
-  isSSO,
-}: {
-  rec: SolarRecommendation;
-  property: PropertyData;
-  annualUsageKwh: number;
-  isSSO: boolean;
-}) {
-  const cls = classifyProperty(property.property_type);
-  const isResidential = cls === "residential";
-
-  const productionPerKw = property.solar_sunshine_hrs
-    ? property.solar_sunshine_hrs * 0.86
-    : 1500;
-
-  const inputs: CalcInputs = useMemo(() => ({
-    annualUsageKwh,
-    systemKw: rec.recommendedKw,
-    batteryKwh: 0,
-    loanTermYears: 0,
-    loanInterestRate: 0,
-    productionPerKw,
-  }), [annualUsageKwh, rec.recommendedKw, productionPerKw]);
-
-  const yearOne         = useMemo(() => buildYearModel(inputs, 0), [inputs]);
-  const thirtyYearBase  = useMemo(() => buildThirtyYearModel(inputs, rec.netCost), [inputs, rec.netCost]);
-  // For-profit commercial >= PBI_MIN_KW isn't CBI-eligible (rec.netCost already reflects that
-  // via austinEnergyRebate) but gets a 5-year on-bill credit on top of Value of Solar instead.
-  const thirtyYear = useMemo(
-    () => rec.pbiEligible
-      ? mergePbiIntoThirtyYear(thirtyYearBase, buildPbiModel(rec.recommendedKw, productionPerKw))
-      : thirtyYearBase,
-    [thirtyYearBase, rec.pbiEligible, rec.recommendedKw, productionPerKw],
-  );
-  // Gross cost, not netCost: SSO systems don't qualify for the AE capacity rebate baked into netCost.
-  const sso        = useMemo(() => buildSsoModel(rec.recommendedKw, productionPerKw, rec.grossCost), [rec.recommendedKw, productionPerKw, rec.grossCost]);
-
-  const billData = yearOne.monthlyRows.map(r => ({
-    month: r.month,
-    "Without solar": Math.round(r.billWithoutSolar),
-    "With solar":    Math.round(r.billWithSolar),
-  }));
-
-  const productionData = isSSO
-    ? sso.monthlyRevenue.map(r => ({ month: r.month, "Revenue": r.revenue }))
-    : yearOne.monthlyRows.map(r => ({
-        month: r.month,
-        "Production":  Math.round(r.solar),
-        "Consumption": Math.round(r.usage),
-      }));
-
-  const cumulativeSource = isSSO ? sso.cumulativeByYear : thirtyYear.cumulativeByYear;
-  const cumulativeKey    = isSSO ? "Net revenue" : "Net savings";
-  const cumulativeData   = cumulativeSource.map(d => ({
-    year: `Yr ${d.year}`,
-    [cumulativeKey]: d.cumulative,
-  }));
-
-  const net25      = cumulativeSource[24]?.cumulative ?? 0;
-  const paybackYr  = isSSO ? sso.paybackYear : thirtyYear.paybackYear;
-
-  return (
-    <div className="space-y-8">
-      {/* Bill comparison — residential only (irrelevant under SSO) */}
-      {isResidential && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Monthly bill: with vs. without solar</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={billData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={44} />
-              <Tooltip formatter={(v: number) => `$${v}`} />
-              <Legend />
-              <Bar dataKey="Without solar" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="With solar"    fill="hsl(var(--primary))"   radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* Monthly production / revenue */}
-      <div className="space-y-2">
-        <p className="text-sm font-medium">
-          {isSSO
-            ? "Estimated monthly revenue"
-            : isResidential
-            ? "Monthly production vs. consumption"
-            : "Estimated monthly production"}
-        </p>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={productionData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={isSSO ? v => `$${v}` : undefined} width={44} />
-            <Tooltip formatter={(v: number) => isSSO ? `$${Math.round(v)}` : `${Math.round(v)} kWh`} />
-            <Legend />
-            {isSSO
-              ? <Bar dataKey="Revenue" fill="#047857" radius={[3, 3, 0, 0]} />
-              : <>
-                  <Bar dataKey="Production"  fill="hsl(var(--primary))"              radius={[3, 3, 0, 0]} />
-                  {isResidential && <Bar dataKey="Consumption" fill="hsl(var(--muted-foreground) / 0.4)" radius={[3, 3, 0, 0]} />}
-                </>
-            }
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* 30-year cumulative */}
-      <div className="space-y-2">
-        <div className="flex items-baseline gap-2">
-          <span className={`text-3xl font-bold tabular-nums ${net25 >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-            {fmt$(net25)}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {isSSO ? "25-year net revenue" : "25-year net savings"}
-          </span>
-        </div>
-        <p className="text-sm font-medium">
-          {isSSO ? "Cumulative net revenue over 30 years" : "Cumulative net savings over 30 years"}
-        </p>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={cumulativeData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="year" tick={{ fontSize: 10 }} interval={4} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} width={48} />
-            <Tooltip formatter={(v: number) => fmt$(v)} />
-            <Bar dataKey={cumulativeKey} radius={[3, 3, 0, 0]}>
-              {cumulativeData.map((entry, i) => (
-                <Cell key={i} fill={Number(entry[cumulativeKey]) >= 0 ? "#047857" : "#b91c1c"} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        {paybackYr && (
-          <p className="text-xs text-center text-muted-foreground">
-            System pays for itself in year {paybackYr}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function PropertyPage() {
   const { pid } = useParams<{ pid: string }>();
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [loading, setLoading]   = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState(150);
+  const [commercialMonthlyBill, setCommercialMonthlyBill] = useState(DEFAULT_MONTHLY_BILL.commercial);
   // null = follow the default sizing; a number = user has chosen a system size.
   const [systemKwOverride, setSystemKwOverride] = useState<number | null>(null);
-  const [showCalcDetails, setShowCalcDetails] = useState(false);
   // Only meaningful when ssoEligible; properties too small for SSO always show VoS regardless.
   const [billingMode, setBillingMode] = useState<"sso" | "vos">("sso");
   const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
@@ -397,8 +190,10 @@ export default function PropertyPage() {
   const isMultifamily  = cls === "multifamily";
   const isCommercial   = !isResidential && !isMultifamily;
 
-  // Residential sizing tracks the user's bill; the recommendation reads it directly.
+  // Residential sizing tracks the user's bill; commercial (under VoS) tracks its own bill
+  // input below; the recommendation reads whichever applies directly.
   const residentialAnnualUsage = billToMonthlyKwh(monthlyBill) * 12;
+  const commercialAnnualUsage = billToMonthlyKwh(commercialMonthlyBill) * 12;
 
   // Size the system off the buildable layout (setbacks, low-TSRF panels and rooftop
   // walkways removed) rather than Google's raw maximum, so every figure downstream —
@@ -408,7 +203,7 @@ export default function PropertyPage() {
   const rec = computeRecommendation(
     fromTcadProperty({ ...property, solar_max_panels: buildablePanels }),
     {
-      annualUsageKwh: isResidential ? residentialAnnualUsage : null,
+      annualUsageKwh: isResidential ? residentialAnnualUsage : isCommercial ? commercialAnnualUsage : null,
       systemKwOverride,
       billingMode: isCommercial && billingMode === "sso" ? "sso" : "vos",
     },
@@ -429,35 +224,15 @@ export default function PropertyPage() {
   // once ssoEligible is true).
   const showSso        = ssoEligible && billingMode === "sso";
 
-  // Real SSO economics (escalating rate, O&M, inverter replacement) for the stat cards
-  // below — rec.annualSavings/paybackYears are VoS-rate figures and don't apply here.
-  // Gross cost, not netCost: SSO systems don't qualify for the AE capacity rebate.
-  const productionPerKw = property.solar_sunshine_hrs ? property.solar_sunshine_hrs * 0.86 : 1500;
-  const sso = ssoEligible && rec
-    ? buildSsoModel(rec.recommendedKw, productionPerKw, rec.grossCost)
-    : null;
+  const productionPerKw = estimateProductionPerKw(property.solar_sunshine_hrs);
 
-  // SSO rate schedule for the calculation-details section below.
-  const ssoRateSteps = [1, ...SSO_RATE_STEP_YEARS].map((year, i) => ({
-    year,
-    rate: SSO_RATE_UNDER_1MW + i * SSO_RATE_STEP,
-  }));
-
+  // Multifamily has no real bill/usage concept (virtual net metering) -- production is used
+  // as a benign proxy purely so downstream charts have a non-zero number to plot against.
   const annualUsageKwh = isResidential
     ? residentialAnnualUsage
-    : (rec?.annualProductionKwh ?? DEFAULT_MONTHLY_USAGE_KWH * 12);
-
-  // Real VoS+PBI economics for the stat cards below, mirroring the SSO `sso` computation
-  // above — rec.annualSavings/paybackYears are pure-VoS and don't include PBI.
-  const vosPbi = !showSso && rec && rec.pbiEligible
-    ? mergePbiIntoThirtyYear(
-        buildThirtyYearModel(
-          { annualUsageKwh, systemKw: rec.recommendedKw, batteryKwh: 0, loanTermYears: 0, loanInterestRate: 0, productionPerKw },
-          rec.netCost,
-        ),
-        buildPbiModel(rec.recommendedKw, productionPerKw),
-      )
-    : null;
+    : isCommercial
+    ? commercialAnnualUsage
+    : (rec?.annualProductionKwh ?? 0);
 
   const ctaTitle = isResidential
     ? "Want help navigating your solar options?"
@@ -619,33 +394,24 @@ export default function PropertyPage() {
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard
-                  label="System size"
-                  value={`${rec.recommendedKw} kW`}
-                  sub={`of ${rec.maxKw} kW max`}
-                />
-                <StatCard
-                  label="Net cost"
-                  value={fmt$(showSso ? rec.grossCost : rec.netCost)}
-                  sub={!showSso && rec.aeRebate > 0 ? "after AE rebate" : undefined}
-                />
-                <StatCard
-                  label={showSso ? "Annual revenue (est.)" : "Annual production"}
-                  value={showSso
-                    ? fmt$(sso?.annualRevenue ?? 0)
-                    : fmtKwh(rec.annualProductionKwh)}
-                />
-                <StatCard
-                  label="Est. payback"
-                  value={`${(showSso ? sso?.paybackYear : vosPbi?.paybackYear ?? rec.paybackYears) ?? "30+"} yr`}
-                  sub={showSso
-                    ? `${fmt$(sso?.annualRevenue ?? 0)}/yr revenue`
-                    : rec.pbiEligible
-                    ? `${fmt$(rec.annualSavings + rec.pbiAnnualCredit)}/yr (yr 1, incl. PBI)`
-                    : `${fmt$(rec.annualSavings)}/yr savings`}
-                />
-              </div>
+
+              {/* Bill input for commercial (VoS only — SSO revenue doesn't depend on usage) */}
+              {isCommercial && billingMode === "vos" && (
+                <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                  <div className="flex justify-between items-baseline">
+                    <p className="text-sm font-medium">Monthly electricity bill</p>
+                    <span className="text-lg font-bold tabular-nums">${commercialMonthlyBill}</span>
+                  </div>
+                  <Slider
+                    min={200} max={10000} step={100}
+                    value={[commercialMonthlyBill]}
+                    onValueChange={([v]) => setCommercialMonthlyBill(v)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    ≈ {fmtKwh(Math.round(billToMonthlyKwh(commercialMonthlyBill)))} / month · {fmtKwh(Math.round(commercialAnnualUsage))} / year. Determines how large a system Value of Solar sizes to offset — Standard Offer doesn't depend on your bill.
+                  </p>
+                </div>
+              )}
 
               {/* Adjust system size away from the default */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -681,12 +447,14 @@ export default function PropertyPage() {
               </div>
             </div>
 
-            <CostBreakdown rec={rec} isSSO={showSso} />
-
-            {/* Charts */}
-            <div className="rounded-lg border border-border bg-card p-6">
-              <SolarCharts rec={rec} property={property} annualUsageKwh={annualUsageKwh} isSSO={showSso} />
-            </div>
+            <SolarProgramView
+              rec={rec}
+              propertyClass={cls}
+              isSSO={showSso}
+              ssoEligible={ssoEligible}
+              annualUsageKwh={annualUsageKwh}
+              productionPerKw={productionPerKw}
+            />
 
             {/* Solar potential */}
             <div className="space-y-3">
@@ -725,71 +493,6 @@ export default function PropertyPage() {
                 )}
               </dl>
             </div>
-
-            {/* Assumptions — commercial gets its own, richer version below instead */}
-            {!isCommercial && (
-              <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
-                <p className="font-medium text-foreground">How we calculated this</p>
-                <ul className="space-y-1 list-disc list-inside">
-                  <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average — get real quotes to verify)</li>
-                  <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
-                  {isResidential && <li>Savings rate: Austin Energy Value of Solar ($0.126/kWh on all production)</li>}
-                  {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
-                  {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
-                </ul>
-              </div>
-            )}
-
-            {/* Commercial calculation details: expandable, full math behind the numbers above */}
-            {isCommercial && (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCalcDetails(v => !v)}
-                  className="flex items-center gap-1.5 text-sm font-medium w-full text-left"
-                >
-                  <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${showCalcDetails ? "rotate-180" : ""}`} />
-                  Commercial calculation details
-                </button>
-                {showCalcDetails && (
-                  <div className="mt-4 space-y-4 text-sm text-muted-foreground">
-                    <div>
-                      <p className="font-medium text-foreground mb-1">Cost</p>
-                      <ul className="space-y-1 list-disc list-inside">
-                        <li>Install cost: ${(rec.costPerW * 1000).toLocaleString()}/kW (${rec.costPerW.toFixed(2)}/W, from the Standard Offer pro forma's tiered rate; systems 1,300 kW and above use a slightly higher rate. Get real quotes to verify.)</li>
-                        {showSso ? (
-                          <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
-                        ) : rec.pbiEligible ? (
-                          <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI) — that program is only for systems under 100 kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
-                        ) : (
-                          <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
-                        )}
-                      </ul>
-                    </div>
-                    {showSso ? (
-                      <div>
-                        <p className="font-medium text-foreground mb-1">Standard Offer revenue</p>
-                        <ul className="space-y-1 list-disc list-inside">
-                          <li>
-                            Rate: {ssoRateSteps.map(s => `${(s.rate * 100).toFixed(2)}¢/kWh from year ${s.year}`).join(" → ")}, then holds through year 25. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same step schedule. This step-up is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
-                          </li>
-                          <li>Ongoing operations and maintenance: ${SSO_OM_PER_KW_YEAR} per kilowatt per year, increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually (covers insurance, monitoring, and maintenance)</li>
-                          <li>Inverter replacement: about ${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)} per kilowatt, a one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
-                        </ul>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="font-medium text-foreground mb-1">Value of Solar revenue</p>
-                        <ul className="space-y-1 list-disc list-inside">
-                          <li>Rate: $0.126/kWh on all production; unused monthly credits carry forward and AE pays out any remaining balance</li>
-                          <li>Below the {SSO_MIN_KW} kW Standard Offer program minimum, so billed under Value of Solar instead</li>
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Performance-Based Incentive — for-profit commercial >= PBI_MIN_KW on VoS billing */}
             {isCommercial && !showSso && rec.pbiEligible && (
