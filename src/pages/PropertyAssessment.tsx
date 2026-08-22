@@ -115,10 +115,6 @@ const PropertyAssessment = () => {
     ? Math.round(Math.min(Math.max(unconstrainedKw, 2), solarMaxKw) * 2) / 2
     : null;
 
-  // Standard Offer sizing is independent of the electricity bill — it starts at a
-  // realistic 60% of the roof's Google Solar max-fit capacity (setbacks, obstructions, wiring).
-  const ssoDefaultKw = solarMaxKw > 0 ? Math.round(solarMaxKw * 0.6 * 2) / 2 : 0;
-
   const [systemKw, setSystemKw] = useState<number>(4);
   const [batteryKwh, setBatteryKwh] = useState<number>(0);
   const [billingMode, setBillingMode] = useState<"vos" | "sso">("vos");
@@ -127,18 +123,20 @@ const PropertyAssessment = () => {
   // Reset to recommended only when a fresh assessment result loads
   useEffect(() => {
     let nextKw = recommendedKw;
-    if (propertyType === "commercial" && ssoDefaultKw > 0) { setSystemKw(ssoDefaultKw); nextKw = ssoDefaultKw; }
+    // Standard Offer is independent of the electricity bill; size to the full buildable
+    // roof capacity (already setback/TSRF/walkway-derated), same as PropertyPage.tsx.
+    if (propertyType === "commercial" && solarMaxKw > 0) { setSystemKw(solarMaxKw); nextKw = solarMaxKw; }
     else if (recommendedKw != null) setSystemKw(recommendedKw);
     setBillingMode(propertyType === "commercial" ? "sso" : "vos");
     if (propertyType === "commercial") setCostPerW(pickSsoScenario(nextKw ?? 0).costPerWatt);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
 
-  // Switching to SSO sizes at 60% of max fit; switching back restores VoS recommended
+  // Switching to SSO maximizes system size; switching back restores VoS recommended
   useEffect(() => {
-    if (billingMode === "sso" && ssoDefaultKw > 0) {
-      setSystemKw(ssoDefaultKw);
-      if (propertyType === "commercial") setCostPerW(pickSsoScenario(ssoDefaultKw).costPerWatt);
+    if (billingMode === "sso" && solarMaxKw > 0) {
+      setSystemKw(solarMaxKw);
+      if (propertyType === "commercial") setCostPerW(pickSsoScenario(solarMaxKw).costPerWatt);
     } else if (billingMode === "vos" && recommendedKw != null) {
       setSystemKw(recommendedKw);
       if (propertyType === "commercial") setCostPerW(pickSsoScenario(recommendedKw).costPerWatt);
