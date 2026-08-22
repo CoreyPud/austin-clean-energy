@@ -46,10 +46,6 @@ const SsoProForma = ({ systemKw }: Props) => {
           </div>
         </div>
 
-        <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5 mb-4">
-          The 30% federal Investment Tax Credit modeled below has a commissioning-deadline eligibility that has changed since this model was built. Confirm current federal rules before relying on the incentive, net cost, or IRR figures.
-        </p>
-
         {/* Headline metrics */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           <Metric
@@ -97,6 +93,10 @@ const SsoProForma = ({ systemKw }: Props) => {
             </LineChart>
           </ResponsiveContainer>
         </div>
+
+        <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5 mb-2">
+          The {(SSO_ITC_RATE * 100).toFixed(0)}% federal Investment Tax Credit modeled above only applies if the system is commissioned (placed in service) by December 31, 2027 — a deadline moved up significantly by 2025 federal tax law changes. Projects that hadn't already begun construction by July 4, 2026 don't get the longer runway older projects had. Confirm your project's construction-start and in-service dates against current IRS guidance before relying on the net cost or IRR figures above.
+        </p>
 
         {/* Cash flow table */}
         <button
