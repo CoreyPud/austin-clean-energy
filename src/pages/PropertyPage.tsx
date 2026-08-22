@@ -319,6 +319,8 @@ export default function PropertyPage() {
   // null = follow the default sizing; a number = user has chosen a system size.
   const [systemKwOverride, setSystemKwOverride] = useState<number | null>(null);
   const [showCalcDetails, setShowCalcDetails] = useState(false);
+  // Only meaningful when ssoEligible; properties too small for SSO always show VoS regardless.
+  const [billingMode, setBillingMode] = useState<"sso" | "vos">("sso");
   const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
   const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
   const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
@@ -329,6 +331,7 @@ export default function PropertyPage() {
     if (!pid) return;
     setLoading(true);
     setSystemKwOverride(null); // a new property starts at its own recommended size
+    setBillingMode("sso"); // default to SSO whenever eligible; VoS is a deliberate opt-in
     Promise.all([
       supabase
         .from("tcad_properties")
@@ -419,6 +422,10 @@ export default function PropertyPage() {
     : null;
 
   const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_MIN_KW;
+  // ssoEligible = the roof qualifies for SSO at all; showSso = actually display SSO right now.
+  // Properties too small for SSO always show VoS (billingMode is only a meaningful choice
+  // once ssoEligible is true).
+  const showSso        = ssoEligible && billingMode === "sso";
 
   // Real SSO economics (escalating rate, O&M, inverter replacement) for the stat cards
   // below — rec.annualSavings/paybackYears are VoS-rate figures and don't apply here.
@@ -437,6 +444,18 @@ export default function PropertyPage() {
   const annualUsageKwh = isResidential
     ? residentialAnnualUsage
     : (rec?.annualProductionKwh ?? DEFAULT_MONTHLY_USAGE_KWH * 12);
+
+  // Real VoS+PBI economics for the stat cards below, mirroring the SSO `sso` computation
+  // above — rec.annualSavings/paybackYears are pure-VoS and don't include PBI.
+  const vosPbi = !showSso && rec && rec.pbiEligible
+    ? mergePbiIntoThirtyYear(
+        buildThirtyYearModel(
+          { annualUsageKwh, systemKw: rec.recommendedKw, batteryKwh: 0, loanTermYears: 0, loanInterestRate: 0, productionPerKw },
+          rec.netCost,
+        ),
+        buildPbiModel(rec.recommendedKw, productionPerKw),
+      )
+    : null;
 
   const ctaTitle = isResidential
     ? "Want help navigating your solar options?"
@@ -535,7 +554,7 @@ export default function PropertyPage() {
                       ? "sized to offset your bill"
                       : isMultifamily
                       ? "maximum roof capacity"
-                      : ssoEligible
+                      : showSso
                       ? "maximum roof capacity · Standard Offer"
                       : "maximum roof capacity"}
                   </span>
@@ -555,11 +574,40 @@ export default function PropertyPage() {
                   </p>
                 )}
                 {isCommercial && ssoEligible && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Under Austin Energy's{" "}
-                    <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline">Standard Offer program</a>
-                    , AE pays you a locked-in rate for every kilowatt-hour your system produces, regardless of what you consume. The rate starts at {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh and steps up roughly every 5 years. Unlike bill-offset solar, this is a standalone revenue stream: your electricity bill stays the same and you simply earn on top of it. Because revenue scales directly with output, there's no ceiling on useful system size, so maximum roof capacity is the right starting point. Minimum system size is {SSO_MIN_KW} kW.
-                  </p>
+                  <div className="mt-2 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems 100 kW and up) can also stack a 5-year Performance-Based Incentive on top. Pick one below to see the numbers.
+                    </p>
+                    <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full max-w-xs">
+                      <button
+                        type="button"
+                        onClick={() => setBillingMode("sso")}
+                        className={`flex-1 py-1.5 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Standard Offer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBillingMode("vos")}
+                        className={`flex-1 py-1.5 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Value of Solar
+                      </button>
+                    </div>
+                    {showSso ? (
+                      <p className="text-sm text-muted-foreground">
+                        Under Austin Energy's{" "}
+                        <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline">Standard Offer program</a>
+                        , AE pays you a locked-in rate for every kilowatt-hour your system produces, regardless of what you consume. The rate starts at {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh and steps up roughly every 5 years. Your electricity bill stays the same; this is a standalone revenue stream on top of it. Because revenue scales directly with output, there's no ceiling on useful system size, so maximum roof capacity is the right starting point. Minimum system size is {SSO_MIN_KW} kW.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Austin Energy's{" "}
+                        <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
+                        {" "}credits all your production at $0.126/kWh regardless of how much you consume — unused monthly credits carry forward, and AE pays out any remaining balance.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar — see below." : ""}
+                      </p>
+                    )}
+                  </div>
                 )}
                 {isCommercial && !ssoEligible && (
                   <p className="text-sm text-muted-foreground mt-1">
@@ -577,20 +625,22 @@ export default function PropertyPage() {
                 />
                 <StatCard
                   label="Net cost"
-                  value={fmt$(ssoEligible ? rec.grossCost : rec.netCost)}
-                  sub={!ssoEligible && rec.aeRebate > 0 ? "after AE rebate" : undefined}
+                  value={fmt$(showSso ? rec.grossCost : rec.netCost)}
+                  sub={!showSso && rec.aeRebate > 0 ? "after AE rebate" : undefined}
                 />
                 <StatCard
-                  label={ssoEligible ? "Annual revenue (est.)" : "Annual production"}
-                  value={ssoEligible
+                  label={showSso ? "Annual revenue (est.)" : "Annual production"}
+                  value={showSso
                     ? fmt$(sso?.annualRevenue ?? 0)
                     : fmtKwh(rec.annualProductionKwh)}
                 />
                 <StatCard
                   label="Est. payback"
-                  value={`${(ssoEligible ? sso?.paybackYear : rec.paybackYears) ?? "30+"} yr`}
-                  sub={ssoEligible
+                  value={`${(showSso ? sso?.paybackYear : vosPbi?.paybackYear ?? rec.paybackYears) ?? "30+"} yr`}
+                  sub={showSso
                     ? `${fmt$(sso?.annualRevenue ?? 0)}/yr revenue`
+                    : rec.pbiEligible
+                    ? `${fmt$(rec.annualSavings + rec.pbiAnnualCredit)}/yr (yr 1, incl. PBI)`
                     : `${fmt$(rec.annualSavings)}/yr savings`}
                 />
               </div>
@@ -629,11 +679,11 @@ export default function PropertyPage() {
               </div>
             </div>
 
-            <CostBreakdown rec={rec} isSSO={ssoEligible} />
+            <CostBreakdown rec={rec} isSSO={showSso} />
 
             {/* Charts */}
             <div className="rounded-lg border border-border bg-card p-6">
-              <SolarCharts rec={rec} property={property} annualUsageKwh={annualUsageKwh} isSSO={ssoEligible} />
+              <SolarCharts rec={rec} property={property} annualUsageKwh={annualUsageKwh} isSSO={showSso} />
             </div>
 
             {/* Solar potential */}
@@ -705,7 +755,7 @@ export default function PropertyPage() {
                       <p className="font-medium text-foreground mb-1">Cost</p>
                       <ul className="space-y-1 list-disc list-inside">
                         <li>Install cost: ${(rec.costPerW * 1000).toLocaleString()}/kW (${rec.costPerW.toFixed(2)}/W, from the Standard Offer pro forma's tiered rate; systems 1,300 kW and above use a slightly higher rate. Get real quotes to verify.)</li>
-                        {ssoEligible ? (
+                        {showSso ? (
                           <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
                         ) : rec.pbiEligible ? (
                           <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI) — that program is only for systems under 100 kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
@@ -714,7 +764,7 @@ export default function PropertyPage() {
                         )}
                       </ul>
                     </div>
-                    {ssoEligible ? (
+                    {showSso ? (
                       <div>
                         <p className="font-medium text-foreground mb-1">Standard Offer revenue</p>
                         <ul className="space-y-1 list-disc list-inside">
@@ -740,12 +790,12 @@ export default function PropertyPage() {
             )}
 
             {/* Performance-Based Incentive — for-profit commercial >= PBI_MIN_KW on VoS billing */}
-            {isCommercial && !ssoEligible && rec.pbiEligible && (
+            {isCommercial && !showSso && rec.pbiEligible && (
               <PbiBreakdown systemKw={rec.recommendedKw} productionPerKw={productionPerKw} />
             )}
 
             {/* Third-party-owner pro forma — same investor-side view shown on the calculator */}
-            {isCommercial && ssoEligible && (
+            {isCommercial && showSso && (
               <SsoProForma systemKw={rec.recommendedKw} />
             )}
           </>
