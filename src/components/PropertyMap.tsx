@@ -135,6 +135,7 @@ export function PropertyMap({ properties, gasPlants, proposedSites, siteCounts, 
       style: "mapbox://styles/mapbox/light-v11",
       center: [-97.74, 30.27],
       zoom: 10,
+      cooperativeGestures: true,
     });
     mapRef.current = map;
     popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });

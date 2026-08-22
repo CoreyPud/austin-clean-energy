@@ -156,15 +156,19 @@ export default function SolarProgramView({
 
   return (
     <div className="space-y-8">
+      {/* Non-sticky comparison blurb -- scrolls away normally, unlike the control card below */}
+      {ssoEligible && (
+        <p className="text-sm text-muted-foreground">
+          This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems 100 kW and up) can also stack a 5-year Performance-Based Incentive on top. Pick one below to see the numbers.
+        </p>
+      )}
+
       {/* Sticky control card: toggle, system/battery sliders, KPI strip */}
       <div className="sticky top-0 z-20 -mx-4 px-4">
         <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
           <CardContent className="p-4">
             {ssoEligible && (
               <div className="mb-3 pb-3 border-b space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems 100 kW and up) can also stack a 5-year Performance-Based Incentive on top. Pick one below to see the numbers.
-                </p>
                 <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full">
                   <button
                     onClick={() => onBillingModeChange("sso")}
@@ -184,13 +188,13 @@ export default function SolarProgramView({
                     <>
                       Under Austin Energy's{" "}
                       <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Standard Offer program</a>
-                      , AE pays a locked-in rate for every kilowatt-hour produced, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh and stepping up roughly every 5 years. Your electricity bill stays unchanged -- this is a standalone revenue stream on top of it. Minimum system size is {SSO_MIN_KW} kW.
+                      , AE pays a locked-in rate for every kilowatt-hour produced, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh. Your electricity bill stays unchanged -- this is a standalone revenue stream on top of it. Minimum system size is {SSO_MIN_KW} kW.
                     </>
                   ) : (
                     <>
                       Austin Energy's{" "}
                       <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                      {" "}credits all your production at $0.126/kWh regardless of how much you consume -- unused monthly credits carry forward, and AE pays out any remaining balance.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar -- see below." : ""}
+                      {" "}credits your production at $0.126/kWh against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar -- see below." : ""}
                     </>
                   )}
                 </p>
@@ -220,7 +224,7 @@ export default function SolarProgramView({
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Austin Energy's{" "}
                   <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                  {" "}credits all your production at $0.126/kWh regardless of how much you consume -- unused monthly credits carry forward, and AE pays out any remaining balance.{isNonProfit ? "" : ` Your system is under the ${SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.`}
+                  {" "}credits your production at $0.126/kWh against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{isNonProfit ? "" : ` Your system is under the ${SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.`}
                 </p>
               </div>
             )}
