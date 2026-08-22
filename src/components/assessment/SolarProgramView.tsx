@@ -410,6 +410,18 @@ export default function SolarProgramView({
         </div>
       </div>
 
+      {/* Performance-Based Incentive -- for-profit commercial >= PBI_MIN_KW on VoS billing.
+          Rendered here (not as a page-level sibling) so the sticky control card's scope
+          extends through it instead of releasing before it. */}
+      {isCommercial && !isSSO && rec.pbiEligible && (
+        <PbiBreakdown systemKw={rec.recommendedKw} productionPerKw={productionPerKw} />
+      )}
+
+      {/* Third-party-owner pro forma -- same reasoning: kept inside the sticky scope. */}
+      {isCommercial && isSSO && (
+        <SsoProForma systemKw={rec.recommendedKw} />
+      )}
+
       {/* Solar potential */}
       {hasRoofInfo && (
         <div className="space-y-3">
@@ -518,18 +530,6 @@ export default function SolarProgramView({
       )}
 
       <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} carbonOffsetKgPerMwh={carbonOffsetKgPerMwh} />
-
-      {/* Performance-Based Incentive -- for-profit commercial >= PBI_MIN_KW on VoS billing.
-          Rendered here (not as a page-level sibling) so the sticky control card's scope
-          extends through it instead of releasing before it. */}
-      {isCommercial && !isSSO && rec.pbiEligible && (
-        <PbiBreakdown systemKw={rec.recommendedKw} productionPerKw={productionPerKw} />
-      )}
-
-      {/* Third-party-owner pro forma -- same reasoning: kept inside the sticky scope. */}
-      {isCommercial && isSSO && (
-        <SsoProForma systemKw={rec.recommendedKw} />
-      )}
     </div>
   );
 }
