@@ -41,10 +41,15 @@ export const AUSTIN_ENERGY_RATES = {
 
 export const AUSTIN_ENERGY_SOLAR_REBATE = 4000; // residential flat rebate (systems > 3 kW)
 
+// Capacity-Based Incentive (CBI) eligibility cutoff for for-profit commercial: per Austin
+// Energy's CBI guidelines, only systems under this size can choose CBI; at or above it, the
+// system is PBI-only (see PBI section below) and gets $0 CBI, not a capped amount.
+export const PBI_MIN_KW = 100;
+
 export function austinEnergyRebate(systemKw: number, propertyType: string): number {
   switch (propertyType) {
     case "commercial":
-      return Math.min(systemKw, 100) * 1000 * 0.70; // $0.70/W, capped at 100 kW
+      return systemKw < PBI_MIN_KW ? systemKw * 1000 * 0.70 : 0; // $0.70/W, only under 100 kW
     case "non-profit":
       return Math.min(systemKw, 200) * 1000 * 1.00; // $1.00/W, capped at 200 kW
     case "multi-family":
@@ -326,12 +331,68 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
   };
 }
 
+// ── Performance-Based Incentive (PBI) ────────────────────────────────────────
+// On-bill credit for the first 5 years, paid in addition to Value of Solar (not a
+// replacement, and not an upfront rebate like CBI). Rate tier is fixed by system size.
+
+export interface PbiYearRow {
+  year: number;
+  credit: number;
+}
+
+export interface PbiModel {
+  rate: number;
+  annualCredit: number;
+  totalFiveYearCredit: number;
+  yearlyRows: PbiYearRow[];
+}
+
+export function buildPbiModel(systemKw: number, productionPerKw: number): PbiModel {
+  const rate = commercialPbiRate(systemKw);
+  const annualKwh = systemKw * productionPerKw;
+  const annualCredit = annualKwh * rate;
+
+  const yearlyRows: PbiYearRow[] = [];
+  let totalFiveYearCredit = 0;
+  for (let y = 0; y < FINANCIAL_HORIZON_YEARS; y++) {
+    const year = y + 1;
+    const credit = year <= COMMERCIAL_PBI_YEARS ? annualKwh * Math.pow(0.995, y) * rate : 0;
+    if (year <= COMMERCIAL_PBI_YEARS) totalFiveYearCredit += credit;
+    yearlyRows.push({ year, credit: Math.round(credit) });
+  }
+
+  return { rate, annualCredit, totalFiveYearCredit: Math.round(totalFiveYearCredit), yearlyRows };
+}
+
+/**
+ * Layers PBI's yearly credits onto an existing VoS cumulative stream and recomputes payback.
+ * Overlays on `cumulativeByYear` (which already correctly accounts for loan payments, if any)
+ * rather than re-deriving cumulative cash flow from scratch, since ThirtyYearResult doesn't
+ * expose per-year loan payment data outside of buildThirtyYearModel's own internal loop.
+ */
+export function mergePbiIntoThirtyYear(thirtyYear: ThirtyYearResult, pbi: PbiModel): ThirtyYearResult {
+  let paybackYear: number | null = null;
+  let runningPbi = 0;
+  const cumulativeByYear = thirtyYear.cumulativeByYear.map((row, i) => {
+    runningPbi += pbi.yearlyRows[i]?.credit ?? 0;
+    const cumulative = row.cumulative + runningPbi;
+    if (paybackYear === null && cumulative >= 0) paybackYear = row.year;
+    return { year: row.year, cumulative };
+  });
+
+  return {
+    ...thirtyYear,
+    totalSavings: thirtyYear.totalSavings + pbi.totalFiveYearCredit,
+    paybackYear,
+    cumulativeByYear,
+  };
+}
+
 // ── Solar Standard Offer (SSO) ───────────────────────────────────────────────
 
 export const SSO_RATE_UNDER_1MW = 0.11;    // $/kWh, systems < 1 MW-ac
 export const SSO_RATE_OVER_1MW  = 0.0841;  // $/kWh, systems >= 1 MW-ac
-export const SSO_MIN_KW         = 50;       // program minimum
-export const SSO_SHOW_THRESHOLD_KW = 75;   // show option when roof can fit this much
+export const SSO_MIN_KW         = 50;       // program minimum -- also the threshold for showing the SSO/VoS toggle at all
 
 // Rate escalation, O&M, and inverter replacement, backed out of a TPO pro forma for a
 // sub-1MW commercial system. The pro forma prices third-party ownership (lease payment

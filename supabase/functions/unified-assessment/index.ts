@@ -91,20 +91,26 @@ serve(async (req) => {
 
     const GOOGLE_KEY = Deno.env.get("GOOGLE_SOLAR_API_KEY");
 
-    // 1. Geocode
-    const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_KEY}`;
-    const geoResp = await fetch(geoUrl);
-    const geoData = await geoResp.json();
-    if (geoData.status !== "OK" || !geoData.results?.[0]) {
+    // 1. Resolve the address via Places "Find Place From Text" -- backed by Google's actual
+    // place/building database (the same one Places Autocomplete searches), not just address-
+    // string parsing. The plain Geocoding API this replaced was observed landing 200m+ off for
+    // real Austin addresses (e.g. "600 Congress Ave" resolving to a different building blocks
+    // away).
+    const findPlaceUrl =
+      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
+      `?input=${encodeURIComponent(address)}&inputtype=textquery&fields=formatted_address,geometry&key=${GOOGLE_KEY}`;
+    const findPlaceResp = await fetch(findPlaceUrl);
+    const findPlaceData = await findPlaceResp.json();
+    const candidate = findPlaceData.status === "OK" ? findPlaceData.candidates?.[0] : null;
+    if (!candidate?.geometry?.location) {
       return new Response(
         JSON.stringify({ error: "Address not found. Please enter a valid Austin, TX address." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const loc = geoData.results[0].geometry.location;
-    const standardizedAddress = geoData.results[0].formatted_address;
-    const lat = loc.lat;
-    const lng = loc.lng;
+    const lat = candidate.geometry.location.lat;
+    const lng = candidate.geometry.location.lng;
+    const standardizedAddress = candidate.formatted_address ?? address;
     const zipMatch = standardizedAddress.match(/\b(\d{5})\b/);
     const zipCode = zipMatch ? zipMatch[1] : null;
 

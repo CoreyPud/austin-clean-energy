@@ -93,7 +93,7 @@ function SatelliteMap({
       style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: [lon, lat],
       zoom: 18,
-      cooperativeGestures: false,
+      cooperativeGestures: true,
     });
     mapRef.current = map;
     if (!panels?.length) {

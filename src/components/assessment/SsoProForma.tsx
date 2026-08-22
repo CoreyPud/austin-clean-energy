@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
 } from "recharts";
@@ -45,12 +44,7 @@ const SsoProForma = ({ systemKw }: Props) => {
               Investor-side economics if a third party owns the system and leases your roof or land.
             </p>
           </div>
-          <Badge variant="secondary" className="text-xs">{model.scenario.label}</Badge>
         </div>
-
-        <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5 mb-4">
-          The 30% federal Investment Tax Credit modeled below has a commissioning-deadline eligibility that has changed since this model was built. Confirm current federal rules before relying on the incentive, net cost, or IRR figures.
-        </p>
 
         {/* Headline metrics */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
@@ -100,6 +94,10 @@ const SsoProForma = ({ systemKw }: Props) => {
           </ResponsiveContainer>
         </div>
 
+        <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5 mb-2">
+          The {(SSO_ITC_RATE * 100).toFixed(0)}% federal Investment Tax Credit modeled above only applies if the system is commissioned (placed in service) by December 31, 2027, a deadline moved up significantly by 2025 federal tax law changes. Projects that hadn't already begun construction by July 4, 2026 don't get the longer runway older projects had. Confirm your project's construction-start and in-service dates against current IRS guidance before relying on the net cost or IRR figures above.
+        </p>
+
         {/* Cash flow table */}
         <button
           onClick={() => setShowTable(v => !v)}
@@ -136,7 +134,7 @@ const SsoProForma = ({ systemKw }: Props) => {
                     <Td right>{fmt$(r.lease)}</Td>
                     <Td right>{fmt$(r.om)}</Td>
                     <Td right>{fmt$(r.expenses)}</Td>
-                    <Td right>{r.incentives ? fmt$(r.incentives) : "—"}</Td>
+                    <Td right>{r.incentives ? fmt$(r.incentives) : "N/A"}</Td>
                     <Td right className={r.netCashFlow < 0 ? "text-destructive" : ""}>{fmt$(r.netCashFlow)}</Td>
                     <Td right className={r.cumulative < 0 ? "text-destructive" : "text-primary font-medium"}>{fmt$(r.cumulative)}</Td>
                   </tr>
@@ -167,17 +165,17 @@ const SsoProForma = ({ systemKw }: Props) => {
             <Row k="System cost" v={`$${model.scenario.costPerWatt.toFixed(2)} per Wdc`} />
             <Row k="Production" v={`${model.scenario.yieldKwhPerKw.toLocaleString()} kWh-ac per kWdc-year, ${(SSO_DEGRADATION_RATE * 100).toFixed(1)}% annual degradation`} />
             <Row k="Standard Offer rate" v={`$${model.scenario.baseRate.toFixed(2)}/kWh, stepping up $0.02 in year 6, $0.04 in year 11, $0.06 in year 16`} />
-            <Row k="Lease payment" v={`${fmt$(model.annualLeaseUsd)} per year to the property owner — 20% of year-1 solar revenue, held flat for all ${SSO_PROFORMA_TERM_YEARS} years`} />
+            <Row k="Lease payment" v={`${fmt$(model.annualLeaseUsd)} per year to the property owner, 20% of year-1 solar revenue, held flat for all ${SSO_PROFORMA_TERM_YEARS} years`} />
             <Row k="O&M" v={`$${SSO_OM_PER_KW_YEAR}/kWdc-year for insurance, monitoring and maintenance, escalating ${(SSO_OM_ESCALATION * 100).toFixed(0)}% per year`} />
             <Row k="Inverter replacement" v={`${fmt$(model.inverterReplacementUsd)} in year ${SSO_INVERTER_REPLACEMENT_YEAR} ($8,000 per 125 kW block)`} />
-            <Row k="Property taxes" v="Modeled as $0 — treatment for third-party-owned solar is unresolved, so this is a known omission" />
-            <Row k="Investment Tax Credit" v={`${(SSO_ITC_RATE * 100).toFixed(0)}% of system cost, only if commissioned before 12/31/2027. This is the commercial/business ITC — it does not apply to homeowners.`} />
-            <Row k="Depreciation" v={`Simplified credit of ${(SSO_DEPRECIATION_CREDIT_RATE * 100).toFixed(0)}% of cost net of the ITC, taken in year ${SSO_INCENTIVE_YEAR} — a stand-in for the present value of MACRS depreciation, not a year-by-year schedule`} />
+            <Row k="Property taxes" v="Modeled as $0. Treatment for third-party-owned solar is unresolved, so this is a known omission" />
+            <Row k="Investment Tax Credit" v={`${(SSO_ITC_RATE * 100).toFixed(0)}% of system cost, only if commissioned before 12/31/2027. This is the commercial/business ITC, it does not apply to homeowners.`} />
+            <Row k="Depreciation" v={`Simplified credit of ${(SSO_DEPRECIATION_CREDIT_RATE * 100).toFixed(0)}% of cost net of the ITC, taken in year ${SSO_INCENTIVE_YEAR}, a stand-in for the present value of MACRS depreciation, not a year-by-year schedule`} />
             <Row k="IRR" v={`Computed on the ${SSO_PROFORMA_TERM_YEARS} annual net cash flows, with year 1 treated as time zero (matching Excel's IRR function)`} />
             <p className="pt-2 border-t text-muted-foreground">
               Source: Austin Clean Energy Standard Offer stand-alone financial model (Standard_offer_financial_model_stand_alone.xlsx),
               two-scenario version. O&amp;M escalation is applied at a consistent 2% per year; the source workbook mixes 2% and 4% steps in
-              a handful of later rows. These are planning estimates, not tax, legal, or investment advice — confirm all incentive and lease
+              a handful of later rows. These are planning estimates, not tax, legal, or investment advice. Confirm all incentive and lease
               terms with Austin Energy and a qualified advisor.
             </p>
           </div>
