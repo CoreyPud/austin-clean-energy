@@ -46,14 +46,13 @@ import {
   buildYearModel,
   buildThirtyYearModel,
   buildSsoModel,
-  austinEnergyRebate,
   AUSTIN_ENERGY_RATES,
   SSO_SHOW_THRESHOLD_KW,
   ssoRate,
-  PBI_MIN_KW,
   buildPbiModel,
   mergePbiIntoThirtyYear,
 } from "@/lib/solar-model";
+import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
@@ -104,16 +103,19 @@ const PropertyAssessment = () => {
     });
     return [az, pt];
   }, [results]);
-  const solarMaxKw = si ? Math.round((si.maxPanels * si.panelCapacityWatts) / 100) / 10 : 0;
-  const solarProdPerKw = si && si.annualProductionKwh > 0 && solarMaxKw > 0
-    ? si.annualProductionKwh / solarMaxKw : 1500;
   const annualUsageKwh = (billViewMode === "bill" && uploadedKwh)
     ? uploadedKwh.reduce((s, v) => s + v, 0)
     : billToMonthlyKwh(monthlyBill) * 12;
-  const unconstrainedKw = solarProdPerKw > 0 ? annualUsageKwh / solarProdPerKw : 0;
-  const recommendedKw = solarMaxKw > 0
-    ? Math.round(Math.min(Math.max(unconstrainedKw, 2), solarMaxKw) * 2) / 2
-    : null;
+
+  // Single-sourced with PropertyPage.tsx via computeRecommendation: same sizing, rebate/PBI
+  // eligibility, and production-per-kW (including the 0.86 NREL PVWatts derate) logic either
+  // way, adapted from the live Google Solar response instead of a TCAD row.
+  const siteInput = si ? fromGoogleSolarInsights(si, propertyType) : null;
+  const recVos = computeRecommendation(siteInput, { annualUsageKwh, billingMode: "vos" });
+  const recSso = computeRecommendation(siteInput, { billingMode: "sso" });
+  const solarMaxKw = recVos?.maxKw ?? recSso?.maxKw ?? 0; // identical either way -- doesn't vary by billing mode
+  const recommendedKw = recVos?.recommendedKw ?? null;
+  const productionPerKw = estimateProductionPerKw(si?.sunshineHours ?? null);
 
   const [systemKw, setSystemKw] = useState<number>(4);
   const [batteryKwh, setBatteryKwh] = useState<number>(0);
@@ -122,24 +124,21 @@ const PropertyAssessment = () => {
 
   // Reset to recommended only when a fresh assessment result loads
   useEffect(() => {
-    let nextKw = recommendedKw;
-    // Standard Offer is independent of the electricity bill; size to the full buildable
-    // roof capacity (already setback/TSRF/walkway-derated), same as PropertyPage.tsx.
-    if (propertyType === "commercial" && solarMaxKw > 0) { setSystemKw(solarMaxKw); nextKw = solarMaxKw; }
-    else if (recommendedKw != null) setSystemKw(recommendedKw);
+    const nextKw = propertyType === "commercial" ? recSso?.recommendedKw ?? null : recommendedKw;
+    if (nextKw != null) setSystemKw(nextKw);
     setBillingMode(propertyType === "commercial" ? "sso" : "vos");
-    if (propertyType === "commercial") setCostPerW(pickSsoScenario(nextKw ?? 0).costPerWatt);
+    if (propertyType === "commercial" && nextKw != null) setCostPerW(pickSsoScenario(nextKw).costPerWatt);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
 
   // Switching to SSO maximizes system size; switching back restores VoS recommended
   useEffect(() => {
-    if (billingMode === "sso" && solarMaxKw > 0) {
-      setSystemKw(solarMaxKw);
-      if (propertyType === "commercial") setCostPerW(pickSsoScenario(solarMaxKw).costPerWatt);
+    if (billingMode === "sso" && recSso?.recommendedKw != null) {
+      setSystemKw(recSso.recommendedKw);
+      if (propertyType === "commercial") setCostPerW(recSso.costPerW);
     } else if (billingMode === "vos" && recommendedKw != null) {
       setSystemKw(recommendedKw);
-      if (propertyType === "commercial") setCostPerW(pickSsoScenario(recommendedKw).costPerWatt);
+      if (propertyType === "commercial" && recVos) setCostPerW(recVos.costPerW);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [billingMode]);
@@ -153,15 +152,20 @@ const PropertyAssessment = () => {
     setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : 2.95);
   }, [propertyType]);
 
+  // The single recommendation for whatever's currently selected (billing mode + manual size
+  // override, if any) -- rebate/PBI eligibility come from here; cost stays local since the
+  // cost-per-watt slider is a deliberate user override that computeRecommendation doesn't know about.
+  const rec = computeRecommendation(siteInput, { annualUsageKwh, systemKwOverride: systemKw, billingMode });
+
   const liveSummary = (() => {
-    if (!si || systemKw <= 0) return null;
+    if (!si || systemKw <= 0 || !rec) return null;
     const grossCost = systemKw * (costPerW * 1000) + batteryKwh * 1000;
-    const cost = Math.max(0, grossCost - austinEnergyRebate(systemKw, propertyType));
-    const co2TonsPerYear = Math.round(systemKw * solarProdPerKw * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10;
+    const cost = Math.max(0, grossCost - rec.aeRebate);
+    const co2TonsPerYear = Math.round(systemKw * productionPerKw * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10;
 
     if (billingMode === "sso") {
       // SSO doesn't qualify for the AE Solar PV rebate — use gross cost
-      const sso = buildSsoModel(systemKw, solarProdPerKw, grossCost);
+      const sso = buildSsoModel(systemKw, productionPerKw, grossCost);
       return {
         monthlySavings: sso.annualRevenue / 12,
         paybackYear: sso.paybackYear ?? null,
@@ -178,15 +182,14 @@ const PropertyAssessment = () => {
       batteryKwh,
       loanTermYears: 0,
       loanInterestRate: 0,
-      productionPerKw: solarProdPerKw,
+      productionPerKw,
     };
     const yr1 = buildYearModel(inputs, 0);
     const yr30Base = buildThirtyYearModel(inputs, cost);
     // For-profit commercial >= PBI_MIN_KW isn't CBI-eligible (cost above already reflects that
-    // via austinEnergyRebate) but gets a 5-year on-bill credit on top of Value of Solar instead.
-    const pbiEligible = propertyType === "commercial" && systemKw >= PBI_MIN_KW;
-    const yr30 = pbiEligible
-      ? mergePbiIntoThirtyYear(yr30Base, buildPbiModel(systemKw, solarProdPerKw))
+    // via rec.aeRebate) but gets a 5-year on-bill credit on top of Value of Solar instead.
+    const yr30 = rec.pbiEligible
+      ? mergePbiIntoThirtyYear(yr30Base, buildPbiModel(systemKw, productionPerKw))
       : yr30Base;
     const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
     return {
@@ -813,8 +816,8 @@ const PropertyAssessment = () => {
                       <SsoProForma systemKw={systemKw} />
                     )}
 
-                    {propertyType === "commercial" && billingMode === "vos" && systemKw >= PBI_MIN_KW && (
-                      <PbiBreakdown systemKw={systemKw} productionPerKw={solarProdPerKw} />
+                    {billingMode === "vos" && rec?.pbiEligible && (
+                      <PbiBreakdown systemKw={systemKw} productionPerKw={productionPerKw} />
                     )}
 
                   </>

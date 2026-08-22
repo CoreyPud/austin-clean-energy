@@ -18,6 +18,7 @@ import {
   slugifyAddress,
   classifyProperty,
   computeRecommendation,
+  fromTcadProperty,
   type SolarRecommendation,
 } from "@/lib/property-solar";
 import { formatAssessorAddress } from "@/lib/address-utils";
@@ -405,10 +406,11 @@ export default function PropertyPage() {
   // Bill and manual override both feed in here so the stat cards stay in sync.
   const buildablePanels = solarFilter.filteredPanelCount ?? property.solar_max_panels;
   const rec = computeRecommendation(
-    { ...property, solar_max_panels: buildablePanels },
+    fromTcadProperty({ ...property, solar_max_panels: buildablePanels }),
     {
       annualUsageKwh: isResidential ? residentialAnnualUsage : null,
       systemKwOverride,
+      billingMode: isCommercial && billingMode === "sso" ? "sso" : "vos",
     },
   );
   const hasSolar = !!property.solar_fetched_at && property.solar_max_panels != null;
