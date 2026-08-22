@@ -33,6 +33,7 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SsoProForma from "@/components/assessment/SsoProForma";
+import { pickSsoScenario } from "@/lib/sso-proforma";
 
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
 import { Slider } from "@/components/ui/slider";
@@ -121,16 +122,23 @@ const PropertyAssessment = () => {
 
   // Reset to recommended only when a fresh assessment result loads
   useEffect(() => {
-    if (propertyType === "commercial" && ssoDefaultKw > 0) setSystemKw(ssoDefaultKw);
+    let nextKw = recommendedKw;
+    if (propertyType === "commercial" && ssoDefaultKw > 0) { setSystemKw(ssoDefaultKw); nextKw = ssoDefaultKw; }
     else if (recommendedKw != null) setSystemKw(recommendedKw);
     setBillingMode(propertyType === "commercial" ? "sso" : "vos");
+    if (propertyType === "commercial") setCostPerW(pickSsoScenario(nextKw ?? 0).costPerWatt);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
 
   // Switching to SSO sizes at 60% of max fit; switching back restores VoS recommended
   useEffect(() => {
-    if (billingMode === "sso" && ssoDefaultKw > 0) setSystemKw(ssoDefaultKw);
-    else if (billingMode === "vos" && recommendedKw != null) setSystemKw(recommendedKw);
+    if (billingMode === "sso" && ssoDefaultKw > 0) {
+      setSystemKw(ssoDefaultKw);
+      if (propertyType === "commercial") setCostPerW(pickSsoScenario(ssoDefaultKw).costPerWatt);
+    } else if (billingMode === "vos" && recommendedKw != null) {
+      setSystemKw(recommendedKw);
+      if (propertyType === "commercial") setCostPerW(pickSsoScenario(recommendedKw).costPerWatt);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [billingMode]);
 
@@ -138,7 +146,9 @@ const PropertyAssessment = () => {
     const defaults: Record<string, number> = { commercial: 3000, "non-profit": 800 };
     setMonthlyBill(defaults[propertyType] ?? 150);
     setBillingMode(propertyType === "commercial" ? "sso" : "vos");
-    setCostPerW(propertyType === "commercial" ? 2.00 : 2.95);
+    // Real system size isn't known yet at this point (results haven't loaded) -- seed with
+    // the smaller-tier rate; the [results] effect above refines it once size is known.
+    setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : 2.95);
   }, [propertyType]);
 
   const liveSummary = (() => {
@@ -286,8 +296,6 @@ const PropertyAssessment = () => {
     if (t.length > 200) return "Address must be less than 200 characters";
     if (/[<>{}]/.test(t)) return "Address contains invalid characters";
     if (!/^\d+\s+\S/.test(t)) return "Please enter a full street address (e.g. 123 Main St, Austin, TX)";
-    if (!/austin|ATX|787\d{2}/i.test(t))
-      return "This tool is for Austin, TX properties. Include 'Austin' or an Austin ZIP (787xx).";
     if (!propertyType) return "Please select a property type";
     return null;
   };
@@ -761,21 +769,23 @@ const PropertyAssessment = () => {
                     {/* Roof map — full width */}
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
-                        <SatellitePane
-                          lat={results.solarCenter?.lat ?? results.center?.[1] ?? 30.2672}
-                          lon={results.solarCenter?.lon ?? results.center?.[0] ?? -97.7431}
-                          className="w-full h-[480px]"
-                          panels={assessmentPanels}
-                          panelHeightM={results.panelDims?.h}
-                          panelWidthM={results.panelDims?.w}
-                          segmentAzimuths={assessmentAzimuths}
-                          segmentPitches={assessmentPitches}
-                          selectedPanelCount={
-                            assessmentPanels && si?.panelCapacityWatts
-                              ? Math.round(systemKw * 1000 / si.panelCapacityWatts)
-                              : undefined
-                          }
-                        />
+                        <MapTokenLoader>
+                          <SatellitePane
+                            lat={results.solarCenter?.lat ?? results.center?.[1] ?? 30.2672}
+                            lon={results.solarCenter?.lon ?? results.center?.[0] ?? -97.7431}
+                            className="w-full h-[480px]"
+                            panels={assessmentPanels}
+                            panelHeightM={results.panelDims?.h}
+                            panelWidthM={results.panelDims?.w}
+                            segmentAzimuths={assessmentAzimuths}
+                            segmentPitches={assessmentPitches}
+                            selectedPanelCount={
+                              assessmentPanels && si?.panelCapacityWatts
+                                ? Math.round(systemKw * 1000 / si.panelCapacityWatts)
+                                : undefined
+                            }
+                          />
+                        </MapTokenLoader>
                       </CardContent>
                     </Card>
 

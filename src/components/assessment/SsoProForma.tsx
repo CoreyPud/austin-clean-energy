@@ -48,6 +48,10 @@ const SsoProForma = ({ systemKw }: Props) => {
           <Badge variant="secondary" className="text-xs">{model.scenario.label}</Badge>
         </div>
 
+        <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5 mb-4">
+          The 30% federal Investment Tax Credit modeled below has a commissioning-deadline eligibility that has changed since this model was built. Confirm current federal rules before relying on the incentive, net cost, or IRR figures.
+        </p>
+
         {/* Headline metrics */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           <Metric

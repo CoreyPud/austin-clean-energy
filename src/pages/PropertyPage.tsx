@@ -7,9 +7,11 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
+import MapTokenLoader from "@/components/MapTokenLoader";
 import { useSolarFilter } from "@/components/SolarFilterPanel";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
+import SsoProForma from "@/components/assessment/SsoProForma";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import {
   slugifyAddress,
@@ -34,7 +36,6 @@ import {
   SSO_INVERTER_REPLACEMENT_PER_KW,
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
-  AUSTIN_INSTALL_COST_PER_KW,
 } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
@@ -457,19 +458,21 @@ export default function PropertyPage() {
         {/* Satellite map */}
         {property.centroid_lat != null && property.centroid_lon != null && (
           <div className="space-y-3">
-            <SatellitePane
-              lat={property.centroid_lat}
-              lon={property.centroid_lon}
-              className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
-              {...solarFilter.paneProps}
-              panelHeightM={panelDims?.h}
-              panelWidthM={panelDims?.w}
-              segmentAzimuths={segmentAzimuths}
-              segmentPitches={segmentPitches}
-              selectedPanelCount={rec
-                ? Math.round((rec.recommendedKw * 1000) / (property.solar_panel_capacity_w ?? 400))
-                : undefined}
-            />
+            <MapTokenLoader>
+              <SatellitePane
+                lat={property.centroid_lat}
+                lon={property.centroid_lon}
+                className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
+                {...solarFilter.paneProps}
+                panelHeightM={panelDims?.h}
+                panelWidthM={panelDims?.w}
+                segmentAzimuths={segmentAzimuths}
+                segmentPitches={segmentPitches}
+                selectedPanelCount={rec
+                  ? Math.round((rec.recommendedKw * 1000) / (property.solar_panel_capacity_w ?? 400))
+                  : undefined}
+              />
+            </MapTokenLoader>
           </div>
         )}
 
@@ -690,7 +693,7 @@ export default function PropertyPage() {
                     <div>
                       <p className="font-medium text-foreground mb-1">Cost</p>
                       <ul className="space-y-1 list-disc list-inside">
-                        <li>Install cost: ${AUSTIN_INSTALL_COST_PER_KW.toLocaleString()}/kW (Berkeley Lab 2024 regression for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify)</li>
+                        <li>Install cost: ${(rec.costPerW * 1000).toLocaleString()}/kW (${rec.costPerW.toFixed(2)}/W, from the Standard Offer pro forma's tiered rate; systems 1,300 kW and above use a slightly higher rate. Get real quotes to verify.)</li>
                         {ssoEligible ? (
                           <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
                         ) : (
@@ -721,6 +724,11 @@ export default function PropertyPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Third-party-owner pro forma — same investor-side view shown on the calculator */}
+            {isCommercial && ssoEligible && (
+              <SsoProForma systemKw={rec.recommendedKw} />
             )}
           </>
         )}

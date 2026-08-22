@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Search, Download } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Search, Download, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +54,35 @@ const TYPE_COLOR: Record<string, string> = {
 
 const ALL_TYPES = ["single_family", "multifamily", "condo", "commercial", "other"] as const;
 
+type NumericFieldKey =
+  | "market_value" | "roof_sqft" | "year_built"
+  | "solar_kw" | "solar_sunshine_median" | "max_system_kw"
+  | "solar_buildable_kw" | "solar_eligible_kw" | "roof_area_sqft";
+
+const NUMERIC_FIELDS: { key: NumericFieldKey; label: string; getValue: (p: PropertyPoint) => number | null }[] = [
+  { key: "market_value",         label: "Market value ($)",         getValue: p => p.market_value },
+  { key: "roof_sqft",            label: "Roof sqft (TCAD)",         getValue: p => p.roof_sqft },
+  { key: "year_built",           label: "Year built",               getValue: p => p.year_built },
+  { key: "solar_kw",             label: "Installed solar (kW)",     getValue: p => p.solar_kw },
+  { key: "solar_sunshine_median",label: "Sun score (hrs/yr)",       getValue: p => p.solar_sunshine_median },
+  { key: "max_system_kw",        label: "Max system size (kW)",     getValue: p => p.solar_max_panels != null && p.solar_panel_capacity_w != null ? (p.solar_max_panels * p.solar_panel_capacity_w) / 1000 : null },
+  { key: "solar_buildable_kw",   label: "Buildable kW",             getValue: p => p.solar_buildable_kw },
+  { key: "solar_eligible_kw",    label: "75% TSRF kW",              getValue: p => p.solar_eligible_kw },
+  { key: "roof_area_sqft",       label: "Usable roof area (sqft)",  getValue: p => p.solar_max_area_m2 != null ? p.solar_max_area_m2 * 10.764 : null },
+];
+
+type NumericRange = { min: string; max: string };
+const EMPTY_NUMERIC_FILTERS: Record<NumericFieldKey, NumericRange> = NUMERIC_FIELDS.reduce(
+  (acc, f) => ({ ...acc, [f.key]: { min: "", max: "" } }),
+  {} as Record<NumericFieldKey, NumericRange>,
+);
+// Hide obvious junk records (vacant slivers, data errors) by default; still fully adjustable/clearable.
+const DEFAULT_NUMERIC_FILTERS: Record<NumericFieldKey, NumericRange> = {
+  ...EMPTY_NUMERIC_FILTERS,
+  market_value: { min: "10000", max: "" },
+  roof_sqft:    { min: "100", max: "" },
+};
+
 const STREET_SUFFIXES = new Set([
   "drive","dr","street","st","avenue","ave","road","rd","lane","ln",
   "boulevard","blvd","court","ct","place","pl","way","circle","cir",
@@ -80,6 +109,8 @@ export default function PropertyViewer() {
   const [includeProposed, setIncludeProposed] = useState(true);
   const [selectedTypes,   setSelectedTypes]   = useState<string[]>([...ALL_TYPES]);
   const [onlyWithSolar,   setOnlyWithSolar]   = useState(false);
+  const [numericFilters,  setNumericFilters]  = useState<Record<NumericFieldKey, NumericRange>>(DEFAULT_NUMERIC_FILTERS);
+  const [advancedOpen,    setAdvancedOpen]    = useState(false);
   const [proximityOn,     setProximityOn]     = useState(true);
 
   const [properties,    setProperties]    = useState<PropertyPoint[]>([]);
@@ -497,16 +528,31 @@ export default function PropertyViewer() {
     });
   }, [properties, sortKey, sortDir]);
 
+  const activeNumericFilters = useMemo(
+    () => NUMERIC_FIELDS.filter(f => numericFilters[f.key].min !== "" || numericFilters[f.key].max !== ""),
+    [numericFilters],
+  );
+
   const filteredSorted = useMemo(() => {
     const raw = searchQuery.trim();
-    if (!raw) return sorted;
-    const q = normalizeAddressSearch(raw).toLowerCase();
-    return sorted.filter(p =>
-      p.address?.toLowerCase().includes(q) ||
-      p.owner?.toLowerCase().includes(q) ||
-      p.pid?.toLowerCase().includes(q)
-    );
-  }, [sorted, searchQuery]);
+    const q = raw ? normalizeAddressSearch(raw).toLowerCase() : null;
+    return sorted.filter(p => {
+      if (q && !(
+        p.address?.toLowerCase().includes(q) ||
+        p.owner?.toLowerCase().includes(q) ||
+        p.pid?.toLowerCase().includes(q)
+      )) return false;
+
+      for (const f of activeNumericFilters) {
+        const { min, max } = numericFilters[f.key];
+        const v = f.getValue(p);
+        if (v == null) return false;
+        if (min !== "" && v < Number(min)) return false;
+        if (max !== "" && v > Number(max)) return false;
+      }
+      return true;
+    });
+  }, [sorted, searchQuery, activeNumericFilters, numericFilters]);
 
   const exportCsv = () => {
     const headers = ["Address","Owner","ZIP","Type","Land use","Built","Market value","Roof sqft","Solar kW","Sun score","Max system kW","Dist peaker mi","Dist gas mi"];
@@ -688,32 +734,60 @@ export default function PropertyViewer() {
               {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Loading…</> : "Run Query"}
             </Button>
 
-            <div className="pt-2 border-t border-border space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Map legend</p>
-              {ALL_TYPES.map(t => (
-                <div key={t} className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: TYPE_COLOR[t] }} />
-                  <span className="text-xs text-foreground">{TYPE_LABEL[t]}</span>
-                </div>
-              ))}
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-yellow-400 bg-transparent" />
-                <span className="text-xs text-foreground">Yellow ring = has solar</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full flex-shrink-0 bg-white ring-1 ring-border" />
-                <span className="text-xs text-foreground">White = no Google Solar data</span>
-              </div>
-              {proximityOn && includeGas && (
-                <div className="flex items-center gap-2 pt-1.5 mt-1.5 border-t border-border">
-                  <span className="w-3 h-3 rounded-full flex-shrink-0 bg-[#7f1d1d]" />
-                  <span className="text-xs text-foreground">Existing gas plant</span>
-                </div>
-              )}
-              {proximityOn && includeProposed && (
-                <div className={`flex items-center gap-2 ${proximityOn && includeGas ? "" : "pt-1.5 mt-1.5 border-t border-border"}`}>
-                  <span className="w-3 h-3 rounded-full flex-shrink-0 bg-amber-600" />
-                  <span className="text-xs text-foreground">Proposed peaker site</span>
+            {/* Advanced: numeric range filters, applied instantly on the already-fetched set */}
+            <div className="pt-2 border-t border-border space-y-2">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen(v => !v)}
+                className="flex items-center justify-between w-full text-left"
+              >
+                <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Advanced filters
+                  {activeNumericFilters.length > 0 && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {activeNumericFilters.length}
+                    </span>
+                  )}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${advancedOpen ? "rotate-180" : ""}`} />
+              </button>
+              {advancedOpen && (
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">Min/max, either side optional</p>
+                    <button
+                      className="text-xs text-muted-foreground underline disabled:opacity-40 disabled:no-underline"
+                      disabled={activeNumericFilters.length === 0}
+                      onClick={() => setNumericFilters(EMPTY_NUMERIC_FILTERS)}
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  {NUMERIC_FIELDS.map(f => (
+                    <div key={f.key} className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{f.label}</p>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          placeholder="Min"
+                          value={numericFilters[f.key].min}
+                          onChange={e => setNumericFilters(prev => ({ ...prev, [f.key]: { ...prev[f.key], min: e.target.value } }))}
+                          className="h-7 w-full rounded border border-input bg-background px-2 text-xs"
+                        />
+                        <span className="text-xs text-muted-foreground">–</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          placeholder="Max"
+                          value={numericFilters[f.key].max}
+                          onChange={e => setNumericFilters(prev => ({ ...prev, [f.key]: { ...prev[f.key], max: e.target.value } }))}
+                          className="h-7 w-full rounded border border-input bg-background px-2 text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -724,7 +798,7 @@ export default function PropertyViewer() {
         <div className="flex-1 relative min-w-0">
           <MapTokenLoader>
             <PropertyMap
-              properties={properties}
+              properties={filteredSorted}
               gasPlants={proximityOn && includeGas ? gasPlants : []}
               proposedSites={proximityOn && includeProposed ? proposedSites : []}
               siteCounts={proximityOn ? siteCounts : {}}
@@ -734,6 +808,37 @@ export default function PropertyViewer() {
               onSelect={setFocusPid}
             />
           </MapTokenLoader>
+
+          {/* Legend — map overlay, not part of the filter panel */}
+          <div className="absolute bottom-3 left-3 z-10 bg-card/90 backdrop-blur-sm rounded-lg border border-border shadow-md p-3 space-y-1.5 max-w-[180px] pointer-events-none">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Legend</p>
+            {ALL_TYPES.map(t => (
+              <div key={t} className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: TYPE_COLOR[t] }} />
+                <span className="text-xs text-foreground">{TYPE_LABEL[t]}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-yellow-400 bg-transparent" />
+              <span className="text-xs text-foreground">Has solar</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full flex-shrink-0 bg-white ring-1 ring-border" />
+              <span className="text-xs text-foreground">No Solar data</span>
+            </div>
+            {proximityOn && includeGas && (
+              <div className="flex items-center gap-2 pt-1.5 mt-1.5 border-t border-border">
+                <span className="w-3 h-3 rounded-full flex-shrink-0 bg-[#7f1d1d]" />
+                <span className="text-xs text-foreground">Gas plant</span>
+              </div>
+            )}
+            {proximityOn && includeProposed && (
+              <div className={`flex items-center gap-2 ${proximityOn && includeGas ? "" : "pt-1.5 mt-1.5 border-t border-border"}`}>
+                <span className="w-3 h-3 rounded-full flex-shrink-0 bg-amber-600" />
+                <span className="text-xs text-foreground">Proposed peaker</span>
+              </div>
+            )}
+          </div>
         </div>
 
       </div>
@@ -921,15 +1026,17 @@ export default function PropertyViewer() {
             </Button>
             {/* Satellite map — aspect-square keeps it square as width changes */}
             <div className="flex-shrink-0 aspect-square w-full">
-              <SatellitePane
-                lat={sel.lat} lon={sel.lon} className="w-full h-full"
-                {...solarFilter.paneProps}
-                panelHeightM={panelOverlay?.dims.h}
-                panelWidthM={panelOverlay?.dims.w}
-                segmentAzimuths={panelOverlay?.azimuths}
-                segmentPitches={panelOverlay?.pitches}
-                fitKey={focusPid ?? undefined}
-              />
+              <MapTokenLoader>
+                <SatellitePane
+                  lat={sel.lat} lon={sel.lon} className="w-full h-full"
+                  {...solarFilter.paneProps}
+                  panelHeightM={panelOverlay?.dims.h}
+                  panelWidthM={panelOverlay?.dims.w}
+                  segmentAzimuths={panelOverlay?.azimuths}
+                  segmentPitches={panelOverlay?.pitches}
+                  fitKey={focusPid ?? undefined}
+                />
+              </MapTokenLoader>
             </div>
             {/* Property info */}
             <div className="flex-1 overflow-auto bg-card p-4 space-y-4">
