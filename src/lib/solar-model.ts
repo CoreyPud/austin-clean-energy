@@ -392,8 +392,7 @@ export function mergePbiIntoThirtyYear(thirtyYear: ThirtyYearResult, pbi: PbiMod
 
 export const SSO_RATE_UNDER_1MW = 0.11;    // $/kWh, systems < 1 MW-ac
 export const SSO_RATE_OVER_1MW  = 0.0841;  // $/kWh, systems >= 1 MW-ac
-export const SSO_MIN_KW         = 50;       // program minimum
-export const SSO_SHOW_THRESHOLD_KW = 75;   // show option when roof can fit this much
+export const SSO_MIN_KW         = 50;       // program minimum -- also the threshold for showing the SSO/VoS toggle at all
 
 // Rate escalation, O&M, and inverter replacement, backed out of a TPO pro forma for a
 // sub-1MW commercial system. The pro forma prices third-party ownership (lease payment

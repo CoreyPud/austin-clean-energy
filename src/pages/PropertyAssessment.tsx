@@ -44,7 +44,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import {
   billToMonthlyKwh,
   calculateAustinEnergyUsageBill,
-  SSO_SHOW_THRESHOLD_KW,
+  SSO_MIN_KW,
 } from "@/lib/solar-model";
 import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
@@ -136,7 +136,7 @@ const PropertyAssessment = () => {
   const [loanTermYears, setLoanTermYears] = useState(20);
   const [loanRate, setLoanRate] = useState(6);
   const effectiveLoanTerm = financeMode === "cash" ? 0 : loanTermYears;
-  const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_SHOW_THRESHOLD_KW;
+  const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_MIN_KW;
 
   // Reset to recommended only when a fresh assessment result loads
   useEffect(() => {

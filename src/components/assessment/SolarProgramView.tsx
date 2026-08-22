@@ -17,7 +17,6 @@ import {
   SSO_INVERTER_REPLACEMENT_PER_KW,
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
-  SSO_SHOW_THRESHOLD_KW,
   ssoRate,
 } from "@/lib/solar-model";
 import { buildProgramFinancials, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
@@ -100,7 +99,7 @@ export default function SolarProgramView({
   const isResidential = propertyClass === "residential";
   const isMultifamily = propertyClass === "multifamily";
   const isCommercial = propertyClass === "commercial";
-  const ssoEligible = isCommercial && !isNonProfit && rec.maxKw >= SSO_SHOW_THRESHOLD_KW;
+  const ssoEligible = isCommercial && !isNonProfit && rec.maxKw >= SSO_MIN_KW;
   const isSSO = ssoEligible && billingMode === "sso";
   // Only residential and commercial-VoS reflect a real bill/usage figure -- multifamily's
   // annualUsageKwh is a production proxy (virtual net metering has no per-unit bill), and SSO

@@ -20,7 +20,7 @@ import {
 } from "@/lib/property-solar";
 import SolarProgramView from "@/components/assessment/SolarProgramView";
 import { formatAssessorAddress } from "@/lib/address-utils";
-import { billToMonthlyKwh, SSO_SHOW_THRESHOLD_KW } from "@/lib/solar-model";
+import { billToMonthlyKwh, SSO_MIN_KW } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -232,7 +232,7 @@ export default function PropertyPage() {
 
   // Matches SolarProgramView's own internal ssoEligible formula exactly -- this page's
   // surrounding copy (bill input gating, CTA) needs to agree with what the shared view decides.
-  const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_SHOW_THRESHOLD_KW;
+  const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_MIN_KW;
   // ssoEligible = the roof qualifies for SSO at all; showSso = actually display SSO right now.
   // Properties too small for SSO always show VoS (billingMode is only a meaningful choice
   // once ssoEligible is true).
@@ -256,7 +256,15 @@ export default function PropertyPage() {
 
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">{address}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold tracking-tight">{address}</h1>
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded-full text-white shrink-0"
+              style={{ backgroundColor: typeColor }}
+            >
+              {typeLabel}
+            </span>
+          </div>
           {property.situs_zip && (
             <p className="text-muted-foreground text-sm">Austin, TX {property.situs_zip}</p>
           )}
