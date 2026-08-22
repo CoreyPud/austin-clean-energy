@@ -44,7 +44,7 @@ import {
   calculateAustinEnergyUsageBill,
   SSO_MIN_KW,
 } from "@/lib/solar-model";
-import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
+import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, isSsoEligible, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
@@ -136,12 +136,15 @@ const PropertyAssessment = () => {
   const effectiveLoanTerm = financeMode === "cash" ? 0 : loanTermYears;
   const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_MIN_KW;
 
-  // Reset to recommended only when a fresh assessment result loads
+  // Reset to recommended only when a fresh assessment result loads. Defaults to Standard
+  // Offer whenever it's actually available (real roof-size eligibility, not just property
+  // type), same isSsoEligible formula SolarProgramView/SolarBillingToggle use.
   useEffect(() => {
-    const nextKw = propertyType === "commercial" ? recSso?.recommendedKw ?? null : recommendedKw;
+    const eligible = recSso ? isSsoEligible(recSso, classifyProperty(propertyType), propertyType === "non-profit") : false;
+    const nextKw = eligible ? recSso?.recommendedKw ?? null : recommendedKw;
     if (nextKw != null) setSystemKw(nextKw);
-    setBillingMode(propertyType === "commercial" ? "sso" : "vos");
-    if (propertyType === "commercial" && nextKw != null) setCostPerW(pickSsoScenario(nextKw).costPerWatt);
+    setBillingMode(eligible ? "sso" : "vos");
+    if (eligible && nextKw != null) setCostPerW(pickSsoScenario(nextKw).costPerWatt);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
 
@@ -751,8 +754,10 @@ const PropertyAssessment = () => {
                 {/* Contact CTA */}
                 <ContactCtaCard {...getCtaCopy(classifyProperty(propertyType), ssoEligible)} />
 
-                {/* Quiz gate / lifestyle form, while quiz not yet completed */}
-                {!quizCompleted && (
+                {/* Quiz gate / lifestyle form, while quiz not yet completed. Residential/
+                    multifamily only -- EVs, home electrification, etc. don't fit a commercial
+                    or non-profit property. */}
+                {!quizCompleted && classifyProperty(propertyType) !== "commercial" && (
                   !showLifestyleForm ? (
                     <Card className="border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
                       <CardContent className="py-6 flex flex-col items-center text-center gap-3">
