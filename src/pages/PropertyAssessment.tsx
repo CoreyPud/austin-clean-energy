@@ -33,6 +33,7 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SsoProForma from "@/components/assessment/SsoProForma";
+import { pickSsoScenario } from "@/lib/sso-proforma";
 
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
 import { Slider } from "@/components/ui/slider";
@@ -121,16 +122,23 @@ const PropertyAssessment = () => {
 
   // Reset to recommended only when a fresh assessment result loads
   useEffect(() => {
-    if (propertyType === "commercial" && ssoDefaultKw > 0) setSystemKw(ssoDefaultKw);
+    let nextKw = recommendedKw;
+    if (propertyType === "commercial" && ssoDefaultKw > 0) { setSystemKw(ssoDefaultKw); nextKw = ssoDefaultKw; }
     else if (recommendedKw != null) setSystemKw(recommendedKw);
     setBillingMode(propertyType === "commercial" ? "sso" : "vos");
+    if (propertyType === "commercial") setCostPerW(pickSsoScenario(nextKw ?? 0).costPerWatt);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
 
   // Switching to SSO sizes at 60% of max fit; switching back restores VoS recommended
   useEffect(() => {
-    if (billingMode === "sso" && ssoDefaultKw > 0) setSystemKw(ssoDefaultKw);
-    else if (billingMode === "vos" && recommendedKw != null) setSystemKw(recommendedKw);
+    if (billingMode === "sso" && ssoDefaultKw > 0) {
+      setSystemKw(ssoDefaultKw);
+      if (propertyType === "commercial") setCostPerW(pickSsoScenario(ssoDefaultKw).costPerWatt);
+    } else if (billingMode === "vos" && recommendedKw != null) {
+      setSystemKw(recommendedKw);
+      if (propertyType === "commercial") setCostPerW(pickSsoScenario(recommendedKw).costPerWatt);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [billingMode]);
 
@@ -138,7 +146,9 @@ const PropertyAssessment = () => {
     const defaults: Record<string, number> = { commercial: 3000, "non-profit": 800 };
     setMonthlyBill(defaults[propertyType] ?? 150);
     setBillingMode(propertyType === "commercial" ? "sso" : "vos");
-    setCostPerW(propertyType === "commercial" ? 2.00 : 2.95);
+    // Real system size isn't known yet at this point (results haven't loaded) -- seed with
+    // the smaller-tier rate; the [results] effect above refines it once size is known.
+    setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : 2.95);
   }, [propertyType]);
 
   const liveSummary = (() => {

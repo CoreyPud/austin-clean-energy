@@ -1,4 +1,5 @@
 import { austinEnergyRebate, AUSTIN_INSTALL_COST_PER_KW } from "@/lib/solar-model";
+import { pickSsoScenario } from "@/lib/sso-proforma";
 
 export function slugifyAddress(address: string): string {
   return address
@@ -29,6 +30,7 @@ export interface SolarRecommendation {
   recommendedKw: number;
   maxKw: number;
   annualProductionKwh: number;
+  costPerW: number;
   grossCost: number;
   aeRebate: number;
   netCost: number;
@@ -73,7 +75,13 @@ export function computeRecommendation(
   recommendedKw = Math.round(recommendedKw * 10) / 10;
 
   const annualProductionKwh = Math.round(recommendedKw * productionPerKw);
-  const grossCost = Math.round(recommendedKw * AUSTIN_INSTALL_COST_PER_KW);
+  // Commercial install cost is single-sourced from the Standard Offer pro forma's tiered
+  // rate (sso-proforma.ts) rather than the Berkeley Lab figure below, which is a residential
+  // regression that doesn't reflect commercial economies of scale.
+  const costPerW = cls === "commercial"
+    ? pickSsoScenario(recommendedKw).costPerWatt
+    : AUSTIN_INSTALL_COST_PER_KW / 1000;
+  const grossCost = Math.round(recommendedKw * costPerW * 1000);
 
   const aePropertyType =
     cls === "multifamily" ? "multi-family" : cls === "commercial" ? "commercial" : "single-family";
@@ -88,6 +96,7 @@ export function computeRecommendation(
     recommendedKw,
     maxKw: Math.round(maxKw * 10) / 10,
     annualProductionKwh,
+    costPerW,
     grossCost,
     aeRebate,
     netCost,

@@ -324,7 +324,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                     </div>
                     <div>
                       <p className="font-medium text-foreground/70 mb-0.5">Install cost</p>
-                      <p>The default $2.95/W comes from Berkeley Lab's 2024 Tracking the Sun report for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify. Standard Offer installs don't qualify for Austin Energy's capacity rebate, so this is the full cost with no rebate applied.</p>
+                      <p>The default ${costPerW.toFixed(2)}/W comes from the Standard Offer pro forma's tiered rate (systems 1,300 kW and above use a slightly higher rate); get real quotes to verify. Standard Offer installs don't qualify for Austin Energy's capacity rebate, so this is the full cost with no rebate applied.</p>
                     </div>
                   </>
                 ) : (
@@ -335,7 +335,7 @@ const SolarCalculator = ({ solarInsights, annualUsageKwh, uploadedKwh, propertyT
                     </div>
                     <div>
                       <p className="font-medium text-foreground/70 mb-0.5">Install cost</p>
-                      <p>The default $2.95/W comes from Berkeley Lab's 2024 Tracking the Sun report for Austin residential installs. Use the slider to match quotes you actually receive; costs vary meaningfully by installer and system design.</p>
+                      <p>The default ${costPerW.toFixed(2)}/W comes from {propertyType === "commercial" ? "the Standard Offer pro forma's tiered commercial rate" : "Berkeley Lab's 2024 Tracking the Sun report for Austin residential installs"}. Use the slider to match quotes you actually receive; costs vary meaningfully by installer and system design.</p>
                     </div>
                   </>
                 )}

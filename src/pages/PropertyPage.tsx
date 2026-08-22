@@ -36,7 +36,6 @@ import {
   SSO_INVERTER_REPLACEMENT_PER_KW,
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
-  AUSTIN_INSTALL_COST_PER_KW,
 } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
@@ -694,7 +693,7 @@ export default function PropertyPage() {
                     <div>
                       <p className="font-medium text-foreground mb-1">Cost</p>
                       <ul className="space-y-1 list-disc list-inside">
-                        <li>Install cost: ${AUSTIN_INSTALL_COST_PER_KW.toLocaleString()}/kW (Berkeley Lab 2024 regression for Austin residential installs; large commercial systems typically run lower per watt from economies of scale, so get real quotes to verify)</li>
+                        <li>Install cost: ${(rec.costPerW * 1000).toLocaleString()}/kW (${rec.costPerW.toFixed(2)}/W, from the Standard Offer pro forma's tiered rate; systems 1,300 kW and above use a slightly higher rate. Get real quotes to verify.)</li>
                         {ssoEligible ? (
                           <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
                         ) : (
