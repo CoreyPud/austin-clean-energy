@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
+import MapTokenLoader from "@/components/MapTokenLoader";
 import { useSolarFilter } from "@/components/SolarFilterPanel";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
@@ -457,19 +458,21 @@ export default function PropertyPage() {
         {/* Satellite map */}
         {property.centroid_lat != null && property.centroid_lon != null && (
           <div className="space-y-3">
-            <SatellitePane
-              lat={property.centroid_lat}
-              lon={property.centroid_lon}
-              className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
-              {...solarFilter.paneProps}
-              panelHeightM={panelDims?.h}
-              panelWidthM={panelDims?.w}
-              segmentAzimuths={segmentAzimuths}
-              segmentPitches={segmentPitches}
-              selectedPanelCount={rec
-                ? Math.round((rec.recommendedKw * 1000) / (property.solar_panel_capacity_w ?? 400))
-                : undefined}
-            />
+            <MapTokenLoader>
+              <SatellitePane
+                lat={property.centroid_lat}
+                lon={property.centroid_lon}
+                className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
+                {...solarFilter.paneProps}
+                panelHeightM={panelDims?.h}
+                panelWidthM={panelDims?.w}
+                segmentAzimuths={segmentAzimuths}
+                segmentPitches={segmentPitches}
+                selectedPanelCount={rec
+                  ? Math.round((rec.recommendedKw * 1000) / (property.solar_panel_capacity_w ?? 400))
+                  : undefined}
+              />
+            </MapTokenLoader>
           </div>
         )}
 
