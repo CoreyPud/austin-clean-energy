@@ -33,6 +33,7 @@ import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarCalculator from "@/components/assessment/SolarCalculator";
 import SsoProForma from "@/components/assessment/SsoProForma";
+import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import { pickSsoScenario } from "@/lib/sso-proforma";
 
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
@@ -49,6 +50,9 @@ import {
   AUSTIN_ENERGY_RATES,
   SSO_SHOW_THRESHOLD_KW,
   ssoRate,
+  PBI_MIN_KW,
+  buildPbiModel,
+  mergePbiIntoThirtyYear,
 } from "@/lib/solar-model";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
@@ -179,7 +183,13 @@ const PropertyAssessment = () => {
       productionPerKw: solarProdPerKw,
     };
     const yr1 = buildYearModel(inputs, 0);
-    const yr30 = buildThirtyYearModel(inputs, cost);
+    const yr30Base = buildThirtyYearModel(inputs, cost);
+    // For-profit commercial >= PBI_MIN_KW isn't CBI-eligible (cost above already reflects that
+    // via austinEnergyRebate) but gets a 5-year on-bill credit on top of Value of Solar instead.
+    const pbiEligible = propertyType === "commercial" && systemKw >= PBI_MIN_KW;
+    const yr30 = pbiEligible
+      ? mergePbiIntoThirtyYear(yr30Base, buildPbiModel(systemKw, solarProdPerKw))
+      : yr30Base;
     const net25 = yr30.cumulativeByYear[24]?.cumulative ?? 0;
     return {
       monthlySavings: yr1.savings / 12,
@@ -803,6 +813,10 @@ const PropertyAssessment = () => {
 
                     {ssoEligible && billingMode === "sso" && (
                       <SsoProForma systemKw={systemKw} />
+                    )}
+
+                    {propertyType === "commercial" && billingMode === "vos" && systemKw >= PBI_MIN_KW && (
+                      <PbiBreakdown systemKw={systemKw} productionPerKw={solarProdPerKw} />
                     )}
 
                   </>

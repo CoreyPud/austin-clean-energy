@@ -12,6 +12,7 @@ import { useSolarFilter } from "@/components/SolarFilterPanel";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import SsoProForma from "@/components/assessment/SsoProForma";
+import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import {
   slugifyAddress,
@@ -36,6 +37,8 @@ import {
   SSO_INVERTER_REPLACEMENT_PER_KW,
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
+  buildPbiModel,
+  mergePbiIntoThirtyYear,
 } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
@@ -187,8 +190,16 @@ function SolarCharts({
     productionPerKw,
   }), [annualUsageKwh, rec.recommendedKw, productionPerKw]);
 
-  const yearOne    = useMemo(() => buildYearModel(inputs, 0), [inputs]);
-  const thirtyYear = useMemo(() => buildThirtyYearModel(inputs, rec.netCost), [inputs, rec.netCost]);
+  const yearOne         = useMemo(() => buildYearModel(inputs, 0), [inputs]);
+  const thirtyYearBase  = useMemo(() => buildThirtyYearModel(inputs, rec.netCost), [inputs, rec.netCost]);
+  // For-profit commercial >= PBI_MIN_KW isn't CBI-eligible (rec.netCost already reflects that
+  // via austinEnergyRebate) but gets a 5-year on-bill credit on top of Value of Solar instead.
+  const thirtyYear = useMemo(
+    () => rec.pbiEligible
+      ? mergePbiIntoThirtyYear(thirtyYearBase, buildPbiModel(rec.recommendedKw, productionPerKw))
+      : thirtyYearBase,
+    [thirtyYearBase, rec.pbiEligible, rec.recommendedKw, productionPerKw],
+  );
   // Gross cost, not netCost: SSO systems don't qualify for the AE capacity rebate baked into netCost.
   const sso        = useMemo(() => buildSsoModel(rec.recommendedKw, productionPerKw, rec.grossCost), [rec.recommendedKw, productionPerKw, rec.grossCost]);
 
@@ -696,6 +707,8 @@ export default function PropertyPage() {
                         <li>Install cost: ${(rec.costPerW * 1000).toLocaleString()}/kW (${rec.costPerW.toFixed(2)}/W, from the Standard Offer pro forma's tiered rate; systems 1,300 kW and above use a slightly higher rate. Get real quotes to verify.)</li>
                         {ssoEligible ? (
                           <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
+                        ) : rec.pbiEligible ? (
+                          <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI) — that program is only for systems under 100 kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
                         ) : (
                           <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
                         )}
@@ -724,6 +737,11 @@ export default function PropertyPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Performance-Based Incentive — for-profit commercial >= PBI_MIN_KW on VoS billing */}
+            {isCommercial && !ssoEligible && rec.pbiEligible && (
+              <PbiBreakdown systemKw={rec.recommendedKw} productionPerKw={productionPerKw} />
             )}
 
             {/* Third-party-owner pro forma — same investor-side view shown on the calculator */}

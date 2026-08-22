@@ -1,4 +1,4 @@
-import { austinEnergyRebate, AUSTIN_INSTALL_COST_PER_KW } from "@/lib/solar-model";
+import { austinEnergyRebate, AUSTIN_INSTALL_COST_PER_KW, PBI_MIN_KW, buildPbiModel } from "@/lib/solar-model";
 import { pickSsoScenario } from "@/lib/sso-proforma";
 
 export function slugifyAddress(address: string): string {
@@ -36,6 +36,12 @@ export interface SolarRecommendation {
   netCost: number;
   annualSavings: number;
   paybackYears: number;
+  /** For-profit commercial systems >= PBI_MIN_KW: not CBI-eligible, gets a 5-year PBI credit instead. */
+  pbiEligible: boolean;
+  /** Year-1 PBI credit; $0 when not pbiEligible. Ongoing VoS (annualSavings) is unaffected — this
+   *  is a separate, time-limited stream (see buildPbiModel/mergePbiIntoThirtyYear for the full
+   *  year-by-year picture used in the payback chart). */
+  pbiAnnualCredit: number;
 }
 
 export function computeRecommendation(
@@ -92,6 +98,9 @@ export function computeRecommendation(
   const paybackYears =
     annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
 
+  const pbiEligible = cls === "commercial" && recommendedKw >= PBI_MIN_KW;
+  const pbiAnnualCredit = pbiEligible ? Math.round(buildPbiModel(recommendedKw, productionPerKw).annualCredit) : 0;
+
   return {
     recommendedKw,
     maxKw: Math.round(maxKw * 10) / 10,
@@ -102,5 +111,7 @@ export function computeRecommendation(
     netCost,
     annualSavings,
     paybackYears,
+    pbiEligible,
+    pbiAnnualCredit,
   };
 }
