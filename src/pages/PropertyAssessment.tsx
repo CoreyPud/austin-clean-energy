@@ -37,6 +37,7 @@ import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import { pickSsoScenario } from "@/lib/sso-proforma";
 
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
+import { useSolarFilter } from "@/components/SolarFilterPanel";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -100,10 +101,22 @@ const PropertyAssessment = () => {
     ? uploadedKwh.reduce((s, v) => s + v, 0)
     : billToMonthlyKwh(monthlyBill) * 12;
 
+  // Same buildable-layout derate (setbacks, low-TSRF panels, rooftop walkways removed) that
+  // PropertyPage.tsx applies -- without this, every downstream number here is sized off
+  // Google's raw maximum instead of what can actually be built, and the two pages disagree.
+  const solarFilter = useSolarFilter({
+    panels: assessmentPanels,
+    propertyType,
+    azimuths: assessmentAzimuths,
+  });
+  const buildablePanels = solarFilter.filteredPanelCount ?? si?.maxPanels ?? null;
+
   // Single-sourced with PropertyPage.tsx via computeRecommendation: same sizing, rebate/PBI
   // eligibility, and production-per-kW (including the 0.86 NREL PVWatts derate) logic either
   // way, adapted from the live Google Solar response instead of a TCAD row.
-  const siteInput = si ? fromGoogleSolarInsights(si, propertyType) : null;
+  const siteInput = (si && buildablePanels)
+    ? fromGoogleSolarInsights({ ...si, maxPanels: buildablePanels }, propertyType)
+    : null;
   const recVos = computeRecommendation(siteInput, { annualUsageKwh, billingMode: "vos" });
   const recSso = computeRecommendation(siteInput, { billingMode: "sso" });
   const solarMaxKw = recVos?.maxKw ?? recSso?.maxKw ?? 0; // identical either way -- doesn't vary by billing mode
@@ -623,7 +636,7 @@ const PropertyAssessment = () => {
                             lat={results.solarCenter?.lat ?? results.center?.[1] ?? 30.2672}
                             lon={results.solarCenter?.lon ?? results.center?.[0] ?? -97.7431}
                             className="w-full h-[480px]"
-                            panels={assessmentPanels}
+                            {...solarFilter.paneProps}
                             panelHeightM={results.panelDims?.h}
                             panelWidthM={results.panelDims?.w}
                             segmentAzimuths={assessmentAzimuths}
@@ -656,7 +669,7 @@ const PropertyAssessment = () => {
                         carbonOffsetKgPerMwh={si.carbonOffsetKgPerMwh}
                         sunshineHrsDisplay={sunshineHrsDisplay}
                         roofSqft={roofSqft}
-                        panelCount={si.maxPanels ?? null}
+                        panelCount={buildablePanels}
                         imageryQuality={si.imageryQuality}
                         imageryDate={imageryDateStr}
                         onCostPerWChange={setCostPerW}
