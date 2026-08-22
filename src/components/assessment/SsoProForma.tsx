@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
 } from "recharts";
@@ -45,7 +44,6 @@ const SsoProForma = ({ systemKw }: Props) => {
               Investor-side economics if a third party owns the system and leases your roof or land.
             </p>
           </div>
-          <Badge variant="secondary" className="text-xs">{model.scenario.label}</Badge>
         </div>
 
         <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5 mb-4">

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -41,7 +40,6 @@ const PbiBreakdown = ({ systemKw, productionPerKw }: Props) => {
               An on-bill credit for the first {COMMERCIAL_PBI_YEARS} years, in addition to Value of Solar — not a replacement for it, and not an upfront rebate.
             </p>
           </div>
-          <Badge variant="secondary" className="text-xs">{tierLabel(systemKw)} tier</Badge>
         </div>
 
         {/* Headline metrics */}
