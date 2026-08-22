@@ -759,21 +759,23 @@ const PropertyAssessment = () => {
                     {/* Roof map — full width */}
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
-                        <SatellitePane
-                          lat={results.solarCenter?.lat ?? results.center?.[1] ?? 30.2672}
-                          lon={results.solarCenter?.lon ?? results.center?.[0] ?? -97.7431}
-                          className="w-full h-[480px]"
-                          panels={assessmentPanels}
-                          panelHeightM={results.panelDims?.h}
-                          panelWidthM={results.panelDims?.w}
-                          segmentAzimuths={assessmentAzimuths}
-                          segmentPitches={assessmentPitches}
-                          selectedPanelCount={
-                            assessmentPanels && si?.panelCapacityWatts
-                              ? Math.round(systemKw * 1000 / si.panelCapacityWatts)
-                              : undefined
-                          }
-                        />
+                        <MapTokenLoader>
+                          <SatellitePane
+                            lat={results.solarCenter?.lat ?? results.center?.[1] ?? 30.2672}
+                            lon={results.solarCenter?.lon ?? results.center?.[0] ?? -97.7431}
+                            className="w-full h-[480px]"
+                            panels={assessmentPanels}
+                            panelHeightM={results.panelDims?.h}
+                            panelWidthM={results.panelDims?.w}
+                            segmentAzimuths={assessmentAzimuths}
+                            segmentPitches={assessmentPitches}
+                            selectedPanelCount={
+                              assessmentPanels && si?.panelCapacityWatts
+                                ? Math.round(systemKw * 1000 / si.panelCapacityWatts)
+                                : undefined
+                            }
+                          />
+                        </MapTokenLoader>
                       </CardContent>
                     </Card>
 
