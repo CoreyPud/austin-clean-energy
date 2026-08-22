@@ -509,7 +509,7 @@ export function SolarBillingToggle({
 
       {ssoEligible && (
         <div className="space-y-2">
-          <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full max-w-xs">
+          <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full">
             <button
               type="button"
               onClick={() => onBillingModeChange("sso")}
