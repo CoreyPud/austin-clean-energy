@@ -274,3 +274,31 @@ export function buildProgramFinancials(
 
   return { yearOne, thirtyYear, sso, isSSO: opts.isSSO, net25, paybackYear, annualAmount };
 }
+
+/** Single source for the contact-CTA copy shown at the bottom of both PropertyPage.tsx and
+ *  PropertyAssessment.tsx -- tailored by property class and SSO eligibility rather than the
+ *  generic ContactCtaCard default. */
+export function getCtaCopy(cls: PropertyClass, ssoEligible: boolean): { title: string; description: string } {
+  if (cls === "residential") {
+    return {
+      title: "Want help navigating your solar options?",
+      description: "We're an independent resource, not a solar installer. We help Austin homeowners understand rebates, what questions to ask installers, and whether solar actually pencils out for their situation.",
+    };
+  }
+  if (cls === "multifamily") {
+    return {
+      title: "Questions about multifamily solar in Austin?",
+      description: "We're not a solar company — we're an independent resource. Austin Energy's multifamily programs change frequently and eligibility can be complicated. We can help you figure out what's currently available and whether it makes sense for your building.",
+    };
+  }
+  if (ssoEligible) {
+    return {
+      title: "Want help evaluating the Standard Offer for your property?",
+      description: "We're not a solar installer — we're an independent resource. The Standard Offer is compelling for large commercial properties, but navigating AE's interconnection process and finding the right installer takes work. We can help you ask the right questions.",
+    };
+  }
+  return {
+    title: "Want help evaluating solar for your commercial property?",
+    description: "We're not a solar installer — we're an independent resource. We can help you evaluate whether solar makes financial sense for your property and what to ask commercial installers about sizing, rates, and AE's rebate process.",
+  };
+}

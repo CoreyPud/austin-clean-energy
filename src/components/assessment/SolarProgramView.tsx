@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RotateCcw } from "lucide-react";
 import {
   BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { Slider } from "@/components/ui/slider";
+import { Card, CardContent } from "@/components/ui/card";
+import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import {
   SSO_RATE_UNDER_1MW,
   SSO_RATE_OVER_1MW,
@@ -15,39 +17,52 @@ import {
   SSO_INVERTER_REPLACEMENT_PER_KW,
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
+  SSO_SHOW_THRESHOLD_KW,
+  ssoRate,
 } from "@/lib/solar-model";
 import { buildProgramFinancials, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const fmtKwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`;
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-2xl font-semibold tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+const StickyKpi = ({
+  label, value, href, highlight,
+}: { label: string; value: string; href?: string; highlight?: boolean }) => {
+  const cls = `px-2 py-1 rounded border bg-background/50 ${highlight ? "border-primary/40" : ""} ${href ? "hover:border-primary/50 transition-colors cursor-pointer" : ""}`;
+  const inner = (
+    <div className="flex md:flex-col items-center md:items-start justify-between md:justify-start gap-2 md:gap-0">
+      <div className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">{label}</div>
+      <div className={`text-xl font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
     </div>
   );
-}
+  return href ? <a href={href} className={cls}>{inner}</a> : <div className={cls}>{inner}</div>;
+};
 
 interface SolarProgramViewProps {
   rec: SolarRecommendation;
+  /** The natural default size (no manual override) for the current billing mode --
+   *  independent of `rec.recommendedKw`, which already reflects any override. Used only for
+   *  the VoS "reset to recommended" comparison link; pass null when not known or not VoS. */
+  recommendedKw: number | null;
   propertyClass: PropertyClass;
-  isSSO: boolean;
-  ssoEligible: boolean;
+  isNonProfit?: boolean;
+  systemKw: number;
+  onSystemKwChange: (v: number) => void;
+  billingMode: "vos" | "sso";
+  onBillingModeChange: (m: "vos" | "sso") => void;
   annualUsageKwh: number;
   productionPerKw: number;
-  batteryKwh?: number;
   loanTermYears?: number;
   loanInterestRate?: number;
   monthlyUsageKwh?: number[];
-  /** True only for the calculator's "non-profit" property type -- TCAD data (PropertyPage.tsx)
-   *  has no such distinction, so this only ever comes from PropertyAssessment.tsx. Non-profits
-   *  classify as propertyClass "commercial" (same detailed calc-details view) but get a
-   *  different rebate ($1.00/W capped at 200 kW, not the for-profit $0.70/W/100 kW or PBI) and
-   *  the flat residential-style install-cost rate, not the Standard Offer pro forma's tiered one. */
-  isNonProfit?: boolean;
+  carbonOffsetKgPerMwh?: number | null;
+  /** Pre-formatted roof-info strings/numbers -- each caller derives these from its own data
+   *  shape (TCAD row vs Google Solar response); this view only displays them. */
+  sunshineHrsDisplay: string | null;
+  roofSqft: number | null;
+  panelCount: number | null;
+  imageryQuality?: string | null;
+  imageryDate?: string | null;
   /** Presence enables an interactive installer-quote slider bound to rec.costPerW; the
    *  caller owns the state and re-derives `rec` with computeRecommendation's
    *  costPerWOverride. Omit for a static, data-derived cost-per-watt display. */
@@ -59,23 +74,34 @@ interface SolarProgramViewProps {
 
 export default function SolarProgramView({
   rec,
+  recommendedKw,
   propertyClass,
-  isSSO,
-  ssoEligible,
+  isNonProfit = false,
+  systemKw,
+  onSystemKwChange,
+  billingMode,
+  onBillingModeChange,
   annualUsageKwh,
   productionPerKw,
-  batteryKwh,
   loanTermYears,
   loanInterestRate,
   monthlyUsageKwh,
-  isNonProfit = false,
+  carbonOffsetKgPerMwh,
+  sunshineHrsDisplay,
+  roofSqft,
+  panelCount,
+  imageryQuality,
+  imageryDate,
   onCostPerWChange,
   financingSlot,
 }: SolarProgramViewProps) {
   const [showCalcDetails, setShowCalcDetails] = useState(false);
+  const [batteryKwh, setBatteryKwh] = useState(0);
   const isResidential = propertyClass === "residential";
   const isMultifamily = propertyClass === "multifamily";
   const isCommercial = propertyClass === "commercial";
+  const ssoEligible = isCommercial && !isNonProfit && rec.maxKw >= SSO_SHOW_THRESHOLD_KW;
+  const isSSO = ssoEligible && billingMode === "sso";
   // Only residential and commercial-VoS reflect a real bill/usage figure -- multifamily's
   // annualUsageKwh is a production proxy (virtual net metering has no per-unit bill), and SSO
   // revenue doesn't depend on usage at all. Showing a "vs. consumption" chart in either case
@@ -92,6 +118,14 @@ export default function SolarProgramView({
     monthlyUsageKwh,
   });
   const { yearOne, sso, net25, paybackYear, annualAmount } = financials;
+
+  const installCost = isSSO ? rec.grossCost : rec.netCost;
+  const billOffsetPct = yearOne.billWithoutSolar > 0
+    ? Math.round((yearOne.savings / yearOne.billWithoutSolar) * 100)
+    : 0;
+  const co2TonsPerYear = Math.round(
+    rec.recommendedKw * productionPerKw * (carbonOffsetKgPerMwh ? carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10,
+  ) / 10;
 
   const billData = yearOne.monthlyRows.map(r => ({
     month: r.month,
@@ -119,29 +153,138 @@ export default function SolarProgramView({
     rate: SSO_RATE_UNDER_1MW + i * SSO_RATE_STEP,
   }));
 
+  const hasRoofInfo = sunshineHrsDisplay || roofSqft || panelCount || imageryQuality;
+
   return (
     <div className="space-y-8">
-      {/* Stat row */}
-      <div id="section-savings" className="grid grid-cols-2 sm:grid-cols-4 gap-3 scroll-mt-52">
-        <StatCard label="System size" value={`${rec.recommendedKw} kW`} sub={`of ${rec.maxKw} kW max`} />
-        <StatCard
-          label="Net cost"
-          value={fmt$(isSSO ? rec.grossCost : rec.netCost)}
-          sub={!isSSO && rec.aeRebate > 0 ? "after AE rebate" : undefined}
-        />
-        <StatCard
-          label={isSSO ? "Annual revenue (est.)" : "Annual production"}
-          value={isSSO ? fmt$(annualAmount) : fmtKwh(rec.annualProductionKwh)}
-        />
-        <StatCard
-          label="Est. payback"
-          value={`${paybackYear ?? "30+"} yr`}
-          sub={isSSO
-            ? `${fmt$(annualAmount)}/yr revenue`
-            : rec.pbiEligible
-            ? `${fmt$(annualAmount)}/yr (yr 1, incl. PBI)`
-            : `${fmt$(annualAmount)}/yr savings`}
-        />
+      {/* Sticky control card: toggle, system/battery sliders, KPI strip */}
+      <div className="sticky top-0 z-20 -mx-4 px-4">
+        <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
+          <CardContent className="p-4">
+            {ssoEligible && (
+              <div className="mb-3 pb-3 border-b space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems 100 kW and up) can also stack a 5-year Performance-Based Incentive on top. Pick one below to see the numbers.
+                </p>
+                <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full">
+                  <button
+                    onClick={() => onBillingModeChange("sso")}
+                    className={`flex-1 py-1.5 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    Standard Offer
+                  </button>
+                  <button
+                    onClick={() => onBillingModeChange("vos")}
+                    className={`flex-1 py-1.5 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    Value of Solar
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {isSSO ? (
+                    <>
+                      Under Austin Energy's{" "}
+                      <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Standard Offer program</a>
+                      , AE pays a locked-in rate for every kilowatt-hour produced, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh and stepping up roughly every 5 years. Your electricity bill stays unchanged -- this is a standalone revenue stream on top of it. Minimum system size is {SSO_MIN_KW} kW.
+                    </>
+                  ) : (
+                    <>
+                      Austin Energy's{" "}
+                      <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
+                      {" "}credits all your production at $0.126/kWh regardless of how much you consume -- unused monthly credits carry forward, and AE pays out any remaining balance.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar -- see below." : ""}
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {isResidential && (
+              <div className="mb-3 pb-3 border-b">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Austin Energy's{" "}
+                  <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
+                  {" "}credits all your production at $0.126/kWh against your bill. Once credits cover your bill, additional production doesn't improve payback -- so we size to match your consumption.
+                </p>
+              </div>
+            )}
+            {isMultifamily && (
+              <div className="mb-3 pb-3 border-b">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Austin Energy offers solar rebates and incentives for multifamily properties. See{" "}
+                  <a href="https://austinenergy.com/green-power/solar-solutions/for-your-multifamily" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">AE's multifamily solar page</a>
+                  {" "}for current program options -- availability and eligibility change frequently.
+                </p>
+              </div>
+            )}
+            {isCommercial && !ssoEligible && (
+              <div className="mb-3 pb-3 border-b">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Austin Energy's{" "}
+                  <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
+                  {" "}credits all your production at $0.126/kWh regardless of how much you consume -- unused monthly credits carry forward, and AE pays out any remaining balance.{isNonProfit ? "" : ` Your system is under the ${SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.`}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-start gap-6">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-muted-foreground mb-1">Solar system size</div>
+                <div className="text-2xl font-bold tabular-nums mb-3">{systemKw.toFixed(1)} kW</div>
+                <Slider
+                  min={1}
+                  max={Math.max(rec.maxKw, 16)}
+                  step={rec.maxKw > 50 ? 1 : 0.5}
+                  value={[systemKw]}
+                  onValueChange={([v]) => onSystemKwChange(v)}
+                />
+                {recommendedKw != null && billingMode === "vos" && systemKw !== recommendedKw && (
+                  <div className="flex justify-end mt-1.5">
+                    <button
+                      onClick={() => onSystemKwChange(recommendedKw)}
+                      className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums transition-colors hover:text-primary"
+                    >
+                      <RotateCcw className="h-3 w-3 shrink-0" />
+                      {recommendedKw.toFixed(1)} kW recommended
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="h-16 w-px bg-border shrink-0" />
+
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-muted-foreground mb-1">Battery system size</div>
+                <div className="text-2xl font-bold tabular-nums mb-3">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</div>
+                <Slider
+                  min={0} max={30} step={1}
+                  value={[batteryKwh]}
+                  onValueChange={([v]) => setBatteryKwh(v)}
+                />
+              </div>
+            </div>
+
+            <div className={`${ssoEligible ? "mt-2" : "border-t mt-3"} pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5`}>
+              <StickyKpi label="install cost" value={fmt$(installCost)} href="#section-install" />
+              <StickyKpi
+                label={isSSO ? "monthly revenue" : "monthly savings"}
+                value={fmt$(annualAmount / 12)}
+                href="#section-savings"
+                highlight
+              />
+              <StickyKpi
+                label="payback"
+                value={paybackYear ? `${paybackYear} years` : "> 30 years"}
+                href="#section-payback"
+              />
+              {isSSO ? (
+                <StickyKpi label="SSO rate" value={`${(ssoRate(systemKw) * 100).toFixed(1)}¢/kWh`} href="#section-savings" />
+              ) : (
+                <StickyKpi label="bill offset" value={`${billOffsetPct}%`} href="#section-production" />
+              )}
+              <StickyKpi label="yearly CO₂ offset" value={`${co2TonsPerYear} tons`} href="#section-environmental" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Cost breakdown */}
@@ -175,7 +318,7 @@ export default function SolarProgramView({
           )}
           <div className="flex justify-between font-medium border-t border-border pt-2">
             <dt>Net cost</dt>
-            <dd>{fmt$(isSSO ? rec.grossCost : rec.netCost)}</dd>
+            <dd>{fmt$(installCost)}</dd>
           </div>
         </dl>
       </div>
@@ -185,7 +328,7 @@ export default function SolarProgramView({
       {/* Charts */}
       <div className="rounded-lg border border-border bg-card p-6 space-y-8">
         {hasRealUsage && (
-          <div className="space-y-2">
+          <div id="section-savings" className="space-y-2 scroll-mt-52">
             <p className="text-sm font-medium">Monthly bill: with vs. without solar</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={billData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -201,7 +344,7 @@ export default function SolarProgramView({
           </div>
         )}
 
-        <div id="section-production" className="space-y-2 scroll-mt-52">
+        <div id={hasRealUsage ? "section-production" : "section-savings"} className="space-y-2 scroll-mt-52">
           <p className="text-sm font-medium">
             {isSSO
               ? "Estimated monthly revenue"
@@ -259,6 +402,40 @@ export default function SolarProgramView({
           )}
         </div>
       </div>
+
+      {/* Solar potential */}
+      {hasRoofInfo && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold">Solar potential</h2>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            {sunshineHrsDisplay && (
+              <div className="col-span-2 sm:col-span-1">
+                <dt className="text-muted-foreground">Sun score</dt>
+                <dd className="font-medium">{sunshineHrsDisplay}</dd>
+                <dd className="text-xs text-muted-foreground mt-0.5">
+                  Peak sun-hours adjusted for this roof's orientation, tilt, shading from trees and nearby structures, and Austin's solar path — not a generic city-wide average.
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt className="text-muted-foreground">Max system</dt>
+              <dd className="font-medium">{rec.maxKw} kW{panelCount ? ` (${panelCount.toLocaleString()} panels)` : ""}</dd>
+            </div>
+            {roofSqft && (
+              <div>
+                <dt className="text-muted-foreground">Usable roof area</dt>
+                <dd className="font-medium">{roofSqft.toLocaleString()} sqft</dd>
+              </div>
+            )}
+            {imageryDate && (
+              <div>
+                <dt className="text-muted-foreground">Imagery</dt>
+                <dd className="font-medium">{imageryQuality} · {imageryDate}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
 
       {/* Assumptions — residential/multifamily get a fixed list; commercial gets the richer,
           expandable version below (SSO/VoS/PBI rate details, CBI-threshold explanation). */}
@@ -324,7 +501,7 @@ export default function SolarProgramView({
                   <p className="font-medium text-foreground mb-1">Value of Solar revenue</p>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Rate: $0.126/kWh on all production; unused monthly credits carry forward and AE pays out any remaining balance</li>
-                    {!ssoEligible && <li>Below the {SSO_MIN_KW} kW Standard Offer program minimum, so billed under Value of Solar instead</li>}
+                    {!ssoEligible && !isNonProfit && <li>Below the {SSO_MIN_KW} kW Standard Offer program minimum, so billed under Value of Solar instead</li>}
                   </ul>
                 </div>
               )}
@@ -332,6 +509,8 @@ export default function SolarProgramView({
           )}
         </div>
       )}
+
+      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} carbonOffsetKgPerMwh={carbonOffsetKgPerMwh} />
     </div>
   );
 }

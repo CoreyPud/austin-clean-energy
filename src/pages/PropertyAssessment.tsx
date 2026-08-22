@@ -15,7 +15,6 @@ import {
   CheckCircle,
   XCircle,
   X,
-  RotateCcw,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +31,6 @@ import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import SolarProgramView from "@/components/assessment/SolarProgramView";
-import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SsoProForma from "@/components/assessment/SsoProForma";
 import PbiBreakdown from "@/components/assessment/PbiBreakdown";
@@ -45,11 +43,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import {
   billToMonthlyKwh,
   calculateAustinEnergyUsageBill,
-  AUSTIN_ENERGY_RATES,
   SSO_SHOW_THRESHOLD_KW,
-  ssoRate,
 } from "@/lib/solar-model";
-import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, buildProgramFinancials, classifyProperty, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
+import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
@@ -113,9 +109,15 @@ const PropertyAssessment = () => {
   const solarMaxKw = recVos?.maxKw ?? recSso?.maxKw ?? 0; // identical either way -- doesn't vary by billing mode
   const recommendedKw = recVos?.recommendedKw ?? null;
   const productionPerKw = estimateProductionPerKw(si?.sunshineHours ?? null);
+  const sunshineHrsDisplay = si?.sunshineHours != null
+    ? `${Math.round(si.sunshineHours).toLocaleString()} hrs/yr`
+    : null;
+  const roofSqft = si?.roofAreaM2 ? Math.round(si.roofAreaM2 * 10.764) : null;
+  const imageryDateStr = si?.imageryDate
+    ? `${si.imageryDate.year}-${String(si.imageryDate.month).padStart(2, "0")}-${String(si.imageryDate.day).padStart(2, "0")}`
+    : null;
 
   const [systemKw, setSystemKw] = useState<number>(4);
-  const [batteryKwh, setBatteryKwh] = useState<number>(0);
   const [billingMode, setBillingMode] = useState<"vos" | "sso">("vos");
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
   const [loanTermYears, setLoanTermYears] = useState(20);
@@ -152,51 +154,13 @@ const PropertyAssessment = () => {
     setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : 2.95);
   }, [propertyType]);
 
-  const isSSO = billingMode === "sso";
-
   // The single recommendation for whatever's currently selected (billing mode, manual size
   // override, and cost-per-watt override, if any) -- single-sourced with PropertyPage.tsx.
+  // SolarProgramView derives all summary numbers (KPI strip, environmental impact) from this
+  // directly, so no separate liveSummary calc is needed here.
   const rec = computeRecommendation(siteInput, {
     annualUsageKwh, systemKwOverride: systemKw, billingMode, costPerWOverride: costPerW,
   });
-
-  const financials = (si && rec) ? buildProgramFinancials(rec, {
-    annualUsageKwh,
-    productionPerKw,
-    isSSO,
-    batteryKwh,
-    loanTermYears: effectiveLoanTerm,
-    loanInterestRate: loanRate / 100,
-    monthlyUsageKwh: uploadedKwh ?? undefined,
-  }) : null;
-
-  const liveSummary = (() => {
-    if (!si || systemKw <= 0 || !rec || !financials) return null;
-    const cost = isSSO ? rec.grossCost : rec.netCost;
-    const co2TonsPerYear = Math.round(systemKw * productionPerKw * (si.carbonOffsetKgPerMwh ? si.carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10) / 10;
-
-    if (isSSO) {
-      return {
-        monthlySavings: financials.annualAmount / 12,
-        paybackYear: financials.paybackYear,
-        roi: null,
-        billOffsetPct: null,
-        co2TonsPerYear,
-        installCost: cost,
-      };
-    }
-
-    return {
-      monthlySavings: financials.annualAmount / 12,
-      paybackYear: financials.paybackYear,
-      roi: cost > 0 ? Math.round((financials.net25 / cost) * 100) : null,
-      billOffsetPct: financials.yearOne.billWithoutSolar > 0
-        ? Math.round((financials.yearOne.savings / financials.yearOne.billWithoutSolar) * 100)
-        : 0,
-      co2TonsPerYear,
-      installCost: cost,
-    };
-  })();
 
   useSeo({
     title: sharedAddress
@@ -651,126 +615,6 @@ const PropertyAssessment = () => {
                   <>
                     <SectionHeading emoji="☀️" title="Solar Overview" />
 
-                    {/* Control card — recommended + sliders */}
-                    <div className="sticky top-0 z-20 -mx-4 px-4">
-                      <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
-                        <CardContent className="p-4">
-                          {/* Billing mode toggle — full width, above sliders */}
-                          {ssoEligible && (
-                            <div className="mb-3 pb-3 border-b space-y-2">
-                              <span className="text-xs text-muted-foreground">Billing model</span>
-                              <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full">
-                                <button
-                                  onClick={() => setBillingMode("sso")}
-                                  className={`flex-1 py-1.5 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                                >
-                                  Standard Offer
-                                </button>
-                                <button
-                                  onClick={() => setBillingMode("vos")}
-                                  className={`flex-1 py-1.5 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                                >
-                                  Value of Solar
-                                </button>
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {billingMode === "vos" ? (
-                                  <>
-                                    Your solar offsets your own electricity bill. Austin Energy credits excess production at {(AUSTIN_ENERGY_RATES.vosRate * 100).toFixed(1)}¢/kWh. Best when you consume most of what you produce.{" "}
-                                    <a href="https://austinenergy.com/rates/residential-rates/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
-                                  </>
-                                ) : (
-                                  <>
-                                    Austin Energy buys all power your system generates at a locked-in rate, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh and stepping up roughly every 5 years. Your electricity bill stays unchanged. Best when your roof capacity exceeds your load.{" "}
-                                    <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Learn more</a>
-                                  </>
-                                )}
-                              </p>
-                            </div>
-                          )}
-
-                          <div className="flex items-start gap-6">
-                            {/* System size slider */}
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs text-muted-foreground mb-1">Solar system size</div>
-                              <div className="text-2xl font-bold tabular-nums mb-3">{systemKw.toFixed(1)} kW</div>
-                              <Slider
-                                min={1}
-                                max={Math.max(solarMaxKw, 16)}
-                                step={0.5}
-                                value={[systemKw]}
-                                onValueChange={([v]) => setSystemKw(v)}
-                              />
-                              {recommendedKw != null && billingMode === "vos" && (
-                                <div className="flex justify-end mt-1.5">
-                                  <button
-                                    onClick={() => setSystemKw(recommendedKw)}
-                                    className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums transition-colors hover:text-primary"
-                                  >
-                                    {systemKw !== recommendedKw && <RotateCcw className="h-3 w-3 shrink-0" />}
-                                    {recommendedKw.toFixed(1)} kW recommended
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="h-16 w-px bg-border shrink-0" />
-
-                            {/* Battery slider */}
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs text-muted-foreground mb-1">Battery system size</div>
-                              <div className="text-2xl font-bold tabular-nums mb-3">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</div>
-                              <Slider
-                                min={0} max={30} step={1}
-                                value={[batteryKwh]}
-                                onValueChange={([v]) => setBatteryKwh(v)}
-                              />
-                            </div>
-                          </div>
-
-                          {/* KPI strip */}
-                          {liveSummary && (
-                            <div className={`${ssoEligible ? "mt-2" : "border-t mt-3"} pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5`}>
-                              <StickyKpi
-                                label="install cost"
-                                value={`$${Math.round(liveSummary.installCost).toLocaleString()}`}
-                                href="#section-install"
-                              />
-                              <StickyKpi
-                                label={billingMode === "sso" ? "monthly revenue" : "monthly savings"}
-                                value={`$${Math.round(liveSummary.monthlySavings).toLocaleString()}`}
-                                href="#section-savings"
-                                highlight
-                              />
-                              <StickyKpi
-                                label="payback"
-                                value={liveSummary.paybackYear ? `${liveSummary.paybackYear} years` : "> 30 years"}
-                                href="#section-payback"
-                              />
-                              {billingMode === "sso" ? (
-                                <StickyKpi
-                                  label={`SSO rate`}
-                                  value={`${(ssoRate(systemKw) * 100).toFixed(1)}¢/kWh`}
-                                  href="#section-savings"
-                                />
-                              ) : (
-                                <StickyKpi
-                                  label="bill offset"
-                                  value={`${liveSummary.billOffsetPct}%`}
-                                  href="#section-production"
-                                />
-                              )}
-                              <StickyKpi
-                                label="yearly CO₂ offset"
-                                value={`${liveSummary.co2TonsPerYear} tons`}
-                                href="#section-environmental"
-                              />
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-
                     {/* Roof map — full width */}
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
@@ -797,16 +641,24 @@ const PropertyAssessment = () => {
                     {rec && (
                       <SolarProgramView
                         rec={rec}
+                        recommendedKw={recommendedKw}
                         propertyClass={classifyProperty(propertyType)}
                         isNonProfit={propertyType === "non-profit"}
-                        isSSO={isSSO}
-                        ssoEligible={ssoEligible}
+                        systemKw={systemKw}
+                        onSystemKwChange={setSystemKw}
+                        billingMode={billingMode}
+                        onBillingModeChange={setBillingMode}
                         annualUsageKwh={annualUsageKwh}
                         productionPerKw={productionPerKw}
-                        batteryKwh={batteryKwh}
                         loanTermYears={effectiveLoanTerm}
                         loanInterestRate={loanRate / 100}
                         monthlyUsageKwh={uploadedKwh ?? undefined}
+                        carbonOffsetKgPerMwh={si.carbonOffsetKgPerMwh}
+                        sunshineHrsDisplay={sunshineHrsDisplay}
+                        roofSqft={roofSqft}
+                        panelCount={si.maxPanels ?? null}
+                        imageryQuality={si.imageryQuality}
+                        imageryDate={imageryDateStr}
                         onCostPerWChange={setCostPerW}
                         financingSlot={billingMode === "vos" && (
                           <div className="rounded-lg border border-border bg-card p-4">
@@ -839,10 +691,6 @@ const PropertyAssessment = () => {
                         )}
                       />
                     )}
-
-                    <div id="section-environmental" className="scroll-mt-52">
-                      <EnvironmentalImpactCard annualSolarKwh={financials?.yearOne.solarTotal ?? 0} carbonOffsetKgPerMwh={si.carbonOffsetKgPerMwh} />
-                    </div>
 
                     {ssoEligible && billingMode === "sso" && (
                       <SsoProForma systemKw={systemKw} />
@@ -887,7 +735,7 @@ const PropertyAssessment = () => {
 
 
                 {/* Contact CTA */}
-                <ContactCtaCard />
+                <ContactCtaCard {...getCtaCopy(classifyProperty(propertyType), ssoEligible)} />
 
                 {/* Quiz gate / lifestyle form — while quiz not yet completed */}
                 {!quizCompleted && (
@@ -1004,21 +852,6 @@ const PropertyAssessment = () => {
       </div>
     </div>
   );
-};
-
-const StickyKpi = ({
-  label, value, href, highlight,
-}: {
-  label: string; value: string; href?: string; highlight?: boolean;
-}) => {
-  const cls = `px-2 py-1 rounded border bg-background/50 ${highlight ? "border-primary/40" : ""} ${href ? "hover:border-primary/50 transition-colors cursor-pointer" : ""}`;
-  const inner = (
-    <div className="flex md:flex-col items-center md:items-start justify-between md:justify-start gap-2 md:gap-0">
-      <div className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">{label}</div>
-      <div className={`text-xl font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
-    </div>
-  );
-  return href ? <a href={href} className={cls}>{inner}</a> : <div className={cls}>{inner}</div>;
 };
 
 export default PropertyAssessment;
