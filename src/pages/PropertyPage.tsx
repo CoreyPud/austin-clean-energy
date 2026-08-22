@@ -16,7 +16,7 @@ import {
   getCtaCopy,
   DEFAULT_MONTHLY_BILL,
 } from "@/lib/property-solar";
-import SolarProgramView from "@/components/assessment/SolarProgramView";
+import SolarProgramView, { SolarBillingToggle } from "@/components/assessment/SolarProgramView";
 import { formatAssessorAddress } from "@/lib/address-utils";
 import { billToMonthlyKwh, SSO_MIN_KW } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
@@ -305,6 +305,14 @@ export default function PropertyPage() {
 
         {hasSolar && rec && (
           <>
+            <SolarBillingToggle
+              rec={rec}
+              propertyClass={cls}
+              billingMode={billingMode}
+              onBillingModeChange={setBillingMode}
+              systemKw={rec.recommendedKw}
+            />
+
             {/* Bill input for residential */}
             {isResidential && (
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">

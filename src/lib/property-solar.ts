@@ -3,6 +3,7 @@ import {
   AUSTIN_INSTALL_COST_PER_KW,
   AUSTIN_ENERGY_RATES,
   PBI_MIN_KW,
+  SSO_MIN_KW,
   buildPbiModel,
   billToMonthlyKwh,
   buildYearModel,
@@ -114,6 +115,14 @@ export interface SolarRecommendation {
    *  is a separate, time-limited stream (see buildPbiModel/mergePbiIntoThirtyYear for the full
    *  year-by-year picture used in the payback chart). */
   pbiAnnualCredit: number;
+}
+
+/** Single source for whether the SSO/VoS billing choice is even worth showing -- both pages
+ *  and SolarProgramView's two exports (the toggle and the main view) need to agree on this
+ *  exactly, or one can show a toggle the other doesn't expect. Non-profits are excluded (the
+ *  Standard Offer program is for-profit commercial only). */
+export function isSsoEligible(rec: SolarRecommendation, propertyClass: PropertyClass, isNonProfit: boolean): boolean {
+  return propertyClass === "commercial" && !isNonProfit && rec.maxKw >= SSO_MIN_KW;
 }
 
 export function computeRecommendation(

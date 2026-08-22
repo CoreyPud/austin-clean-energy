@@ -22,7 +22,7 @@ import {
   AUSTIN_ENERGY_RATES,
   ssoRate,
 } from "@/lib/solar-model";
-import { buildProgramFinancials, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
+import { buildProgramFinancials, isSsoEligible, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const fmtKwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`;
@@ -103,7 +103,7 @@ export default function SolarProgramView({
   const isResidential = propertyClass === "residential";
   const isMultifamily = propertyClass === "multifamily";
   const isCommercial = propertyClass === "commercial";
-  const ssoEligible = isCommercial && !isNonProfit && rec.maxKw >= SSO_MIN_KW;
+  const ssoEligible = isSsoEligible(rec, propertyClass, isNonProfit);
   const isSSO = ssoEligible && billingMode === "sso";
   // Only residential and commercial-VoS reflect a real bill/usage figure -- multifamily's
   // annualUsageKwh is a production proxy (virtual net metering has no per-unit bill), and SSO
@@ -160,79 +160,13 @@ export default function SolarProgramView({
 
   return (
     <div className="space-y-8">
-      {/* Non-sticky comparison blurb -- scrolls away normally, unlike the control card below */}
-      {ssoEligible && (
-        <p className="text-sm text-muted-foreground">
-          This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems 100 kW and up) can also stack a 5-year Performance-Based Incentive on top. Pick one below to see the numbers.
-        </p>
-      )}
-
-      {/* Sticky control card: toggle, system/battery sliders, KPI strip */}
+      {/* Sticky control card: system/battery sliders, KPI strip. The billing-mode toggle and
+          its explainer text live in the separately-exported SolarBillingToggle instead of
+          here, so callers can position it earlier in the page (e.g. above a bill input whose
+          visibility depends on billingMode) without it being sticky. */}
       <div className="sticky top-0 z-20 -mx-4 px-4">
         <Card className="rounded-t-none rounded-b-xl border-2 border-primary/20 shadow-md bg-background/95 backdrop-blur">
           <CardContent className="p-4">
-            {ssoEligible && (
-              <div className="mb-3 pb-3 border-b space-y-2">
-                <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full">
-                  <button
-                    onClick={() => onBillingModeChange("sso")}
-                    className={`flex-1 py-1.5 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    Standard Offer
-                  </button>
-                  <button
-                    onClick={() => onBillingModeChange("vos")}
-                    className={`flex-1 py-1.5 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    Value of Solar
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {isSSO ? (
-                    <>
-                      Under Austin Energy's{" "}
-                      <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Standard Offer program</a>
-                      , AE pays a locked-in rate for every kilowatt-hour produced, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh. Your electricity bill stays unchanged -- this is a standalone revenue stream on top of it. Minimum system size is {SSO_MIN_KW} kW.
-                    </>
-                  ) : (
-                    <>
-                      Austin Energy's{" "}
-                      <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                      {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar -- see below." : ""}
-                    </>
-                  )}
-                </p>
-              </div>
-            )}
-
-            {isResidential && (
-              <div className="mb-3 pb-3 border-b">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Austin Energy's{" "}
-                  <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                  {" "}credits all your production at {VOS_RATE_DISPLAY} against your bill. Once credits cover your bill, additional production doesn't improve payback -- so we size to match your consumption.
-                </p>
-              </div>
-            )}
-            {isMultifamily && (
-              <div className="mb-3 pb-3 border-b">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Austin Energy offers solar rebates and incentives for multifamily properties. See{" "}
-                  <a href="https://austinenergy.com/green-power/solar-solutions/for-your-multifamily" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">AE's multifamily solar page</a>
-                  {" "}for current program options -- availability and eligibility change frequently.
-                </p>
-              </div>
-            )}
-            {isCommercial && !ssoEligible && (
-              <div className="mb-3 pb-3 border-b">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Austin Energy's{" "}
-                  <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">Value of Solar program</a>
-                  {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill -- you're only credited up to what you actually use each month; production beyond your usage isn't credited or paid out.{isNonProfit ? "" : ` Your system is under the ${SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.`}
-                </p>
-              </div>
-            )}
-
             <div className="flex items-start gap-6">
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-muted-foreground mb-1">Solar system size</div>
@@ -270,7 +204,7 @@ export default function SolarProgramView({
               </div>
             </div>
 
-            <div className={`${ssoEligible ? "mt-2" : "border-t mt-3"} pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5`}>
+            <div className="border-t mt-3 pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5">
               <StickyKpi label="install cost" value={fmt$(installCost)} href="#section-install" />
               <StickyKpi
                 label={isSSO ? "monthly revenue" : "monthly savings"}
@@ -530,6 +464,105 @@ export default function SolarProgramView({
             </div>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+interface SolarBillingToggleProps {
+  rec: SolarRecommendation;
+  propertyClass: PropertyClass;
+  isNonProfit?: boolean;
+  billingMode: "vos" | "sso";
+  onBillingModeChange: (m: "vos" | "sso") => void;
+  systemKw: number;
+}
+
+/** The billing-mode toggle and its explainer text, factored out of SolarProgramView so a
+ *  caller can position it wherever it needs to (non-sticky, and above any page-specific
+ *  content whose visibility depends on billingMode, like a commercial bill input that only
+ *  shows under VoS) while still sharing one implementation and the same isSsoEligible formula
+ *  SolarProgramView itself uses. */
+export function SolarBillingToggle({
+  rec,
+  propertyClass,
+  isNonProfit = false,
+  billingMode,
+  onBillingModeChange,
+  systemKw,
+}: SolarBillingToggleProps) {
+  const isResidential = propertyClass === "residential";
+  const isMultifamily = propertyClass === "multifamily";
+  const isCommercial = propertyClass === "commercial";
+  const ssoEligible = isSsoEligible(rec, propertyClass, isNonProfit);
+  const isSSO = ssoEligible && billingMode === "sso";
+
+  if (!isResidential && !isMultifamily && !isCommercial) return null;
+
+  return (
+    <div className="space-y-2">
+      {ssoEligible && (
+        <p className="text-sm text-muted-foreground">
+          This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems 100 kW and up) can also stack a 5-year Performance-Based Incentive on top. Pick one below to see the numbers.
+        </p>
+      )}
+
+      {ssoEligible && (
+        <div className="space-y-2">
+          <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full max-w-xs">
+            <button
+              type="button"
+              onClick={() => onBillingModeChange("sso")}
+              className={`flex-1 py-1.5 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Standard Offer
+            </button>
+            <button
+              type="button"
+              onClick={() => onBillingModeChange("vos")}
+              className={`flex-1 py-1.5 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Value of Solar
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {isSSO ? (
+              <>
+                Under Austin Energy's{" "}
+                <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline">Standard Offer program</a>
+                , AE pays a locked-in rate for every kilowatt-hour produced, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh. Your electricity bill stays unchanged, this is a standalone revenue stream on top of it. Minimum system size is {SSO_MIN_KW} kW.
+              </>
+            ) : (
+              <>
+                Austin Energy's{" "}
+                <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
+                {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill, up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar, see below." : ""}
+              </>
+            )}
+          </p>
+        </div>
+      )}
+
+      {isResidential && (
+        <p className="text-sm text-muted-foreground">
+          Austin Energy's{" "}
+          <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
+          {" "}credits all your production at {VOS_RATE_DISPLAY} against your bill. Once credits cover your bill, additional production doesn't improve payback, so we size to match your consumption.
+        </p>
+      )}
+      {isMultifamily && (
+        <p className="text-sm text-muted-foreground">
+          Austin Energy offers solar rebates and incentives for multifamily properties. See{" "}
+          <a href="https://austinenergy.com/green-power/solar-solutions/for-your-multifamily" target="_blank" rel="noopener noreferrer" className="underline">AE's multifamily solar page</a>
+          {" "}for current program options, availability and eligibility change frequently.
+        </p>
+      )}
+      {isCommercial && !ssoEligible && (
+        <p className="text-sm text-muted-foreground">
+          Austin Energy's{" "}
+          <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
+          {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill, up to what you actually use each month; production beyond your usage isn't credited or paid out.{isNonProfit ? "" : ` Your system is under the ${SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.`}
+        </p>
       )}
     </div>
   );

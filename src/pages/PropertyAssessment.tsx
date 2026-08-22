@@ -30,7 +30,7 @@ import ZipSolarAdoptionTrend from "@/components/assessment/ZipSolarAdoptionTrend
 import CouncilMemberCard from "@/components/assessment/CouncilMemberCard";
 import RecommendationCards from "@/components/assessment/RecommendationCards";
 import SectionHeading from "@/components/assessment/SectionHeading";
-import SolarProgramView from "@/components/assessment/SolarProgramView";
+import SolarProgramView, { SolarBillingToggle } from "@/components/assessment/SolarProgramView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { pickSsoScenario } from "@/lib/sso-proforma";
 
@@ -648,6 +648,17 @@ const PropertyAssessment = () => {
                         </MapTokenLoader>
                       </CardContent>
                     </Card>
+
+                    {rec && (
+                      <SolarBillingToggle
+                        rec={rec}
+                        propertyClass={classifyProperty(propertyType)}
+                        isNonProfit={propertyType === "non-profit"}
+                        billingMode={billingMode}
+                        onBillingModeChange={setBillingMode}
+                        systemKw={systemKw}
+                      />
+                    )}
 
                     {rec && (
                       <SolarProgramView
