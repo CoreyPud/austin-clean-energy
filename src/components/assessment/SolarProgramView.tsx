@@ -456,8 +456,11 @@ export default function SolarProgramView({
         </div>
       )}
 
-      {/* Assumptions — residential/multifamily get a fixed list; commercial gets the richer,
-          expandable version below (SSO/VoS/PBI rate details, CBI-threshold explanation). */}
+      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} carbonOffsetKgPerMwh={carbonOffsetKgPerMwh} />
+
+      {/* Assumptions — kept as the very last thing in the component, after everything else
+          (residential/multifamily get a fixed list; commercial gets the richer, expandable
+          version below with SSO/VoS/PBI rate details and the CBI-threshold explanation). */}
       {!isCommercial && (
         <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
           <p className="font-medium text-foreground">How we calculated this</p>
@@ -528,8 +531,6 @@ export default function SolarProgramView({
           )}
         </div>
       )}
-
-      <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} carbonOffsetKgPerMwh={carbonOffsetKgPerMwh} />
     </div>
   );
 }
