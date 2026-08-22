@@ -10,6 +10,7 @@ import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
 import { useSolarFilter } from "@/components/SolarFilterPanel";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
+import SsoProForma from "@/components/assessment/SsoProForma";
 import SectionHeading from "@/components/assessment/SectionHeading";
 import {
   slugifyAddress,
@@ -721,6 +722,11 @@ export default function PropertyPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Third-party-owner pro forma — same investor-side view shown on the calculator */}
+            {isCommercial && ssoEligible && (
+              <SsoProForma systemKw={rec.recommendedKw} />
             )}
           </>
         )}
