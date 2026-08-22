@@ -1026,15 +1026,17 @@ export default function PropertyViewer() {
             </Button>
             {/* Satellite map — aspect-square keeps it square as width changes */}
             <div className="flex-shrink-0 aspect-square w-full">
-              <SatellitePane
-                lat={sel.lat} lon={sel.lon} className="w-full h-full"
-                {...solarFilter.paneProps}
-                panelHeightM={panelOverlay?.dims.h}
-                panelWidthM={panelOverlay?.dims.w}
-                segmentAzimuths={panelOverlay?.azimuths}
-                segmentPitches={panelOverlay?.pitches}
-                fitKey={focusPid ?? undefined}
-              />
+              <MapTokenLoader>
+                <SatellitePane
+                  lat={sel.lat} lon={sel.lon} className="w-full h-full"
+                  {...solarFilter.paneProps}
+                  panelHeightM={panelOverlay?.dims.h}
+                  panelWidthM={panelOverlay?.dims.w}
+                  segmentAzimuths={panelOverlay?.azimuths}
+                  segmentPitches={panelOverlay?.pitches}
+                  fitKey={focusPid ?? undefined}
+                />
+              </MapTokenLoader>
             </div>
             {/* Property info */}
             <div className="flex-1 overflow-auto bg-card p-4 space-y-4">
