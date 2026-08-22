@@ -122,7 +122,7 @@ serve(async (req) => {
     if (!inAustinArea) {
       return new Response(
         JSON.stringify({
-          error: `This tool is for the greater Austin, TX area. "${standardizedAddress}" is too far outside it.`,
+          error: `This tool is for Austin, TX properties. "${standardizedAddress}" is too far outside the Austin area.`,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
