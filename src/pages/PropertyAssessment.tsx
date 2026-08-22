@@ -70,7 +70,7 @@ const PropertyAssessment = () => {
   const [billViewMode, setBillViewMode] = useState<"estimate" | "bill">("estimate");
   const [costPerW, setCostPerW] = useState<number>(2.95);
 
-  // Derived solar values — recomputed on every render when bill/results change
+  // Derived solar values, recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
 
   const assessmentPanels = useMemo<SolarPanel[] | undefined>(() => {
@@ -175,8 +175,8 @@ const PropertyAssessment = () => {
 
   useSeo({
     title: sharedAddress
-      ? `Clean energy options for ${sharedAddress} — Austin Clean Energy`
-      : "Calculate Solar Savings in Austin — Austin Clean Energy",
+      ? `Clean energy options for ${sharedAddress} | Austin Clean Energy`
+      : "Calculate Solar Savings in Austin | Austin Clean Energy",
     description: sharedAddress
       ? `See solar potential, neighborhood adoption, savings estimates and personalized clean energy actions for ${sharedAddress}.`
       : "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
@@ -196,7 +196,7 @@ const PropertyAssessment = () => {
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setBillParseError("File too large — maximum 5 MB.");
+      setBillParseError("File too large. Maximum 5 MB.");
       setBillParseState("error");
       return;
     }
@@ -210,7 +210,7 @@ const PropertyAssessment = () => {
 
       let months: { label: string; kwh: number }[];
 
-      // Try cache — validate shape before trusting it
+      // Try cache, validate shape before trusting it
       let fromCache = false;
       try {
         const raw = localStorage.getItem(cacheKey);
@@ -224,7 +224,7 @@ const PropertyAssessment = () => {
       } catch {}
 
       if (!fromCache) {
-        // Chunked base64 — avoids both call-stack overflow and O(n²) string growth
+        // Chunked base64, avoids both call-stack overflow and O(n²) string growth
         const bytes = new Uint8Array(arrayBuf);
         const CHUNK = 8192;
         let binary = "";
@@ -344,7 +344,7 @@ const PropertyAssessment = () => {
     try {
       const data = await callUnified(lifestyleData);
 
-      // Derive recommendedKw from fresh solar data and current bill inputs —
+      // Derive recommendedKw from fresh solar data and current bill inputs,
       // same formula the tool uses, so both plan and cards stay in sync.
       const usage = (billViewMode === "bill" && uploadedKwh)
         ? uploadedKwh.reduce((s, v) => s + v, 0)
@@ -579,7 +579,7 @@ const PropertyAssessment = () => {
                 )}
               </div>
 
-              {/* Bill history chart — shown inside the card when bill is uploaded */}
+              {/* Bill history chart, shown inside the card when bill is uploaded */}
               {uploadedBillData && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Average monthly usage from your bill (kWh)</p>
@@ -619,14 +619,14 @@ const PropertyAssessment = () => {
           {/* Results */}
           {results && (
             <div className="space-y-6 animate-slide-up">
-              {/* Sticky scope — sticky control card is contained within this div and won't persist past it */}
+              {/* Sticky scope: sticky control card is contained within this div and won't persist past it */}
               <div className="space-y-6">
                 {/* ☀️ Solar Overview */}
                 {si && (
                   <>
                     <SectionHeading emoji="☀️" title="Solar Overview" />
 
-                    {/* Roof map — full width */}
+                    {/* Roof map, full width */}
                     <Card className="border-2 border-primary/20 overflow-hidden">
                       <CardContent className="p-0">
                         <MapTokenLoader>
@@ -740,7 +740,7 @@ const PropertyAssessment = () => {
                 {/* Contact CTA */}
                 <ContactCtaCard {...getCtaCopy(classifyProperty(propertyType), ssoEligible)} />
 
-                {/* Quiz gate / lifestyle form — while quiz not yet completed */}
+                {/* Quiz gate / lifestyle form, while quiz not yet completed */}
                 {!quizCompleted && (
                   !showLifestyleForm ? (
                     <Card className="border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/5 via-background to-background">
@@ -751,7 +751,7 @@ const PropertyAssessment = () => {
                         <div>
                           <p className="text-xl font-bold text-foreground">What else can you do beyond solar?</p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            EVs, home electrification, efficiency upgrades, community action — a 1-minute quiz surfaces the highest-impact moves for your specific situation.
+                            EVs, home electrification, efficiency upgrades, community action. A 1-minute quiz surfaces the highest-impact moves for your specific situation.
                           </p>
                         </div>
                         <Button
@@ -776,7 +776,7 @@ const PropertyAssessment = () => {
                 )}
               </div>
 
-              {/* Next Steps — outside sticky scope so control card scrolls away on arrival */}
+              {/* Next Steps: outside sticky scope so control card scrolls away on arrival */}
               {quizCompleted && (
                 <div ref={postQuizRef} className="space-y-6 animate-slide-up">
                   <SectionHeading emoji="✅" title="Next Steps" />
@@ -821,7 +821,7 @@ const PropertyAssessment = () => {
                 </div>
               )}
 
-              {/* Share card — placed after recommendations & plan */}
+              {/* Share card, placed after recommendations & plan */}
               <ShareAssessmentCard address={results.address || address} />
 
               <div className="flex justify-center">
@@ -830,15 +830,15 @@ const PropertyAssessment = () => {
                 </Button>
               </div>
 
-              {/* AI / data disclaimer — bottom of page */}
+              {/* AI / data disclaimer, bottom of page */}
               <Alert className="border-primary/30 bg-primary/5">
                 <AlertCircle className="h-4 w-4 text-primary" />
                 <AlertTitle>How we built this</AlertTitle>
                 <AlertDescription>
                   Solar potential comes from Google Solar API. Neighborhood counts come from Austin's
                   open permit data. Council district is resolved live from Austin's ArcGIS service.
-                  All recommendations and savings estimates are calculated from your property data —
-                  for a precise, certified energy efficiency rating, schedule a professional audit
+                  All recommendations and savings estimates are calculated from your property data.
+                  For a precise, certified energy efficiency rating, schedule a professional audit
                   through Austin Energy's Home Performance program.{" "}
                   <button
                     onClick={() => navigate("/data-sources")}

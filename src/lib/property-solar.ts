@@ -25,7 +25,7 @@ export function slugifyAddress(address: string): string {
 export type PropertyClass = "residential" | "commercial" | "multifamily";
 
 // Handles both naming conventions in use: TCAD's underscored types (PropertyPage.tsx) and the
-// calculator's hyphenated ones (PropertyAssessment.tsx) — a single source both can feed.
+// calculator's hyphenated ones (PropertyAssessment.tsx), a single source both can feed.
 export function classifyProperty(propertyType: string | null): PropertyClass {
   switch (propertyType) {
     case "single_family":
@@ -44,11 +44,11 @@ const RESIDENTIAL_ANNUAL_USAGE_KWH = 14_004; // Austin avg: 1167 kWh/mo × 12
 const SYSTEM_DERATE = 0.86;                  // NREL PVWatts default performance ratio: inverter/wiring/
                                               // soiling/temperature losses on top of Google's geometry-
                                               // and-shading-adjusted sunshine hours. Not redundant with
-                                              // anything Google already applies — a different loss category.
+                                              // anything Google already applies, a different loss category.
 const VOS_RATE = AUSTIN_ENERGY_RATES.vosRate; // single-sourced from solar-model.ts
 const MIN_SYSTEM_KW = 2;                     // floor for usage-based (VoS) default sizing
 // Default monthly bill assumption when no real usage is known, by AE property type (matches
-// the calculator's existing defaults) — used both as the static-render default and as the
+// the calculator's existing defaults), used both as the static-render default and as the
 // starting point a user's own bill input overrides.
 export const DEFAULT_MONTHLY_BILL: Record<string, number> = { commercial: 3000, "non-profit": 800 };
 
@@ -58,7 +58,7 @@ export interface SolarSiteInput {
   panelCapacityWatts: number;
   sunshineHours: number | null;
   /** Raw property-type string from either source; classifyProperty()/the rebate lookup
-   *  normalize it. Pass "non-profit" explicitly when known — TCAD data never has this
+   *  normalize it. Pass "non-profit" explicitly when known, TCAD data never has this
    *  distinction, only the calculator does. */
   propertyType: string | null;
 }
@@ -78,7 +78,7 @@ export function fromTcadProperty(p: {
   };
 }
 
-/** Same derate `computeRecommendation` applies internally — exposed for callers (chart
+/** Same derate `computeRecommendation` applies internally, exposed for callers (chart
  *  components, PbiBreakdown, SsoProForma) that need a per-kW production estimate independent
  *  of any specific system size. */
 export function estimateProductionPerKw(sunshineHours: number | null): number {
@@ -110,7 +110,7 @@ export interface SolarRecommendation {
   paybackYears: number;
   /** For-profit commercial systems >= PBI_MIN_KW: not CBI-eligible, gets a 5-year PBI credit instead. */
   pbiEligible: boolean;
-  /** Year-1 PBI credit; $0 when not pbiEligible. Ongoing VoS (annualSavings) is unaffected — this
+  /** Year-1 PBI credit; $0 when not pbiEligible. Ongoing VoS (annualSavings) is unaffected. This
    *  is a separate, time-limited stream (see buildPbiModel/mergePbiIntoThirtyYear for the full
    *  year-by-year picture used in the payback chart). */
   pbiAnnualCredit: number;
@@ -122,16 +122,16 @@ export function computeRecommendation(
     /** Size the default system to offset this yearly consumption (e.g. from an uploaded
      *  bill). Falls back to a property-type default (Austin residential average, or the
      *  DEFAULT_MONTHLY_BILL assumption for commercial/non-profit) when omitted. Ignored
-     *  when billingMode is "sso" — that program is bill-independent by design. */
+     *  when billingMode is "sso", that program is bill-independent by design. */
     annualUsageKwh?: number | null;
     /** User-chosen system size in kW. Overrides the default sizing, clamped to
      *  the roof's maximum. */
     systemKwOverride?: number | null;
     /** "vos" (default): size to usage, floor MIN_SYSTEM_KW, ceiling the roof max.
-     *  "sso": bill-independent — size to the full buildable roof capacity. */
+     *  "sso": bill-independent, size to the full buildable roof capacity. */
     billingMode?: "vos" | "sso";
     /** User-supplied installer quote ($/W), overriding the default tiered/flat rate below.
-     *  A manual override, not a data-derived default — omit for the data-driven figure. */
+     *  A manual override, not a data-derived default. Omit for the data-driven figure. */
     costPerWOverride?: number | null;
   } = {},
 ): SolarRecommendation | null {
@@ -165,7 +165,7 @@ export function computeRecommendation(
   }
   recommendedKw = Math.round(recommendedKw * 10) / 10;
 
-  // "non-profit" only ever comes from the calculator's own propertyType — TCAD data has no
+  // "non-profit" only ever comes from the calculator's own propertyType. TCAD data has no
   // such distinction, so it always falls through to the class-based mapping below.
   const aePropertyType = input.propertyType === "non-profit"
     ? "non-profit"
@@ -289,17 +289,17 @@ export function getCtaCopy(cls: PropertyClass, ssoEligible: boolean): { title: s
   if (cls === "multifamily") {
     return {
       title: "Questions about multifamily solar in Austin?",
-      description: "We're not a solar company — we're an independent resource. Austin Energy's multifamily programs change frequently and eligibility can be complicated. We can help you figure out what's currently available and whether it makes sense for your building.",
+      description: "We're not a solar company. We're an independent resource. Austin Energy's multifamily programs change frequently and eligibility can be complicated. We can help you figure out what's currently available and whether it makes sense for your building.",
     };
   }
   if (ssoEligible) {
     return {
       title: "Want help evaluating the Standard Offer for your property?",
-      description: "We're not a solar installer — we're an independent resource. The Standard Offer is compelling for large commercial properties, but navigating AE's interconnection process and finding the right installer takes work. We can help you ask the right questions.",
+      description: "We're not a solar installer. We're an independent resource. The Standard Offer is compelling for large commercial properties, but navigating AE's interconnection process and finding the right installer takes work. We can help you ask the right questions.",
     };
   }
   return {
     title: "Want help evaluating solar for your commercial property?",
-    description: "We're not a solar installer — we're an independent resource. We can help you evaluate whether solar makes financial sense for your property and what to ask commercial installers about sizing, rates, and AE's rebate process.",
+    description: "We're not a solar installer. We're an independent resource. We can help you evaluate whether solar makes financial sense for your property and what to ask commercial installers about sizing, rates, and AE's rebate process.",
   };
 }

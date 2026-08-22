@@ -37,7 +37,7 @@ const PbiBreakdown = ({ systemKw, productionPerKw }: Props) => {
           <div>
             <h3 className="text-lg font-semibold">Performance-Based Incentive (PBI)</h3>
             <p className="text-sm text-muted-foreground">
-              An on-bill credit for the first {COMMERCIAL_PBI_YEARS} years, in addition to Value of Solar — not a replacement for it, and not an upfront rebate.
+              An on-bill credit for the first {COMMERCIAL_PBI_YEARS} years, in addition to Value of Solar. Not a replacement for it, and not an upfront rebate.
             </p>
           </div>
         </div>
@@ -80,10 +80,10 @@ const PbiBreakdown = ({ systemKw, productionPerKw }: Props) => {
             <Row k="Rate tiers" v="10¢/kWh under 400 kW-ac (Medium), 8¢/kWh 400–999 kW-ac (Large), 6¢/kWh 1,000 kW-ac and above (Extra-Large)" />
             <Row k="Term" v={`${COMMERCIAL_PBI_YEARS} years, paid monthly as an on-bill credit`} />
             <Row k="Stacking" v="Paid in addition to the Value of Solar credit, not instead of it. After the term ends, only Value of Solar continues." />
-            <Row k="Eligibility" v={`For-profit commercial systems ${PBI_MIN_KW} kW-ac and above are PBI-only — not eligible for the upfront Capacity-Based Incentive (CBI). Systems under ${PBI_MIN_KW} kW-ac can choose CBI or PBI instead.`} />
+            <Row k="Eligibility" v={`For-profit commercial systems ${PBI_MIN_KW} kW-ac and above are PBI-only, not eligible for the upfront Capacity-Based Incentive (CBI). Systems under ${PBI_MIN_KW} kW-ac can choose CBI or PBI instead.`} />
             <Row k="Ownership" v="The system must be owned outright by the customer. Leased systems and Power Purchase Agreements are not eligible." />
             <p className="pt-2 border-t text-muted-foreground">
-              Source: Austin Energy Solar Photovoltaic Commercial 5-Year Performance-Based Incentive (PBI) Program Guidelines. Not enforcing the program's 110%-of-consumption sizing cap here — this reflects whatever system size is currently selected.
+              Source: Austin Energy Solar Photovoltaic Commercial 5-Year Performance-Based Incentive (PBI) Program Guidelines. Not enforcing the program's 110%-of-consumption sizing cap here, this reflects whatever system size is currently selected.
             </p>
           </div>
         )}

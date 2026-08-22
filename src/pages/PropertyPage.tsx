@@ -195,8 +195,8 @@ export default function PropertyPage() {
   const commercialAnnualUsage = billToMonthlyKwh(commercialMonthlyBill) * 12;
 
   // Size the system off the buildable layout (setbacks, low-TSRF panels and rooftop
-  // walkways removed) rather than Google's raw maximum, so every figure downstream —
-  // kW, cost, rebate, production, payback, SSO — reflects what can actually be built.
+  // walkways removed) rather than Google's raw maximum, so every figure downstream
+  // (kW, cost, rebate, production, payback, SSO) reflects what can actually be built.
   // Bill and manual override both feed in here so the stat cards stay in sync.
   const buildablePanels = solarFilter.filteredPanelCount ?? property.solar_max_panels;
   const siteInput = fromTcadProperty({ ...property, solar_max_panels: buildablePanels });
@@ -323,7 +323,7 @@ export default function PropertyPage() {
               </div>
             )}
 
-            {/* Bill input for commercial (VoS only — SSO revenue doesn't depend on usage) */}
+            {/* Bill input for commercial (VoS only, SSO revenue doesn't depend on usage) */}
             {isCommercial && billingMode === "vos" && (
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex justify-between items-baseline">
@@ -336,7 +336,7 @@ export default function PropertyPage() {
                   onValueChange={([v]) => setCommercialMonthlyBill(v)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  ≈ {fmtKwh(Math.round(billToMonthlyKwh(commercialMonthlyBill)))} / month · {fmtKwh(Math.round(commercialAnnualUsage))} / year. Determines how large a system Value of Solar sizes to offset — Standard Offer doesn't depend on your bill.
+                  ≈ {fmtKwh(Math.round(billToMonthlyKwh(commercialMonthlyBill)))} / month · {fmtKwh(Math.round(commercialAnnualUsage))} / year
                 </p>
               </div>
             )}
@@ -361,7 +361,7 @@ export default function PropertyPage() {
           </>
         )}
 
-        {/* Solar in your neighborhood — residential only */}
+        {/* Solar in your neighborhood, residential only */}
         {isResidential && nbStats && property.situs_zip && (
           <>
             <SectionHeading title="Solar in your neighborhood" />

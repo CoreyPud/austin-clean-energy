@@ -432,7 +432,7 @@ export default function SolarProgramView({
                 <dt className="text-muted-foreground">Sun score</dt>
                 <dd className="font-medium">{sunshineHrsDisplay}</dd>
                 <dd className="text-xs text-muted-foreground mt-0.5">
-                  Peak sun-hours adjusted for this roof's orientation, tilt, shading from trees and nearby structures, and Austin's solar path — not a generic city-wide average.
+                  Peak sun-hours adjusted for this roof's orientation, tilt, shading from trees and nearby structures, and Austin's solar path. Not a generic city-wide average.
                 </dd>
               </div>
             )}
@@ -458,14 +458,14 @@ export default function SolarProgramView({
 
       <EnvironmentalImpactCard annualSolarKwh={yearOne.solarTotal} carbonOffsetKgPerMwh={carbonOffsetKgPerMwh} />
 
-      {/* Assumptions — kept as the very last thing in the component, after everything else
+      {/* Assumptions, kept as the very last thing in the component, after everything else
           (residential/multifamily get a fixed list; commercial gets the richer, expandable
           version below with SSO/VoS/PBI rate details and the CBI-threshold explanation). */}
       {!isCommercial && (
         <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
           <p className="font-medium text-foreground">How we calculated this</p>
           <ul className="space-y-1 list-disc list-inside">
-            <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average — get real quotes to verify)</li>
+            <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average, get real quotes to verify)</li>
             <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
             {isResidential && <li>Savings rate: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production)</li>}
             {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
@@ -501,7 +501,7 @@ export default function SolarProgramView({
                   ) : isSSO ? (
                     <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
                   ) : rec.pbiEligible ? (
-                    <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI) — that program is only for systems under 100 kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
+                    <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI). That program is only for systems under 100 kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
                   ) : (
                     <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
                   )}
