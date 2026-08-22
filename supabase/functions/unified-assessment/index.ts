@@ -108,6 +108,23 @@ serve(async (req) => {
     const zipMatch = standardizedAddress.match(/\b(\d{5})\b/);
     const zipCode = zipMatch ? zipMatch[1] : null;
 
+    // Reject only once we have a real geocoded location to check, rather than pattern-matching
+    // the raw user input (which rejected plenty of valid Austin addresses that just didn't
+    // happen to include the word "Austin" or a 787xx zip in what the user typed). Bounds match
+    // the ones AddressAutocomplete.tsx already biases suggestions toward.
+    const AUSTIN_BOUNDS = { swLat: 30.098, swLng: -97.978, neLat: 30.516, neLng: -97.565 };
+    const inAustinArea =
+      lat >= AUSTIN_BOUNDS.swLat && lat <= AUSTIN_BOUNDS.neLat &&
+      lng >= AUSTIN_BOUNDS.swLng && lng <= AUSTIN_BOUNDS.neLng;
+    if (!inAustinArea) {
+      return new Response(
+        JSON.stringify({
+          error: `This tool is for Austin, TX properties. "${standardizedAddress}" is outside the Austin area.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Load admin-editable knowledge files (council-members may have been edited)
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,

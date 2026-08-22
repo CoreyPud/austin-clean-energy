@@ -286,8 +286,6 @@ const PropertyAssessment = () => {
     if (t.length > 200) return "Address must be less than 200 characters";
     if (/[<>{}]/.test(t)) return "Address contains invalid characters";
     if (!/^\d+\s+\S/.test(t)) return "Please enter a full street address (e.g. 123 Main St, Austin, TX)";
-    if (!/austin|ATX|787\d{2}/i.test(t))
-      return "This tool is for Austin, TX properties. Include 'Austin' or an Austin ZIP (787xx).";
     if (!propertyType) return "Please select a property type";
     return null;
   };
