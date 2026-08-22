@@ -108,6 +108,26 @@ serve(async (req) => {
     const zipMatch = standardizedAddress.match(/\b(\d{5})\b/);
     const zipCode = zipMatch ? zipMatch[1] : null;
 
+    // Reject only once we have a real geocoded location to check, rather than pattern-matching
+    // the raw user input (which rejected plenty of valid Austin addresses that just didn't
+    // happen to include the word "Austin" or a 787xx zip in what the user typed). Deliberately
+    // generous -- padded well past city limits to cover greater Travis County and immediate
+    // neighbors (Round Rock, Pflugerville, Cedar Park, Buda, Kyle, Manor, Del Valle, Lakeway).
+    // A false positive here just means a non-Austin address sees an assessment that may not be
+    // fully accurate for their utility; a false negative blocks a real user outright, which is worse.
+    const AUSTIN_BOUNDS = { swLat: 29.90, swLng: -98.15, neLat: 30.75, neLng: -97.35 };
+    const inAustinArea =
+      lat >= AUSTIN_BOUNDS.swLat && lat <= AUSTIN_BOUNDS.neLat &&
+      lng >= AUSTIN_BOUNDS.swLng && lng <= AUSTIN_BOUNDS.neLng;
+    if (!inAustinArea) {
+      return new Response(
+        JSON.stringify({
+          error: `This tool is for Austin, TX properties. "${standardizedAddress}" is too far outside the Austin area.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Load admin-editable knowledge files (council-members may have been edited)
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
