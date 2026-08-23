@@ -37,6 +37,38 @@ export default function Explore() {
   const seenPointsRef = useRef<Map<string, ClusterPoint>>(new Map());
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Full-area background load: one gzipped request for every AE-territory parcel, replacing
+  // the ~248 paginated PostgREST calls that made the whole-city view take about a minute.
+  // The per-viewport query below stays as-is -- it's already fast, and it's what supplies the
+  // richer per-property fields the bulk payload intentionally leaves out.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchBulkProperties(controller.signal)
+      .then(({ points: bulk, typeCodes }) => {
+        for (const [pid, lng, lat, typeCode, zip, hasSolar] of bulk) {
+          // Don't clobber a richer record already loaded from the bounds query.
+          if (seenPointsRef.current.has(pid)) continue;
+          seenPointsRef.current.set(pid, [
+            pid,
+            lng,
+            lat,
+            classifyProperty(decodeTypeCode(typeCode, typeCodes)) === "commercial" ? 1 : 0,
+            zip,
+            undefined,
+            hasSolar,
+          ]);
+        }
+        setPoints(Array.from(seenPointsRef.current.values()));
+      })
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        // Non-fatal: the viewport query still populates the map, just area-by-area.
+        console.error("Explore bulk load error:", err);
+      });
+    return () => controller.abort();
+  }, []);
+
+
   const handleBoundsChange = (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
 
