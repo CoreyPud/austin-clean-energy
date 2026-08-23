@@ -7,6 +7,7 @@ import PropertyPreviewCard from "@/components/explore/PropertyPreviewCard";
 import ExploreFilterPanel from "@/components/explore/ExploreFilterPanel";
 import { classifyProperty } from "@/lib/property-solar";
 import { findContainingFeatureId } from "@/lib/point-in-polygon";
+import { loadBulkPropertiesCached, decodeTypeCode } from "@/lib/properties-bulk";
 import {
   matchesNumericFilters,
   EMPTY_NUMERIC_FILTERS,
@@ -57,25 +58,10 @@ const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
 // requested (confirmed empirically: asking for 5000 still returned exactly 1000).
 const BOUNDS_QUERY_LIMIT = 1000;
 const DEBOUNCE_MS = 400;
-// Background full-area load: paginated the same way as the bounds query, but for every AE
-// property regardless of viewport, so the map fills in behind the scenes while the existing
-// pan/zoom-driven fetch keeps handling what's actually on screen. A short gap between pages
-// keeps it from competing for bandwidth with bounds-triggered fetches while the user is
-// actively panning.
-const BACKGROUND_PAGE_SIZE = 1000;
-const BACKGROUND_PAGE_DELAY_MS = 30;
-// Recomputing/re-rendering after every one of ~250 background pages would be wasteful --
-// batch it instead.
-const BACKGROUND_RECOMPUTE_EVERY_N_PAGES = 10;
-
-interface MinimalPropertyRow {
-  pid: string;
-  situs_zip: string | null;
-  property_type: string | null;
-  centroid_lat: number;
-  centroid_lon: number;
-  has_solar: boolean | null;
-}
+// District assignment (client-side point-in-polygon) for ~247k background-loaded properties
+// in one synchronous pass would visibly freeze the tab -- chunk it across idle-ish ticks
+// instead, same as the old paginated loader did incidentally by being network-bound.
+const DISTRICT_CHUNK_SIZE = 2000;
 
 /**
  * Step 1 of the consumer-facing "Zillow-like" property browser: a full-map view that fetches
@@ -143,48 +129,46 @@ export default function Explore() {
   };
 
   // Fills in the rest of the AE area in the background, independent of pan/zoom, so a fully
-  // populated cache (for future clustering at zoomed-out levels) builds up without blocking or
-  // slowing down the normal viewport-driven experience. Records this adds are minimal (no
-  // filter-relevant columns) -- matchesNumericFilters already treats a null field as "doesn't
-  // match" a specific range, so a background-only property just won't show up under an active
-  // numeric filter until a real viewport visit enriches it via handleBoundsChange, which never
-  // downgrades an already-enriched record since it always overwrites with full data anyway.
+  // populated cache builds up (for the zoomed-out clustering) without blocking or slowing down
+  // the normal viewport-driven experience. One request via properties-bulk (direct-Postgres
+  // edge function, no PostgREST 1000-row cap) instead of ~250 paginated round trips, cached in
+  // IndexedDB and keyed off the payload's own generatedAt so a same-day reload skips the
+  // download entirely. Records this adds are minimal (no filter-relevant columns) --
+  // matchesNumericFilters already treats a null field as "doesn't match" a specific range, so a
+  // background-only property just won't show up under an active numeric filter until a real
+  // viewport visit enriches it via handleBoundsChange, which never downgrades an already-
+  // enriched record since it always overwrites with full data anyway.
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
     const loadEverything = async () => {
+      let payload;
+      try {
+        payload = await loadBulkPropertiesCached(controller.signal);
+      } catch (err) {
+        if (!cancelled) console.error("Explore bulk load error:", err);
+        return;
+      }
+      if (cancelled) return;
+
       const districts = await loadDistricts();
-      let offset = 0;
-      let pagesSinceRecompute = 0;
+      if (cancelled) return;
 
-      while (!cancelled) {
-        const { data, error, count } = await supabase
-          .from("tcad_properties")
-          .select("pid, situs_zip, property_type, centroid_lat, centroid_lon, has_solar", { count: "exact" })
-          .eq("in_ae", true)
-          .not("centroid_lat", "is", null)
-          .not("centroid_lon", "is", null)
-          .order("pid")
-          .range(offset, offset + BACKGROUND_PAGE_SIZE - 1);
-
+      const total = payload.points.length;
+      for (let i = 0; i < total; i += DISTRICT_CHUNK_SIZE) {
         if (cancelled) return;
-        if (error) {
-          console.error("Explore background load error:", error);
-          return;
-        }
-
-        for (const p of (data ?? []) as MinimalPropertyRow[]) {
+        const chunk = payload.points.slice(i, i + DISTRICT_CHUNK_SIZE);
+        for (const [pid, lng, lat, typeCode, zip, hasSolar] of chunk) {
           // Never overwrite a record a real viewport visit already enriched with filter data.
-          if (propertiesRef.current.has(p.pid)) continue;
-          const lng = p.centroid_lon;
-          const lat = p.centroid_lat;
-          propertiesRef.current.set(p.pid, {
-            pid: p.pid,
+          if (propertiesRef.current.has(pid)) continue;
+          propertiesRef.current.set(pid, {
+            pid,
             lng,
             lat,
-            property_type: p.property_type,
-            zip: p.situs_zip,
-            has_solar: p.has_solar ? 1 : 0,
+            property_type: decodeTypeCode(typeCode, payload.typeCodes),
+            zip,
+            has_solar: hasSolar,
             district: findContainingFeatureId(lng, lat, districts, "district_number"),
             market_value: null,
             roof_sqft: null,
@@ -198,24 +182,17 @@ export default function Explore() {
             solar_max_area_m2: null,
           });
         }
-
-        offset += BACKGROUND_PAGE_SIZE;
-        pagesSinceRecompute++;
-        const loaded = Math.min(offset, count ?? offset);
-        const isLastPage = (data?.length ?? 0) < BACKGROUND_PAGE_SIZE;
-        if (pagesSinceRecompute >= BACKGROUND_RECOMPUTE_EVERY_N_PAGES || isLastPage) {
-          recomputeVisiblePoints();
-          pagesSinceRecompute = 0;
-        }
-        setBackgroundLoad({ loaded, total: count ?? null, done: isLastPage });
-        if (isLastPage) break;
-
-        await new Promise((resolve) => setTimeout(resolve, BACKGROUND_PAGE_DELAY_MS));
+        recomputeVisiblePoints();
+        setBackgroundLoad({ loaded: Math.min(i + DISTRICT_CHUNK_SIZE, total), total, done: false });
+        // Yield to the event loop between chunks so ~247k point-in-polygon checks don't do it
+        // in one uninterruptible pass.
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
+      if (!cancelled) setBackgroundLoad({ loaded: total, total, done: true });
     };
 
     loadEverything();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
     // Runs once on mount by design; recomputeVisiblePoints/loadDistricts only read refs, so
     // using their mount-time closure is safe even though the linter can't tell that itself.
   }, []);
