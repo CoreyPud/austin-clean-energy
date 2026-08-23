@@ -202,7 +202,7 @@ export default function Explore() {
           showLegend
           cooperativeGestures={false}
           showServiceAreaBoundary
-          showCouncilDistricts
+          showCouncilDistricts={selectedDistricts.length > 0}
           onClusterPointClick={setSelectedPid}
           selectedPointId={selectedPid}
           onMapBackgroundClick={() => setSelectedPid(null)}
