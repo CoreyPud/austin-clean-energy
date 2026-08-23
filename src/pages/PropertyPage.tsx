@@ -302,9 +302,16 @@ export default function PropertyPage() {
           )}
         </div>
 
-        {/* Satellite map */}
+        {/* Satellite map -- while the first-ever fetch is in flight, show a map-sized
+            placeholder instead of mounting SatellitePane at all, so there's no Mapbox instance
+            to spin up just to immediately swap out, and no size jump once it's ready. */}
         {property.centroid_lat != null && property.centroid_lon != null && (
-          <div className="relative space-y-3">
+          fetchingSolar ? (
+            <div className="w-full h-[32rem] rounded-lg border border-border bg-muted flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <p className="text-sm">Fetching solar data for this roof…</p>
+            </div>
+          ) : (
             <MapTokenLoader>
               <SatellitePane
                 lat={property.centroid_lat}
@@ -320,13 +327,7 @@ export default function PropertyPage() {
                   : undefined}
               />
             </MapTokenLoader>
-            {fetchingSolar && (
-              <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 text-white text-xs rounded-full px-3 py-1.5 backdrop-blur-sm">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Fetching solar data for this roof…
-              </div>
-            )}
-          </div>
+          )
         )}
 
         {/* No solar data states */}
