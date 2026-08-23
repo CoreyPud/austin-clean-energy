@@ -217,9 +217,14 @@ def main():
     matched = enriched["situs_address"].notna().sum()
     print(f"  Matched {matched:,} / {len(enriched):,} properties ({matched/len(enriched)*100:.1f}%)")
 
-    enriched["in_ae"] = enriched["situs_zip"].astype(str).str.strip().str[:5].isin(AE_ZIPS)
-    in_ae_count = enriched["in_ae"].sum()
-    print(f"  In AE territory: {in_ae_count:,} / {len(enriched):,} ({in_ae_count/len(enriched)*100:.1f}%)")
+    # ZIP-based approximation, for this script's own diagnostic prints only -- it over-counts
+    # AE coverage for ZIPs that are only partially in AE territory. The real in_ae column in
+    # Supabase is derived from the actual AE service-area polygon (a DB trigger on
+    # centroid_lat/centroid_lon, see geo_derivation_setup.sql) and must never be overwritten by
+    # this script's output. Dropped from the CSV below before saving -- do not re-add it there.
+    enriched["in_ae_zip_approx"] = enriched["situs_zip"].astype(str).str.strip().str[:5].isin(AE_ZIPS)
+    in_ae_count = enriched["in_ae_zip_approx"].sum()
+    print(f"  In AE territory (ZIP approximation, diagnostic only): {in_ae_count:,} / {len(enriched):,} ({in_ae_count/len(enriched)*100:.1f}%)")
 
     # Normalize TCAD addresses for solar join
     enriched["norm_addr"] = enriched["situs_address"].apply(normalize_street)
@@ -248,17 +253,18 @@ def main():
     joined = enriched.merge(solar_for_join, on="norm_addr", how="left")
     joined.drop(columns=["norm_addr"], inplace=True)
     joined.sort_values("estimated_roof_sqft", ascending=False, inplace=True)
-    joined.to_csv(OUTPUT_SOLAR_JOINED, index=False)
+    # in_ae_zip_approx is diagnostic-only (see above) -- never goes in an uploadable CSV.
+    joined.drop(columns=["in_ae_zip_approx"]).to_csv(OUTPUT_SOLAR_JOINED, index=False)
     solar_join_count = joined["solar_address"].notna().sum()
     print(f"  {solar_join_count:,} rows with solar permit data")
     print(f"  Saved -> {OUTPUT_SOLAR_JOINED}")
 
     enriched.drop(columns=["norm_addr"], inplace=True)
     enriched.sort_values("estimated_roof_sqft", ascending=False, inplace=True)
-    enriched.to_csv(OUTPUT_FILE, index=False)
+    enriched.drop(columns=["in_ae_zip_approx"]).to_csv(OUTPUT_FILE, index=False)
     print(f"\nSaved -> {OUTPUT_FILE}")
     print(f"\nTop 10 by estimated roof size (no solar yet, in AE):")
-    top = enriched[enriched["in_ae"] & ~enriched["has_solar"] & enriched["situs_address"].notna()]
+    top = enriched[enriched["in_ae_zip_approx"] & ~enriched["has_solar"] & enriched["situs_address"].notna()]
     print(top[["pID", "situs_address", "stateCd", "estimated_roof_sqft"]].head(10).to_string(index=False))
 
 
