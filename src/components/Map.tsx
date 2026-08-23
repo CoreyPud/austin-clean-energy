@@ -56,9 +56,15 @@ interface MapProps {
    *  decimal places, ~1cm precision) is embedded in fix_in_ae_service_area.sql, which recomputes
    *  tcad_properties.in_ae via point-in-polygon instead of the old ZIP-list approximation. */
   showServiceAreaBoundary?: boolean;
+  /** Draws Austin's 10 council district boundaries with a number label per district, from
+   *  public/data/austin-council-districts.geojson. Outline + label only, no filtering.
+   *  Source: City of Austin Open Data (Socrata), "Boundaries: City of Austin Council Districts"
+   *  (dataset w3v2-cj58), fetched from https://data.austintexas.gov/resource/w3v2-cj58.geojson
+   *  -- see that dataset's own _source field for the full provenance note. */
+  showCouncilDistricts?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -145,6 +151,59 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       }
     };
   }, [showServiceAreaBoundary]);
+
+  // Austin's 10 council districts -- boundary line + number label per district, no filtering.
+  useEffect(() => {
+    if (!map.current || !showCouncilDistricts) return;
+    const currentMap = map.current;
+    let cancelled = false;
+
+    const addDistricts = () => {
+      if (cancelled || !currentMap || currentMap.getSource('council-districts')) return;
+      fetch('/data/austin-council-districts.geojson')
+        .then((res) => res.json())
+        .then((geojson) => {
+          if (cancelled || !currentMap || currentMap.getSource('council-districts')) return;
+          currentMap.addSource('council-districts', { type: 'geojson', data: geojson });
+          currentMap.addLayer({
+            id: 'council-districts-line',
+            type: 'line',
+            source: 'council-districts',
+            paint: { 'line-color': '#7c3aed', 'line-width': 1.5, 'line-opacity': 0.6 },
+          });
+          currentMap.addLayer({
+            id: 'council-districts-label',
+            type: 'symbol',
+            source: 'council-districts',
+            layout: {
+              'text-field': ['concat', 'D', ['get', 'district_number']],
+              'text-size': 13,
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            },
+            paint: {
+              'text-color': '#7c3aed',
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 1.5,
+            },
+          });
+        })
+        .catch((err) => console.error('Failed to load council districts:', err));
+    };
+
+    if (currentMap.loaded()) addDistricts();
+    else currentMap.once('load', addDistricts);
+
+    return () => {
+      cancelled = true;
+      try {
+        if (currentMap.getLayer('council-districts-label')) currentMap.removeLayer('council-districts-label');
+        if (currentMap.getLayer('council-districts-line')) currentMap.removeLayer('council-districts-line');
+        if (currentMap.getSource('council-districts')) currentMap.removeSource('council-districts');
+      } catch {
+        // Map instance already torn down by the init effect's own cleanup -- nothing to clean up.
+      }
+    };
+  }, [showCouncilDistricts]);
 
   // Attach/detach bounds change listener without recreating the map
   useEffect(() => {
