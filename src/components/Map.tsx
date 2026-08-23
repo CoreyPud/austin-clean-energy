@@ -510,7 +510,11 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       map.current.addSource('installations', {
         type: 'geojson',
         data: buildGeoJSON(),
-        ...(clusterMode ? { cluster: true, clusterMaxZoom: 14, clusterRadius: 50 } : {}),
+        // clusterMaxZoom 13 -- computed against the actual AE service-area extent
+        // (~50.6 x 45.2km): a typical ~1400px-wide viewport shows roughly 1/5 of that area at
+        // zoom 13 vs. ~1/19 at zoom 14, so 13 is close to "clustering stops once about 1/8 of
+        // the city is in view." Viewport width varies by device, so treat this as tunable.
+        ...(clusterMode ? { cluster: true, clusterMaxZoom: 13, clusterRadius: 50 } : {}),
       });
 
       if (clusterMode) {
