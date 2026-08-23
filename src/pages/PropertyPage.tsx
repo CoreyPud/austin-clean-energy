@@ -120,12 +120,8 @@ export default function PropertyPage() {
   const [segmentPitches,   setSegmentPitches]   = useState<Record<number, number>>({});
 
 
-  useEffect(() => {
-    if (!pid) return;
-    setLoading(true);
-    setSystemKwOverride(null); // a new property starts at its own recommended size
-    setBillingMode("sso"); // default to SSO whenever eligible; VoS is a deliberate opt-in
-    Promise.all([
+  const loadProperty = async (pid: string) => {
+    const [{ data, error }, { data: segs }] = await Promise.all([
       supabase
         .from("tcad_properties")
         .select("pid, situs_address, situs_zip, property_type, year_built, market_value, estimated_roof_sqft, land_type_desc, centroid_lat, centroid_lon, solar_fetched_at, solar_max_panels, solar_panel_capacity_w, solar_sunshine_hrs, solar_sunshine_median, solar_max_area_m2, solar_imagery_quality, solar_imagery_date, solar_panels_layout")
@@ -135,29 +131,46 @@ export default function PropertyPage() {
         .from("tcad_roof_segments")
         .select("segment_index, azimuth_deg, pitch_deg")
         .eq("pid", pid),
-    ]).then(([{ data, error }, { data: segs }]) => {
-      setLoading(false);
-      if (error || !data) { setNotFound(true); return; }
-      setProperty(data as PropertyData);
-      const az: Record<number, number> = {};
-      const pt: Record<number, number> = {};
-      (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; pt[s.segment_index] = s.pitch_deg; });
-      setSegmentAzimuths(az);
-      setSegmentPitches(pt);
-      const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
-      if (layout?.p?.length) {
-        const [refLat, refLon] = layout.ref;
-        setSolarPanels(layout.p.map(([dlat, dlon, o, kwh, si]) => ({
-          lat: refLat + dlat / 1e6,
-          lon: refLon + dlon / 1e6,
-          orientation: o ? "LANDSCAPE" : "PORTRAIT",
-          yearlyEnergyDcKwh: kwh,
-          segmentIndex: si,
-        })));
-        setPanelDims({ h: 1.879, w: 1.045 });
-      }
-    });
+    ]);
+    if (error || !data) { setNotFound(true); return; }
+    setProperty(data as PropertyData);
+    const az: Record<number, number> = {};
+    const pt: Record<number, number> = {};
+    (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; pt[s.segment_index] = s.pitch_deg; });
+    setSegmentAzimuths(az);
+    setSegmentPitches(pt);
+    const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
+    if (layout?.p?.length) {
+      const [refLat, refLon] = layout.ref;
+      setSolarPanels(layout.p.map(([dlat, dlon, o, kwh, si]) => ({
+        lat: refLat + dlat / 1e6,
+        lon: refLon + dlon / 1e6,
+        orientation: o ? "LANDSCAPE" : "PORTRAIT",
+        yearlyEnergyDcKwh: kwh,
+        segmentIndex: si,
+      })));
+      setPanelDims({ h: 1.879, w: 1.045 });
+    }
+  };
+
+  useEffect(() => {
+    if (!pid) return;
+    setLoading(true);
+    setSystemKwOverride(null); // a new property starts at its own recommended size
+    setBillingMode("sso"); // default to SSO whenever eligible; VoS is a deliberate opt-in
+    loadProperty(pid).finally(() => setLoading(false));
   }, [pid]);
+
+  // Never fetched Google Solar data for this parcel -- pull it now, same on-demand fetch the
+  // calculator already does for arbitrary addresses, just persisted here since it's a known
+  // TCAD pid (see ensure-property-solar). Re-reads once it lands so panels/charts pick it up.
+  useEffect(() => {
+    if (!pid || !property || property.solar_fetched_at) return;
+    supabase.functions.invoke("ensure-property-solar", { body: { pid } }).then(({ data, error }) => {
+      if (error || !data?.ok || data.alreadyFetched) return;
+      loadProperty(pid);
+    });
+  }, [pid, property]);
 
   const nbStats = useNeighborhoodStats(property?.situs_zip ?? null);
 
