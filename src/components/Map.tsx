@@ -165,11 +165,33 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         .then((geojson) => {
           if (cancelled || !currentMap || currentMap.getSource('council-districts')) return;
           currentMap.addSource('council-districts', { type: 'geojson', data: geojson });
+          // 10-hue categorical palette (Tableau10), keyed on district_number -- which the
+          // source data stores as a string ("1".."10"), so the match cases must match.
+          const districtColor: mapboxgl.Expression = [
+            'match', ['get', 'district_number'],
+            '1', '#1f77b4',
+            '2', '#ff7f0e',
+            '3', '#2ca02c',
+            '4', '#d62728',
+            '5', '#9467bd',
+            '6', '#8c564b',
+            '7', '#e377c2',
+            '8', '#7f7f7f',
+            '9', '#bcbd22',
+            '10', '#17becf',
+            '#999999',
+          ];
+          currentMap.addLayer({
+            id: 'council-districts-fill',
+            type: 'fill',
+            source: 'council-districts',
+            paint: { 'fill-color': districtColor, 'fill-opacity': 0.08 },
+          });
           currentMap.addLayer({
             id: 'council-districts-line',
             type: 'line',
             source: 'council-districts',
-            paint: { 'line-color': '#7c3aed', 'line-width': 1.5, 'line-opacity': 0.6 },
+            paint: { 'line-color': districtColor, 'line-width': 1.5, 'line-opacity': 0.8 },
           });
           currentMap.addLayer({
             id: 'council-districts-label',
@@ -181,7 +203,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
               'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
             },
             paint: {
-              'text-color': '#7c3aed',
+              'text-color': districtColor,
               'text-halo-color': '#ffffff',
               'text-halo-width': 1.5,
             },
@@ -198,6 +220,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       try {
         if (currentMap.getLayer('council-districts-label')) currentMap.removeLayer('council-districts-label');
         if (currentMap.getLayer('council-districts-line')) currentMap.removeLayer('council-districts-line');
+        if (currentMap.getLayer('council-districts-fill')) currentMap.removeLayer('council-districts-fill');
         if (currentMap.getSource('council-districts')) currentMap.removeSource('council-districts');
       } catch {
         // Map instance already torn down by the init effect's own cleanup -- nothing to clean up.
