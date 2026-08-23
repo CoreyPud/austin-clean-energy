@@ -8,7 +8,10 @@ import { classifyProperty } from "@/lib/property-solar";
 type ClusterPoint = [string, number, number, number, string | null];
 
 const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
-const BOUNDS_QUERY_LIMIT = 100;
+// 1000 is the actual ceiling here, not just a chosen number -- PostgREST silently truncates
+// any higher limit to this project's configured max rows per request regardless of what's
+// requested (confirmed empirically: asking for 5000 still returned exactly 1000).
+const BOUNDS_QUERY_LIMIT = 1000;
 const DEBOUNCE_MS = 400;
 
 /**
