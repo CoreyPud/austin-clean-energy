@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -54,7 +54,10 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const lastFitKeyRef = useRef<string | undefined>(undefined);
-  const [overlayPos, setOverlayPos] = useState<{ x: number; y: number } | null>(null);
+  // Positioned imperatively (not via React state) in the effect below -- this tracks a live
+  // map camera at up to 60fps during a drag/zoom, and re-rendering the whole overlay subtree
+  // on every 'move' tick was the actual cause of laggy panning once a point was selected.
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -379,22 +382,19 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
   }, [clusterPoints, onClusterPointClick, onMapBackgroundClick]);
 
   // Track the selected point's screen position (for a floating overlay card) as the map moves.
-  useEffect(() => {
-    if (!map.current || !selectedPointId || !clusterPoints) {
-      setOverlayPos(null);
-      return;
-    }
+  // Writes directly to the DOM instead of React state -- 'move' fires on every animation frame
+  // during a drag/zoom, and routing that through setState re-rendered the whole overlay subtree
+  // 60x/sec, which is what made panning/zooming laggy whenever a card was open.
+  useLayoutEffect(() => {
+    if (!map.current || !selectedPointId || !clusterPoints) return;
     const point = clusterPoints.find(([id]) => id === selectedPointId);
-    if (!point) {
-      setOverlayPos(null);
-      return;
-    }
+    if (!point) return;
     const [, lng, lat] = point;
 
     const updatePos = () => {
-      if (!map.current) return;
+      if (!map.current || !overlayRef.current) return;
       const { x, y } = map.current.project([lng, lat]);
-      setOverlayPos({ x, y });
+      overlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
     };
 
     updatePos();
@@ -618,12 +618,11 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
           </div>
         </div>
       )}
-      {selectedPointId && overlayPos && renderPointOverlay && (
-        <div
-          className="absolute z-30"
-          style={{ left: overlayPos.x, top: overlayPos.y, transform: 'translate(-50%, calc(-100% - 16px))' }}
-        >
-          {renderPointOverlay(selectedPointId)}
+      {selectedPointId && renderPointOverlay && (
+        <div ref={overlayRef} className="absolute top-0 left-0 z-30">
+          <div style={{ transform: 'translate(-50%, calc(-100% - 16px))' }}>
+            {renderPointOverlay(selectedPointId)}
+          </div>
         </div>
       )}
       {showLegend && !clusterPoints && markers.length > 0 && (

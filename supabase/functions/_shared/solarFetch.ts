@@ -1,4 +1,4 @@
-// The Google Solar API call, response shape, and DB upsert used by ensure-property-solar (the
+// The Google Solar API call, response shape, and DB upsert used by fetch-property-solar (the
 // only caller). Split out from the endpoint handler for readability, not reuse.
 
 type SupabaseClientLike = ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.58.0").createClient>;

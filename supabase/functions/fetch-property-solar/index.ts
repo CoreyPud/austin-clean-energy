@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
 
     return json(200, { ok: true, property: result.property });
   } catch (e) {
-    console.error("ensure-property-solar error:", e);
+    console.error("fetch-property-solar error:", e);
     return json(500, { error: e instanceof Error ? e.message : "Unknown error" });
   }
 });

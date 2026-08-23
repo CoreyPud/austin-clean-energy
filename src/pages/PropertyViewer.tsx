@@ -252,7 +252,7 @@ export default function PropertyViewer() {
   const handleFetchSolar = async (pid: string) => {
     setSolarFetching(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ensure-property-solar', {
+      const { data, error } = await supabase.functions.invoke('fetch-property-solar', {
         body: { pid },
       });
       if (error || !data?.ok) throw new Error(data?.error || 'Fetch failed');
