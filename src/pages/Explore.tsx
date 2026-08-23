@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import PropertyMapView from "@/components/Map";
 import PropertyPreviewCard from "@/components/explore/PropertyPreviewCard";
 import { classifyProperty } from "@/lib/property-solar";
+import { decodeTypeCode, fetchBulkProperties } from "@/lib/properties-bulk";
 
 /** [pid, lng, lat, isCommercial(0|1), zip, ym?, hasSolar(0|1)] -- Map.tsx's compact clusterPoints tuple format. */
 type ClusterPoint = [string, number, number, number, string | null, number | undefined, number];
@@ -15,6 +16,7 @@ const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
 // requested (confirmed empirically: asking for 5000 still returned exactly 1000).
 const BOUNDS_QUERY_LIMIT = 1000;
 const DEBOUNCE_MS = 400;
+
 
 /**
  * Step 1 of the consumer-facing "Zillow-like" property browser: a full-map view that fetches
@@ -34,6 +36,38 @@ export default function Explore() {
   // scrolled off-screen is harmless, not wasted rendering work.
   const seenPointsRef = useRef<Map<string, ClusterPoint>>(new Map());
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Full-area background load: one gzipped request for every AE-territory parcel, replacing
+  // the ~248 paginated PostgREST calls that made the whole-city view take about a minute.
+  // The per-viewport query below stays as-is -- it's already fast, and it's what supplies the
+  // richer per-property fields the bulk payload intentionally leaves out.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchBulkProperties(controller.signal)
+      .then(({ points: bulk, typeCodes }) => {
+        for (const [pid, lng, lat, typeCode, zip, hasSolar] of bulk) {
+          // Don't clobber a richer record already loaded from the bounds query.
+          if (seenPointsRef.current.has(pid)) continue;
+          seenPointsRef.current.set(pid, [
+            pid,
+            lng,
+            lat,
+            classifyProperty(decodeTypeCode(typeCode, typeCodes)) === "commercial" ? 1 : 0,
+            zip,
+            undefined,
+            hasSolar,
+          ]);
+        }
+        setPoints(Array.from(seenPointsRef.current.values()));
+      })
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        // Non-fatal: the viewport query still populates the map, just area-by-area.
+        console.error("Explore bulk load error:", err);
+      });
+    return () => controller.abort();
+  }, []);
+
 
   const handleBoundsChange = (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
