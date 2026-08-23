@@ -58,6 +58,8 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
   // map camera at up to 60fps during a drag/zoom, and re-rendering the whole overlay subtree
   // on every 'move' tick was the actual cause of laggy panning once a point was selected.
   const overlayRef = useRef<HTMLDivElement>(null);
+  const hoveredPointIdRef = useRef<string | number | null>(null);
+  const selectedPointIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -313,6 +315,9 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       type: 'FeatureCollection' as const,
       features: clusterPoints.map(([id, lng, lat, c, zip, , hasSolar]) => ({
         type: 'Feature' as const,
+        // Top-level id (distinct from properties.id) is what feature-state keys off of, for
+        // the hover/selected paint below.
+        id,
         properties: { id, c, zip: zip || '', has_solar: hasSolar || 0 },
         geometry: { type: 'Point' as const, coordinates: [lng, lat] },
       })),
@@ -337,13 +342,30 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         type: 'circle',
         source: 'installations',
         paint: {
-          'circle-color': ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
+          'circle-color': [
+            'case',
+            ['boolean', ['feature-state', 'selected'], false],
+            ['case', ['==', ['get', 'c'], 1], '#1e3a8a', '#166534'],
+            ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
+          ],
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            8, 1.2,
-            11, 2,
-            14, 3.5,
-            17, 6,
+            8, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 2.2,
+              ['boolean', ['feature-state', 'hover'], false], 1.8,
+              1.2],
+            11, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 3.6,
+              ['boolean', ['feature-state', 'hover'], false], 3,
+              2],
+            14, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 6,
+              ['boolean', ['feature-state', 'hover'], false], 5,
+              3.5],
+            17, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 10,
+              ['boolean', ['feature-state', 'hover'], false], 8.5,
+              6],
           ],
           'circle-stroke-color': ['case', ['==', ['get', 'has_solar'], 1], '#facc15', '#fff'],
           'circle-stroke-width': [
@@ -363,9 +385,26 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       });
 
       const setPointer = () => { if (map.current) map.current.getCanvas().style.cursor = 'pointer'; };
-      const clearPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
+      const clearPointer = () => {
+        if (!map.current) return;
+        map.current.getCanvas().style.cursor = '';
+        if (hoveredPointIdRef.current !== null) {
+          map.current.setFeatureState({ source: 'installations', id: hoveredPointIdRef.current }, { hover: false });
+          hoveredPointIdRef.current = null;
+        }
+      };
       map.current.on('mouseenter', 'inst-point', setPointer);
       map.current.on('mouseleave', 'inst-point', clearPointer);
+      map.current.on('mousemove', 'inst-point', (e) => {
+        if (!map.current) return;
+        const id = e.features?.[0]?.id;
+        if (id === undefined || id === hoveredPointIdRef.current) return;
+        if (hoveredPointIdRef.current !== null) {
+          map.current.setFeatureState({ source: 'installations', id: hoveredPointIdRef.current }, { hover: false });
+        }
+        hoveredPointIdRef.current = id;
+        map.current.setFeatureState({ source: 'installations', id }, { hover: true });
+      });
 
       map.current.on('click', (e) => {
         if (!map.current || !onMapBackgroundClick) return;
@@ -400,6 +439,21 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     updatePos();
     map.current.on('move', updatePos);
     return () => { map.current?.off('move', updatePos); };
+  }, [selectedPointId, clusterPoints]);
+
+  // Mark the selected cluster point's feature-state so the paint expressions above can
+  // render it darker/larger. Feature-state persists across setData as long as ids match, so
+  // this only needs to react to selectedPointId actually changing, not every data refresh.
+  useEffect(() => {
+    if (!map.current || !map.current.getSource('installations')) return;
+    const prev = selectedPointIdRef.current;
+    if (prev !== null && prev !== selectedPointId) {
+      map.current.setFeatureState({ source: 'installations', id: prev }, { selected: false });
+    }
+    if (selectedPointId) {
+      map.current.setFeatureState({ source: 'installations', id: selectedPointId }, { selected: true });
+    }
+    selectedPointIdRef.current = selectedPointId ?? null;
   }, [selectedPointId, clusterPoints]);
 
 
