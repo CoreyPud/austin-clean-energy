@@ -94,6 +94,7 @@ export default function Explore() {
           onBoundsChange={handleBoundsChange}
           showLegend
           cooperativeGestures={false}
+          showServiceAreaBoundary
           onClusterPointClick={setSelectedPid}
           selectedPointId={selectedPid}
           onMapBackgroundClick={() => setSelectedPid(null)}

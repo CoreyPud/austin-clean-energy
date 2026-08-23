@@ -47,9 +47,12 @@ interface MapProps {
    *  hijack the scroll. Defaults to true for every embedded use; a page where the map IS
    *  the whole viewport (nothing to scroll past) should pass false for plain scroll-to-zoom. */
   cooperativeGestures?: boolean;
+  /** Draws the Austin Energy service-area boundary (public/data/austin-energy-service-area.geojson,
+   *  sourced from the City of Austin's GIS). Outline only -- no filtering/masking. */
+  showServiceAreaBoundary?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -92,6 +95,50 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       map.current = null;
     };
   }, []);
+
+  // Austin Energy service-area boundary -- outline only, sanity-check visual, no filtering.
+  useEffect(() => {
+    if (!map.current || !showServiceAreaBoundary) return;
+    const currentMap = map.current;
+    let cancelled = false;
+
+    const addBoundary = () => {
+      if (cancelled || !currentMap || currentMap.getSource('ae-service-area')) return;
+      fetch('/data/austin-energy-service-area.geojson')
+        .then((res) => res.json())
+        .then((geojson) => {
+          if (cancelled || !currentMap || currentMap.getSource('ae-service-area')) return;
+          currentMap.addSource('ae-service-area', { type: 'geojson', data: geojson });
+          currentMap.addLayer({
+            id: 'ae-service-area-fill',
+            type: 'fill',
+            source: 'ae-service-area',
+            paint: { 'fill-color': '#2563eb', 'fill-opacity': 0.04 },
+          });
+          currentMap.addLayer({
+            id: 'ae-service-area-line',
+            type: 'line',
+            source: 'ae-service-area',
+            paint: { 'line-color': '#2563eb', 'line-width': 2, 'line-dasharray': [2, 1.5] },
+          });
+        })
+        .catch((err) => console.error('Failed to load AE service area boundary:', err));
+    };
+
+    if (currentMap.loaded()) addBoundary();
+    else currentMap.once('load', addBoundary);
+
+    return () => {
+      cancelled = true;
+      try {
+        if (currentMap.getLayer('ae-service-area-line')) currentMap.removeLayer('ae-service-area-line');
+        if (currentMap.getLayer('ae-service-area-fill')) currentMap.removeLayer('ae-service-area-fill');
+        if (currentMap.getSource('ae-service-area')) currentMap.removeSource('ae-service-area');
+      } catch {
+        // Map instance already torn down by the init effect's own cleanup -- nothing to clean up.
+      }
+    };
+  }, [showServiceAreaBoundary]);
 
   // Attach/detach bounds change listener without recreating the map
   useEffect(() => {
