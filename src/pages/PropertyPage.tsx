@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
 import MapTokenLoader from "@/components/MapTokenLoader";
@@ -117,7 +118,11 @@ export default function PropertyPage() {
   const [costPerWOverride, setCostPerWOverride] = useState<number | null>(null);
   // Only meaningful when ssoEligible; properties too small for SSO always show VoS regardless.
   const [billingMode, setBillingMode] = useState<"sso" | "vos">("sso");
-  const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
+  // undefined = we don't know yet (never checked, or a check is in flight); [] = checked and
+  // confirmed no panels; populated = the real layout. SatellitePane renders each distinctly so
+  // the marker/loading view doesn't flicker between "unknown" and "confirmed empty".
+  const [solarPanels,      setSolarPanels]      = useState<SolarPanel[] | undefined>(undefined);
+  const [fetchingSolar,    setFetchingSolar]    = useState(false);
   const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
   const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
   const [segmentPitches,   setSegmentPitches]   = useState<Record<number, number>>({});
@@ -153,6 +158,11 @@ export default function PropertyPage() {
         segmentIndex: si,
       })));
       setPanelDims({ h: 1.879, w: 1.045 });
+    } else if (data.solar_fetched_at) {
+      // Checked, confirmed no panels -- distinct from "haven't checked yet" (undefined).
+      setSolarPanels([]);
+    } else {
+      setSolarPanels(undefined);
     }
   };
 
@@ -175,16 +185,22 @@ export default function PropertyPage() {
     const fetchedAt = property.solar_fetched_at ? new Date(property.solar_fetched_at).getTime() : null;
     const isStale = fetchedAt == null || Date.now() - fetchedAt > SOLAR_DATA_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
     if (!isStale) return;
-    supabase.functions.invoke("fetch-property-solar", { body: { pid } }).then(({ data, error }) => {
-      if (error || !data?.ok || data.alreadyFetched || data.rateLimited) return;
-      loadProperty(pid);
-    });
+    // Only show a loading state for a true first fetch -- a background staleness refresh has
+    // perfectly good (if slightly old) data to keep showing while it silently checks for newer.
+    const isFirstFetch = fetchedAt == null;
+    if (isFirstFetch) setFetchingSolar(true);
+    supabase.functions.invoke("fetch-property-solar", { body: { pid } })
+      .then(({ data, error }) => {
+        if (error || !data?.ok || data.alreadyFetched || data.rateLimited) return;
+        return loadProperty(pid);
+      })
+      .finally(() => { if (isFirstFetch) setFetchingSolar(false); });
   }, [pid, property]);
 
   const nbStats = useNeighborhoodStats(property?.situs_zip ?? null);
 
   const solarFilter = useSolarFilter({
-    panels:       solarPanels.length ? solarPanels : undefined,
+    panels:       solarPanels,
     propertyType: property?.property_type,
     azimuths:     segmentAzimuths,
   });
@@ -288,7 +304,7 @@ export default function PropertyPage() {
 
         {/* Satellite map */}
         {property.centroid_lat != null && property.centroid_lon != null && (
-          <div className="space-y-3">
+          <div className="relative space-y-3">
             <MapTokenLoader>
               <SatellitePane
                 lat={property.centroid_lat}
@@ -304,15 +320,32 @@ export default function PropertyPage() {
                   : undefined}
               />
             </MapTokenLoader>
+            {fetchingSolar && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 text-white text-xs rounded-full px-3 py-1.5 backdrop-blur-sm">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Fetching solar data for this roof…
+              </div>
+            )}
           </div>
         )}
 
         {/* No solar data states */}
-        {!hasSolar && (
+        {!hasSolar && fetchingSolar && (
+          <div className="rounded-lg border border-border p-6 text-center space-y-2">
+            <p className="font-medium flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Fetching solar data
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Pulling roof and sunshine data for this property from Google Solar.
+            </p>
+          </div>
+        )}
+        {!hasSolar && !fetchingSolar && (
           <div className="rounded-lg border border-border p-6 text-center space-y-2">
             <p className="font-medium">No Google Solar data available for this property</p>
             <p className="text-sm text-muted-foreground">
-              Solar potential data hasn't been fetched for this address yet.
+              Google hasn't imaged this roof yet, so we can't estimate solar potential here.
             </p>
           </div>
         )}

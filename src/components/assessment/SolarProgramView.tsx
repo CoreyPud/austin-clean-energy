@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import {
   BarChart, Bar, Cell,
@@ -100,6 +100,17 @@ export default function SolarProgramView({
 }: SolarProgramViewProps) {
   const [showCalcDetails, setShowCalcDetails] = useState(false);
   const [batteryKwh, setBatteryKwh] = useState(0);
+  // Sliders below drag against these "live" locals instead of committing straight to
+  // systemKw/batteryKwh/rec.costPerW on every pointer-move tick. Those three each drive a full
+  // financials + chart recompute (systemKw and costPerW also bubble up to a full page
+  // re-render), which made dragging visibly laggy -- onValueCommit below only pushes the real
+  // value once the drag ends, while these track the thumb smoothly in the meantime.
+  const [liveSystemKw, setLiveSystemKw] = useState(systemKw);
+  const [liveBatteryKwh, setLiveBatteryKwh] = useState(batteryKwh);
+  const [liveCostPerW, setLiveCostPerW] = useState(rec.costPerW);
+  useEffect(() => setLiveSystemKw(systemKw), [systemKw]);
+  useEffect(() => setLiveBatteryKwh(batteryKwh), [batteryKwh]);
+  useEffect(() => setLiveCostPerW(rec.costPerW), [rec.costPerW]);
   const isResidential = propertyClass === "residential";
   const isMultifamily = propertyClass === "multifamily";
   const isCommercial = propertyClass === "commercial";
@@ -170,18 +181,19 @@ export default function SolarProgramView({
             <div className="flex items-start gap-6">
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-muted-foreground mb-1">Solar system size</div>
-                <div className="text-2xl font-bold tabular-nums mb-3">{systemKw.toFixed(1)} kW</div>
+                <div className="text-2xl font-bold tabular-nums mb-3">{liveSystemKw.toFixed(1)} kW</div>
                 <Slider
                   min={1}
                   max={Math.max(rec.maxKw, 16)}
                   step={rec.maxKw > 50 ? 1 : 0.5}
-                  value={[systemKw]}
-                  onValueChange={([v]) => onSystemKwChange(v)}
+                  value={[liveSystemKw]}
+                  onValueChange={([v]) => setLiveSystemKw(v)}
+                  onValueCommit={([v]) => onSystemKwChange(v)}
                 />
-                {recommendedKw != null && billingMode === "vos" && systemKw !== recommendedKw && (
+                {recommendedKw != null && billingMode === "vos" && liveSystemKw !== recommendedKw && (
                   <div className="flex justify-end mt-1.5">
                     <button
-                      onClick={() => onSystemKwChange(recommendedKw)}
+                      onClick={() => { setLiveSystemKw(recommendedKw); onSystemKwChange(recommendedKw); }}
                       className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums transition-colors hover:text-primary"
                     >
                       <RotateCcw className="h-3 w-3 shrink-0" />
@@ -195,11 +207,12 @@ export default function SolarProgramView({
 
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-muted-foreground mb-1">Battery system size</div>
-                <div className="text-2xl font-bold tabular-nums mb-3">{batteryKwh === 0 ? "None" : `${batteryKwh} kWh`}</div>
+                <div className="text-2xl font-bold tabular-nums mb-3">{liveBatteryKwh === 0 ? "None" : `${liveBatteryKwh} kWh`}</div>
                 <Slider
                   min={0} max={30} step={1}
-                  value={[batteryKwh]}
-                  onValueChange={([v]) => setBatteryKwh(v)}
+                  value={[liveBatteryKwh]}
+                  onValueChange={([v]) => setLiveBatteryKwh(v)}
+                  onValueCommit={([v]) => setBatteryKwh(v)}
                 />
               </div>
             </div>
@@ -237,8 +250,9 @@ export default function SolarProgramView({
         {onCostPerWChange && (
           <Slider
             min={1.5} max={5.0} step={0.05}
-            value={[rec.costPerW]}
-            onValueChange={([v]) => onCostPerWChange(v)}
+            value={[liveCostPerW]}
+            onValueChange={([v]) => setLiveCostPerW(v)}
+            onValueCommit={([v]) => onCostPerWChange(v)}
           />
         )}
         <dl className="space-y-2 text-sm">
