@@ -23,6 +23,11 @@ const DEBOUNCE_MS = 400;
  */
 export default function Explore() {
   const [points, setPoints] = useState<ClusterPoint[]>([]);
+  // Accumulates every property fetched so far, keyed by pid, so panning back over
+  // already-seen area re-renders instantly from memory instead of re-querying. Mapbox only
+  // paints whatever's within the current camera view, so holding onto points that have
+  // scrolled off-screen is harmless, not wasted rendering work.
+  const seenPointsRef = useRef<Map<string, ClusterPoint>>(new Map());
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleBoundsChange = (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
@@ -53,15 +58,16 @@ export default function Explore() {
         return;
       }
 
-      setPoints(
-        (data ?? []).map((p): ClusterPoint => [
+      for (const p of data ?? []) {
+        seenPointsRef.current.set(p.pid, [
           p.pid,
           p.centroid_lon as number,
           p.centroid_lat as number,
           classifyProperty(p.property_type) === "commercial" ? 1 : 0,
           p.situs_zip,
-        ]),
-      );
+        ]);
+      }
+      setPoints(Array.from(seenPointsRef.current.values()));
     }, DEBOUNCE_MS);
   };
 
