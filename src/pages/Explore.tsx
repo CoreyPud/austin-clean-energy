@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import MapTokenLoader from "@/components/MapTokenLoader";
@@ -57,25 +57,6 @@ const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
 // requested (confirmed empirically: asking for 5000 still returned exactly 1000).
 const BOUNDS_QUERY_LIMIT = 1000;
 const DEBOUNCE_MS = 400;
-// Background full-area load: paginated the same way as the bounds query, but for every AE
-// property regardless of viewport, so the map fills in behind the scenes while the existing
-// pan/zoom-driven fetch keeps handling what's actually on screen. A short gap between pages
-// keeps it from competing for bandwidth with bounds-triggered fetches while the user is
-// actively panning.
-const BACKGROUND_PAGE_SIZE = 1000;
-const BACKGROUND_PAGE_DELAY_MS = 30;
-// Recomputing/re-rendering after every one of ~250 background pages would be wasteful --
-// batch it instead.
-const BACKGROUND_RECOMPUTE_EVERY_N_PAGES = 10;
-
-interface MinimalPropertyRow {
-  pid: string;
-  situs_zip: string | null;
-  property_type: string | null;
-  centroid_lat: number;
-  centroid_lon: number;
-  has_solar: boolean | null;
-}
 
 /**
  * Step 1 of the consumer-facing "Zillow-like" property browser: a full-map view that fetches
@@ -96,11 +77,6 @@ export default function Explore() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [numericFilters, setNumericFilters] = useState<Record<NumericFieldKey, NumericRange>>(EMPTY_NUMERIC_FILTERS);
-  const [backgroundLoad, setBackgroundLoad] = useState<{ loaded: number; total: number | null; done: boolean }>({
-    loaded: 0,
-    total: null,
-    done: false,
-  });
 
   // Accumulates every property fetched so far, keyed by pid, so panning back over already-seen
   // area re-renders instantly from memory instead of re-querying, and so filter changes can
@@ -141,84 +117,6 @@ export default function Explore() {
     }
     setPoints(filtered);
   };
-
-  // Fills in the rest of the AE area in the background, independent of pan/zoom, so a fully
-  // populated cache (for future clustering at zoomed-out levels) builds up without blocking or
-  // slowing down the normal viewport-driven experience. Records this adds are minimal (no
-  // filter-relevant columns) -- matchesNumericFilters already treats a null field as "doesn't
-  // match" a specific range, so a background-only property just won't show up under an active
-  // numeric filter until a real viewport visit enriches it via handleBoundsChange, which never
-  // downgrades an already-enriched record since it always overwrites with full data anyway.
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadEverything = async () => {
-      const districts = await loadDistricts();
-      let offset = 0;
-      let pagesSinceRecompute = 0;
-
-      while (!cancelled) {
-        const { data, error, count } = await supabase
-          .from("tcad_properties")
-          .select("pid, situs_zip, property_type, centroid_lat, centroid_lon, has_solar", { count: "exact" })
-          .eq("in_ae", true)
-          .not("centroid_lat", "is", null)
-          .not("centroid_lon", "is", null)
-          .order("pid")
-          .range(offset, offset + BACKGROUND_PAGE_SIZE - 1);
-
-        if (cancelled) return;
-        if (error) {
-          console.error("Explore background load error:", error);
-          return;
-        }
-
-        for (const p of (data ?? []) as MinimalPropertyRow[]) {
-          // Never overwrite a record a real viewport visit already enriched with filter data.
-          if (propertiesRef.current.has(p.pid)) continue;
-          const lng = p.centroid_lon;
-          const lat = p.centroid_lat;
-          propertiesRef.current.set(p.pid, {
-            pid: p.pid,
-            lng,
-            lat,
-            property_type: p.property_type,
-            zip: p.situs_zip,
-            has_solar: p.has_solar ? 1 : 0,
-            district: findContainingFeatureId(lng, lat, districts, "district_number"),
-            market_value: null,
-            roof_sqft: null,
-            year_built: null,
-            solar_kw: null,
-            solar_sunshine_median: null,
-            solar_max_panels: null,
-            solar_panel_capacity_w: null,
-            solar_buildable_kw: null,
-            solar_eligible_kw: null,
-            solar_max_area_m2: null,
-          });
-        }
-
-        offset += BACKGROUND_PAGE_SIZE;
-        pagesSinceRecompute++;
-        const loaded = Math.min(offset, count ?? offset);
-        const isLastPage = (data?.length ?? 0) < BACKGROUND_PAGE_SIZE;
-        if (pagesSinceRecompute >= BACKGROUND_RECOMPUTE_EVERY_N_PAGES || isLastPage) {
-          recomputeVisiblePoints();
-          pagesSinceRecompute = 0;
-        }
-        setBackgroundLoad({ loaded, total: count ?? null, done: isLastPage });
-        if (isLastPage) break;
-
-        await new Promise((resolve) => setTimeout(resolve, BACKGROUND_PAGE_DELAY_MS));
-      }
-    };
-
-    loadEverything();
-    return () => { cancelled = true; };
-    // Runs once on mount by design; recomputeVisiblePoints/loadDistricts only read refs, so
-    // using their mount-time closure is safe even though the linter can't tell that itself.
-  }, []);
 
   const handleBoundsChange = (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
@@ -318,12 +216,6 @@ export default function Explore() {
           )}
         />
       </MapTokenLoader>
-      {!backgroundLoad.done && (
-        <div className="absolute bottom-8 left-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1.5 border border-border text-xs text-muted-foreground">
-          Loading full map
-          {backgroundLoad.total ? ` (${Math.min(100, Math.round((backgroundLoad.loaded / backgroundLoad.total) * 100))}%)` : "…"}
-        </div>
-      )}
       <ExploreFilterPanel
         selectedTypes={selectedTypes}
         onTypesChange={(v) => { setSelectedTypes(v); filtersRef.current.selectedTypes = v; recomputeVisiblePoints(); }}
