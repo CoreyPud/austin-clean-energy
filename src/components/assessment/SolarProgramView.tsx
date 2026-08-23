@@ -38,7 +38,17 @@ const StickyKpi = ({
       <div className={`text-xl font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
     </div>
   );
-  return href ? <a href={href} className={cls}>{inner}</a> : <div className={cls}>{inner}</div>;
+  // Scroll to the target manually instead of a real hash navigation. A plain <a href="#...">
+  // click does a native same-document navigation, which drops the current history entry's
+  // state -- on the /explore overlay that state carries {background: ...}, so a real hash nav
+  // makes the app think there's no background location anymore and collapses the overlay into
+  // a plain full-page render. Scrolling by hand never touches the URL, so it's safe everywhere.
+  const handleClick = (e: React.MouseEvent) => {
+    if (!href || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  return href ? <a href={href} onClick={handleClick} className={cls}>{inner}</a> : <div className={cls}>{inner}</div>;
 };
 
 interface SolarProgramViewProps {
