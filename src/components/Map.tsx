@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -26,6 +26,14 @@ interface MapProps {
   /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null, ym?, hasSolar(0|1)?] */
   clusterPoints?: Array<[string, number, number, number, string | null, number?, number?]>;
   onClusterPointClick?: (id: string) => void;
+  /** id of a clusterPoint to show a floating overlay over (e.g. a Zillow-style preview card).
+   *  The overlay tracks that point's screen position as the map pans/zooms. */
+  selectedPointId?: string | null;
+  /** Renders the overlay content for selectedPointId. Positioning/tracking is handled by Map. */
+  renderPointOverlay?: (id: string) => ReactNode;
+  /** Fires when the map background (not a cluster point) is clicked -- typically used to
+   *  dismiss a point overlay. */
+  onMapBackgroundClick?: () => void;
   heatmapData?: HeatmapPoint[];
   showLegend?: boolean;
   className?: string;
@@ -41,11 +49,12 @@ interface MapProps {
   cooperativeGestures?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const lastFitKeyRef = useRef<string | undefined>(undefined);
+  const [overlayPos, setOverlayPos] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -354,6 +363,12 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       const clearPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
       map.current.on('mouseenter', 'inst-point', setPointer);
       map.current.on('mouseleave', 'inst-point', clearPointer);
+
+      map.current.on('click', (e) => {
+        if (!map.current || !onMapBackgroundClick) return;
+        const hit = map.current.queryRenderedFeatures(e.point, { layers: ['inst-point'] });
+        if (hit.length === 0) onMapBackgroundClick();
+      });
     };
 
     if (map.current.loaded()) {
@@ -361,7 +376,31 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     } else {
       map.current.on('load', ensureLayers);
     }
-  }, [clusterPoints, onClusterPointClick]);
+  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick]);
+
+  // Track the selected point's screen position (for a floating overlay card) as the map moves.
+  useEffect(() => {
+    if (!map.current || !selectedPointId || !clusterPoints) {
+      setOverlayPos(null);
+      return;
+    }
+    const point = clusterPoints.find(([id]) => id === selectedPointId);
+    if (!point) {
+      setOverlayPos(null);
+      return;
+    }
+    const [, lng, lat] = point;
+
+    const updatePos = () => {
+      if (!map.current) return;
+      const { x, y } = map.current.project([lng, lat]);
+      setOverlayPos({ x, y });
+    };
+
+    updatePos();
+    map.current.on('move', updatePos);
+    return () => { map.current?.off('move', updatePos); };
+  }, [selectedPointId, clusterPoints]);
 
 
   // Handle marker rendering
@@ -577,6 +616,14 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
               <span className="text-xs text-muted-foreground">Commercial</span>
             </div>
           </div>
+        </div>
+      )}
+      {selectedPointId && overlayPos && renderPointOverlay && (
+        <div
+          className="absolute z-30"
+          style={{ left: overlayPos.x, top: overlayPos.y, transform: 'translate(-50%, calc(-100% - 16px))' }}
+        >
+          {renderPointOverlay(selectedPointId)}
         </div>
       )}
       {showLegend && !clusterPoints && markers.length > 0 && (

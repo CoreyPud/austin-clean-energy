@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import PropertyMapView from "@/components/Map";
+import PropertyPreviewCard from "@/components/explore/PropertyPreviewCard";
 import { classifyProperty } from "@/lib/property-solar";
 
 /** [pid, lng, lat, isCommercial(0|1), zip, ym?, hasSolar(0|1)] -- Map.tsx's compact clusterPoints tuple format. */
@@ -22,7 +24,10 @@ const DEBOUNCE_MS = 400;
  * once that's wired up -- this pass is just the map and the bounded fetch.
  */
 export default function Explore() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [points, setPoints] = useState<ClusterPoint[]>([]);
+  const [selectedPid, setSelectedPid] = useState<string | null>(null);
   // Accumulates every property fetched so far, keyed by pid, so panning back over
   // already-seen area re-renders instantly from memory instead of re-querying. Mapbox only
   // paints whatever's within the current camera view, so holding onto points that have
@@ -73,6 +78,10 @@ export default function Explore() {
     }, DEBOUNCE_MS);
   };
 
+  const openProperty = (pid: string) => {
+    navigate(`/property/${pid}`, { state: { background: location } });
+  };
+
   return (
     <div className="h-screen w-full">
       <MapTokenLoader>
@@ -85,6 +94,16 @@ export default function Explore() {
           onBoundsChange={handleBoundsChange}
           showLegend
           cooperativeGestures={false}
+          onClusterPointClick={setSelectedPid}
+          selectedPointId={selectedPid}
+          onMapBackgroundClick={() => setSelectedPid(null)}
+          renderPointOverlay={(pid) => (
+            <PropertyPreviewCard
+              pid={pid}
+              onOpen={() => openProperty(pid)}
+              onClose={() => setSelectedPid(null)}
+            />
+          )}
         />
       </MapTokenLoader>
     </div>
