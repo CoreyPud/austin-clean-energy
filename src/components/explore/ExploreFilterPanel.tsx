@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Filter, ChevronLeft, ChevronDown } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MultiSelectDropdown from "@/components/explore/MultiSelectDropdown";
 import { TYPE_LABEL } from "@/lib/property-solar";
@@ -49,7 +49,7 @@ export default function ExploreFilterPanel({
         onClick={() => setExpanded(true)}
         className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-border px-3 py-2 hover:bg-white transition-colors"
       >
-        <Filter className="h-4 w-4 text-foreground" />
+        <SlidersHorizontal className="h-4 w-4 text-foreground" />
         {activeFilterCount > 0 && (
           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
             {activeFilterCount}
@@ -60,10 +60,10 @@ export default function ExploreFilterPanel({
   }
 
   return (
-    <div className="absolute top-4 left-4 bottom-4 z-20 w-72 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-border flex flex-col overflow-hidden">
+    <div className="absolute inset-y-0 left-0 z-20 w-72 bg-card border-r border-border flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border shrink-0">
         <span className="text-sm font-medium flex items-center gap-1.5">
-          <Filter className="h-3.5 w-3.5" />
+          <SlidersHorizontal className="h-3.5 w-3.5" />
           Filters
           {activeFilterCount > 0 && (
             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">

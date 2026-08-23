@@ -21,14 +21,16 @@ export default function MultiSelectDropdown({ label, options, selected, onChange
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
   };
 
+  const labelByValue = new Map(options.map((o) => [o.value, o.label]));
+  const triggerText = selected.length > 0
+    ? selected.map((v) => labelByValue.get(v) ?? v).join(", ")
+    : label;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
-          <span className="truncate">
-            {label}
-            {selected.length > 0 && <span className="text-muted-foreground"> ({selected.length})</span>}
-          </span>
+          <span className="truncate" title={triggerText}>{triggerText}</span>
           <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

@@ -826,8 +826,8 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         </div>
       )}
       {showLegend && (clusterPoints && clusterPoints.length > 0) && (
-        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
-          
+        <div className="absolute bottom-8 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
+
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border border-white shadow-sm"></div>
