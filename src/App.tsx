@@ -36,6 +36,7 @@ import EVProgress from "./pages/EVProgress";
 import CleanEnergyPlan from "./pages/CleanEnergyPlan";
 import PropertyViewer from "./pages/PropertyViewer";
 import PropertyPage from "./pages/PropertyPage";
+import Explore from "./pages/Explore";
 import BuildingEnergyUse from "./pages/BuildingEnergyUse";
 import BuildingEnergyUsage from "./pages/BuildingEnergyUsage";
 import LoadGrowth from "./pages/LoadGrowth";
@@ -97,6 +98,7 @@ const App = () => (
           {/* Pages without footer */}
           <Route path="/property-viewer" element={<PropertyViewer />} />
           <Route path="/property/:pid/:slug?" element={<PropertyPage />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/embed/area-analysis" element={<EmbedAreaAnalysis />} />
           <Route path="/import-solar-data" element={<ImportSolarData />} />
           <Route path="/admin" element={<AdminLogin />} />

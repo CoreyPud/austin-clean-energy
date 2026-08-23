@@ -98,11 +98,19 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
     if (enableDynamicLoading && onBoundsChange) {
       map.current.on('moveend', handleBoundsChange);
+      // Also fire once for the initial view, not just after the first user-initiated
+      // move, so a bounds-driven page has data before anyone touches the map.
+      if (map.current.loaded()) {
+        handleBoundsChange();
+      } else {
+        map.current.once('load', handleBoundsChange);
+      }
     }
 
     return () => {
       if (map.current) {
         map.current.off('moveend', handleBoundsChange);
+        map.current.off('load', handleBoundsChange);
       }
     };
   }, [enableDynamicLoading, onBoundsChange]);
