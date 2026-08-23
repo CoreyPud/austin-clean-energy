@@ -18,6 +18,8 @@ export type BulkTuple = [
   zip: string | null,
   hasSolar: 0 | 1,
   councilDistrict: number | null,
+  yearBuilt: number | null,
+  marketValue: number | null,
 ];
 
 export interface BulkPayload {

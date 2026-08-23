@@ -5,7 +5,7 @@
 // via SUPABASE_DB_URL, so the row cap does not apply, and caches a gzipped payload in Storage.
 //
 // Payload tuple (compact, matches what the client expands into its own shapes):
-//   [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict]
+//   [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict, yearBuilt, marketValue]
 // typeCode: 0 single_family | 1 multifamily | 2 condo | 3 commercial | 4 other
 //
 // Endpoints:
@@ -86,7 +86,7 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
   try {
     const t0 = Date.now();
     const rows = await sql<
-      { pid: string; lon: number; lat: number; property_type: string | null; situs_zip: string | null; has_solar: boolean | null; council_district: number | null }[]
+      { pid: string; lon: number; lat: number; property_type: string | null; situs_zip: string | null; has_solar: boolean | null; council_district: number | null; year_built: number | null; market_value: number | null }[]
     >`
       SELECT pid,
              centroid_lon AS lon,
@@ -94,7 +94,9 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
              property_type,
              situs_zip,
              has_solar,
-             council_district
+             council_district,
+             year_built,
+             market_value
         FROM tcad_properties
        WHERE in_ae = true
          AND centroid_lat IS NOT NULL
@@ -113,6 +115,8 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
       r.has_solar ? 1 : 0,
       // Already computed server-side by the geo trigger; raw district integer 1-10, NULL outside city limits.
       r.council_district === null ? null : Number(r.council_district),
+      r.year_built === null ? null : Number(r.year_built),
+      r.market_value === null ? null : Number(r.market_value),
     ]);
 
     const generatedAt = new Date().toISOString();
