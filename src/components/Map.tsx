@@ -28,6 +28,13 @@ interface MapProps {
   /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null, ym?, hasSolar(0|1)?] */
   clusterPoints?: Array<[string, number, number, number, string | null, number?, number?]>;
   onClusterPointClick?: (id: string) => void;
+  /** Aggregates clusterPoints into count bubbles at low zoom via Mapbox's built-in
+   *  (supercluster-backed) clustering instead of rendering every point as its own feature --
+   *  needed once clusterPoints gets into the hundreds of thousands (a raw per-point circle
+   *  layer at that scale is what caused an OOM crash on /explore's full-area background load).
+   *  Individual dots (hover/selected feature-state, click-to-open) still work at high zoom
+   *  once a cluster has broken apart into its members. */
+  clusterMode?: boolean;
   /** id of a clusterPoint to show a floating overlay over (e.g. a Zillow-style preview card).
    *  The overlay tracks that point's screen position as the map pans/zooms. */
   selectedPointId?: string | null;
@@ -69,7 +76,7 @@ interface MapProps {
   councilDistrictFilter?: string[];
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter, clusterMode = false }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -503,12 +510,58 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       map.current.addSource('installations', {
         type: 'geojson',
         data: buildGeoJSON(),
+        ...(clusterMode ? { cluster: true, clusterMaxZoom: 14, clusterRadius: 50 } : {}),
       });
+
+      if (clusterMode) {
+        map.current.addLayer({
+          id: 'inst-cluster',
+          type: 'circle',
+          source: 'installations',
+          filter: ['has', 'point_count'],
+          paint: {
+            'circle-radius': ['step', ['get', 'point_count'], 14, 100, 18, 1000, 24, 10000, 32],
+            'circle-color': ['step', ['get', 'point_count'], '#93c5fd', 100, '#3b82f6', 1000, '#1d4ed8', 10000, '#1e3a8a'],
+            'circle-opacity': 0.85,
+            'circle-stroke-color': '#fff',
+            'circle-stroke-width': 2,
+          },
+        });
+        map.current.addLayer({
+          id: 'inst-cluster-count',
+          type: 'symbol',
+          source: 'installations',
+          filter: ['has', 'point_count'],
+          layout: {
+            'text-field': ['get', 'point_count_abbreviated'],
+            'text-size': 12,
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          },
+          paint: { 'text-color': '#fff' },
+        });
+
+        map.current.on('click', 'inst-cluster', (e) => {
+          if (!map.current) return;
+          const feature = map.current.queryRenderedFeatures(e.point, { layers: ['inst-cluster'] })[0];
+          const clusterId = feature?.properties?.cluster_id;
+          if (clusterId == null || feature.geometry.type !== 'Point') return;
+          const source = map.current.getSource('installations') as mapboxgl.GeoJSONSource;
+          source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+            if (err || !map.current || zoom == null) return;
+            map.current.easeTo({ center: (feature.geometry as GeoJSON.Point).coordinates as [number, number], zoom });
+          });
+        });
+        const setClusterPointer = () => { if (map.current) map.current.getCanvas().style.cursor = 'pointer'; };
+        const clearClusterPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
+        map.current.on('mouseenter', 'inst-cluster', setClusterPointer);
+        map.current.on('mouseleave', 'inst-cluster', clearClusterPointer);
+      }
 
       map.current.addLayer({
         id: 'inst-point',
         type: 'circle',
         source: 'installations',
+        ...(clusterMode ? { filter: ['!', ['has', 'point_count']] } : {}),
         paint: {
           'circle-color': [
             'case',
@@ -576,7 +629,8 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
       map.current.on('click', (e) => {
         if (!map.current || !onMapBackgroundClick) return;
-        const hit = map.current.queryRenderedFeatures(e.point, { layers: ['inst-point'] });
+        const hitLayers = clusterMode ? ['inst-point', 'inst-cluster'] : ['inst-point'];
+        const hit = map.current.queryRenderedFeatures(e.point, { layers: hitLayers });
         if (hit.length === 0) onMapBackgroundClick();
       });
     };
@@ -586,7 +640,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     } else {
       map.current.on('load', ensureLayers);
     }
-  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick]);
+  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick, clusterMode]);
 
   // Track the selected point's screen position (for a floating overlay card) as the map moves.
   // Writes directly to the DOM instead of React state -- 'move' fires on every animation frame
