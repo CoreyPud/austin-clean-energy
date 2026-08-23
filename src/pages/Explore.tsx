@@ -4,8 +4,8 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 import PropertyMapView from "@/components/Map";
 import { classifyProperty } from "@/lib/property-solar";
 
-/** [pid, lng, lat, isCommercial(0|1), zip] -- Map.tsx's compact clusterPoints tuple format. */
-type ClusterPoint = [string, number, number, number, string | null];
+/** [pid, lng, lat, isCommercial(0|1), zip, ym?, hasSolar(0|1)] -- Map.tsx's compact clusterPoints tuple format. */
+type ClusterPoint = [string, number, number, number, string | null, number | undefined, number];
 
 const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
 // 1000 is the actual ceiling here, not just a chosen number -- PostgREST silently truncates
@@ -36,7 +36,7 @@ export default function Explore() {
     loadingTimeoutRef.current = setTimeout(async () => {
       const { data, error } = await supabase
         .from("tcad_properties")
-        .select("pid, situs_zip, property_type, centroid_lat, centroid_lon")
+        .select("pid, situs_zip, property_type, centroid_lat, centroid_lon, has_solar")
         .eq("in_ae", true)
         .not("centroid_lat", "is", null)
         .not("centroid_lon", "is", null)
@@ -65,6 +65,8 @@ export default function Explore() {
           p.centroid_lat as number,
           classifyProperty(p.property_type) === "commercial" ? 1 : 0,
           p.situs_zip,
+          undefined,
+          p.has_solar ? 1 : 0,
         ]);
       }
       setPoints(Array.from(seenPointsRef.current.values()));

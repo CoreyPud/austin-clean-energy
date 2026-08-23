@@ -23,8 +23,8 @@ interface MapProps {
     color?: string;
     source?: 'existing' | 'api' | 'target';
   }>;
-  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null] */
-  clusterPoints?: Array<[string, number, number, number, string | null, number?]>;
+  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null, ym?, hasSolar(0|1)?] */
+  clusterPoints?: Array<[string, number, number, number, string | null, number?, number?]>;
   onClusterPointClick?: (id: string) => void;
   heatmapData?: HeatmapPoint[];
   showLegend?: boolean;
@@ -299,9 +299,9 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
     const buildGeoJSON = () => ({
       type: 'FeatureCollection' as const,
-      features: clusterPoints.map(([id, lng, lat, c, zip]) => ({
+      features: clusterPoints.map(([id, lng, lat, c, zip, , hasSolar]) => ({
         type: 'Feature' as const,
-        properties: { id, c, zip: zip || '' },
+        properties: { id, c, zip: zip || '', has_solar: hasSolar || 0 },
         geometry: { type: 'Point' as const, coordinates: [lng, lat] },
       })),
     });
@@ -333,12 +333,11 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
             14, 3.5,
             17, 6,
           ],
-          'circle-stroke-color': '#fff',
+          'circle-stroke-color': ['case', ['==', ['get', 'has_solar'], 1], '#facc15', '#fff'],
           'circle-stroke-width': [
-            'interpolate', ['linear'], ['zoom'],
-            8, 0,
-            12, 0.5,
-            15, 1,
+            'case', ['==', ['get', 'has_solar'], 1],
+            ['interpolate', ['linear'], ['zoom'], 8, 1, 11, 1.5, 14, 2.5, 17, 4],
+            ['interpolate', ['linear'], ['zoom'], 8, 0, 12, 0.5, 15, 1],
           ],
           'circle-opacity': 0.85,
         },
