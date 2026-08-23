@@ -118,7 +118,7 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
     const { error } = await sb.storage.from(BUCKET).upload(PAYLOAD_PATH, new Blob([gz]), {
       upsert: true,
       contentType: "application/json",
-　  });
+   });
     if (error) throw new Error(`storage upload failed: ${error.message}`);
 
     const manifest: Manifest = {
