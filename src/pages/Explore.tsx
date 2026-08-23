@@ -36,6 +36,13 @@ export default function Explore() {
         .lte("centroid_lat", bounds.north)
         .gte("centroid_lon", bounds.west)
         .lte("centroid_lon", bounds.east)
+        // Without an explicit order, Postgres satisfies LIMIT by scanning the
+        // (centroid_lat, centroid_lon) index from its low end, so results end up biased to
+        // the south edge of the viewport instead of spread across it. Ordering by a
+        // non-spatial column decorrelates the limit from that scan direction. This is a
+        // stopgap, not genuine spatial sampling -- a densely-covered viewport with far more
+        // than BOUNDS_QUERY_LIMIT candidates would want real grid-bucketed sampling instead.
+        .order("pid")
         .limit(BOUNDS_QUERY_LIMIT);
 
       if (error) {
@@ -66,6 +73,7 @@ export default function Explore() {
           enableDynamicLoading
           onBoundsChange={handleBoundsChange}
           showLegend
+          cooperativeGestures={false}
         />
       </MapTokenLoader>
     </div>

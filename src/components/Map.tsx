@@ -35,9 +35,13 @@ interface MapProps {
   isLoadingMapData?: boolean;
   /** When this string changes, the map refits its view to the current markers (overrides enableDynamicLoading). */
   fitMarkersKey?: string;
+  /** Requires ctrl/cmd+scroll to zoom, so scrolling a page past an embedded map doesn't
+   *  hijack the scroll. Defaults to true for every embedded use; a page where the map IS
+   *  the whole viewport (nothing to scroll past) should pass false for plain scroll-to-zoom. */
+  cooperativeGestures?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -59,7 +63,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       style: 'mapbox://styles/mapbox/light-v11',
       center,
       zoom,
-      cooperativeGestures: true,
+      cooperativeGestures,
     });
 
     map.current.addControl(
