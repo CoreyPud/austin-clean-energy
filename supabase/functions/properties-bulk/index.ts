@@ -71,10 +71,6 @@ async function writeManifest(sb: ReturnType<typeof admin>, m: Manifest) {
   }), { upsert: true, contentType: "application/json" });
 }
 
-async function gzip(text: string): Promise<Uint8Array> {
-  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
-}
 
 /** Build a single wire tuple from a DB row. */
 function buildTuple(r: {
