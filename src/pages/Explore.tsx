@@ -52,7 +52,10 @@ interface PropertyRecord extends NumericFilterable {
   district: string | null;
 }
 
-const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
+// Centered and zoomed to contain the full AE service-area polygon (bbox ~50.6 x 45.2km) with
+// margin, computed against its actual extent rather than picking an arbitrary Austin-ish view.
+const AUSTIN_CENTER: [number, number] = [-97.7437, 30.3005];
+const INITIAL_ZOOM = 11;
 // 1000 is the actual ceiling here, not just a chosen number -- PostgREST silently truncates
 // any higher limit to this project's configured max rows per request regardless of what's
 // requested (confirmed empirically: asking for 5000 still returned exactly 1000).
@@ -246,7 +249,8 @@ export default function Explore() {
         <PropertyMapView
           className="h-full w-full"
           center={AUSTIN_CENTER}
-          zoom={12}
+          zoom={INITIAL_ZOOM}
+          disableClusterAutoFit
           clusterPoints={points}
           enableDynamicLoading
           onBoundsChange={handleBoundsChange}

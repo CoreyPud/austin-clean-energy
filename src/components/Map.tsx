@@ -79,9 +79,14 @@ interface MapProps {
   /** Restricts the drawn districts to these district_number values (e.g. ["3", "7"]) instead
    *  of all 10. Omit/empty to draw every district. */
   councilDistrictFilter?: string[];
+  /** Skips the auto-fit-to-clusterPoints-on-first-load behavior below. Use when the caller
+   *  wants to control the initial camera itself (e.g. a fixed view sized to a known service
+   *  area) instead of having it jump to fit whatever small initial batch of points loads
+   *  first. */
+  disableClusterAutoFit?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter, clusterMode = false, pointsMinZoom }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter, clusterMode = false, pointsMinZoom, disableClusterAutoFit = false }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -863,6 +868,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
   // Auto-fit bounds to cluster points (once on first load)
   const didFitClusterRef = useRef(false);
   useEffect(() => {
+    if (disableClusterAutoFit) return;
     if (!map.current || !clusterPoints || clusterPoints.length === 0) return;
     if (didFitClusterRef.current) return;
 
@@ -876,7 +882,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
     if (map.current.loaded()) doFit();
     else map.current.once('load', doFit);
-  }, [clusterPoints]);
+  }, [clusterPoints, disableClusterAutoFit]);
 
   return (
     <div className={`relative ${className}`}>
