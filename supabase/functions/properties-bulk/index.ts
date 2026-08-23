@@ -5,7 +5,7 @@
 // via SUPABASE_DB_URL, so the row cap does not apply, and caches a gzipped payload in Storage.
 //
 // Payload tuple (compact, matches what the client expands into its own shapes):
-//   [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict, yearBuilt, marketValue]
+//   [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict, marketValue, yearBuilt, roofSqft, solarKw]
 // typeCode: 0 single_family | 1 multifamily | 2 condo | 3 commercial | 4 other
 //
 // Endpoints:
@@ -71,12 +71,49 @@ async function writeManifest(sb: ReturnType<typeof admin>, m: Manifest) {
   }), { upsert: true, contentType: "application/json" });
 }
 
+
+/** Build a single wire tuple from a DB row. */
+function buildTuple(r: {
+  pid: string;
+  lon: number;
+  lat: number;
+  property_type: string | null;
+  situs_zip: string | null;
+  has_solar: boolean | null;
+  council_district: number | null;
+  market_value: number | null;
+  estimated_roof_sqft: number | null;
+  year_built: number | null;
+  solar_kw: number | null;
+}) {
+  const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  return [
+    r.pid,
+    Number(r.lon),
+    Number(r.lat),
+    // Unknown/NULL property_type falls into "other" (code 4) so the client's type filter
+    // still has a bucket for it rather than dropping the row.
+    TYPE_CODE_BY_NAME.get(r.property_type ?? "") ?? 4,
+    r.situs_zip,
+    r.has_solar ? 1 : 0,
+    // Already computed server-side by the geo trigger; raw district integer 1-10, NULL outside city limits.
+    num(r.council_district),
+    num(r.market_value),
+    num(r.year_built),
+    num(r.estimated_roof_sqft),
+    // Sum of permitted kW across all installations on this parcel; NULL when none.
+    num(r.solar_kw),
+  ];
+}
+
 async function gzip(text: string): Promise<Uint8Array> {
   const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-/** Full-table read over a direct Postgres connection — no PostgREST row cap involved. */
+/** Full-table read over a direct Postgres connection — no PostgREST row cap involved.
+ *  Queries in chunks and builds the JSON string incrementally to avoid materializing
+ *  the entire result set as intermediate JS arrays (which hits the worker memory limit). */
 async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
   const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, {
     max: 2,
@@ -85,66 +122,71 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
   });
   try {
     const t0 = Date.now();
-    const rows = await sql<
-      { pid: string; lon: number; lat: number; property_type: string | null; situs_zip: string | null; has_solar: boolean | null; council_district: number | null; market_value: number | null; estimated_roof_sqft: number | null; year_built: number | null; solar_kw: number | null }[]
-    >`
-      SELECT p.pid,
-             p.centroid_lon AS lon,
-             p.centroid_lat AS lat,
-             p.property_type,
-             p.situs_zip,
-             p.has_solar,
-             p.council_district,
-             p.market_value,
-             p.estimated_roof_sqft,
-             p.year_built,
-             s.solar_kw
-        FROM tcad_properties p
-        LEFT JOIN (
-              SELECT tcad_pid, SUM(installed_kw) AS solar_kw
-                FROM solar_installations
-               WHERE tcad_pid IS NOT NULL
-               GROUP BY tcad_pid
-             ) s ON s.tcad_pid = p.pid_int
-       WHERE p.in_ae = true
-         AND p.centroid_lat IS NOT NULL
-         AND p.centroid_lon IS NOT NULL
-    `;
-    console.log(`properties-bulk: queried ${rows.length} rows in ${Date.now() - t0}ms`);
-
-    const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
-
-    const tuples = rows.map((r) => [
-      r.pid,
-      Number(r.lon),
-      Number(r.lat),
-      // Unknown/NULL property_type falls into "other" (code 4) so the client's type filter
-      // still has a bucket for it rather than dropping the row.
-      TYPE_CODE_BY_NAME.get(r.property_type ?? "") ?? 4,
-      r.situs_zip,
-      r.has_solar ? 1 : 0,
-      // Already computed server-side by the geo trigger; raw district integer 1-10, NULL outside city limits.
-      num(r.council_district),
-      num(r.market_value),
-      num(r.estimated_roof_sqft),
-      num(r.year_built),
-      // Sum of permitted kW across all installations on this parcel; NULL when none.
-      num(r.solar_kw),
-    ]);
-
-
     const generatedAt = new Date().toISOString();
-    const gz = await gzip(JSON.stringify({ generatedAt, typeCodes: TYPE_CODES, points: tuples }));
+
+    let json = `{"generatedAt":"${generatedAt}","typeCodes":${JSON.stringify(TYPE_CODES)},"points":[`;
+    let first = true;
+    let totalRows = 0;
+    let lastPid = "";
+    const chunkSize = 20000;
+
+    while (true) {
+      const rows = await sql<
+        { pid: string; lon: number; lat: number; property_type: string | null; situs_zip: string | null; has_solar: boolean | null; council_district: number | null; market_value: number | null; estimated_roof_sqft: number | null; year_built: number | null; solar_kw: number | null }[]
+      >`
+        SELECT p.pid,
+               p.centroid_lon AS lon,
+               p.centroid_lat AS lat,
+               p.property_type,
+               p.situs_zip,
+               p.has_solar,
+               p.council_district,
+               p.market_value,
+               p.estimated_roof_sqft,
+               p.year_built,
+               s.solar_kw
+          FROM tcad_properties p
+          LEFT JOIN (
+                SELECT tcad_pid, SUM(installed_kw) AS solar_kw
+                  FROM solar_installations
+                 WHERE tcad_pid IS NOT NULL
+                 GROUP BY tcad_pid
+                ) s ON s.tcad_pid = p.pid_int
+         WHERE p.in_ae = true
+           AND p.centroid_lat IS NOT NULL
+           AND p.centroid_lon IS NOT NULL
+           AND p.pid > ${lastPid}
+         ORDER BY p.pid
+         LIMIT ${chunkSize}
+      `;
+      if (rows.length === 0) break;
+
+      let chunkText = "";
+      for (const r of rows) {
+        chunkText += (first ? "" : ",") + JSON.stringify(buildTuple(r));
+        first = false;
+      }
+      json += chunkText;
+      totalRows += rows.length;
+      lastPid = rows[rows.length - 1].pid;
+      console.log(`properties-bulk: streamed ${rows.length} rows (total ${totalRows})`);
+    }
+
+    json += "]}";
+    console.log(`properties-bulk: built ${totalRows} rows, JSON ${json.length} bytes in ${Date.now() - t0}ms`);
+
+    const gz = await gzip(json);
+    console.log(`properties-bulk: gzip ${gz.byteLength} bytes in ${Date.now() - t0}ms`);
 
     const { error } = await sb.storage.from(BUCKET).upload(PAYLOAD_PATH, new Blob([gz]), {
       upsert: true,
       contentType: "application/json",
-   });
+    });
     if (error) throw new Error(`storage upload failed: ${error.message}`);
 
     const manifest: Manifest = {
       generatedAt,
-      rowCount: tuples.length,
+      rowCount: totalRows,
       bytes: gz.byteLength,
       typeCodes: TYPE_CODES,
       regenerating: false,
