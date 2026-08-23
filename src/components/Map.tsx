@@ -47,8 +47,14 @@ interface MapProps {
    *  hijack the scroll. Defaults to true for every embedded use; a page where the map IS
    *  the whole viewport (nothing to scroll past) should pass false for plain scroll-to-zoom. */
   cooperativeGestures?: boolean;
-  /** Draws the Austin Energy service-area boundary (public/data/austin-energy-service-area.geojson,
-   *  sourced from the City of Austin's GIS). Outline only -- no filtering/masking. */
+  /** Draws the Austin Energy service-area boundary from
+   *  public/data/austin-energy-service-area.geojson. Outline only -- no filtering/masking.
+   *  Source: City of Austin GIS, "Austin Energy Utility Service Area" layer (OBJECTID 641,
+   *  last updated 2026-04-03), fetched from
+   *  https://maps.austintexas.gov/gis/rest/Shared/BoundariesGrids_2/MapServer/1/query?where=1=1&outFields=*&f=geojson
+   *  -- see that dataset's own _source field for the full provenance note. Same polygon (7
+   *  decimal places, ~1cm precision) is embedded in fix_in_ae_service_area.sql, which recomputes
+   *  tcad_properties.in_ae via point-in-polygon instead of the old ZIP-list approximation. */
   showServiceAreaBoundary?: boolean;
 }
 
