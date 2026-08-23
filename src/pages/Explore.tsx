@@ -252,7 +252,7 @@ export default function Explore() {
           onBoundsChange={handleBoundsChange}
           showLegend
           cooperativeGestures={false}
-          pointsMinZoom={13}
+          pointsMinZoom={11}
           showServiceAreaBoundary
           showCouncilDistricts={selectedDistricts.length > 0}
           councilDistrictFilter={selectedDistricts}
