@@ -6,7 +6,6 @@ import PropertyMapView from "@/components/Map";
 import PropertyPreviewCard from "@/components/explore/PropertyPreviewCard";
 import ExploreFilterPanel from "@/components/explore/ExploreFilterPanel";
 import { classifyProperty } from "@/lib/property-solar";
-import { findContainingFeatureId } from "@/lib/point-in-polygon";
 import { loadBulkPropertiesCached, decodeTypeCode } from "@/lib/properties-bulk";
 import {
   matchesNumericFilters,
@@ -27,6 +26,7 @@ interface PropertyQueryRow {
   centroid_lat: number;
   centroid_lon: number;
   has_solar: boolean | null;
+  council_district: number | null;
   market_value: number | null;
   estimated_roof_sqft: number | null;
   year_built: number | null;
@@ -58,23 +58,6 @@ const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
 // requested (confirmed empirically: asking for 5000 still returned exactly 1000).
 const BOUNDS_QUERY_LIMIT = 1000;
 const DEBOUNCE_MS = 400;
-// District assignment (client-side point-in-polygon) for ~247k background-loaded properties
-// in one synchronous pass would visibly freeze the tab -- chunk it across idle-ish ticks
-// instead, same as the old paginated loader did incidentally by being network-bound.
-const DISTRICT_CHUNK_SIZE = 10000;
-
-/** Waits for genuine browser idle time (falling back to a plain macrotask where
- *  requestIdleCallback isn't available, e.g. Safari) instead of just the next tick, so
- *  chunked background work steps out of the way of active rendering/input handling. */
-function yieldToIdle(): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof requestIdleCallback === "function") {
-      requestIdleCallback(() => resolve(), { timeout: 200 });
-    } else {
-      setTimeout(resolve, 0);
-    }
-  });
-}
 
 /**
  * Step 1 of the consumer-facing "Zillow-like" property browser: a full-map view that fetches
@@ -95,31 +78,19 @@ export default function Explore() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [numericFilters, setNumericFilters] = useState<Record<NumericFieldKey, NumericRange>>(EMPTY_NUMERIC_FILTERS);
-  const [backgroundLoad, setBackgroundLoad] = useState<{ loaded: number; total: number | null; done: boolean }>({
-    loaded: 0,
-    total: null,
-    done: false,
-  });
+  const [backgroundLoad, setBackgroundLoad] = useState<{ done: boolean }>({ done: false });
 
   // Accumulates every property fetched so far, keyed by pid, so panning back over already-seen
   // area re-renders instantly from memory instead of re-querying, and so filter changes can
   // re-derive the visible set without a new fetch.
   const propertiesRef = useRef<Map<string, PropertyRecord>>(new Map());
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const districtsPromiseRef = useRef<Promise<GeoJSON.FeatureCollection> | null>(null);
   // Synced every render (and mutated directly in each filter onChange below, ahead of the
   // resulting setState) so recomputeVisiblePoints -- called from both the debounced bounds
   // fetch and the filter handlers -- always reads the latest filter values immediately,
   // regardless of which render's closure it was created in or React's batching timing.
   const filtersRef = useRef({ selectedTypes, selectedDistricts, numericFilters });
   filtersRef.current = { selectedTypes, selectedDistricts, numericFilters };
-
-  const loadDistricts = (): Promise<GeoJSON.FeatureCollection> => {
-    if (!districtsPromiseRef.current) {
-      districtsPromiseRef.current = fetch("/data/austin-council-districts.geojson").then((r) => r.json());
-    }
-    return districtsPromiseRef.current;
-  };
 
   const recomputeVisiblePoints = () => {
     const { selectedTypes, selectedDistricts, numericFilters } = filtersRef.current;
@@ -146,11 +117,14 @@ export default function Explore() {
   // the normal viewport-driven experience. One request via properties-bulk (direct-Postgres
   // edge function, no PostgREST 1000-row cap) instead of ~250 paginated round trips, cached in
   // IndexedDB and keyed off the payload's own generatedAt so a same-day reload skips the
-  // download entirely. Records this adds are minimal (no filter-relevant columns) --
-  // matchesNumericFilters already treats a null field as "doesn't match" a specific range, so a
-  // background-only property just won't show up under an active numeric filter until a real
-  // viewport visit enriches it via handleBoundsChange, which never downgrades an already-
-  // enriched record since it always overwrites with full data anyway.
+  // download entirely. council_district comes pre-computed from the server now (a DB trigger,
+  // see geo_derivation_setup.sql) -- no client-side point-in-polygon needed anymore, which was
+  // expensive enough at ~247k properties to need chunking across idle ticks; a plain loop
+  // building simple objects doesn't. Records this adds are minimal (no filter-relevant
+  // columns) -- matchesNumericFilters already treats a null field as "doesn't match" a specific
+  // range, so a background-only property just won't show up under an active numeric filter
+  // until a real viewport visit enriches it via handleBoundsChange, which never downgrades an
+  // already-enriched record since it always overwrites with full data anyway.
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
@@ -165,91 +139,68 @@ export default function Explore() {
       }
       if (cancelled) return;
 
-      const districts = await loadDistricts();
-      if (cancelled) return;
-
-      const total = payload.points.length;
-      for (let i = 0; i < total; i += DISTRICT_CHUNK_SIZE) {
-        if (cancelled) return;
-        const chunk = payload.points.slice(i, i + DISTRICT_CHUNK_SIZE);
-        for (const [pid, lng, lat, typeCode, zip, hasSolar] of chunk) {
-          // Never overwrite a record a real viewport visit already enriched with filter data.
-          if (propertiesRef.current.has(pid)) continue;
-          propertiesRef.current.set(pid, {
-            pid,
-            lng,
-            lat,
-            property_type: decodeTypeCode(typeCode, payload.typeCodes),
-            zip,
-            has_solar: hasSolar,
-            district: findContainingFeatureId(lng, lat, districts, "district_number"),
-            market_value: null,
-            roof_sqft: null,
-            year_built: null,
-            solar_kw: null,
-            solar_sunshine_median: null,
-            solar_max_panels: null,
-            solar_panel_capacity_w: null,
-            solar_buildable_kw: null,
-            solar_eligible_kw: null,
-            solar_max_area_m2: null,
-          });
-        }
-        // Cheap -- just a small state object, doesn't touch the (much larger) points array or
-        // Mapbox, so updating it every chunk for a live progress readout costs nothing.
-        setBackgroundLoad({ loaded: Math.min(i + DISTRICT_CHUNK_SIZE, total), total, done: false });
-        // Idle-scheduled, not just "next tick": setTimeout(0) can still land between frames the
-        // browser is trying to paint or handle input on, which is what made the initial map feel
-        // slow/unresponsive while this ran. requestIdleCallback explicitly waits for genuine
-        // spare time, so this work steps out of the way of anything the user is actually doing.
-        await yieldToIdle();
+      for (const [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict] of payload.points) {
+        // Never overwrite a record a real viewport visit already enriched with filter data.
+        if (propertiesRef.current.has(pid)) continue;
+        propertiesRef.current.set(pid, {
+          pid,
+          lng,
+          lat,
+          property_type: decodeTypeCode(typeCode, payload.typeCodes),
+          zip,
+          has_solar: hasSolar,
+          district: councilDistrict != null ? String(councilDistrict) : null,
+          market_value: null,
+          roof_sqft: null,
+          year_built: null,
+          solar_kw: null,
+          solar_sunshine_median: null,
+          solar_max_panels: null,
+          solar_panel_capacity_w: null,
+          solar_buildable_kw: null,
+          solar_eligible_kw: null,
+          solar_max_area_m2: null,
+        });
       }
-      // recomputeVisiblePoints rebuilds the whole ClusterPoint array and pushes it into Mapbox
-      // via setData -- real cost, worth paying once at the end rather than partway through.
-      // The viewport's own bounds-fetch already shows real dots for whatever's on screen in the
-      // meantime, so there's nothing the incremental updates were actually buying.
       if (!cancelled) {
         recomputeVisiblePoints();
-        setBackgroundLoad({ loaded: total, total, done: true });
+        setBackgroundLoad({ done: true });
       }
     };
 
     loadEverything();
     return () => { cancelled = true; controller.abort(); };
-    // Runs once on mount by design; recomputeVisiblePoints/loadDistricts only read refs, so
-    // using their mount-time closure is safe even though the linter can't tell that itself.
+    // Runs once on mount by design; recomputeVisiblePoints only reads refs, so using its
+    // mount-time closure is safe even though the linter can't tell that itself.
   }, []);
 
   const handleBoundsChange = (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => {
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
 
     loadingTimeoutRef.current = setTimeout(async () => {
-      const [{ data, error }, districts] = await Promise.all([
-        supabase
-          .from("tcad_properties")
-          .select(`
-            pid, situs_zip, property_type, centroid_lat, centroid_lon, has_solar,
-            market_value, estimated_roof_sqft, year_built, solar_sunshine_median,
-            solar_max_panels, solar_panel_capacity_w, solar_buildable_kw, solar_eligible_kw,
-            solar_max_area_m2, solar_installations(installed_kw)
-          `)
-          .eq("in_ae", true)
-          .not("centroid_lat", "is", null)
-          .not("centroid_lon", "is", null)
-          .gte("centroid_lat", bounds.south)
-          .lte("centroid_lat", bounds.north)
-          .gte("centroid_lon", bounds.west)
-          .lte("centroid_lon", bounds.east)
-          // Without an explicit order, Postgres satisfies LIMIT by scanning the
-          // (centroid_lat, centroid_lon) index from its low end, so results end up biased to
-          // the south edge of the viewport instead of spread across it. Ordering by a
-          // non-spatial column decorrelates the limit from that scan direction. This is a
-          // stopgap, not genuine spatial sampling -- a densely-covered viewport with far more
-          // than BOUNDS_QUERY_LIMIT candidates would want real grid-bucketed sampling instead.
-          .order("pid")
-          .limit(BOUNDS_QUERY_LIMIT),
-        loadDistricts(),
-      ]);
+      const { data, error } = await supabase
+        .from("tcad_properties")
+        .select(`
+          pid, situs_zip, property_type, centroid_lat, centroid_lon, has_solar, council_district,
+          market_value, estimated_roof_sqft, year_built, solar_sunshine_median,
+          solar_max_panels, solar_panel_capacity_w, solar_buildable_kw, solar_eligible_kw,
+          solar_max_area_m2, solar_installations(installed_kw)
+        `)
+        .eq("in_ae", true)
+        .not("centroid_lat", "is", null)
+        .not("centroid_lon", "is", null)
+        .gte("centroid_lat", bounds.south)
+        .lte("centroid_lat", bounds.north)
+        .gte("centroid_lon", bounds.west)
+        .lte("centroid_lon", bounds.east)
+        // Without an explicit order, Postgres satisfies LIMIT by scanning the
+        // (centroid_lat, centroid_lon) index from its low end, so results end up biased to
+        // the south edge of the viewport instead of spread across it. Ordering by a
+        // non-spatial column decorrelates the limit from that scan direction. This is a
+        // stopgap, not genuine spatial sampling -- a densely-covered viewport with far more
+        // than BOUNDS_QUERY_LIMIT candidates would want real grid-bucketed sampling instead.
+        .order("pid")
+        .limit(BOUNDS_QUERY_LIMIT);
 
       if (error) {
         console.error("Explore bounds query error:", error);
@@ -257,20 +208,18 @@ export default function Explore() {
       }
 
       for (const p of (data ?? []) as unknown as PropertyQueryRow[]) {
-        const lng = p.centroid_lon;
-        const lat = p.centroid_lat;
         const installedKw = (p.solar_installations ?? []).reduce(
           (sum: number, r: { installed_kw: number | null }) => sum + (r.installed_kw ?? 0),
           0,
         ) || null;
         propertiesRef.current.set(p.pid, {
           pid: p.pid,
-          lng,
-          lat,
+          lng: p.centroid_lon,
+          lat: p.centroid_lat,
           property_type: p.property_type,
           zip: p.situs_zip,
           has_solar: p.has_solar ? 1 : 0,
-          district: findContainingFeatureId(lng, lat, districts, "district_number"),
+          district: p.council_district != null ? String(p.council_district) : null,
           market_value: p.market_value,
           roof_sqft: p.estimated_roof_sqft,
           year_built: p.year_built,
@@ -321,8 +270,7 @@ export default function Explore() {
       </MapTokenLoader>
       {!backgroundLoad.done && (
         <div className="absolute bottom-8 left-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-3 py-1.5 border border-border text-xs text-muted-foreground">
-          Loading full map
-          {backgroundLoad.total ? ` (${Math.min(100, Math.round((backgroundLoad.loaded / backgroundLoad.total) * 100))}%)` : "…"}
+          Loading full map…
         </div>
       )}
       <ExploreFilterPanel

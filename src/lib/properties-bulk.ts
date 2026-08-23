@@ -16,10 +16,11 @@ const AUTH_HEADERS = {
   Authorization: `Bearer ${ANON_KEY}`,
 };
 
-/** [pid, lng, lat, typeCode, zip, hasSolar(0|1)] -- typeCode indexes into the payload's own
- *  typeCodes array (decode against that, not TYPE_CODES below, so a reordered/extended type
- *  list on the server can't silently desync an older cached client). */
-export type BulkTuple = [string, number, number, number, string | null, 0 | 1];
+/** [pid, lng, lat, typeCode, zip, hasSolar(0|1), councilDistrict] -- typeCode indexes into the
+ *  payload's own typeCodes array (decode against that, not TYPE_CODES below, so a
+ *  reordered/extended type list on the server can't silently desync an older cached client).
+ *  councilDistrict is the raw integer (1-10) already computed server-side, no lookup needed. */
+export type BulkTuple = [string, number, number, number, string | null, 0 | 1, number | null];
 
 export interface BulkPayload {
   generatedAt: string;
