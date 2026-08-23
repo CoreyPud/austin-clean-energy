@@ -61,7 +61,7 @@ const DEBOUNCE_MS = 400;
 // District assignment (client-side point-in-polygon) for ~247k background-loaded properties
 // in one synchronous pass would visibly freeze the tab -- chunk it across idle-ish ticks
 // instead, same as the old paginated loader did incidentally by being network-bound.
-const DISTRICT_CHUNK_SIZE = 2000;
+const DISTRICT_CHUNK_SIZE = 10000;
 
 /**
  * Step 1 of the consumer-facing "Zillow-like" property browser: a full-map view that fetches
@@ -156,6 +156,7 @@ export default function Explore() {
       if (cancelled) return;
 
       const total = payload.points.length;
+      let chunksSinceRecompute = 0;
       for (let i = 0; i < total; i += DISTRICT_CHUNK_SIZE) {
         if (cancelled) return;
         const chunk = payload.points.slice(i, i + DISTRICT_CHUNK_SIZE);
@@ -182,8 +183,20 @@ export default function Explore() {
             solar_max_area_m2: null,
           });
         }
-        recomputeVisiblePoints();
-        setBackgroundLoad({ loaded: Math.min(i + DISTRICT_CHUNK_SIZE, total), total, done: false });
+        const loaded = Math.min(i + DISTRICT_CHUNK_SIZE, total);
+        const isLastChunk = loaded >= total;
+        chunksSinceRecompute++;
+        // recomputeVisiblePoints rebuilds the whole ClusterPoint array and pushes it into
+        // Mapbox via setData, which for a clustered source re-indexes everything from scratch
+        // (not incremental) -- calling that every chunk turned ~124 chunks into ~124 full
+        // re-clusters of an ever-growing dataset, which was the actual cause of the "not super
+        // fast" load, not the fetch itself. Throttle it the same way the old paginated loader
+        // did (every 10 pages there, every 10 chunks here).
+        if (chunksSinceRecompute >= 3 || isLastChunk) {
+          recomputeVisiblePoints();
+          chunksSinceRecompute = 0;
+        }
+        setBackgroundLoad({ loaded, total, done: false });
         // Yield to the event loop between chunks so ~247k point-in-polygon checks don't do it
         // in one uninterruptible pass.
         await new Promise((resolve) => setTimeout(resolve, 0));
