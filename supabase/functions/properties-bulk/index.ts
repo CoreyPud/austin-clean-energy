@@ -86,23 +86,33 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
   try {
     const t0 = Date.now();
     const rows = await sql<
-      { pid: string; lon: number; lat: number; property_type: string | null; situs_zip: string | null; has_solar: boolean | null; council_district: number | null; year_built: number | null; market_value: number | null }[]
+      { pid: string; lon: number; lat: number; property_type: string | null; situs_zip: string | null; has_solar: boolean | null; council_district: number | null; market_value: number | null; estimated_roof_sqft: number | null; year_built: number | null; solar_kw: number | null }[]
     >`
-      SELECT pid,
-             centroid_lon AS lon,
-             centroid_lat AS lat,
-             property_type,
-             situs_zip,
-             has_solar,
-             council_district,
-             year_built,
-             market_value
-        FROM tcad_properties
-       WHERE in_ae = true
-         AND centroid_lat IS NOT NULL
-         AND centroid_lon IS NOT NULL
+      SELECT p.pid,
+             p.centroid_lon AS lon,
+             p.centroid_lat AS lat,
+             p.property_type,
+             p.situs_zip,
+             p.has_solar,
+             p.council_district,
+             p.market_value,
+             p.estimated_roof_sqft,
+             p.year_built,
+             s.solar_kw
+        FROM tcad_properties p
+        LEFT JOIN (
+              SELECT tcad_pid, SUM(installed_kw) AS solar_kw
+                FROM solar_installations
+               WHERE tcad_pid IS NOT NULL
+               GROUP BY tcad_pid
+             ) s ON s.tcad_pid = p.pid_int
+       WHERE p.in_ae = true
+         AND p.centroid_lat IS NOT NULL
+         AND p.centroid_lon IS NOT NULL
     `;
     console.log(`properties-bulk: queried ${rows.length} rows in ${Date.now() - t0}ms`);
+
+    const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
 
     const tuples = rows.map((r) => [
       r.pid,
@@ -114,10 +124,14 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
       r.situs_zip,
       r.has_solar ? 1 : 0,
       // Already computed server-side by the geo trigger; raw district integer 1-10, NULL outside city limits.
-      r.council_district === null ? null : Number(r.council_district),
-      r.year_built === null ? null : Number(r.year_built),
-      r.market_value === null ? null : Number(r.market_value),
+      num(r.council_district),
+      num(r.market_value),
+      num(r.estimated_roof_sqft),
+      num(r.year_built),
+      // Sum of permitted kW across all installations on this parcel; NULL when none.
+      num(r.solar_kw),
     ]);
+
 
     const generatedAt = new Date().toISOString();
     const gz = await gzip(JSON.stringify({ generatedAt, typeCodes: TYPE_CODES, points: tuples }));
