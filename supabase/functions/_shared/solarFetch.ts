@@ -1,6 +1,7 @@
-// Shared by fetch-property-solar (admin, client-supplied lat/lon) and ensure-property-solar
-// (public, server-looked-up lat/lon) so the Google Solar API call, response shape, and DB
-// upsert logic live in exactly one place.
+// The Google Solar API call, response shape, and DB upsert used by ensure-property-solar (the
+// only caller). Split out from the endpoint handler for readability, not reuse.
+
+type SupabaseClientLike = ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.58.0").createClient>;
 
 const AUSTIN_REF_HRS = 1950;
 const TSRF_MIN = 0.75;
@@ -106,7 +107,7 @@ export async function fetchAndBuildSolarRecord(
 }
 
 export async function persistSolarResult(
-  supabase: ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.58.0").createClient>,
+  supabase: SupabaseClientLike,
   result: FetchSolarResult,
 ): Promise<{ error: string | null }> {
   if (!result.property) return { error: result.errorMessage ?? "No property record to persist" };

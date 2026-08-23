@@ -13,15 +13,24 @@ function json(status: number, body: unknown) {
   });
 }
 
-// Public counterpart to fetch-property-solar's admin tool: called from PropertyPage/the
-// preview card whenever a visitor lands on a parcel we've never pulled Google Solar data for,
-// same as the calculator already does on demand for arbitrary addresses -- except this
-// persists the result since it's a known TCAD pid, so the next visitor gets it for free.
-//
-// No admin token, so the only cost guard is server-side: coordinates are looked up from the
-// pid (never trusted from the client) and solar_fetched_at is checked before spending an API
-// call. A pid fetched twice concurrently before the first upsert lands can still double-call
-// the API; that's an accepted, self-limiting race, not worth a locking scheme for this traffic.
+// Re-fetch data older than this even if we already have it -- solar potential doesn't change
+// often, but roofs get replaced/shaded out and imagery improves, so treat it as stale
+// eventually rather than frozen forever.
+const MAX_AGE_DAYS = 365;
+// Global cost guard, independent of the per-pid staleness check above: caps how many *new*
+// Google Solar API calls this endpoint will make across all properties combined per hour,
+// so a traffic spike (or a scraper working through never-seen pids) can't run up an unbounded
+// bill. Counts off solar_fetched_at itself -- no separate rate-limit table needed. A request
+// that gets rate-limited just no-ops (leaves the row as-is) so the next visit retries.
+const MAX_FETCHES_PER_HOUR = 100;
+
+// Public, single endpoint for pulling Google Solar data for a known TCAD pid -- called by
+// PropertyPage/the preview card whenever a visitor lands on a parcel with missing or stale
+// solar data, same on-demand fetch the calculator already does for arbitrary addresses, except
+// this persists to tcad_properties/tcad_roof_segments since it's a known pid, so later
+// visitors benefit without repeating the API call. No admin path: a coordinate is always
+// looked up server-side from the pid, never trusted from the client, and the age + rate-limit
+// checks below are the only guards -- there's nothing here for an admin token to bypass.
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "POST only" });
@@ -51,11 +60,23 @@ Deno.serve(async (req) => {
     if (lookupErr) return json(500, { error: lookupErr.message });
     if (!existing) return json(404, { error: "Property not found" });
 
-    if (existing.solar_fetched_at) {
+    const ageMs = existing.solar_fetched_at ? Date.now() - new Date(existing.solar_fetched_at).getTime() : Infinity;
+    const isStale = ageMs > MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    if (existing.solar_fetched_at && !isStale) {
       return json(200, { ok: true, alreadyFetched: true, property: existing });
     }
     if (existing.centroid_lat == null || existing.centroid_lon == null) {
       return json(400, { error: "Property has no location" });
+    }
+
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentFetchCount, error: rateErr } = await supabase
+      .from("tcad_properties")
+      .select("pid", { count: "exact", head: true })
+      .gt("solar_fetched_at", oneHourAgo);
+    if (rateErr) return json(500, { error: rateErr.message });
+    if ((recentFetchCount ?? 0) >= MAX_FETCHES_PER_HOUR) {
+      return json(200, { ok: true, rateLimited: true, property: existing });
     }
 
     const apiKey = Deno.env.get("GOOGLE_SOLAR_API_KEY");

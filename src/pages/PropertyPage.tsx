@@ -38,6 +38,9 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 const fmtKwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`;
+// Keep in sync with ensure-property-solar's MAX_AGE_DAYS -- the edge function enforces this
+// for real, this is just so the client doesn't invoke it on every view of a fresh property.
+const SOLAR_DATA_MAX_AGE_DAYS = 365;
 
 
 interface PropertyData {
@@ -161,13 +164,19 @@ export default function PropertyPage() {
     loadProperty(pid).finally(() => setLoading(false));
   }, [pid]);
 
-  // Never fetched Google Solar data for this parcel -- pull it now, same on-demand fetch the
-  // calculator already does for arbitrary addresses, just persisted here since it's a known
-  // TCAD pid (see ensure-property-solar). Re-reads once it lands so panels/charts pick it up.
+  // Never fetched (or fetched over a year ago) Google Solar data for this parcel -- pull it
+  // now, same on-demand fetch the calculator already does for arbitrary addresses, just
+  // persisted here since it's a known TCAD pid. ensure-property-solar enforces the actual
+  // staleness threshold and a global rate limit server-side; this is just the client-side
+  // mirror of "is it worth asking" so an up-to-date property doesn't invoke on every view.
+  // Re-reads once it lands so panels/charts pick it up.
   useEffect(() => {
-    if (!pid || !property || property.solar_fetched_at) return;
+    if (!pid || !property) return;
+    const fetchedAt = property.solar_fetched_at ? new Date(property.solar_fetched_at).getTime() : null;
+    const isStale = fetchedAt == null || Date.now() - fetchedAt > SOLAR_DATA_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    if (!isStale) return;
     supabase.functions.invoke("ensure-property-solar", { body: { pid } }).then(({ data, error }) => {
-      if (error || !data?.ok || data.alreadyFetched) return;
+      if (error || !data?.ok || data.alreadyFetched || data.rateLimited) return;
       loadProperty(pid);
     });
   }, [pid, property]);
