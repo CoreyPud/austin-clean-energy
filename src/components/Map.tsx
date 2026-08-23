@@ -35,6 +35,11 @@ interface MapProps {
    *  Individual dots (hover/selected feature-state, click-to-open) still work at high zoom
    *  once a cluster has broken apart into its members. */
   clusterMode?: boolean;
+  /** Hides individual clusterPoint dots entirely below this zoom (Mapbox's native layer
+   *  minzoom -- the layer simply isn't drawn, no clustering index and no extra computation).
+   *  Simpler alternative to clusterMode for a dataset that doesn't need count bubbles, just
+   *  "nothing at low zoom, real dots once zoomed in." */
+  pointsMinZoom?: number;
   /** id of a clusterPoint to show a floating overlay over (e.g. a Zillow-style preview card).
    *  The overlay tracks that point's screen position as the map pans/zooms. */
   selectedPointId?: string | null;
@@ -76,7 +81,7 @@ interface MapProps {
   councilDistrictFilter?: string[];
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter, clusterMode = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter, clusterMode = false, pointsMinZoom }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -566,6 +571,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         type: 'circle',
         source: 'installations',
         ...(clusterMode ? { filter: ['!', ['has', 'point_count']] } : {}),
+        ...(pointsMinZoom != null ? { minzoom: pointsMinZoom } : {}),
         paint: {
           'circle-color': [
             'case',
@@ -644,7 +650,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     } else {
       map.current.on('load', ensureLayers);
     }
-  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick, clusterMode]);
+  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick, clusterMode, pointsMinZoom]);
 
   // Track the selected point's screen position (for a floating overlay card) as the map moves.
   // Writes directly to the DOM instead of React state -- 'move' fires on every animation frame
