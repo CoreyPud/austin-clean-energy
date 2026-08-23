@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import MapTokenLoader from "@/components/MapTokenLoader";
-import Map from "@/components/Map";
+import PropertyMapView from "@/components/Map";
 import { classifyProperty } from "@/lib/property-solar";
 
 /** [pid, lng, lat, isCommercial(0|1), zip] -- Map.tsx's compact clusterPoints tuple format. */
@@ -74,7 +74,7 @@ export default function Explore() {
   return (
     <div className="h-screen w-full">
       <MapTokenLoader>
-        <Map
+        <PropertyMapView
           className="h-full w-full"
           center={AUSTIN_CENTER}
           zoom={12}
