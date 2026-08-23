@@ -5,7 +5,7 @@
 // via SUPABASE_DB_URL, so the row cap does not apply, and caches a gzipped payload in Storage.
 //
 // Payload tuple (compact, matches what the client expands into its own shapes):
-//   [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict, yearBuilt, marketValue]
+//   [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict, marketValue, yearBuilt, roofSqft, solarKw]
 // typeCode: 0 single_family | 1 multifamily | 2 condo | 3 commercial | 4 other
 //
 // Endpoints:
@@ -126,8 +126,8 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
       // Already computed server-side by the geo trigger; raw district integer 1-10, NULL outside city limits.
       num(r.council_district),
       num(r.market_value),
-      num(r.estimated_roof_sqft),
       num(r.year_built),
+      num(r.estimated_roof_sqft),
       // Sum of permitted kW across all installations on this parcel; NULL when none.
       num(r.solar_kw),
     ]);
