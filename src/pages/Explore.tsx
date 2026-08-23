@@ -63,6 +63,19 @@ const DEBOUNCE_MS = 400;
 // instead, same as the old paginated loader did incidentally by being network-bound.
 const DISTRICT_CHUNK_SIZE = 10000;
 
+/** Waits for genuine browser idle time (falling back to a plain macrotask where
+ *  requestIdleCallback isn't available, e.g. Safari) instead of just the next tick, so
+ *  chunked background work steps out of the way of active rendering/input handling. */
+function yieldToIdle(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(() => resolve(), { timeout: 200 });
+    } else {
+      setTimeout(resolve, 0);
+    }
+  });
+}
+
 /**
  * Step 1 of the consumer-facing "Zillow-like" property browser: a full-map view that fetches
  * whatever's in the current viewport instead of a query-first flow. Single-sources the map
@@ -156,7 +169,6 @@ export default function Explore() {
       if (cancelled) return;
 
       const total = payload.points.length;
-      let chunksSinceRecompute = 0;
       for (let i = 0; i < total; i += DISTRICT_CHUNK_SIZE) {
         if (cancelled) return;
         const chunk = payload.points.slice(i, i + DISTRICT_CHUNK_SIZE);
@@ -183,25 +195,23 @@ export default function Explore() {
             solar_max_area_m2: null,
           });
         }
-        const loaded = Math.min(i + DISTRICT_CHUNK_SIZE, total);
-        const isLastChunk = loaded >= total;
-        chunksSinceRecompute++;
-        // recomputeVisiblePoints rebuilds the whole ClusterPoint array and pushes it into
-        // Mapbox via setData, which for a clustered source re-indexes everything from scratch
-        // (not incremental) -- calling that every chunk turned ~124 chunks into ~124 full
-        // re-clusters of an ever-growing dataset, which was the actual cause of the "not super
-        // fast" load, not the fetch itself. Throttle it the same way the old paginated loader
-        // did (every 10 pages there, every 10 chunks here).
-        if (chunksSinceRecompute >= 3 || isLastChunk) {
-          recomputeVisiblePoints();
-          chunksSinceRecompute = 0;
-        }
-        setBackgroundLoad({ loaded, total, done: false });
-        // Yield to the event loop between chunks so ~247k point-in-polygon checks don't do it
-        // in one uninterruptible pass.
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        // Cheap -- just a small state object, doesn't touch the (much larger) points array or
+        // Mapbox, so updating it every chunk for a live progress readout costs nothing.
+        setBackgroundLoad({ loaded: Math.min(i + DISTRICT_CHUNK_SIZE, total), total, done: false });
+        // Idle-scheduled, not just "next tick": setTimeout(0) can still land between frames the
+        // browser is trying to paint or handle input on, which is what made the initial map feel
+        // slow/unresponsive while this ran. requestIdleCallback explicitly waits for genuine
+        // spare time, so this work steps out of the way of anything the user is actually doing.
+        await yieldToIdle();
       }
-      if (!cancelled) setBackgroundLoad({ loaded: total, total, done: true });
+      // recomputeVisiblePoints rebuilds the whole ClusterPoint array and pushes it into Mapbox
+      // via setData -- real cost, worth paying once at the end rather than partway through.
+      // The viewport's own bounds-fetch already shows real dots for whatever's on screen in the
+      // meantime, so there's nothing the incremental updates were actually buying.
+      if (!cancelled) {
+        recomputeVisiblePoints();
+        setBackgroundLoad({ loaded: total, total, done: true });
+      }
     };
 
     loadEverything();
