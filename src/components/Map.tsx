@@ -1,6 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+const DISTRICT_LAYER_IDS = ['council-districts-fill', 'council-districts-line', 'council-districts-label'];
 
 interface HeatmapPoint {
   zip: string;
@@ -56,15 +58,18 @@ interface MapProps {
    *  decimal places, ~1cm precision) is embedded in fix_in_ae_service_area.sql, which recomputes
    *  tcad_properties.in_ae via point-in-polygon instead of the old ZIP-list approximation. */
   showServiceAreaBoundary?: boolean;
-  /** Draws Austin's 10 council district boundaries with a number label per district, from
-   *  public/data/austin-council-districts.geojson. Outline + label only, no filtering.
+  /** Draws Austin's council district boundaries with a number label per district, from
+   *  public/data/austin-council-districts.geojson. Outline + label only, no dot filtering.
    *  Source: City of Austin Open Data (Socrata), "Boundaries: City of Austin Council Districts"
    *  (dataset w3v2-cj58), fetched from https://data.austintexas.gov/resource/w3v2-cj58.geojson
    *  -- see that dataset's own _source field for the full provenance note. */
   showCouncilDistricts?: boolean;
+  /** Restricts the drawn districts to these district_number values (e.g. ["3", "7"]) instead
+   *  of all 10. Omit/empty to draw every district. */
+  councilDistrictFilter?: string[];
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -75,6 +80,11 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
   const overlayRef = useRef<HTMLDivElement>(null);
   const hoveredPointIdRef = useRef<string | number | null>(null);
   const selectedPointIdRef = useRef<string | number | null>(null);
+  // Synced every render so the async district-layer setup (fetch().then(...)) and the
+  // filter-update effect both always read the latest selection, regardless of which render's
+  // closure created them.
+  const councilDistrictFilterRef = useRef(councilDistrictFilter);
+  councilDistrictFilterRef.current = councilDistrictFilter;
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -152,7 +162,22 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     };
   }, [showServiceAreaBoundary]);
 
-  // Austin's 10 council districts -- boundary line + number label per district, no filtering.
+  // Applies councilDistrictFilterRef's current value to the district layers (if they exist).
+  // Called both right after the layers are first created and whenever the filter changes
+  // while they already exist, so it's correct regardless of which happens first. Reads only
+  // from a ref (never stale) and takes the map explicitly, so it's safe to keep referentially
+  // stable via useCallback rather than re-created (and re-added to effect deps) every render.
+  const applyDistrictFilter = useCallback((targetMap: mapboxgl.Map) => {
+    const selected = councilDistrictFilterRef.current;
+    const filterExpr: mapboxgl.Expression | null =
+      selected && selected.length > 0 ? ['in', ['get', 'district_number'], ['literal', selected]] : null;
+    for (const id of DISTRICT_LAYER_IDS) {
+      if (targetMap.getLayer(id)) targetMap.setFilter(id, filterExpr);
+    }
+  }, []);
+
+  // Austin's council districts -- boundary line + number label per district, restricted to
+  // councilDistrictFilter when set.
   useEffect(() => {
     if (!map.current || !showCouncilDistricts) return;
     const currentMap = map.current;
@@ -208,6 +233,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
               'text-halo-width': 1.5,
             },
           });
+          applyDistrictFilter(currentMap);
         })
         .catch((err) => console.error('Failed to load council districts:', err));
     };
@@ -226,7 +252,14 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         // Map instance already torn down by the init effect's own cleanup -- nothing to clean up.
       }
     };
-  }, [showCouncilDistricts]);
+  }, [showCouncilDistricts, applyDistrictFilter]);
+
+  // Updates which districts are drawn when the selection changes while the layers already
+  // exist (the effect above only runs on showCouncilDistricts, i.e. empty <-> non-empty).
+  useEffect(() => {
+    if (!map.current) return;
+    applyDistrictFilter(map.current);
+  }, [councilDistrictFilter, applyDistrictFilter]);
 
   // Attach/detach bounds change listener without recreating the map
   useEffect(() => {

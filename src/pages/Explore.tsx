@@ -203,6 +203,7 @@ export default function Explore() {
           cooperativeGestures={false}
           showServiceAreaBoundary
           showCouncilDistricts={selectedDistricts.length > 0}
+          councilDistrictFilter={selectedDistricts}
           onClusterPointClick={setSelectedPid}
           selectedPointId={selectedPid}
           onMapBackgroundClick={() => setSelectedPid(null)}
