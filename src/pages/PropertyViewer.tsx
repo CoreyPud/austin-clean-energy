@@ -249,13 +249,11 @@ export default function PropertyViewer() {
     setFocusPid(p.pid);
   };
 
-  const handleFetchSolar = async (pid: string, lat: number, lon: number) => {
+  const handleFetchSolar = async (pid: string) => {
     setSolarFetching(true);
     try {
-      const token = sessionStorage.getItem('admin_token');
       const { data, error } = await supabase.functions.invoke('fetch-property-solar', {
-        body: { pid, lat, lon },
-        headers: { 'x-admin-token': token ?? '' },
+        body: { pid },
       });
       if (error || !data?.ok) throw new Error(data?.error || 'Fetch failed');
       if (data.property) {
@@ -279,7 +277,9 @@ export default function PropertyViewer() {
         }));
       }
       setSolarRefreshKey(k => k + 1);
-      toast.success('Solar data updated');
+      if (data.rateLimited) toast.info('Rate limited, try again shortly');
+      else if (data.alreadyFetched) toast.info('Solar data is already up to date');
+      else toast.success('Solar data updated');
     } catch (e: any) {
       toast.error(e.message || 'Failed to fetch solar data');
     } finally {
@@ -1101,7 +1101,7 @@ export default function PropertyViewer() {
                       className="h-6 text-xs px-2"
                       disabled={solarFetching || !isAdmin}
                       title={!isAdmin ? "Admin login required" : undefined}
-                      onClick={() => handleFetchSolar(sel.pid, sel.lat, sel.lon)}
+                      onClick={() => handleFetchSolar(sel.pid)}
 
                     >
                       {solarFetching ? (

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -23,9 +23,17 @@ interface MapProps {
     color?: string;
     source?: 'existing' | 'api' | 'target';
   }>;
-  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null] */
-  clusterPoints?: Array<[string, number, number, number, string | null, number?]>;
+  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null, ym?, hasSolar(0|1)?] */
+  clusterPoints?: Array<[string, number, number, number, string | null, number?, number?]>;
   onClusterPointClick?: (id: string) => void;
+  /** id of a clusterPoint to show a floating overlay over (e.g. a Zillow-style preview card).
+   *  The overlay tracks that point's screen position as the map pans/zooms. */
+  selectedPointId?: string | null;
+  /** Renders the overlay content for selectedPointId. Positioning/tracking is handled by Map. */
+  renderPointOverlay?: (id: string) => ReactNode;
+  /** Fires when the map background (not a cluster point) is clicked -- typically used to
+   *  dismiss a point overlay. */
+  onMapBackgroundClick?: () => void;
   heatmapData?: HeatmapPoint[];
   showLegend?: boolean;
   className?: string;
@@ -35,13 +43,21 @@ interface MapProps {
   isLoadingMapData?: boolean;
   /** When this string changes, the map refits its view to the current markers (overrides enableDynamicLoading). */
   fitMarkersKey?: string;
+  /** Requires ctrl/cmd+scroll to zoom, so scrolling a page past an embedded map doesn't
+   *  hijack the scroll. Defaults to true for every embedded use; a page where the map IS
+   *  the whole viewport (nothing to scroll past) should pass false for plain scroll-to-zoom. */
+  cooperativeGestures?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const lastFitKeyRef = useRef<string | undefined>(undefined);
+  // Positioned imperatively (not via React state) in the effect below -- this tracks a live
+  // map camera at up to 60fps during a drag/zoom, and re-rendering the whole overlay subtree
+  // on every 'move' tick was the actual cause of laggy panning once a point was selected.
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -59,7 +75,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       style: 'mapbox://styles/mapbox/light-v11',
       center,
       zoom,
-      cooperativeGestures: true,
+      cooperativeGestures,
     });
 
     map.current.addControl(
@@ -98,11 +114,19 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
     if (enableDynamicLoading && onBoundsChange) {
       map.current.on('moveend', handleBoundsChange);
+      // Also fire once for the initial view, not just after the first user-initiated
+      // move, so a bounds-driven page has data before anyone touches the map.
+      if (map.current.loaded()) {
+        handleBoundsChange();
+      } else {
+        map.current.once('load', handleBoundsChange);
+      }
     }
 
     return () => {
       if (map.current) {
         map.current.off('moveend', handleBoundsChange);
+        map.current.off('load', handleBoundsChange);
       }
     };
   }, [enableDynamicLoading, onBoundsChange]);
@@ -287,9 +311,9 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
     const buildGeoJSON = () => ({
       type: 'FeatureCollection' as const,
-      features: clusterPoints.map(([id, lng, lat, c, zip]) => ({
+      features: clusterPoints.map(([id, lng, lat, c, zip, , hasSolar]) => ({
         type: 'Feature' as const,
-        properties: { id, c, zip: zip || '' },
+        properties: { id, c, zip: zip || '', has_solar: hasSolar || 0 },
         geometry: { type: 'Point' as const, coordinates: [lng, lat] },
       })),
     });
@@ -321,12 +345,13 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
             14, 3.5,
             17, 6,
           ],
-          'circle-stroke-color': '#fff',
+          'circle-stroke-color': ['case', ['==', ['get', 'has_solar'], 1], '#facc15', '#fff'],
           'circle-stroke-width': [
             'interpolate', ['linear'], ['zoom'],
-            8, 0,
-            12, 0.5,
-            15, 1,
+            8, ['case', ['==', ['get', 'has_solar'], 1], 1, 0],
+            11, ['case', ['==', ['get', 'has_solar'], 1], 1.5, 0.5],
+            14, ['case', ['==', ['get', 'has_solar'], 1], 2.5, 1],
+            17, ['case', ['==', ['get', 'has_solar'], 1], 4, 1],
           ],
           'circle-opacity': 0.85,
         },
@@ -341,6 +366,12 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       const clearPointer = () => { if (map.current) map.current.getCanvas().style.cursor = ''; };
       map.current.on('mouseenter', 'inst-point', setPointer);
       map.current.on('mouseleave', 'inst-point', clearPointer);
+
+      map.current.on('click', (e) => {
+        if (!map.current || !onMapBackgroundClick) return;
+        const hit = map.current.queryRenderedFeatures(e.point, { layers: ['inst-point'] });
+        if (hit.length === 0) onMapBackgroundClick();
+      });
     };
 
     if (map.current.loaded()) {
@@ -348,7 +379,28 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     } else {
       map.current.on('load', ensureLayers);
     }
-  }, [clusterPoints, onClusterPointClick]);
+  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick]);
+
+  // Track the selected point's screen position (for a floating overlay card) as the map moves.
+  // Writes directly to the DOM instead of React state -- 'move' fires on every animation frame
+  // during a drag/zoom, and routing that through setState re-rendered the whole overlay subtree
+  // 60x/sec, which is what made panning/zooming laggy whenever a card was open.
+  useLayoutEffect(() => {
+    if (!map.current || !selectedPointId || !clusterPoints) return;
+    const point = clusterPoints.find(([id]) => id === selectedPointId);
+    if (!point) return;
+    const [, lng, lat] = point;
+
+    const updatePos = () => {
+      if (!map.current || !overlayRef.current) return;
+      const { x, y } = map.current.project([lng, lat]);
+      overlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
+    };
+
+    updatePos();
+    map.current.on('move', updatePos);
+    return () => { map.current?.off('move', updatePos); };
+  }, [selectedPointId, clusterPoints]);
 
 
   // Handle marker rendering
@@ -563,6 +615,13 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
               <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] border border-white shadow-sm"></div>
               <span className="text-xs text-muted-foreground">Commercial</span>
             </div>
+          </div>
+        </div>
+      )}
+      {selectedPointId && renderPointOverlay && (
+        <div ref={overlayRef} className="absolute top-0 left-0 z-30">
+          <div style={{ transform: 'translate(-50%, calc(-100% - 16px))' }}>
+            {renderPointOverlay(selectedPointId)}
           </div>
         </div>
       )}

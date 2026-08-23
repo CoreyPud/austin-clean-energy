@@ -1,11 +1,30 @@
 // Shared Google Maps JS SDK loader — loads the script once per page regardless
 // of how many components call loadGoogleMapsScript.
 
+import { supabase } from "@/integrations/supabase/client";
+
 declare global {
   interface Window {
     google: any;
     _initGoogleMaps: () => void;
   }
+}
+
+let apiKeyPromise: Promise<string> | null = null;
+
+/** Fetches the (public, referrer-restricted) Google Maps API key once per page load and
+ *  caches it, regardless of how many components call this. */
+export function getGoogleMapsApiKey(): Promise<string> {
+  if (!apiKeyPromise) {
+    apiKeyPromise = supabase.functions.invoke("get-maps-config").then(({ data, error }) => {
+      if (error || !data?.apiKey) {
+        apiKeyPromise = null; // allow retry on next call
+        throw new Error(error?.message ?? "Maps API key unavailable");
+      }
+      return data.apiKey as string;
+    });
+  }
+  return apiKeyPromise;
 }
 
 let state: "idle" | "loading" | "ready" | "error" = "idle";

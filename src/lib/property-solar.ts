@@ -23,6 +23,22 @@ export function slugifyAddress(address: string): string {
     .replace(/^-|-$/g, "");
 }
 
+export const TYPE_LABEL: Record<string, string> = {
+  single_family: "Single Family",
+  multifamily:   "Multifamily",
+  condo:         "Condo",
+  commercial:    "Commercial",
+  other:         "Other",
+};
+
+export const TYPE_COLOR: Record<string, string> = {
+  single_family: "#3b82f6",
+  multifamily:   "#8b5cf6",
+  condo:         "#ec4899",
+  commercial:    "#f97316",
+  other:         "#6b7280",
+};
+
 export type PropertyClass = "residential" | "commercial" | "multifamily";
 
 // Handles both naming conventions in use: TCAD's underscored types (PropertyPage.tsx) and the

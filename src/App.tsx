@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, useLocation, type Location } from "react-router-dom";
 import Footer from "./components/Footer";
 import ShareWidget from "./components/ShareWidget";
 import Index from "./pages/Index";
@@ -36,6 +36,8 @@ import EVProgress from "./pages/EVProgress";
 import CleanEnergyPlan from "./pages/CleanEnergyPlan";
 import PropertyViewer from "./pages/PropertyViewer";
 import PropertyPage from "./pages/PropertyPage";
+import Explore from "./pages/Explore";
+import PropertyOverlay from "./pages/PropertyOverlay";
 import BuildingEnergyUse from "./pages/BuildingEnergyUse";
 import BuildingEnergyUsage from "./pages/BuildingEnergyUsage";
 import LoadGrowth from "./pages/LoadGrowth";
@@ -54,6 +56,74 @@ const PublicLayout = () => (
   </>
 );
 
+const AppRoutes = () => {
+  const location = useLocation();
+  // Set by Explore when it opens a property as an overlay (see PropertyOverlay.tsx). A direct
+  // visit to /property/:pid carries no background, so it renders as a normal full page.
+  const background = (location.state as { background?: Location } | null)?.background;
+
+  return (
+    <>
+      <Routes location={background || location}>
+        {/* Public pages with footer */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<Index />} />
+          <Route path="/city-overview" element={<CityOverview />} />
+          <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
+          <Route path="/property-assessment" element={<PropertyAssessment />} />
+          <Route path="/recommendations" element={<Navigate to="/property-assessment" replace />} />
+          <Route path="/installation/:id" element={<InstallationDetail />} />
+          <Route path="/data-sources" element={<DataSources />} />
+          <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
+          <Route path="/decarb-dashboard" element={<SolarMap />} />
+          <Route path="/ev-comparison" element={<EVComparison />} />
+          <Route path="/ev-progress" element={<EVProgress />} />
+          <Route path="/clean-energy-plan" element={<CleanEnergyPlan />} />
+          <Route path="/council" element={<CouncilOverview />} />
+          <Route path="/council-members" element={<CouncilMembers />} />
+          <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
+          <Route path="/council-climate-record" element={<Navigate to="/council" replace />} />
+          <Route path="/council-lobbying" element={<Navigate to="/council" replace />} />
+
+          <Route path="/guides" element={<Guides />} />
+          <Route path="/guides/:slug" element={<GuideDetail />} />
+          <Route path="/sitemap" element={<Sitemap />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/join-the-community" element={<JoinCommunity />} />
+          <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
+          <Route path="/building-energy-usage" element={<BuildingEnergyUsage />} />
+          <Route path="/load-growth" element={<LoadGrowth />} />
+          <Route path="/import-capacity" element={<ImportCapacity />} />
+        </Route>
+
+        {/* Pages without footer */}
+        <Route path="/property-viewer" element={<PropertyViewer />} />
+        <Route path="/property/:pid/:slug?" element={<PropertyPage />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/embed/area-analysis" element={<EmbedAreaAnalysis />} />
+        <Route path="/import-solar-data" element={<ImportSolarData />} />
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/corrections" element={<AdminCorrections />} />
+        <Route path="/admin/knowledge-base" element={<AdminKnowledgeBase />} />
+        <Route path="/admin/pir-import" element={<PIRImport />} />
+        <Route path="/admin/data-comparison" element={<DataComparison />} />
+        <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
+        <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
+
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+
+      {background && (
+        <Routes>
+          <Route path="/property/:pid/:slug?" element={<PropertyOverlay />} />
+        </Routes>
+      )}
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -62,55 +132,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <TrailingSlashRedirect />
-        <Routes>
-          {/* Public pages with footer */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/city-overview" element={<CityOverview />} />
-            <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
-            <Route path="/property-assessment" element={<PropertyAssessment />} />
-            <Route path="/recommendations" element={<Navigate to="/property-assessment" replace />} />
-            <Route path="/installation/:id" element={<InstallationDetail />} />
-            <Route path="/data-sources" element={<DataSources />} />
-            <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />
-            <Route path="/decarb-dashboard" element={<SolarMap />} />
-            <Route path="/ev-comparison" element={<EVComparison />} />
-            <Route path="/ev-progress" element={<EVProgress />} />
-            <Route path="/clean-energy-plan" element={<CleanEnergyPlan />} />
-            <Route path="/council" element={<CouncilOverview />} />
-            <Route path="/council-members" element={<CouncilMembers />} />
-            <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
-            <Route path="/council-climate-record" element={<Navigate to="/council" replace />} />
-            <Route path="/council-lobbying" element={<Navigate to="/council" replace />} />
-
-            <Route path="/guides" element={<Guides />} />
-            <Route path="/guides/:slug" element={<GuideDetail />} />
-            <Route path="/sitemap" element={<Sitemap />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/join-the-community" element={<JoinCommunity />} />
-            <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
-            <Route path="/building-energy-usage" element={<BuildingEnergyUsage />} />
-            <Route path="/load-growth" element={<LoadGrowth />} />
-            <Route path="/import-capacity" element={<ImportCapacity />} />
-          </Route>
-
-          {/* Pages without footer */}
-          <Route path="/property-viewer" element={<PropertyViewer />} />
-          <Route path="/property/:pid/:slug?" element={<PropertyPage />} />
-          <Route path="/embed/area-analysis" element={<EmbedAreaAnalysis />} />
-          <Route path="/import-solar-data" element={<ImportSolarData />} />
-          <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/corrections" element={<AdminCorrections />} />
-          <Route path="/admin/knowledge-base" element={<AdminKnowledgeBase />} />
-          <Route path="/admin/pir-import" element={<PIRImport />} />
-          <Route path="/admin/data-comparison" element={<DataComparison />} />
-          <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
-          <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
-
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppRoutes />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
