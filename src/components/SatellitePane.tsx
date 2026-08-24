@@ -81,6 +81,12 @@ function SatelliteMap({
   const panelsRef    = useRef<SolarPanel[] | undefined>(undefined);
   const azimuthsRef  = useRef<Record<number, number>>({});
   const fitKeyRef    = useRef<string | number | undefined>(undefined);
+  // Once true, later effect runs can call straight into the map instead of registering
+  // map.once('load', ...) again -- that event only ever fires once per map instance, so a
+  // second registration after it already fired would silently never run its callback, which
+  // is what left the pane stuck hidden (opacity 0 from the layout effect below, nothing to
+  // ever set it back) when panel data arrived after the map had already loaded.
+  const styleLoadedRef = useRef(false);
   // Refs so the visibility effect can rebuild the correct opacity expression
 
   useEffect(() => {
@@ -96,6 +102,7 @@ function SatelliteMap({
       cooperativeGestures: true,
     });
     mapRef.current = map;
+    map.once("load", () => { styleLoadedRef.current = true; });
     if (!panels?.length) {
       markerRef.current = new mapboxgl.Marker({ color: "#ef4444" }).setLngLat([lon, lat]).addTo(map);
     }
@@ -114,6 +121,7 @@ function SatelliteMap({
       panelsRef.current = undefined;
       azimuthsRef.current = {};
       fitKeyRef.current = undefined;
+      styleLoadedRef.current = false;
     };
   }, []);
 
@@ -126,6 +134,19 @@ function SatelliteMap({
     const map = mapRef.current;
     if (!map) return;
 
+    // 'load' only ever fires once per map instance -- registering .once('load', fn) after it
+    // already fired (e.g. on a later effect run, once panel data arrives) would silently never
+    // call fn. styleLoadedRef tracks whether that's already happened so later runs call
+    // straight through instead.
+    const runWhenReady = (fn: () => void) => {
+      if (styleLoadedRef.current || map.isStyleLoaded()) {
+        styleLoadedRef.current = true;
+        fn();
+      } else {
+        map.once("load", () => { styleLoadedRef.current = true; fn(); });
+      }
+    };
+
     if (panels === undefined) {
       // Loading state — hide map and clear stale overlay.
       // Only hide if we had panels before (avoids hiding on initial no-panel mount).
@@ -137,8 +158,7 @@ function SatelliteMap({
           (map.getSource("panels") as mapboxgl.GeoJSONSource).setData({ type: "FeatureCollection", features: [] });
         }
       };
-      if (map.isStyleLoaded()) clearSource();
-      else map.once("load", clearSource);
+      runWhenReady(clearSource);
       // Don't update panelsRef — keep previous value so next non-undefined panels trigger shouldFit
       return;
     }
@@ -157,8 +177,7 @@ function SatelliteMap({
         map.jumpTo({ center: [lon, lat], zoom: 18 });
         if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
       };
-      if (map.isStyleLoaded()) show();
-      else map.once("load", show);
+      runWhenReady(show);
       panelsRef.current = panels;
       return;
     }
@@ -167,12 +186,16 @@ function SatelliteMap({
     if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
 
     // Refit only when the property/data changes (fitKey), not when the filter toggles
-    const fitKeyChanged   = fitKey !== fitKeyRef.current;
-    const azimuthsChanged = segmentAzimuths !== azimuthsRef.current;
+    const fitKeyChanged    = fitKey !== fitKeyRef.current;
+    const azimuthsChanged  = segmentAzimuths !== azimuthsRef.current;
+    const hadNoPanelsBefore = !panelsRef.current?.length;
     panelsRef.current   = panels;
     azimuthsRef.current = segmentAzimuths;
     fitKeyRef.current   = fitKey;
-    const shouldFit = fitKeyChanged || azimuthsChanged;
+    // hadNoPanelsBefore is a belt-and-suspenders case: the marker→panels transition should
+    // already trip azimuthsChanged in practice, but that's incidental to azimuths being fetched
+    // alongside panels, not a guarantee -- don't rely on it alone to reveal the pane again.
+    const shouldFit = fitKeyChanged || azimuthsChanged || hadNoPanelsBefore;
 
     const halfH = panelHeightM / 2 * 0.95;
     const halfW = panelWidthM / 2 * 0.95;
@@ -401,8 +424,7 @@ function SatelliteMap({
       else if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
     };
 
-    if (map.isStyleLoaded()) addLayers();
-    else map.once("load", addLayers);
+    runWhenReady(addLayers);
   }, [panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths]);
 
   // Selected-count changes (e.g. a system-size slider) only move the dim threshold,

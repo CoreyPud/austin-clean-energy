@@ -1,68 +1,82 @@
-/**
- * Client for the `properties-bulk` edge function: the whole Austin Energy-territory parcel set
- * (~247k rows) in a single gzipped request, instead of ~248 paginated PostgREST calls.
- *
- * The wire format is deliberately compact tuples. `typeCodes` is echoed in the payload so the
- * decode table can never silently drift from whatever the server encoded with, but the local
- * TYPE_CODES below is the fallback and the canonical ordering.
- */
+// Client for the properties-bulk edge function: fetches every AE-territory property in one
+// request (direct-Postgres, no PostgREST 1000-row cap) instead of the ~250-page paginated
+// loop the /explore background loader used before. See supabase/functions/properties-bulk.
+//
+// Browsers send Accept-Encoding: gzip on every fetch automatically and decompress
+// transparently, so no special handling is needed here for the function's gzip'd response.
 
-/** Index === wire code. Must stay in sync with the edge function's TYPE_CODES. */
-export const TYPE_CODES = ["single_family", "multifamily", "condo", "commercial", "other"] as const;
+import { readCachedBulk, writeCachedBulk } from "@/lib/bulk-properties-cache";
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/properties-bulk`;
+
+const AUTH_HEADERS = {
+  apikey: ANON_KEY,
+  Authorization: `Bearer ${ANON_KEY}`,
+};
+
+/** [pid, lng, lat, typeCode, zip, hasSolar(0|1), councilDistrict, marketValue, yearBuilt,
+ *  roofSqft, solarKw] -- typeCode indexes into the payload's own typeCodes array (decode
+ *  against that, not TYPE_CODES below, so a reordered/extended type list on the server can't
+ *  silently desync an older cached client). councilDistrict is the raw integer (1-10) already
+ *  computed server-side, no lookup needed. marketValue/yearBuilt/roofSqft/solarKw are exactly
+ *  the fields Explore's numeric filters need (see property-numeric-filters.ts) -- added so
+ *  every property is filterable everywhere on the map without a separate per-viewport fetch.
+ *  solarKw is the sum of that property's solar_installations.installed_kw (null if none).
+ *  Order confirmed live 2026-08-23 against generatedAt 2026-08-23T21:38:40.417Z -- don't
+ *  assume the order without re-checking if this ever seems off, it's bitten us before. */
 export type BulkTuple = [
-  pid: string,
-  lng: number,
-  lat: number,
-  typeCode: number,
-  zip: string | null,
-  hasSolar: 0 | 1,
-  councilDistrict: number | null,
-  marketValue: number | null,
-  yearBuilt: number | null,
-  roofSqft: number | null,
-  solarKw: number | null,
+  string, number, number, number, string | null, 0 | 1, number | null,
+  number | null, number | null, number | null, number | null,
 ];
 
 export interface BulkPayload {
   generatedAt: string;
-  typeCodes?: readonly string[];
+  typeCodes: string[];
   points: BulkTuple[];
 }
 
-/** Tiny freshness descriptor — cheap to fetch before deciding to re-download the payload. */
 export interface BulkManifest {
   generatedAt: string;
   rowCount: number;
   bytes: number;
-  typeCodes: readonly string[];
+  typeCodes: string[];
+  regenerating: boolean;
+  lockAt: string | null;
 }
 
-const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/properties-bulk`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+/** Reference copy of the current type order, for callers that don't have a payload/manifest
+ *  handy. Prefer decoding against the payload's own typeCodes when you have one. */
+export const TYPE_CODES = ["single_family", "multifamily", "condo", "commercial", "other"];
 
-async function call(path: string, signal?: AbortSignal) {
-  const res = await fetch(`${FUNCTIONS_BASE}${path}`, {
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
-    signal,
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(body.error ?? `properties-bulk failed (${res.status})`);
-  }
-  return res;
+export function decodeTypeCode(code: number, typeCodes: string[] = TYPE_CODES): string {
+  return typeCodes[code] ?? "other";
 }
 
 export async function fetchBulkManifest(signal?: AbortSignal): Promise<BulkManifest> {
-  return (await call("?manifest=1", signal)).json();
+  const res = await fetch(`${FUNCTION_URL}?manifest=1`, { headers: AUTH_HEADERS, signal });
+  if (!res.ok) throw new Error(`properties-bulk manifest failed: ${res.status}`);
+  return res.json();
 }
 
-/** Browser handles the gzip transparently — this is a plain JSON response as far as fetch cares. */
 export async function fetchBulkProperties(signal?: AbortSignal): Promise<BulkPayload> {
-  return (await call("", signal)).json();
+  const res = await fetch(FUNCTION_URL, { headers: AUTH_HEADERS, signal });
+  if (!res.ok) throw new Error(`properties-bulk fetch failed: ${res.status}`);
+  return res.json();
 }
 
-/** Wire code -> the same `property_type` strings the filters and classifyProperty expect. */
-export function decodeTypeCode(code: number, typeCodes: readonly string[] = TYPE_CODES): string {
-  return typeCodes[code] ?? "other";
+/** Manifest-first: only pays for the ~2.9MB download when the server has actually regenerated
+ *  since this browser last cached it. Falls back to a plain fetch if IndexedDB is unavailable. */
+export async function loadBulkPropertiesCached(signal?: AbortSignal): Promise<BulkPayload> {
+  const [manifest, cached] = await Promise.all([
+    fetchBulkManifest(signal),
+    readCachedBulk(),
+  ]);
+  if (cached && cached.generatedAt === manifest.generatedAt) {
+    return cached.payload;
+  }
+  const payload = await fetchBulkProperties(signal);
+  writeCachedBulk(payload); // fire-and-forget; a write failure shouldn't block using the data
+  return payload;
 }

@@ -108,10 +108,18 @@ export default function PropertyPreviewCard({ pid, onOpen, onClose }: Props) {
         className="cursor-pointer rounded-xl bg-white shadow-xl border border-border overflow-hidden hover:shadow-2xl transition-shadow"
       >
         {loading ? (
-          <div className="p-4 space-y-2 animate-pulse">
-            <div className="h-4 w-1/2 bg-muted rounded" />
-            <div className="h-5 w-3/4 bg-muted rounded" />
-            <div className="h-3 w-2/3 bg-muted rounded" />
+          // Matches the loaded layout's actual dimensions below (same image height, same
+          // badge/address/details/footer rows) so the card doesn't visibly resize the moment
+          // data arrives -- a skeleton that's a different shape than the real content just
+          // moves the resize from "on click" to "on load" instead of avoiding it.
+          <div className="animate-pulse">
+            <div className="bg-muted" style={{ height: IMG_H }} />
+            <div className="p-4 space-y-2">
+              <div className="h-[18px] w-20 bg-muted rounded-full" />
+              <div className="h-4 w-3/4 bg-muted rounded" />
+              <div className="h-3 w-1/2 bg-muted rounded" />
+              <div className="pt-1 h-3.5 w-2/3 bg-muted rounded" />
+            </div>
           </div>
         ) : !data ? (
           <div className="p-4 text-sm text-muted-foreground">Property not found</div>
