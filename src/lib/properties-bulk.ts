@@ -16,11 +16,20 @@ const AUTH_HEADERS = {
   Authorization: `Bearer ${ANON_KEY}`,
 };
 
-/** [pid, lng, lat, typeCode, zip, hasSolar(0|1), councilDistrict] -- typeCode indexes into the
- *  payload's own typeCodes array (decode against that, not TYPE_CODES below, so a
- *  reordered/extended type list on the server can't silently desync an older cached client).
- *  councilDistrict is the raw integer (1-10) already computed server-side, no lookup needed. */
-export type BulkTuple = [string, number, number, number, string | null, 0 | 1, number | null];
+/** [pid, lng, lat, typeCode, zip, hasSolar(0|1), councilDistrict, marketValue, yearBuilt,
+ *  roofSqft, solarKw] -- typeCode indexes into the payload's own typeCodes array (decode
+ *  against that, not TYPE_CODES below, so a reordered/extended type list on the server can't
+ *  silently desync an older cached client). councilDistrict is the raw integer (1-10) already
+ *  computed server-side, no lookup needed. marketValue/yearBuilt/roofSqft/solarKw are exactly
+ *  the fields Explore's numeric filters need (see property-numeric-filters.ts) -- added so
+ *  every property is filterable everywhere on the map without a separate per-viewport fetch.
+ *  solarKw is the sum of that property's solar_installations.installed_kw (null if none).
+ *  Order confirmed live 2026-08-23 against generatedAt 2026-08-23T21:38:40.417Z -- don't
+ *  assume the order without re-checking if this ever seems off, it's bitten us before. */
+export type BulkTuple = [
+  string, number, number, number, string | null, 0 | 1, number | null,
+  number | null, number | null, number | null, number | null,
+];
 
 export interface BulkPayload {
   generatedAt: string;

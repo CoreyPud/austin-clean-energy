@@ -3,9 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface MapTokenLoaderProps {
   children: React.ReactNode;
+  /** Sizes the loading/error placeholder to match whatever the map will actually render at
+   *  (e.g. "h-full w-full" for a full-screen map) so swapping from placeholder to real map
+   *  doesn't resize/reflow the page. Defaults to a fixed height, matching every caller before
+   *  this prop existed. */
+  className?: string;
 }
 
-const MapTokenLoader = ({ children }: MapTokenLoaderProps) => {
+const MapTokenLoader = ({ children, className = "h-[500px]" }: MapTokenLoaderProps) => {
   const [tokenLoaded, setTokenLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -40,7 +45,7 @@ const MapTokenLoader = ({ children }: MapTokenLoaderProps) => {
 
   if (error) {
     return (
-      <div className="h-[500px] flex items-center justify-center bg-muted rounded-lg">
+      <div className={`${className} flex items-center justify-center bg-muted rounded-lg`}>
         <p className="text-muted-foreground">Unable to load map. Please try again later.</p>
       </div>
     );
@@ -48,7 +53,8 @@ const MapTokenLoader = ({ children }: MapTokenLoaderProps) => {
 
   if (!tokenLoaded) {
     return (
-      <div className="h-[500px] bg-muted animate-pulse rounded-lg flex items-center justify-center">
+      <div className={`${className} bg-muted rounded-lg flex items-center justify-center gap-3`}>
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
         <p className="text-muted-foreground">Loading map...</p>
       </div>
     );

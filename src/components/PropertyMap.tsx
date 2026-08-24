@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { TYPE_COLOR } from "@/lib/property-solar";
+
+// Single source for the property-type palette (property-solar.ts) instead of a hardcoded copy
+// here -- this is exactly the match expression the fill and stroke paint below both used to
+// duplicate as separate literal arrays, which is how they drifted from Explore's palette before.
+const TYPE_COLOR_MATCH = [
+  "match", ["get", "property_type"],
+  "single_family", TYPE_COLOR.single_family,
+  "multifamily", TYPE_COLOR.multifamily,
+  "condo", TYPE_COLOR.condo,
+  "commercial", TYPE_COLOR.commercial,
+  TYPE_COLOR.other,
+];
 
 export interface PropertyPoint {
   pid: string;
@@ -172,12 +185,7 @@ export function PropertyMap({ properties, gasPlants, proposedSites, siteCounts, 
           "circle-opacity": 0.9,
           "circle-color": [
             "case", ["boolean", ["get", "has_google_data"], false],
-            ["match", ["get", "property_type"],
-              "single_family", "#3b82f6",
-              "multifamily",   "#8b5cf6",
-              "condo",         "#ec4899",
-              "commercial",    "#f97316",
-              "#6b7280"],
+            TYPE_COLOR_MATCH,
             "#ffffff",
           ],
           "circle-stroke-width": [
@@ -186,12 +194,7 @@ export function PropertyMap({ properties, gasPlants, proposedSites, siteCounts, 
           "circle-stroke-color": [
             "case", ["boolean", ["get", "has_solar"], false],
             "#facc15",
-            ["match", ["get", "property_type"],
-              "single_family", "#3b82f6",
-              "multifamily",   "#8b5cf6",
-              "condo",         "#ec4899",
-              "commercial",    "#f97316",
-              "#6b7280"],
+            TYPE_COLOR_MATCH,
           ],
         },
       });

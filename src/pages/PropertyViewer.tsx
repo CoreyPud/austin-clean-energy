@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { slugifyAddress } from "@/lib/property-solar";
+import { slugifyAddress, TYPE_LABEL, TYPE_COLOR } from "@/lib/property-solar";
 import { useSolarFilter, SolarFilterPanel } from "@/components/SolarFilterPanel";
 import MapTokenLoader from "@/components/MapTokenLoader";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
@@ -35,22 +35,6 @@ function haversineMi(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return 2 * 3958.8 * Math.asin(Math.sqrt(a));
 }
 const TABLE_PAGE = 50;
-
-const TYPE_LABEL: Record<string, string> = {
-  single_family: "Single Family",
-  multifamily:   "Multifamily",
-  condo:         "Condo",
-  commercial:    "Commercial",
-  other:         "Other",
-};
-
-const TYPE_COLOR: Record<string, string> = {
-  single_family: "#3b82f6",
-  multifamily:   "#8b5cf6",
-  condo:         "#ec4899",
-  commercial:    "#f97316",
-  other:         "#6b7280",
-};
 
 const ALL_TYPES = ["single_family", "multifamily", "condo", "commercial", "other"] as const;
 

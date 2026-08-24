@@ -31,13 +31,28 @@ export const TYPE_LABEL: Record<string, string> = {
   other:         "Other",
 };
 
+// Residential (single_family, multifamily, condo) in the same green used everywhere else in
+// the app for "residential" (Map.tsx's non-property-type legend, the old 'c' 0/1 dot coloring),
+// commercial in that same established blue, and other on its own in neutral gray -- not grouped
+// with commercial, since "other" isn't actually commercial, just unclassified.
 export const TYPE_COLOR: Record<string, string> = {
-  single_family: "#3b82f6",
-  multifamily:   "#8b5cf6",
-  condo:         "#ec4899",
-  commercial:    "#f97316",
+  single_family: "#22c55e",
+  multifamily:   "#22c55e",
+  condo:         "#22c55e",
+  commercial:    "#2563eb",
   other:         "#6b7280",
 };
+
+// Sequential light-to-dark purple ramp for Explore's percentile-based color-by-value modes
+// (market value, year built) -- one color per property-numeric-filters.ts's GRADIENT_PERCENTILES
+// stop. Purple, not the more typical yellow-to-red heat ramp, specifically because the
+// has_solar stroke ring is amber (#facc15, Map.tsx) -- a yellow-toned fill made that ring hard
+// to see against low-end gradient dots. Also stays clear of TYPE_COLOR's green/blue/gray so a
+// gradient mode never looks like it's just another type color.
+export const GRADIENT_COLORS = [
+  "#f3e8ff", "#e9d5ff", "#d8b4fe", "#c084fc", "#a855f7",
+  "#9333ea", "#7e22ce", "#6b21a8", "#581c87", "#3b0764",
+];
 
 export type PropertyClass = "residential" | "commercial" | "multifamily";
 

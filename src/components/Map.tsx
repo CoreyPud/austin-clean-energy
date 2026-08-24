@@ -3,6 +3,32 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const DISTRICT_LAYER_IDS = ['council-districts-fill', 'council-districts-line', 'council-districts-label'];
+// 'inst-point' fill color when a caller doesn't supply pointColor -- unchanged from before
+// pointColor existed, so CityOverview.tsx (which never passes it) keeps its exact original
+// residential/commercial 2-color look.
+const DEFAULT_POINT_COLOR: mapboxgl.Expression = [
+  'case',
+  ['boolean', ['feature-state', 'selected'], false],
+  ['case', ['==', ['get', 'c'], 1], '#1e3a8a', '#166534'],
+  ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
+];
+
+/** Compact clustered point tuple: [id, lng, lat, isCommercial(0|1), zip|null, ym?, hasSolar(0|1)?,
+ *  filterProps?]. Named here so both the full-source build and the incremental updateData path
+ *  below share one feature-shape definition instead of two copies that could drift apart. */
+type ClusterPointTuple = [string, number, number, number, string | null, number?, number?, Record<string, string | number>?];
+
+const buildFeature = ([id, lng, lat, c, zip, , hasSolar, filterProps]: ClusterPointTuple) => ({
+  type: 'Feature' as const,
+  // Top-level id (distinct from properties.id) is what feature-state keys off of, for the
+  // hover/selected paint below.
+  id,
+  // filterProps spreads in last so a caller-supplied field never collides with the
+  // always-present ones -- pointFilter expressions only ever reference filterProps' own keys
+  // (property_type, district, the numeric filter fields), never these.
+  properties: { id, c, zip: zip || '', has_solar: hasSolar || 0, ...(filterProps ?? {}) },
+  geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+});
 
 interface HeatmapPoint {
   zip: string;
@@ -25,9 +51,29 @@ interface MapProps {
     color?: string;
     source?: 'existing' | 'api' | 'target';
   }>;
-  /** Compact clustered points: [id, lng, lat, isCommercial(0|1), zip|null, ym?, hasSolar(0|1)?] */
-  clusterPoints?: Array<[string, number, number, number, string | null, number?, number?]>;
+  /** filterProps (if present on a tuple) is spread into the feature's GeoJSON properties
+   *  verbatim -- it's how pointFilter below gets anything to reference beyond c/zip/has_solar. */
+  clusterPoints?: ClusterPointTuple[];
+  /** Mapbox 'circle-color' expression applied to the 'inst-point' layer via setPaintProperty --
+   *  same pattern as pointFilter below (a caller builds whatever expression it needs and this
+   *  just applies it, no GeoJSON/data involvement). Falls back to DEFAULT_POINT_COLOR (the
+   *  original residential-vs-commercial 2-color split, keyed on 'c') when omitted, so
+   *  CityOverview.tsx (which never passes this) is unaffected. Pair with legendContent so the
+   *  legend actually reflects whatever this expression does -- Map.tsx has no way to infer a
+   *  legend from an arbitrary expression itself. */
+  pointColor?: mapboxgl.Expression | null;
+  /** Overrides the default residential/commercial 2-item legend entirely when showLegend is on.
+   *  Whoever builds pointColor above should build this from the exact same color data, so the
+   *  two can never drift out of sync with each other. */
+  legendContent?: ReactNode;
   onClusterPointClick?: (id: string) => void;
+  /** Mapbox filter expression applied to the 'inst-point' layer via setFilter -- lets a caller
+   *  filter the already-loaded point set (matched against each feature's properties, including
+   *  whatever clusterPoints' filterProps supplied) without touching clusterPoints/setData at
+   *  all. Cheap regardless of dataset size: no GeoJSON rebuild, just a native Mapbox re-filter
+   *  of what's already on the GPU. Combined with clusterMode's own point/cluster split filter
+   *  when both are in play. */
+  pointFilter?: mapboxgl.Expression | null;
   /** Aggregates clusterPoints into count bubbles at low zoom via Mapbox's built-in
    *  (supercluster-backed) clustering instead of rendering every point as its own feature --
    *  needed once clusterPoints gets into the hundreds of thousands (a raw per-point circle
@@ -86,7 +132,7 @@ interface MapProps {
   disableClusterAutoFit?: boolean;
 }
 
-const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter, clusterMode = false, pointsMinZoom, disableClusterAutoFit = false }: MapProps) => {
+const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoints, onClusterPointClick, heatmapData = [], className = "", showLegend = false, onMarkerClick, onBoundsChange, enableDynamicLoading = false, isLoadingMapData = false, fitMarkersKey, cooperativeGestures = true, selectedPointId, renderPointOverlay, onMapBackgroundClick, showServiceAreaBoundary = false, showCouncilDistricts = false, councilDistrictFilter, clusterMode = false, pointsMinZoom, disableClusterAutoFit = false, pointFilter = null, pointColor = null, legendContent }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -97,11 +143,26 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
   const overlayRef = useRef<HTMLDivElement>(null);
   const hoveredPointIdRef = useRef<string | number | null>(null);
   const selectedPointIdRef = useRef<string | number | null>(null);
+  // Tracks the clusterPoints reference actually last pushed into the 'installations' source, so
+  // the effect below can skip a redundant rebuild-and-setData when it re-runs for an unrelated
+  // dependency (e.g. a caller passing a new onClusterPointClick/onMapBackgroundClick closure
+  // every render) but clusterPoints itself hasn't changed. Rebuilding the full GeoJSON and
+  // making Mapbox re-tile it is not free at ~250k points -- doing it on every unrelated
+  // re-render under rapid filter interaction is what caused an OOM.
+  const lastAppliedClusterPointsRef = useRef<typeof clusterPoints>(undefined);
   // Synced every render so the async district-layer setup (fetch().then(...)) and the
   // filter-update effect both always read the latest selection, regardless of which render's
   // closure created them.
   const councilDistrictFilterRef = useRef(councilDistrictFilter);
   councilDistrictFilterRef.current = councilDistrictFilter;
+  // Same pattern as councilDistrictFilterRef -- the applyPointFilter callback below and the
+  // effect that calls it on prop changes both need the latest value regardless of which
+  // render's closure they were created in.
+  const pointFilterRef = useRef(pointFilter);
+  pointFilterRef.current = pointFilter;
+  // Same pattern again, for pointColor.
+  const pointColorRef = useRef(pointColor);
+  pointColorRef.current = pointColor;
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -164,8 +225,11 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         .catch((err) => console.error('Failed to load AE service area boundary:', err));
     };
 
-    if (currentMap.loaded()) addBoundary();
-    else currentMap.once('load', addBoundary);
+    // isStyleLoaded/'styledata', not loaded()/'load' -- see the matching comment on the
+    // council-districts effect below for why 'load' (fires once ever, not on every re-run) is
+    // the wrong check here even though this particular effect only runs once today.
+    if (currentMap.isStyleLoaded()) addBoundary();
+    else currentMap.once('styledata', addBoundary);
 
     return () => {
       cancelled = true;
@@ -191,6 +255,26 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     for (const id of DISTRICT_LAYER_IDS) {
       if (targetMap.getLayer(id)) targetMap.setFilter(id, filterExpr);
     }
+  }, []);
+
+  // Same idea as applyDistrictFilter, for the 'inst-point' layer's own pointFilter prop. When
+  // clusterMode is also on, the point/cluster split filter (['!', ['has','point_count']]) has
+  // to be preserved alongside whatever pointFilter adds -- ANDed together rather than one
+  // replacing the other.
+  const applyPointFilter = useCallback((targetMap: mapboxgl.Map) => {
+    if (!targetMap.getLayer('inst-point')) return;
+    const splitFilter: mapboxgl.Expression | null = clusterMode ? ['!', ['has', 'point_count']] : null;
+    const extra = pointFilterRef.current ?? null;
+    const combined: mapboxgl.Expression | null =
+      splitFilter && extra ? ['all', splitFilter, extra] : (extra ?? splitFilter);
+    targetMap.setFilter('inst-point', combined);
+  }, [clusterMode]);
+
+  // Same idea again, for pointColor -- setPaintProperty instead of setFilter, DEFAULT_POINT_COLOR
+  // instead of "no filter" as the fallback.
+  const applyPointColor = useCallback((targetMap: mapboxgl.Map) => {
+    if (!targetMap.getLayer('inst-point')) return;
+    targetMap.setPaintProperty('inst-point', 'circle-color', pointColorRef.current ?? DEFAULT_POINT_COLOR);
   }, []);
 
   // Austin's council districts -- boundary line + number label per district, restricted to
@@ -255,8 +339,15 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         .catch((err) => console.error('Failed to load council districts:', err));
     };
 
-    if (currentMap.loaded()) addDistricts();
-    else currentMap.once('load', addDistricts);
+    // isStyleLoaded (not loaded()/'load') because this effect re-runs on every toggle, not just
+    // once on mount -- Mapbox's 'load' event only ever fires once for a map instance's initial
+    // style load, so a second `.once('load', ...)` registration here would simply never fire
+    // once that's already happened (which is very plausibly why the overlay only "sometimes"
+    // showed: whenever loaded() read false at exactly the moment a toggle fired -- e.g. while
+    // the ~250k-point background source was mid-(re)load -- it waited on an event that was
+    // never coming again). isStyleLoaded/'styledata' both fire correctly on every check instead.
+    if (currentMap.isStyleLoaded()) addDistricts();
+    else currentMap.once('styledata', addDistricts);
 
     return () => {
       cancelled = true;
@@ -277,6 +368,21 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     if (!map.current) return;
     applyDistrictFilter(map.current);
   }, [councilDistrictFilter, applyDistrictFilter]);
+
+  // Updates the 'inst-point' layer's filter whenever pointFilter changes, without touching the
+  // GeoJSON source at all -- this is the whole point (no pun intended) of pointFilter existing
+  // separately from clusterPoints: toggling a filter never needs a setData pass.
+  useEffect(() => {
+    if (!map.current) return;
+    applyPointFilter(map.current);
+  }, [pointFilter, applyPointFilter]);
+
+  // Same idea for pointColor -- a color-mode switch is a single setPaintProperty call, no
+  // GeoJSON rebuild.
+  useEffect(() => {
+    if (!map.current) return;
+    applyPointColor(map.current);
+  }, [pointColor, applyPointColor]);
 
   // Attach/detach bounds change listener without recreating the map
   useEffect(() => {
@@ -495,17 +601,16 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
 
   useEffect(() => {
     if (!map.current || !clusterPoints) return;
+    // Nothing to do -- this data was already applied. Only clusterPoints identity matters here
+    // (see lastAppliedClusterPointsRef's own comment for why); the effect can still have been
+    // re-triggered by some other dependency without there being any new data to push.
+    if (lastAppliedClusterPointsRef.current === clusterPoints && map.current.getSource('installations')) {
+      return;
+    }
 
     const buildGeoJSON = () => ({
       type: 'FeatureCollection' as const,
-      features: clusterPoints.map(([id, lng, lat, c, zip, , hasSolar]) => ({
-        type: 'Feature' as const,
-        // Top-level id (distinct from properties.id) is what feature-state keys off of, for
-        // the hover/selected paint below.
-        id,
-        properties: { id, c, zip: zip || '', has_solar: hasSolar || 0 },
-        geometry: { type: 'Point' as const, coordinates: [lng, lat] },
-      })),
+      features: clusterPoints.map(buildFeature),
     });
 
     const ensureLayers = () => {
@@ -514,6 +619,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       if (existingSource && existingSource.setData) {
         // Fast path: just update data, no layer teardown → no flicker
         existingSource.setData(buildGeoJSON());
+        lastAppliedClusterPointsRef.current = clusterPoints;
         return;
       }
 
@@ -526,6 +632,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         // the city is in view." Viewport width varies by device, so treat this as tunable.
         ...(clusterMode ? { cluster: true, clusterMaxZoom: 13, clusterRadius: 50 } : {}),
       });
+      lastAppliedClusterPointsRef.current = clusterPoints;
 
       if (clusterMode) {
         map.current.addLayer({
@@ -575,15 +682,12 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
         id: 'inst-point',
         type: 'circle',
         source: 'installations',
-        ...(clusterMode ? { filter: ['!', ['has', 'point_count']] } : {}),
         ...(pointsMinZoom != null ? { minzoom: pointsMinZoom } : {}),
         paint: {
-          'circle-color': [
-            'case',
-            ['boolean', ['feature-state', 'selected'], false],
-            ['case', ['==', ['get', 'c'], 1], '#1e3a8a', '#166534'],
-            ['case', ['==', ['get', 'c'], 1], '#2563eb', '#22c55e'],
-          ],
+          // Overwritten by applyPointColor immediately below if pointColor is set -- this
+          // initial value only matters for the split second before that call, and as the
+          // permanent value when pointColor is never provided at all.
+          'circle-color': DEFAULT_POINT_COLOR,
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
             8, ['case',
@@ -603,17 +707,35 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
               ['boolean', ['feature-state', 'hover'], false], 8.5,
               6],
           ],
-          'circle-stroke-color': ['case', ['==', ['get', 'has_solar'], 1], '#facc15', '#fff'],
+          // Selected takes priority over has_solar's yellow ring -- a dark ring is the clearest
+          // "this one" cue regardless of fill color, which matters more now that circle-color
+          // can be an arbitrary caller-supplied pointColor expression instead of just two colors.
+          'circle-stroke-color': [
+            'case',
+            ['boolean', ['feature-state', 'selected'], false], '#111827',
+            ['==', ['get', 'has_solar'], 1], '#facc15',
+            '#fff',
+          ],
           'circle-stroke-width': [
             'interpolate', ['linear'], ['zoom'],
-            8, ['case', ['==', ['get', 'has_solar'], 1], 1, 0],
-            11, ['case', ['==', ['get', 'has_solar'], 1], 1.5, 0.5],
-            14, ['case', ['==', ['get', 'has_solar'], 1], 2.5, 1],
-            17, ['case', ['==', ['get', 'has_solar'], 1], 4, 1],
+            8, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 2,
+              ['==', ['get', 'has_solar'], 1], 1, 0],
+            11, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 3,
+              ['==', ['get', 'has_solar'], 1], 1.5, 0.5],
+            14, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 4,
+              ['==', ['get', 'has_solar'], 1], 2.5, 1],
+            17, ['case',
+              ['boolean', ['feature-state', 'selected'], false], 6,
+              ['==', ['get', 'has_solar'], 1], 4, 1],
           ],
           'circle-opacity': 0.85,
         },
       });
+      applyPointFilter(map.current);
+      applyPointColor(map.current);
 
       map.current.on('click', 'inst-point', (e) => {
         const id = e.features?.[0]?.properties?.id;
@@ -655,7 +777,7 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
     } else {
       map.current.on('load', ensureLayers);
     }
-  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick, clusterMode, pointsMinZoom]);
+  }, [clusterPoints, onClusterPointClick, onMapBackgroundClick, clusterMode, pointsMinZoom, applyPointFilter, applyPointColor]);
 
   // Track the selected point's screen position (for a floating overlay card) as the map moves.
   // Writes directly to the DOM instead of React state -- 'move' fires on every animation frame
@@ -897,22 +1019,28 @@ const Map = ({ center = [-97.7431, 30.2672], zoom = 10, markers = [], clusterPoi
       )}
       {showLegend && (clusterPoints && clusterPoints.length > 0) && (
         <div className="absolute bottom-8 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-4 z-10 border border-border">
-
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border border-white shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Residential</span>
+          {legendContent ?? (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] border border-white shadow-sm"></div>
+                <span className="text-xs text-muted-foreground">Residential</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] border border-white shadow-sm"></div>
+                <span className="text-xs text-muted-foreground">Commercial</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] border border-white shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Commercial</span>
-            </div>
-          </div>
+          )}
         </div>
       )}
       {selectedPointId && renderPointOverlay && (
-        <div ref={overlayRef} className="absolute top-0 left-0 z-30">
-          <div style={{ transform: 'translate(-50%, calc(-100% - 16px))' }}>
+        // pointer-events-none on the wrapper (re-enabled only on the actual card via
+        // pointer-events-auto below) so this positioning wrapper never blocks clicks to the map
+        // underneath -- without it, clicking a nearby dot (or empty map) anywhere within this
+        // div's layout box did nothing, since the click never reached Mapbox's own canvas
+        // click handlers at all.
+        <div ref={overlayRef} className="absolute top-0 left-0 z-30 pointer-events-none">
+          <div style={{ transform: 'translate(-50%, calc(-100% - 16px))' }} className="pointer-events-auto inline-block">
             {renderPointOverlay(selectedPointId)}
           </div>
         </div>
