@@ -270,9 +270,16 @@ export default function Explore() {
           zip,
           has_solar: hasSolar,
           district: councilDistrict != null ? String(councilDistrict) : null,
-          market_value: marketValue,
-          roof_sqft: roofSqft,
-          year_built: yearBuilt,
+          // 0 here means "no real data" the same way null does (a $0 assessed market value, a
+          // 0 sqft roof, or a year-0 build are all bad/missing source data, not real values) --
+          // treating them as null keeps them out of numeric filters, percentile bounds, and the
+          // color-by-value gradient, all of which would otherwise get skewed by a few thousand
+          // zeros that aren't meaningfully "the lowest real value." Confirmed live: ~3.2% of all
+          // properties have market_value === 0 specifically (roof_sqft/year_built are much
+          // rarer, solar_kw never does this).
+          market_value: marketValue || null,
+          roof_sqft: roofSqft || null,
+          year_built: yearBuilt || null,
           solar_kw: solarKw,
         });
       }
