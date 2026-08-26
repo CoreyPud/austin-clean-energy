@@ -163,6 +163,27 @@ const Index = () => {
               />
 
               <FeatureCard
+                to="/explore"
+                title="Austin Property Explorer"
+                description="Browse every property in the Austin Energy service area on an interactive map. Filter by type, value, year built, and more."
+                cta="Explore the Map"
+                preview={
+                  <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground select-none">
+                      <MapPin className="h-8 w-8 opacity-30" />
+                      <span className="text-xs opacity-40">Map preview</span>
+                    </div>
+                    <img
+                      src="/explore-preview.png"
+                      alt="Austin property explorer map"
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                }
+              />
+
+              <FeatureCard
                 to="/ev-progress"
                 title="Austin EV Adoption"
                 description="Track Austin's EV growth, CO₂ avoided, and the economic impact of keeping fuel dollars local."

@@ -1180,16 +1180,18 @@ export default function PropertyViewer() {
                       <p className="text-xs text-muted-foreground">
                         Imagery: {sel.solar_imagery_quality ?? "—"} · {sel.solar_imagery_date ?? "—"}
                       </p>
-                      <Link
-                        to={`/property/${sel.pid}/${slugifyAddress(sel.address ?? "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary underline underline-offset-2"
-                      >
-                        View property solar page ↗
-                      </Link>
                     </>
                   )}
+                  {/* Always shown, regardless of solar-fetch status -- the page itself handles
+                      having no solar data yet, so there's no reason to gate the link on it. */}
+                  <Link
+                    to={`/property/${sel.pid}/${slugifyAddress(sel.address ?? "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary underline underline-offset-2"
+                  >
+                    View property solar page ↗
+                  </Link>
                 </div>
 
               {(sel.solar_permits ?? []).length > 0 && (

@@ -262,17 +262,33 @@ export default function Explore() {
       if (cancelled) return;
 
       for (const [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict, marketValue, yearBuilt, roofSqft, solarKw] of payload.points) {
+        const propertyType = decodeTypeCode(typeCode, payload.typeCodes);
+        // Bare parcel-list stubs, not real listings: property_type falls back to "other" when
+        // TCAD/WCAD's land_type_desc doesn't match a known category, and these never got joined
+        // against the improvement/appraisal data at all. Confirmed live: 99.8% of properties
+        // with null market_value are exactly this pattern (property_type "other"), and those
+        // same records are also missing roof_sqft (100%), year_built (99.8%), and often zip
+        // (84%) -- not a per-field gap, the whole enrichment join just never happened for them.
+        // Excludes ~20.5k properties (8.3% of the dataset), also a nice map-density win.
+        if (propertyType === "other" && marketValue == null) continue;
         propertiesRef.current.set(pid, {
           pid,
           lng,
           lat,
-          property_type: decodeTypeCode(typeCode, payload.typeCodes),
+          property_type: propertyType,
           zip,
           has_solar: hasSolar,
           district: councilDistrict != null ? String(councilDistrict) : null,
-          market_value: marketValue,
-          roof_sqft: roofSqft,
-          year_built: yearBuilt,
+          // 0 here means "no real data" the same way null does (a $0 assessed market value, a
+          // 0 sqft roof, or a year-0 build are all bad/missing source data, not real values) --
+          // treating them as null keeps them out of numeric filters, percentile bounds, and the
+          // color-by-value gradient, all of which would otherwise get skewed by a few thousand
+          // zeros that aren't meaningfully "the lowest real value." Confirmed live: ~3.2% of all
+          // properties have market_value === 0 specifically (roof_sqft/year_built are much
+          // rarer, solar_kw never does this).
+          market_value: marketValue || null,
+          roof_sqft: roofSqft || null,
+          year_built: yearBuilt || null,
           solar_kw: solarKw,
         });
       }
