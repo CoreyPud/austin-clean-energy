@@ -371,17 +371,17 @@ const Index = () => {
           {/* ── Personal ── */}
           <div id="personal-picture" className="scroll-mt-8">
             <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">Run the Numbers</h2>
+              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">What You Can Do</h2>
               <p className="text-muted-foreground max-w-2xl">
-                Solar payback periods and EV cost comparisons vary a lot by household. Run the numbers using Austin's
-                real rates and incentives to see what the math looks like for your situation.
+                Every household is different. Use Austin's real rates and incentives to explore your options,
+                compare the tradeoffs, and figure out your next steps.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
               <FeatureCard
                 to="/property-assessment"
-                title="Calculate Solar Savings in Austin"
-                description="Enter your address to get neighborhood solar trends, your roof's potential, savings estimates, your council member, and tailored next steps — all in one place."
+                title="Check Solar for Your Home"
+                description="Enter your address to see neighborhood solar trends, your roof's potential, cost estimates, your council member, and a personalized plan — all in one place."
                 cta="Calculate Savings"
                 preview={
                   <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b">
