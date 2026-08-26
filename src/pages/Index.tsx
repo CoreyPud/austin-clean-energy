@@ -213,7 +213,7 @@ const Index = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
               <FeatureCard
                 to="/city-overview"
-                title="Austin Rooftop Solar"
+                title="Austin Rooftop Solar Trends"
                 description="See how Austin is trending on new solar and battery installs, and which areas are adopting solar the fastest."
                 cta="Learn More"
                 preview={
@@ -373,8 +373,8 @@ const Index = () => {
             <div className="mb-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">What You Can Do</h2>
               <p className="text-muted-foreground max-w-2xl">
-                Every household is different. Use Austin's real rates and incentives to explore your options,
-                compare the tradeoffs, and figure out your next steps.
+                Every household is different. Use Austin's real rates and incentives to explore your options, compare
+                the tradeoffs, and figure out your next steps.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
