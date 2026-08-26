@@ -262,11 +262,20 @@ export default function Explore() {
       if (cancelled) return;
 
       for (const [pid, lng, lat, typeCode, zip, hasSolar, councilDistrict, marketValue, yearBuilt, roofSqft, solarKw] of payload.points) {
+        const propertyType = decodeTypeCode(typeCode, payload.typeCodes);
+        // Bare parcel-list stubs, not real listings: property_type falls back to "other" when
+        // TCAD/WCAD's land_type_desc doesn't match a known category, and these never got joined
+        // against the improvement/appraisal data at all. Confirmed live: 99.8% of properties
+        // with null market_value are exactly this pattern (property_type "other"), and those
+        // same records are also missing roof_sqft (100%), year_built (99.8%), and often zip
+        // (84%) -- not a per-field gap, the whole enrichment join just never happened for them.
+        // Excludes ~20.5k properties (8.3% of the dataset), also a nice map-density win.
+        if (propertyType === "other" && marketValue == null) continue;
         propertiesRef.current.set(pid, {
           pid,
           lng,
           lat,
-          property_type: decodeTypeCode(typeCode, payload.typeCodes),
+          property_type: propertyType,
           zip,
           has_solar: hasSolar,
           district: councilDistrict != null ? String(councilDistrict) : null,
