@@ -165,7 +165,7 @@ const Index = () => {
               <FeatureCard
                 to="/explore"
                 title="Austin Property Explorer"
-                description="Browse every property in the Austin Energy service area on an interactive map. Filter by type, value, year built, and more."
+                description="Zoom into any Austin property to check its solar status and potential, and filter by value, year built, and council district."
                 cta="Explore the Map"
                 preview={
                   <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
