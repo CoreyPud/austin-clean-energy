@@ -191,7 +191,7 @@ const Index = () => {
                 }
                 className="bg-accent hover:bg-accent/90 text-foreground font-semibold w-full sm:w-48"
               >
-                Run the Numbers
+                What You Can Do
               </Button>
             </div>
           </div>
