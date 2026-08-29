@@ -28,6 +28,7 @@ import {
 import { calcEVResults, DEFAULT_EV_INPUTS } from "@/lib/ev-model";
 import { evAdoptionSeries } from "@/data/ev-adoption";
 import FeatureCard from "@/components/FeatureCard";
+import { loadPowerMoney, FUEL_META, FUEL_ORDER, type FuelKey } from "@/lib/power-money";
 
 const PRI = "hsl(var(--primary))";
 const BLUE = "#3b82f6";
