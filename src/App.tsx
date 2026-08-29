@@ -42,6 +42,7 @@ import BuildingEnergyUse from "./pages/BuildingEnergyUse";
 import BuildingEnergyUsage from "./pages/BuildingEnergyUsage";
 import LoadGrowth from "./pages/LoadGrowth";
 import ImportCapacity from "./pages/ImportCapacity";
+import PowerMoney from "./pages/PowerMoney";
 import CouncilOverview from "./pages/CouncilOverview";
 import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
