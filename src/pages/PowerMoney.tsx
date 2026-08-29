@@ -23,9 +23,15 @@ import {
   toRateRows,
   fuelsPresent,
   FUEL_META,
+  LAYER_LABEL,
+  SYSTEM_KEY,
+  SYSTEM_META,
+  yearTotal,
+  yearPerHousehold,
   usd,
   usdCompact,
   type Basis,
+  type CostLayer,
   type FuelKey,
   type PowerMoneyData,
 } from "@/lib/power-money";
@@ -40,6 +46,7 @@ const PowerMoney = () => {
   const [data, setData] = useState<PowerMoneyData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [basis, setBasis] = useState<Basis>("total");
+  const [layer, setLayer] = useState<CostLayer>("fuel");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   useEffect(() => {
@@ -53,8 +60,8 @@ const PowerMoney = () => {
   }, []);
 
   const fuels = useMemo<FuelKey[]>(() => (data ? fuelsPresent(data) : []), [data]);
-  const chartRows = useMemo(() => (data ? toChartRows(data, basis) : []), [data, basis]);
-  const rateRows = useMemo(() => (data ? toRateRows(data) : []), [data]);
+  const chartRows = useMemo(() => (data ? toChartRows(data, basis, layer) : []), [data, basis, layer]);
+  const rateRows = useMemo(() => (data ? toRateRows(data, layer) : []), [data, layer]);
   // Fuel oil runs $150–$350/MWh on a rounding-error amount of energy; including it
   // flattens every other fuel, so the rate chart leaves it out (still in the table).
   const rateFuels = useMemo<FuelKey[]>(() => fuels.filter((f) => f !== "oil"), [fuels]);
@@ -70,8 +77,16 @@ const PowerMoney = () => {
 
   const peakYear = useMemo(() => {
     if (!data) return null;
-    return data.years.filter((y) => !y.partial).reduce((a, b) => (b.totalUsd > a.totalUsd ? b : a));
-  }, [data]);
+    return data.years
+      .filter((y) => !y.partial)
+      .reduce((a, b) => (yearTotal(b, layer) > yearTotal(a, layer) ? b : a));
+  }, [data, layer]);
+
+  // Full system cost per MWh, the closest this page gets to an all-in cost of service.
+  const systemRate = useMemo(() => {
+    if (!latestFull || latestFull.fullSystemUsd === null || latestFull.totalMwh <= 0) return null;
+    return latestFull.fullSystemUsd / latestFull.totalMwh;
+  }, [latestFull]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,7 +163,7 @@ const PowerMoney = () => {
                       · 2001–{data.years[data.years.length - 1]?.year}
                     </CardDescription>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant={basis === "total" ? "default" : "outline"}
@@ -167,6 +182,20 @@ const PowerMoney = () => {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-1">Cost layers:</span>
+                  {(["fuel", "plant", "system"] as CostLayer[]).map((l) => (
+                    <Button
+                      key={l}
+                      size="sm"
+                      variant={layer === l ? "secondary" : "ghost"}
+                      className="text-xs"
+                      onClick={() => setLayer(l)}
+                    >
+                      {LAYER_LABEL[l]}
+                    </Button>
+                  ))}
+                </div>
                 <div style={{ height: 380 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -185,22 +214,33 @@ const PowerMoney = () => {
                       <Tooltip
                         formatter={(v: number, name: string) => [
                           basis === "total" ? usd(Number(v)) : usd(Number(v), 2),
-                          FUEL_META[name as FuelKey]?.label ?? name,
+                          name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name,
                         ]}
                         labelFormatter={(l) => `Year ${l}`}
                         contentStyle={{ fontSize: 12 }}
                       />
                       <Legend
-                        formatter={(name) => FUEL_META[name as FuelKey]?.label ?? name}
+                        formatter={(name) =>
+                          name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name
+                        }
                         wrapperStyle={{ fontSize: 12 }}
                       />
                       {fuels.map((f) => (
                         <Bar key={f} dataKey={f} stackId="a" fill={FUEL_META[f].color} />
                       ))}
+                      {layer === "system" && (
+                        <Bar dataKey={SYSTEM_KEY} stackId="a" fill={SYSTEM_META.color} />
+                      )}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">
+                  {layer === "fuel" &&
+                    "Fuel purchases and contracted energy price only — no plant O&M, capital or grid costs."}
+                  {layer === "plant" &&
+                    "Adds estimated variable O&M, fixed O&M and capital / debt service for Austin Energy's owned units. PPA resources carry no separate non-fuel cost because their contract price is all-in."}
+                  {layer === "system" &&
+                    `Adds system costs that cannot be attributed to a fuel — transmission and distribution, ERCOT congestion, ancillary and administrative charges, customer service and the General Fund transfer. Available from ${data.assumptions.systemCosts.startYear} onward; earlier years show fuel and plant costs only.`}{" "}
                   Click a year to load its detail below. Years marked <strong>*</strong> are partial — EIA data runs
                   through {data.lastPeriod ?? "the latest reported month"}. Wind, solar, nuclear and biomass dollars are
                   contracted-cost estimates, not reported fuel purchases (see methodology).
@@ -215,8 +255,9 @@ const PowerMoney = () => {
                   <TrendingDown className="h-5 w-5" /> Effective cost per MWh
                 </CardTitle>
                 <CardDescription>
-                  What each fuel actually cost per megawatt-hour of energy delivered. Gas volatility — including the 2021
-                  winter storm spike — shows up here first.
+                  What each fuel cost per megawatt-hour of energy generated or contracted — not a retail or all-in
+                  price. Excludes transmission, distribution, congestion and other grid charges. Gas volatility —
+                  including the 2021 winter storm spike — shows up here first.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -254,7 +295,10 @@ const PowerMoney = () => {
                   </ResponsiveContainer>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">
-                  Dashed lines are contracted-rate assumptions, so they are flat by construction. Solid lines are derived
+                  Currently showing{" "}
+                  {layer === "fuel" ? "fuel and contracted energy cost only" : "fuel plus estimated plant O&M and capital"}
+                  , following the cost-layer selector above. Dashed lines are contracted-rate assumptions, so they are
+                  flat by construction. Solid lines are derived
                   from reported fuel costs and move with the market. Fuel oil is left off this chart — it costs
                   $150–$350/MWh but supplies a rounding error of energy, so it would flatten everything else. It is still
                   in the table below.
