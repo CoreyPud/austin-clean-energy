@@ -92,7 +92,7 @@ const PowerMoney = () => {
     <div className="min-h-screen bg-background">
       <PageHeader
         title="Power Money"
-        subtitle="What Austin Energy customers spend on each fuel source, every year since 2001. Fuel and contracted energy cost only — not your whole bill."
+        subtitle="What Austin Energy customers spend on each fuel source, every year since 2001 — fuel, plant O&M and capital, and system costs, layer by layer. Still not identical to your bill."
       />
 
       <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
@@ -447,9 +447,10 @@ const PowerMoney = () => {
                   <Info className="h-4 w-4" />
                   <AlertTitle>This is not your electric bill</AlertTitle>
                   <AlertDescription>
-                    These figures cover fuel and contracted energy cost only. They exclude transmission and
-                    distribution, debt service, staffing, plant O&amp;M, customer programs and the General Fund
-                    transfer. Total spend here will not equal Austin Energy revenue or any customer's bill.
+                    The default view covers fuel and contracted energy cost only. The cost-layer selector adds estimated
+                    plant O&amp;M and capital, then system costs such as transmission, distribution, congestion and
+                    administration. Even at the full-system layer these are modeled costs, not billed revenue, so no
+                    figure here equals an actual customer bill or Austin Energy's audited revenue.
                   </AlertDescription>
                 </Alert>
 
@@ -475,10 +476,71 @@ const PowerMoney = () => {
                 </div>
 
                 <div>
+                  <h2 className="font-semibold text-foreground mb-1">Cost layers</h2>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>
+                      <strong>Layer 1 — fuel and contracted energy.</strong> Reported fuel purchases for coal, gas and
+                      oil; contracted $/MWh for resources with no reported fuel price.
+                    </li>
+                    <li>
+                      <strong>Layer 2 — plant O&amp;M and capital.</strong> Variable O&amp;M per MWh plus fixed O&amp;M
+                      and capital / debt service per kW-year on Austin Energy's owned capacity, at NREL Annual
+                      Technology Baseline rate levels. Contracted wind, solar, biomass and hydro get none: a PPA price
+                      is all-in, so adding O&amp;M on top would double count.
+                    </li>
+                    <li>
+                      <strong>Layer 3 — system costs.</strong> Transmission and distribution, ERCOT congestion,
+                      ancillary and administrative charges, customer service, general administration and the General
+                      Fund transfer. These cannot honestly be split by fuel — allocating wires or congestion to "coal"
+                      versus "solar" would be invented precision — so they appear as one gray segment. Derived from
+                      Austin Energy approved-budget requirement minus power-supply cost, interpolated between anchor
+                      years, from {data.assumptions.systemCosts.startYear} onward.
+                    </li>
+                  </ul>
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b text-left text-muted-foreground">
+                          <th className="py-1 pr-3 font-medium">Fuel</th>
+                          <th className="py-1 pr-3 font-medium text-right">Variable O&amp;M $/MWh</th>
+                          <th className="py-1 pr-3 font-medium text-right">Fixed O&amp;M $/kW-yr</th>
+                          <th className="py-1 pr-3 font-medium text-right">Capital $/kW-yr</th>
+                          <th className="py-1 font-medium text-right">AE owned MW</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(data.assumptions.nonFuel.rates)
+                          .filter(
+                            ([k, r]) =>
+                              r.varOmUsdPerMwh > 0 ||
+                              (data.assumptions.nonFuel.ownedCapacityMw[k] ?? 0) > 0,
+                          )
+                          .map(([k, r]) => (
+                            <tr key={k} className="border-b last:border-0">
+                              <td className="py-1 pr-3">{FUEL_META[k as FuelKey]?.label ?? k}</td>
+                              <td className="py-1 pr-3 text-right">${r.varOmUsdPerMwh.toFixed(2)}</td>
+                              <td className="py-1 pr-3 text-right">${r.fixedOmUsdPerKwYr.toFixed(0)}</td>
+                              <td className="py-1 pr-3 text-right">${r.capitalUsdPerKwYr.toFixed(0)}</td>
+                              <td className="py-1 text-right">
+                                {(data.assumptions.nonFuel.ownedCapacityMw[k] ?? 0).toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mt-2 text-xs">{data.assumptions.nonFuel.source}</p>
+                  <p className="mt-1 text-xs">{data.assumptions.systemCosts.source}</p>
+                </div>
+
+                <div>
                   <h2 className="font-semibold text-foreground mb-1">Calculation</h2>
                   <pre className="bg-muted rounded-md p-3 text-xs overflow-x-auto text-foreground">
-{`fuel dollars = heat input (MMBtu) x Texas cost per MMBtu x AE ownership share
-per household = annual total x residential share of sales (${Math.round(
+{`fuel dollars    = heat input (MMBtu) x Texas cost per MMBtu x AE ownership share
+plant dollars   = MWh x variable O&M $/MWh
+                + AE owned kW x (fixed O&M + capital) $/kW-yr
+system dollars  = AE budget requirement - power supply cost   (not split by fuel)
+per household   = layer total x residential share of sales (${Math.round(
   data.assumptions.residentialShareOfSales * 100,
 )}%) / residential customers`}
                   </pre>
@@ -510,6 +572,11 @@ per household = annual total x residential share of sales (${Math.round(
                       A plant-fuel with generation but no reported heat input or price appears as "—" rather than being
                       filled with a guess. Small units are sometimes omitted from EIA fuel reporting, which understates
                       totals slightly.
+                    </li>
+                    <li>
+                      Plant O&amp;M, capital and system costs are rate-based estimates, not Austin Energy's reported
+                      line items. Fixed and system costs are prorated for the partial year. They are the right order of
+                      magnitude for comparing fuels, not an audited accounting.
                     </li>
                     <li>
                       The most recent year is partial — data runs through {data.lastPeriod ?? "the latest reported month"}.
