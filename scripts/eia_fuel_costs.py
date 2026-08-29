@@ -281,25 +281,54 @@ def main():
             total = f["fuel_usd"] + f["contracted_usd"]
             if f["mwh"] <= 0 and total <= 0:
                 continue
+            rates = NONFUEL_RATES.get(group, NONFUEL_RATES["other"])
+            cap_kw = OWNED_CAPACITY_MW.get(group, 0.0) * 1000.0
+            var_om = max(f["mwh"], 0.0) * rates["varOmUsdPerMwh"]
+            fixed_om = cap_kw * rates["fixedOmUsdPerKwYr"]
+            capital = cap_kw * rates["capitalUsdPerKwYr"]
+            if partial_year == year and last_period:
+                # scale annualized fixed costs to the months actually reported
+                frac = int(last_period[5:7]) / 12.0
+                fixed_om *= frac
+                capital *= frac
+            nonfuel = var_om + fixed_om + capital
+            with_nonfuel = total + nonfuel
             fuels[group] = {
                 "mwh": round(f["mwh"], 1),
                 "fuelUsd": round(f["fuel_usd"], 0),
                 "contractedUsd": round(f["contracted_usd"], 0),
                 "totalUsd": round(total, 0),
+                "varOmUsd": round(var_om, 0),
+                "fixedOmUsd": round(fixed_om, 0),
+                "capitalUsd": round(capital, 0),
+                "nonFuelUsd": round(nonfuel, 0),
+                "totalWithNonFuelUsd": round(with_nonfuel, 0),
                 "usdPerMwh": round(total / f["mwh"], 2) if f["mwh"] > 0 else None,
+                "usdPerMwhWithNonFuel": round(with_nonfuel / f["mwh"], 2) if f["mwh"] > 0 else None,
                 "measured": bool(f["cost_reported"]),
             }
         if not fuels:
             continue
         total_usd = sum(v["totalUsd"] for v in fuels.values())
+        nonfuel_usd = sum(v["nonFuelUsd"] for v in fuels.values())
+        sys_usd = system_costs(year)
+        if sys_usd is not None and partial_year == year and last_period:
+            sys_usd *= int(last_period[5:7]) / 12.0
         customers = res_customers(year)
+        full_usd = total_usd + nonfuel_usd + (sys_usd or 0.0)
         out_years.append({
             "year": year,
             "fuels": fuels,
             "totalUsd": round(total_usd, 0),
+            "nonFuelUsd": round(nonfuel_usd, 0),
+            "systemCostsUsd": None if sys_usd is None else round(sys_usd, 0),
+            "totalWithNonFuelUsd": round(total_usd + nonfuel_usd, 0),
+            "fullSystemUsd": None if sys_usd is None else round(full_usd, 0),
             "totalMwh": round(sum(v["mwh"] for v in fuels.values()), 1),
             "resCustomers": customers,
             "perHouseholdUsd": round(total_usd * RES_SHARE_OF_SALES / customers, 2),
+            "perHouseholdWithNonFuelUsd": round((total_usd + nonfuel_usd) * RES_SHARE_OF_SALES / customers, 2),
+            "perHouseholdFullUsd": None if sys_usd is None else round(full_usd * RES_SHARE_OF_SALES / customers, 2),
             "partial": year == partial_year,
         })
 
@@ -312,8 +341,19 @@ def main():
             "residentialShareOfSales": RES_SHARE_OF_SALES,
             "aeResidentialCustomers": AE_RES_CUSTOMERS,
             "aePct": {str(k): v for k, v in AE_PCT.items()},
+            "nonFuel": {
+                "rates": NONFUEL_RATES,
+                "ownedCapacityMw": OWNED_CAPACITY_MW,
+                "source": "NREL Annual Technology Baseline O&M and capital ranges; EIA-860 nameplate capacity x Austin Energy ownership share. PPA resources carry no separate non-fuel cost because the contract price is all-in.",
+            },
+            "systemCosts": {
+                "usdByYear": SYSTEM_COSTS_USD,
+                "startYear": SYSTEM_COSTS_START,
+                "source": "Austin Energy approved budget requirement minus power-supply cost, interpolated between anchor years. Covers transmission and distribution, ERCOT congestion, ancillary and administrative charges, customer service, general administration and the General Fund transfer. Not attributable to any single fuel.",
+            },
         },
     }
+
     OUT.write_text(json.dumps(data))
     print(f"  power_money.json: {len(out_years)} years -> {OUT}")
 
