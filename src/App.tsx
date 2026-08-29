@@ -95,6 +95,7 @@ const AppRoutes = () => {
           <Route path="/building-energy-usage" element={<BuildingEnergyUsage />} />
           <Route path="/load-growth" element={<LoadGrowth />} />
           <Route path="/import-capacity" element={<ImportCapacity />} />
+          <Route path="/power-money" element={<PowerMoney />} />
         </Route>
 
         {/* Pages without footer */}
