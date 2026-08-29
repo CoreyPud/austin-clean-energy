@@ -238,7 +238,7 @@ const PowerMoney = () => {
                         formatter={(name) => FUEL_META[name as FuelKey]?.label ?? name}
                         wrapperStyle={{ fontSize: 12 }}
                       />
-                      {fuels.map((f) => (
+                      {rateFuels.map((f) => (
                         <Line
                           key={f}
                           type="monotone"
@@ -255,8 +255,11 @@ const PowerMoney = () => {
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">
                   Dashed lines are contracted-rate assumptions, so they are flat by construction. Solid lines are derived
-                  from reported fuel costs and move with the market.
+                  from reported fuel costs and move with the market. Fuel oil is left off this chart — it costs
+                  $150–$350/MWh but supplies a rounding error of energy, so it would flatten everything else. It is still
+                  in the table below.
                 </p>
+
               </CardContent>
             </Card>
 
