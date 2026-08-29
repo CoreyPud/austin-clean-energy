@@ -108,15 +108,17 @@ const PowerMoney = () => {
         {data && (
           <>
             {/* Headline numbers */}
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" /> Fuel &amp; energy spend {latestFull?.year}
+                    <DollarSign className="h-4 w-4" /> {LAYER_LABEL[layer]} {latestFull?.year}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{latestFull ? usdCompact(latestFull.totalUsd) : "—"}</p>
+                  <p className="text-3xl font-bold">
+                    {latestFull ? usdCompact(yearTotal(latestFull, layer)) : "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {latestFull ? `${Math.round(latestFull.totalMwh).toLocaleString()} MWh generated or contracted` : ""}
                   </p>
@@ -129,9 +131,11 @@ const PowerMoney = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{latestFull ? usd(latestFull.perHouseholdUsd) : "—"}</p>
+                  <p className="text-3xl font-bold">
+                    {latestFull ? usd(yearPerHousehold(latestFull, layer)) : "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Residential share of fuel cost, per customer, for the year
+                    Residential share of the selected cost layers, per customer, for the year
                   </p>
                 </CardContent>
               </Card>
@@ -144,7 +148,23 @@ const PowerMoney = () => {
                 <CardContent>
                   <p className="text-3xl font-bold">{peakYear?.year ?? "—"}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {peakYear ? `${usdCompact(peakYear.totalUsd)} — ${usd(peakYear.perHouseholdUsd)} per household` : ""}
+                    {peakYear
+                      ? `${usdCompact(yearTotal(peakYear, layer))} — ${usd(yearPerHousehold(peakYear, layer))} per household`
+                      : ""}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4" /> All-in cost per MWh {latestFull?.year}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{systemRate ? `$${systemRate.toFixed(0)}` : "—"}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Fuel + plant + system cost per MWh. Austin Energy's average residential rate is roughly
+                    $110–$130/MWh, so this is the cost side of that price, not the price itself.
                   </p>
                 </CardContent>
               </Card>
@@ -315,7 +335,7 @@ const PowerMoney = () => {
                     <CardTitle>Year detail{detail ? `: ${detail.year}` : ""}</CardTitle>
                     <CardDescription>
                       {detail
-                        ? `${usdCompact(detail.totalUsd)} total · ${usd(detail.perHouseholdUsd)} per household · ${detail.resCustomers.toLocaleString()} residential customers`
+                        ? `${usdCompact(yearTotal(detail, layer))} total · ${usd(yearPerHousehold(detail, layer))} per household · ${detail.resCustomers.toLocaleString()} residential customers`
                         : "Select a year"}
                     </CardDescription>
                   </div>
@@ -342,7 +362,8 @@ const PowerMoney = () => {
                         <tr className="border-b text-left text-muted-foreground">
                           <th className="py-2 pr-4 font-medium">Fuel</th>
                           <th className="py-2 pr-4 font-medium text-right">MWh</th>
-                          <th className="py-2 pr-4 font-medium text-right">Dollars</th>
+                          <th className="py-2 pr-4 font-medium text-right">Fuel $</th>
+                          <th className="py-2 pr-4 font-medium text-right">Plant O&amp;M + capital $</th>
                           <th className="py-2 pr-4 font-medium text-right">$/MWh</th>
                           <th className="py-2 pr-4 font-medium text-right">Share of spend</th>
                           <th className="py-2 font-medium">Basis</th>
@@ -368,10 +389,17 @@ const PowerMoney = () => {
                                 <td className="py-2 pr-4 text-right">{Math.round(row.mwh).toLocaleString()}</td>
                                 <td className="py-2 pr-4 text-right">{usd(row.totalUsd)}</td>
                                 <td className="py-2 pr-4 text-right">
-                                  {row.usdPerMwh === null ? "—" : `$${row.usdPerMwh.toFixed(2)}`}
+                                  {row.nonFuelUsd > 0 ? usd(row.nonFuelUsd) : "—"}
                                 </td>
                                 <td className="py-2 pr-4 text-right">
-                                  {detail.totalUsd > 0 ? `${((row.totalUsd / detail.totalUsd) * 100).toFixed(1)}%` : "—"}
+                                  {(layer === "fuel" ? row.usdPerMwh : row.usdPerMwhWithNonFuel) === null
+                                    ? "—"
+                                    : `$${(layer === "fuel" ? row.usdPerMwh! : row.usdPerMwhWithNonFuel!).toFixed(2)}`}
+                                </td>
+                                <td className="py-2 pr-4 text-right">
+                                  {yearTotal(detail, layer) > 0
+                                    ? `${((layer === "fuel" ? row.totalUsd : row.totalWithNonFuelUsd) / yearTotal(detail, layer) * 100).toFixed(1)}%`
+                                    : "—"}
                                 </td>
                                 <td className="py-2 text-xs text-muted-foreground">
                                   {row.measured ? "Reported fuel cost" : "Contracted-rate estimate"}
@@ -379,6 +407,27 @@ const PowerMoney = () => {
                               </tr>
                             );
                           })}
+                        {layer === "system" && detail.systemCostsUsd !== null && (
+                          <tr className="border-b last:border-0">
+                            <td className="py-2 pr-4">
+                              <span className="inline-flex items-center gap-2">
+                                <span
+                                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                                  style={{ backgroundColor: SYSTEM_META.color }}
+                                />
+                                {SYSTEM_META.label}
+                              </span>
+                            </td>
+                            <td className="py-2 pr-4 text-right">—</td>
+                            <td className="py-2 pr-4 text-right">—</td>
+                            <td className="py-2 pr-4 text-right">{usd(detail.systemCostsUsd)}</td>
+                            <td className="py-2 pr-4 text-right">—</td>
+                            <td className="py-2 pr-4 text-right">
+                              {`${((detail.systemCostsUsd / yearTotal(detail, "system")) * 100).toFixed(1)}%`}
+                            </td>
+                            <td className="py-2 text-xs text-muted-foreground">Budget-derived estimate</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
