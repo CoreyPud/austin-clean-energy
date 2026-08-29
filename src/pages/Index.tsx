@@ -105,6 +105,25 @@ const Index = () => {
   });
   const navigate = useNavigate();
 
+  // Real fuel-spending snapshot used by the Power Money card preview.
+  const [powerMoneyPreview, setPowerMoneyPreview] = useState<Record<string, number>[]>([]);
+  useEffect(() => {
+    loadPowerMoney()
+      .then((d) => {
+        const rows = d.years
+          .filter((y) => !y.partial)
+          .slice(-8)
+          .map((y) => {
+            const row: Record<string, number> = { year: y.year };
+            for (const f of FUEL_ORDER) row[f] = Math.round((y.fuels[f]?.totalUsd ?? 0) / 1_000_000);
+            return row;
+          });
+        setPowerMoneyPreview(rows);
+      })
+      .catch(() => setPowerMoneyPreview([]));
+  }, []);
+
+
   const solarCumulative = useMemo(() => {
     const SAMPLE_KW = 8;
     const inputs: CalcInputs = {
