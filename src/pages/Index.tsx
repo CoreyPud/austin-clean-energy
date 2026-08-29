@@ -385,7 +385,39 @@ const Index = () => {
                   </div>
                 }
               />
+
+              <FeatureCard
+                to="/power-money"
+                title="Power Money"
+                description="How many dollars Austin Energy customers spend on coal, gas, nuclear, wind and solar each year — system totals and per household."
+                cta="See the Spending"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart data={powerMoneyPreview} margin={{ left: 0, right: 4, top: 2, bottom: 0 }}>
+                        <XAxis
+                          dataKey="year"
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={32}
+                          tickFormatter={(v) => `$${v}M`}
+                        />
+                        {FUEL_ORDER.map((f) => (
+                          <Bar key={f} dataKey={f} stackId="money" fill={FUEL_META[f as FuelKey].color} />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                }
+              />
             </div>
+
           </div>
 
           {/* ── Personal ── */}
