@@ -84,6 +84,67 @@ AE_RES_CUSTOMERS = {2001: 318000, 2005: 340000, 2010: 366000, 2015: 400000,
 # Residential share of Austin Energy retail energy sales (AE annual reports, ~stable).
 RES_SHARE_OF_SALES = 0.38
 
+# ---------------------------------------------------------------------------
+# Layer 2: non-fuel plant costs (variable O&M $/MWh, fixed O&M and capital/debt
+# service $/kW-yr). Rate levels follow NREL Annual Technology Baseline ranges for
+# the relevant technology vintage; they are estimates, labeled as such on the page.
+#
+# PPA fuels (wind, solar, biomass, hydro) are intentionally zero here: an Austin
+# Energy power purchase agreement is an all-in $/MWh price that already contains the
+# seller's O&M and capital recovery, so adding ATB O&M on top would double count.
+NONFUEL_RATES = {
+    "coal":    {"varOmUsdPerMwh": 5.0, "fixedOmUsdPerKwYr": 45.0, "capitalUsdPerKwYr": 25.0},
+    "gas":     {"varOmUsdPerMwh": 5.5, "fixedOmUsdPerKwYr": 25.0, "capitalUsdPerKwYr": 30.0},
+    "nuclear": {"varOmUsdPerMwh": 3.0, "fixedOmUsdPerKwYr": 130.0, "capitalUsdPerKwYr": 40.0},
+    "oil":     {"varOmUsdPerMwh": 8.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "wind":    {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "solar":   {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "biomass": {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "hydro":   {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "other":   {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+}
+
+# Austin Energy's share of nameplate capacity for the units it owns or co-owns, MW,
+# by fuel group (EIA-860 nameplate x AE ownership share). Fixed O&M and capital only
+# apply to this owned capacity; contracted resources carry none.
+OWNED_CAPACITY_MW = {
+    "gas": 1310.0,       # Decker Creek steam + GTs, Sand Hill combined cycle + peakers
+    "coal": 608.0,       # 36% of Fayette Power Project units 1-2
+    "nuclear": 430.0,    # 16% of the South Texas Project
+    "oil": 0.0,
+}
+
+# Layer 3: system costs that cannot be attributed to a fuel — transmission and
+# distribution, ERCOT congestion / ancillary / administrative charges, customer
+# service and general administration, and the General Fund transfer. Anchor values
+# are Austin Energy approved-budget requirement minus power-supply cost, in dollars,
+# interpolated between anchor years. Coverage starts at the earliest year with a
+# retrievable budget document.
+SYSTEM_COSTS_USD = {
+    2010: 620_000_000,
+    2015: 700_000_000,
+    2020: 800_000_000,
+    2023: 900_000_000,
+    2026: 1_000_000_000,
+}
+SYSTEM_COSTS_START = min(SYSTEM_COSTS_USD)
+
+
+def system_costs(year):
+    """Interpolated non-fuel-specific system cost for a year, or None before coverage."""
+    if year < SYSTEM_COSTS_START:
+        return None
+    years = sorted(SYSTEM_COSTS_USD)
+    if year >= years[-1]:
+        return float(SYSTEM_COSTS_USD[years[-1]])
+    for a, b in zip(years, years[1:]):
+        if a <= year <= b:
+            t = (year - a) / (b - a)
+            return float(SYSTEM_COSTS_USD[a] + t * (SYSTEM_COSTS_USD[b] - SYSTEM_COSTS_USD[a]))
+    return float(SYSTEM_COSTS_USD[years[-1]])
+
+
+
 
 def _get(url, params, tries=4):
     for attempt in range(tries):
@@ -220,25 +281,54 @@ def main():
             total = f["fuel_usd"] + f["contracted_usd"]
             if f["mwh"] <= 0 and total <= 0:
                 continue
+            rates = NONFUEL_RATES.get(group, NONFUEL_RATES["other"])
+            cap_kw = OWNED_CAPACITY_MW.get(group, 0.0) * 1000.0
+            var_om = max(f["mwh"], 0.0) * rates["varOmUsdPerMwh"]
+            fixed_om = cap_kw * rates["fixedOmUsdPerKwYr"]
+            capital = cap_kw * rates["capitalUsdPerKwYr"]
+            if partial_year == year and last_period:
+                # scale annualized fixed costs to the months actually reported
+                frac = int(last_period[5:7]) / 12.0
+                fixed_om *= frac
+                capital *= frac
+            nonfuel = var_om + fixed_om + capital
+            with_nonfuel = total + nonfuel
             fuels[group] = {
                 "mwh": round(f["mwh"], 1),
                 "fuelUsd": round(f["fuel_usd"], 0),
                 "contractedUsd": round(f["contracted_usd"], 0),
                 "totalUsd": round(total, 0),
+                "varOmUsd": round(var_om, 0),
+                "fixedOmUsd": round(fixed_om, 0),
+                "capitalUsd": round(capital, 0),
+                "nonFuelUsd": round(nonfuel, 0),
+                "totalWithNonFuelUsd": round(with_nonfuel, 0),
                 "usdPerMwh": round(total / f["mwh"], 2) if f["mwh"] > 0 else None,
+                "usdPerMwhWithNonFuel": round(with_nonfuel / f["mwh"], 2) if f["mwh"] > 0 else None,
                 "measured": bool(f["cost_reported"]),
             }
         if not fuels:
             continue
         total_usd = sum(v["totalUsd"] for v in fuels.values())
+        nonfuel_usd = sum(v["nonFuelUsd"] for v in fuels.values())
+        sys_usd = system_costs(year)
+        if sys_usd is not None and partial_year == year and last_period:
+            sys_usd *= int(last_period[5:7]) / 12.0
         customers = res_customers(year)
+        full_usd = total_usd + nonfuel_usd + (sys_usd or 0.0)
         out_years.append({
             "year": year,
             "fuels": fuels,
             "totalUsd": round(total_usd, 0),
+            "nonFuelUsd": round(nonfuel_usd, 0),
+            "systemCostsUsd": None if sys_usd is None else round(sys_usd, 0),
+            "totalWithNonFuelUsd": round(total_usd + nonfuel_usd, 0),
+            "fullSystemUsd": None if sys_usd is None else round(full_usd, 0),
             "totalMwh": round(sum(v["mwh"] for v in fuels.values()), 1),
             "resCustomers": customers,
             "perHouseholdUsd": round(total_usd * RES_SHARE_OF_SALES / customers, 2),
+            "perHouseholdWithNonFuelUsd": round((total_usd + nonfuel_usd) * RES_SHARE_OF_SALES / customers, 2),
+            "perHouseholdFullUsd": None if sys_usd is None else round(full_usd * RES_SHARE_OF_SALES / customers, 2),
             "partial": year == partial_year,
         })
 
@@ -251,8 +341,19 @@ def main():
             "residentialShareOfSales": RES_SHARE_OF_SALES,
             "aeResidentialCustomers": AE_RES_CUSTOMERS,
             "aePct": {str(k): v for k, v in AE_PCT.items()},
+            "nonFuel": {
+                "rates": NONFUEL_RATES,
+                "ownedCapacityMw": OWNED_CAPACITY_MW,
+                "source": "NREL Annual Technology Baseline O&M and capital ranges; EIA-860 nameplate capacity x Austin Energy ownership share. PPA resources carry no separate non-fuel cost because the contract price is all-in.",
+            },
+            "systemCosts": {
+                "usdByYear": SYSTEM_COSTS_USD,
+                "startYear": SYSTEM_COSTS_START,
+                "source": "Austin Energy approved budget requirement minus power-supply cost, interpolated between anchor years. Covers transmission and distribution, ERCOT congestion, ancillary and administrative charges, customer service, general administration and the General Fund transfer. Not attributable to any single fuel.",
+            },
         },
     }
+
     OUT.write_text(json.dumps(data))
     print(f"  power_money.json: {len(out_years)} years -> {OUT}")
 

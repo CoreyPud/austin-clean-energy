@@ -23,9 +23,15 @@ import {
   toRateRows,
   fuelsPresent,
   FUEL_META,
+  LAYER_LABEL,
+  SYSTEM_KEY,
+  SYSTEM_META,
+  yearTotal,
+  yearPerHousehold,
   usd,
   usdCompact,
   type Basis,
+  type CostLayer,
   type FuelKey,
   type PowerMoneyData,
 } from "@/lib/power-money";
@@ -40,6 +46,7 @@ const PowerMoney = () => {
   const [data, setData] = useState<PowerMoneyData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [basis, setBasis] = useState<Basis>("total");
+  const [layer, setLayer] = useState<CostLayer>("fuel");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   useEffect(() => {
@@ -53,8 +60,8 @@ const PowerMoney = () => {
   }, []);
 
   const fuels = useMemo<FuelKey[]>(() => (data ? fuelsPresent(data) : []), [data]);
-  const chartRows = useMemo(() => (data ? toChartRows(data, basis) : []), [data, basis]);
-  const rateRows = useMemo(() => (data ? toRateRows(data) : []), [data]);
+  const chartRows = useMemo(() => (data ? toChartRows(data, basis, layer) : []), [data, basis, layer]);
+  const rateRows = useMemo(() => (data ? toRateRows(data, layer) : []), [data, layer]);
   // Fuel oil runs $150–$350/MWh on a rounding-error amount of energy; including it
   // flattens every other fuel, so the rate chart leaves it out (still in the table).
   const rateFuels = useMemo<FuelKey[]>(() => fuels.filter((f) => f !== "oil"), [fuels]);
@@ -70,14 +77,22 @@ const PowerMoney = () => {
 
   const peakYear = useMemo(() => {
     if (!data) return null;
-    return data.years.filter((y) => !y.partial).reduce((a, b) => (b.totalUsd > a.totalUsd ? b : a));
-  }, [data]);
+    return data.years
+      .filter((y) => !y.partial)
+      .reduce((a, b) => (yearTotal(b, layer) > yearTotal(a, layer) ? b : a));
+  }, [data, layer]);
+
+  // Full system cost per MWh, the closest this page gets to an all-in cost of service.
+  const systemRate = useMemo(() => {
+    if (!latestFull || latestFull.fullSystemUsd === null || latestFull.totalMwh <= 0) return null;
+    return latestFull.fullSystemUsd / latestFull.totalMwh;
+  }, [latestFull]);
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
         title="Power Money"
-        subtitle="What Austin Energy customers spend on each fuel source, every year since 2001. Fuel and contracted energy cost only — not your whole bill."
+        subtitle="What Austin Energy customers spend on each fuel source, every year since 2001 — fuel, plant O&M and capital, and system costs, layer by layer. Still not identical to your bill."
       />
 
       <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
@@ -93,15 +108,17 @@ const PowerMoney = () => {
         {data && (
           <>
             {/* Headline numbers */}
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" /> Fuel &amp; energy spend {latestFull?.year}
+                    <DollarSign className="h-4 w-4" /> {LAYER_LABEL[layer]} {latestFull?.year}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{latestFull ? usdCompact(latestFull.totalUsd) : "—"}</p>
+                  <p className="text-3xl font-bold">
+                    {latestFull ? usdCompact(yearTotal(latestFull, layer)) : "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {latestFull ? `${Math.round(latestFull.totalMwh).toLocaleString()} MWh generated or contracted` : ""}
                   </p>
@@ -114,9 +131,11 @@ const PowerMoney = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{latestFull ? usd(latestFull.perHouseholdUsd) : "—"}</p>
+                  <p className="text-3xl font-bold">
+                    {latestFull ? usd(yearPerHousehold(latestFull, layer)) : "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Residential share of fuel cost, per customer, for the year
+                    Residential share of the selected cost layers, per customer, for the year
                   </p>
                 </CardContent>
               </Card>
@@ -129,7 +148,23 @@ const PowerMoney = () => {
                 <CardContent>
                   <p className="text-3xl font-bold">{peakYear?.year ?? "—"}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {peakYear ? `${usdCompact(peakYear.totalUsd)} — ${usd(peakYear.perHouseholdUsd)} per household` : ""}
+                    {peakYear
+                      ? `${usdCompact(yearTotal(peakYear, layer))} — ${usd(yearPerHousehold(peakYear, layer))} per household`
+                      : ""}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4" /> All-in cost per MWh {latestFull?.year}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{systemRate ? `$${systemRate.toFixed(0)}` : "—"}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Fuel + plant + system cost per MWh. Austin Energy's average residential rate is roughly
+                    $110–$130/MWh, so this is the cost side of that price, not the price itself.
                   </p>
                 </CardContent>
               </Card>
@@ -143,12 +178,12 @@ const PowerMoney = () => {
                     <CardTitle>Dollars by fuel source, by year</CardTitle>
                     <CardDescription>
                       {basis === "total"
-                        ? "Total Austin Energy fuel and contracted energy cost"
-                        : "Residential share of that cost, per customer"}{" "}
+                        ? `Total Austin Energy cost — ${LAYER_LABEL[layer].toLowerCase()}`
+                        : `Residential share of that cost, per customer — ${LAYER_LABEL[layer].toLowerCase()}`}{" "}
                       · 2001–{data.years[data.years.length - 1]?.year}
                     </CardDescription>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant={basis === "total" ? "default" : "outline"}
@@ -167,6 +202,20 @@ const PowerMoney = () => {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-1">Cost layers:</span>
+                  {(["fuel", "plant", "system"] as CostLayer[]).map((l) => (
+                    <Button
+                      key={l}
+                      size="sm"
+                      variant={layer === l ? "secondary" : "ghost"}
+                      className="text-xs"
+                      onClick={() => setLayer(l)}
+                    >
+                      {LAYER_LABEL[l]}
+                    </Button>
+                  ))}
+                </div>
                 <div style={{ height: 380 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -185,22 +234,33 @@ const PowerMoney = () => {
                       <Tooltip
                         formatter={(v: number, name: string) => [
                           basis === "total" ? usd(Number(v)) : usd(Number(v), 2),
-                          FUEL_META[name as FuelKey]?.label ?? name,
+                          name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name,
                         ]}
                         labelFormatter={(l) => `Year ${l}`}
                         contentStyle={{ fontSize: 12 }}
                       />
                       <Legend
-                        formatter={(name) => FUEL_META[name as FuelKey]?.label ?? name}
+                        formatter={(name) =>
+                          name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name
+                        }
                         wrapperStyle={{ fontSize: 12 }}
                       />
                       {fuels.map((f) => (
                         <Bar key={f} dataKey={f} stackId="a" fill={FUEL_META[f].color} />
                       ))}
+                      {layer === "system" && (
+                        <Bar dataKey={SYSTEM_KEY} stackId="a" fill={SYSTEM_META.color} />
+                      )}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">
+                  {layer === "fuel" &&
+                    "Fuel purchases and contracted energy price only — no plant O&M, capital or grid costs."}
+                  {layer === "plant" &&
+                    "Adds estimated variable O&M, fixed O&M and capital / debt service for Austin Energy's owned units. PPA resources carry no separate non-fuel cost because their contract price is all-in."}
+                  {layer === "system" &&
+                    `Adds system costs that cannot be attributed to a fuel — transmission and distribution, ERCOT congestion, ancillary and administrative charges, customer service and the General Fund transfer. Available from ${data.assumptions.systemCosts.startYear} onward; earlier years show fuel and plant costs only.`}{" "}
                   Click a year to load its detail below. Years marked <strong>*</strong> are partial — EIA data runs
                   through {data.lastPeriod ?? "the latest reported month"}. Wind, solar, nuclear and biomass dollars are
                   contracted-cost estimates, not reported fuel purchases (see methodology).
@@ -215,8 +275,9 @@ const PowerMoney = () => {
                   <TrendingDown className="h-5 w-5" /> Effective cost per MWh
                 </CardTitle>
                 <CardDescription>
-                  What each fuel actually cost per megawatt-hour of energy delivered. Gas volatility — including the 2021
-                  winter storm spike — shows up here first.
+                  What each fuel cost per megawatt-hour of energy generated or contracted — not a retail or all-in
+                  price. Excludes transmission, distribution, congestion and other grid charges. Gas volatility —
+                  including the 2021 winter storm spike — shows up here first.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -254,7 +315,10 @@ const PowerMoney = () => {
                   </ResponsiveContainer>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">
-                  Dashed lines are contracted-rate assumptions, so they are flat by construction. Solid lines are derived
+                  Currently showing{" "}
+                  {layer === "fuel" ? "fuel and contracted energy cost only" : "fuel plus estimated plant O&M and capital"}
+                  , following the cost-layer selector above. Dashed lines are contracted-rate assumptions, so they are
+                  flat by construction. Solid lines are derived
                   from reported fuel costs and move with the market. Fuel oil is left off this chart — it costs
                   $150–$350/MWh but supplies a rounding error of energy, so it would flatten everything else. It is still
                   in the table below.
@@ -271,7 +335,7 @@ const PowerMoney = () => {
                     <CardTitle>Year detail{detail ? `: ${detail.year}` : ""}</CardTitle>
                     <CardDescription>
                       {detail
-                        ? `${usdCompact(detail.totalUsd)} total · ${usd(detail.perHouseholdUsd)} per household · ${detail.resCustomers.toLocaleString()} residential customers`
+                        ? `${usdCompact(yearTotal(detail, layer))} total · ${usd(yearPerHousehold(detail, layer))} per household · ${detail.resCustomers.toLocaleString()} residential customers`
                         : "Select a year"}
                     </CardDescription>
                   </div>
@@ -298,7 +362,8 @@ const PowerMoney = () => {
                         <tr className="border-b text-left text-muted-foreground">
                           <th className="py-2 pr-4 font-medium">Fuel</th>
                           <th className="py-2 pr-4 font-medium text-right">MWh</th>
-                          <th className="py-2 pr-4 font-medium text-right">Dollars</th>
+                          <th className="py-2 pr-4 font-medium text-right">Fuel $</th>
+                          <th className="py-2 pr-4 font-medium text-right">Plant O&amp;M + capital $</th>
                           <th className="py-2 pr-4 font-medium text-right">$/MWh</th>
                           <th className="py-2 pr-4 font-medium text-right">Share of spend</th>
                           <th className="py-2 font-medium">Basis</th>
@@ -324,10 +389,17 @@ const PowerMoney = () => {
                                 <td className="py-2 pr-4 text-right">{Math.round(row.mwh).toLocaleString()}</td>
                                 <td className="py-2 pr-4 text-right">{usd(row.totalUsd)}</td>
                                 <td className="py-2 pr-4 text-right">
-                                  {row.usdPerMwh === null ? "—" : `$${row.usdPerMwh.toFixed(2)}`}
+                                  {row.nonFuelUsd > 0 ? usd(row.nonFuelUsd) : "—"}
                                 </td>
                                 <td className="py-2 pr-4 text-right">
-                                  {detail.totalUsd > 0 ? `${((row.totalUsd / detail.totalUsd) * 100).toFixed(1)}%` : "—"}
+                                  {(layer === "fuel" ? row.usdPerMwh : row.usdPerMwhWithNonFuel) === null
+                                    ? "—"
+                                    : `$${(layer === "fuel" ? row.usdPerMwh! : row.usdPerMwhWithNonFuel!).toFixed(2)}`}
+                                </td>
+                                <td className="py-2 pr-4 text-right">
+                                  {yearTotal(detail, layer) > 0
+                                    ? `${((layer === "fuel" ? row.totalUsd : row.totalWithNonFuelUsd) / yearTotal(detail, layer) * 100).toFixed(1)}%`
+                                    : "—"}
                                 </td>
                                 <td className="py-2 text-xs text-muted-foreground">
                                   {row.measured ? "Reported fuel cost" : "Contracted-rate estimate"}
@@ -335,6 +407,27 @@ const PowerMoney = () => {
                               </tr>
                             );
                           })}
+                        {layer === "system" && detail.systemCostsUsd !== null && (
+                          <tr className="border-b last:border-0">
+                            <td className="py-2 pr-4">
+                              <span className="inline-flex items-center gap-2">
+                                <span
+                                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                                  style={{ backgroundColor: SYSTEM_META.color }}
+                                />
+                                {SYSTEM_META.label}
+                              </span>
+                            </td>
+                            <td className="py-2 pr-4 text-right">—</td>
+                            <td className="py-2 pr-4 text-right">—</td>
+                            <td className="py-2 pr-4 text-right">{usd(detail.systemCostsUsd)}</td>
+                            <td className="py-2 pr-4 text-right">—</td>
+                            <td className="py-2 pr-4 text-right">
+                              {`${((detail.systemCostsUsd / yearTotal(detail, "system")) * 100).toFixed(1)}%`}
+                            </td>
+                            <td className="py-2 text-xs text-muted-foreground">Budget-derived estimate</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -354,9 +447,10 @@ const PowerMoney = () => {
                   <Info className="h-4 w-4" />
                   <AlertTitle>This is not your electric bill</AlertTitle>
                   <AlertDescription>
-                    These figures cover fuel and contracted energy cost only. They exclude transmission and
-                    distribution, debt service, staffing, plant O&amp;M, customer programs and the General Fund
-                    transfer. Total spend here will not equal Austin Energy revenue or any customer's bill.
+                    The default view covers fuel and contracted energy cost only. The cost-layer selector adds estimated
+                    plant O&amp;M and capital, then system costs such as transmission, distribution, congestion and
+                    administration. Even at the full-system layer these are modeled costs, not billed revenue, so no
+                    figure here equals an actual customer bill or Austin Energy's audited revenue.
                   </AlertDescription>
                 </Alert>
 
@@ -382,10 +476,71 @@ const PowerMoney = () => {
                 </div>
 
                 <div>
+                  <h2 className="font-semibold text-foreground mb-1">Cost layers</h2>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>
+                      <strong>Layer 1 — fuel and contracted energy.</strong> Reported fuel purchases for coal, gas and
+                      oil; contracted $/MWh for resources with no reported fuel price.
+                    </li>
+                    <li>
+                      <strong>Layer 2 — plant O&amp;M and capital.</strong> Variable O&amp;M per MWh plus fixed O&amp;M
+                      and capital / debt service per kW-year on Austin Energy's owned capacity, at NREL Annual
+                      Technology Baseline rate levels. Contracted wind, solar, biomass and hydro get none: a PPA price
+                      is all-in, so adding O&amp;M on top would double count.
+                    </li>
+                    <li>
+                      <strong>Layer 3 — system costs.</strong> Transmission and distribution, ERCOT congestion,
+                      ancillary and administrative charges, customer service, general administration and the General
+                      Fund transfer. These cannot honestly be split by fuel — allocating wires or congestion to "coal"
+                      versus "solar" would be invented precision — so they appear as one gray segment. Derived from
+                      Austin Energy approved-budget requirement minus power-supply cost, interpolated between anchor
+                      years, from {data.assumptions.systemCosts.startYear} onward.
+                    </li>
+                  </ul>
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b text-left text-muted-foreground">
+                          <th className="py-1 pr-3 font-medium">Fuel</th>
+                          <th className="py-1 pr-3 font-medium text-right">Variable O&amp;M $/MWh</th>
+                          <th className="py-1 pr-3 font-medium text-right">Fixed O&amp;M $/kW-yr</th>
+                          <th className="py-1 pr-3 font-medium text-right">Capital $/kW-yr</th>
+                          <th className="py-1 font-medium text-right">AE owned MW</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(data.assumptions.nonFuel.rates)
+                          .filter(
+                            ([k, r]) =>
+                              r.varOmUsdPerMwh > 0 ||
+                              (data.assumptions.nonFuel.ownedCapacityMw[k] ?? 0) > 0,
+                          )
+                          .map(([k, r]) => (
+                            <tr key={k} className="border-b last:border-0">
+                              <td className="py-1 pr-3">{FUEL_META[k as FuelKey]?.label ?? k}</td>
+                              <td className="py-1 pr-3 text-right">${r.varOmUsdPerMwh.toFixed(2)}</td>
+                              <td className="py-1 pr-3 text-right">${r.fixedOmUsdPerKwYr.toFixed(0)}</td>
+                              <td className="py-1 pr-3 text-right">${r.capitalUsdPerKwYr.toFixed(0)}</td>
+                              <td className="py-1 text-right">
+                                {(data.assumptions.nonFuel.ownedCapacityMw[k] ?? 0).toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mt-2 text-xs">{data.assumptions.nonFuel.source}</p>
+                  <p className="mt-1 text-xs">{data.assumptions.systemCosts.source}</p>
+                </div>
+
+                <div>
                   <h2 className="font-semibold text-foreground mb-1">Calculation</h2>
                   <pre className="bg-muted rounded-md p-3 text-xs overflow-x-auto text-foreground">
-{`fuel dollars = heat input (MMBtu) x Texas cost per MMBtu x AE ownership share
-per household = annual total x residential share of sales (${Math.round(
+{`fuel dollars    = heat input (MMBtu) x Texas cost per MMBtu x AE ownership share
+plant dollars   = MWh x variable O&M $/MWh
+                + AE owned kW x (fixed O&M + capital) $/kW-yr
+system dollars  = AE budget requirement - power supply cost   (not split by fuel)
+per household   = layer total x residential share of sales (${Math.round(
   data.assumptions.residentialShareOfSales * 100,
 )}%) / residential customers`}
                   </pre>
@@ -417,6 +572,11 @@ per household = annual total x residential share of sales (${Math.round(
                       A plant-fuel with generation but no reported heat input or price appears as "—" rather than being
                       filled with a guess. Small units are sometimes omitted from EIA fuel reporting, which understates
                       totals slightly.
+                    </li>
+                    <li>
+                      Plant O&amp;M, capital and system costs are rate-based estimates, not Austin Energy's reported
+                      line items. Fixed and system costs are prorated for the partial year. They are the right order of
+                      magnitude for comparing fuels, not an audited accounting.
                     </li>
                     <li>
                       The most recent year is partial — data runs through {data.lastPeriod ?? "the latest reported month"}.
