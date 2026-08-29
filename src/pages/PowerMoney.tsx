@@ -178,8 +178,8 @@ const PowerMoney = () => {
                     <CardTitle>Dollars by fuel source, by year</CardTitle>
                     <CardDescription>
                       {basis === "total"
-                        ? "Total Austin Energy fuel and contracted energy cost"
-                        : "Residential share of that cost, per customer"}{" "}
+                        ? `Total Austin Energy cost — ${LAYER_LABEL[layer].toLowerCase()}`
+                        : `Residential share of that cost, per customer — ${LAYER_LABEL[layer].toLowerCase()}`}{" "}
                       · 2001–{data.years[data.years.length - 1]?.year}
                     </CardDescription>
                   </div>
