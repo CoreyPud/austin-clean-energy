@@ -55,6 +55,9 @@ const PowerMoney = () => {
   const fuels = useMemo<FuelKey[]>(() => (data ? fuelsPresent(data) : []), [data]);
   const chartRows = useMemo(() => (data ? toChartRows(data, basis) : []), [data, basis]);
   const rateRows = useMemo(() => (data ? toRateRows(data) : []), [data]);
+  // Fuel oil runs $150–$350/MWh on a rounding-error amount of energy; including it
+  // flattens every other fuel, so the rate chart leaves it out (still in the table).
+  const rateFuels = useMemo<FuelKey[]>(() => fuels.filter((f) => f !== "oil"), [fuels]);
 
   const latestFull = useMemo(
     () => (data ? [...data.years].reverse().find((y) => !y.partial) ?? null : null),
