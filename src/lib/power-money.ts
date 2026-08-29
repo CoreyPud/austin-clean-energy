@@ -18,7 +18,13 @@ export interface FuelYearEntry {
   fuelUsd: number;
   contractedUsd: number;
   totalUsd: number;
+  varOmUsd: number;
+  fixedOmUsd: number;
+  capitalUsd: number;
+  nonFuelUsd: number;
+  totalWithNonFuelUsd: number;
   usdPerMwh: number | null;
+  usdPerMwhWithNonFuel: number | null;
   /** true when the dollars come from EIA-reported fuel costs, false when from a documented assumption */
   measured: boolean;
 }
@@ -27,9 +33,15 @@ export interface PowerMoneyYear {
   year: number;
   fuels: Partial<Record<FuelKey, FuelYearEntry>>;
   totalUsd: number;
+  nonFuelUsd: number;
+  systemCostsUsd: number | null;
+  totalWithNonFuelUsd: number;
+  fullSystemUsd: number | null;
   totalMwh: number;
   resCustomers: number;
   perHouseholdUsd: number;
+  perHouseholdWithNonFuelUsd: number;
+  perHouseholdFullUsd: number | null;
   partial: boolean;
 }
 
@@ -42,6 +54,16 @@ export interface PowerMoneyData {
     residentialShareOfSales: number;
     aeResidentialCustomers: Record<string, number>;
     aePct: Record<string, number>;
+    nonFuel: {
+      rates: Record<string, { varOmUsdPerMwh: number; fixedOmUsdPerKwYr: number; capitalUsdPerKwYr: number }>;
+      ownedCapacityMw: Record<string, number>;
+      source: string;
+    };
+    systemCosts: {
+      usdByYear: Record<string, number>;
+      startYear: number;
+      source: string;
+    };
   };
 }
 
@@ -77,35 +99,81 @@ export async function loadPowerMoney(): Promise<PowerMoneyData> {
 
 export type Basis = "total" | "household";
 
+/**
+ * Which cost layers are included.
+ *  fuel    — fuel purchases + contracted energy price only
+ *  plant   — plus per-fuel variable O&M, fixed O&M and capital / debt service
+ *  system  — plus system costs that cannot be attributed to a fuel (T&D, congestion, admin)
+ */
+export type CostLayer = "fuel" | "plant" | "system";
+
+export const LAYER_LABEL: Record<CostLayer, string> = {
+  fuel: "Fuel only",
+  plant: "Fuel + plant costs",
+  system: "Full system cost",
+};
+
+/** Non-fuel-specific system cost bucket, rendered as its own stacked segment. */
+export const SYSTEM_KEY = "systemCosts";
+export const SYSTEM_META = { label: "System costs (not fuel-specific)", color: "#94a3b8" };
+
+const fuelDollars = (f: FuelYearEntry, layer: CostLayer) =>
+  layer === "fuel" ? f.totalUsd : f.totalWithNonFuelUsd;
+
 /** One row per year with a numeric column per fuel, ready for a stacked Recharts series. */
-export function toChartRows(data: PowerMoneyData, basis: Basis) {
+export function toChartRows(data: PowerMoneyData, basis: Basis, layer: CostLayer = "fuel") {
   return data.years.map((y) => {
-    const divisor = basis === "household" ? y.resCustomers / data.assumptions.residentialShareOfSales : 1;
+    const divisor =
+      basis === "household" ? y.resCustomers / data.assumptions.residentialShareOfSales : 1;
+    const digits = basis === "household" ? 2 : 0;
+    const systemUsd = layer === "system" ? y.systemCostsUsd ?? 0 : 0;
+    const fuelsTotal = FUEL_ORDER.reduce((sum, k) => {
+      const f = y.fuels[k];
+      return sum + (f ? fuelDollars(f, layer) : 0);
+    }, 0);
     const row: Record<string, number | boolean | string> = {
       year: y.year,
       partial: y.partial,
       label: y.partial ? `${y.year}*` : String(y.year),
-      total: basis === "household" ? y.perHouseholdUsd : y.totalUsd,
+      total: +((fuelsTotal + systemUsd) / divisor).toFixed(digits),
+      systemMissing: layer === "system" && y.systemCostsUsd === null,
     };
     for (const key of FUEL_ORDER) {
       const f = y.fuels[key];
-      row[key] = f ? +(f.totalUsd / divisor).toFixed(basis === "household" ? 2 : 0) : 0;
+      row[key] = f ? +(fuelDollars(f, layer) / divisor).toFixed(digits) : 0;
     }
+    row[SYSTEM_KEY] = +(systemUsd / divisor).toFixed(digits);
     return row;
   });
 }
 
 /** Effective $/MWh per fuel per year, for the cost-trend chart. */
-export function toRateRows(data: PowerMoneyData) {
+export function toRateRows(data: PowerMoneyData, layer: CostLayer = "fuel") {
   return data.years.map((y) => {
     const row: Record<string, number | null | string> = { year: y.year, label: String(y.year) };
     for (const key of FUEL_ORDER) {
       const f = y.fuels[key];
-      row[key] = f && f.mwh > 0 ? f.usdPerMwh : null;
+      row[key] = f && f.mwh > 0 ? (layer === "fuel" ? f.usdPerMwh : f.usdPerMwhWithNonFuel) : null;
     }
     return row;
   });
 }
+
+/** Total spend for a year at a given cost layer. */
+export const yearTotal = (y: PowerMoneyYear, layer: CostLayer) =>
+  layer === "fuel"
+    ? y.totalUsd
+    : layer === "plant"
+      ? y.totalWithNonFuelUsd
+      : y.fullSystemUsd ?? y.totalWithNonFuelUsd;
+
+/** Per-household spend for a year at a given cost layer. */
+export const yearPerHousehold = (y: PowerMoneyYear, layer: CostLayer) =>
+  layer === "fuel"
+    ? y.perHouseholdUsd
+    : layer === "plant"
+      ? y.perHouseholdWithNonFuelUsd
+      : y.perHouseholdFullUsd ?? y.perHouseholdWithNonFuelUsd;
 
 export const fuelsPresent = (data: PowerMoneyData): FuelKey[] =>
   FUEL_ORDER.filter((k) => data.years.some((y) => (y.fuels[k]?.totalUsd ?? 0) > 0));
