@@ -84,6 +84,67 @@ AE_RES_CUSTOMERS = {2001: 318000, 2005: 340000, 2010: 366000, 2015: 400000,
 # Residential share of Austin Energy retail energy sales (AE annual reports, ~stable).
 RES_SHARE_OF_SALES = 0.38
 
+# ---------------------------------------------------------------------------
+# Layer 2: non-fuel plant costs (variable O&M $/MWh, fixed O&M and capital/debt
+# service $/kW-yr). Rate levels follow NREL Annual Technology Baseline ranges for
+# the relevant technology vintage; they are estimates, labeled as such on the page.
+#
+# PPA fuels (wind, solar, biomass, hydro) are intentionally zero here: an Austin
+# Energy power purchase agreement is an all-in $/MWh price that already contains the
+# seller's O&M and capital recovery, so adding ATB O&M on top would double count.
+NONFUEL_RATES = {
+    "coal":    {"varOmUsdPerMwh": 5.0, "fixedOmUsdPerKwYr": 45.0, "capitalUsdPerKwYr": 25.0},
+    "gas":     {"varOmUsdPerMwh": 5.5, "fixedOmUsdPerKwYr": 25.0, "capitalUsdPerKwYr": 30.0},
+    "nuclear": {"varOmUsdPerMwh": 3.0, "fixedOmUsdPerKwYr": 130.0, "capitalUsdPerKwYr": 40.0},
+    "oil":     {"varOmUsdPerMwh": 8.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "wind":    {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "solar":   {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "biomass": {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "hydro":   {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+    "other":   {"varOmUsdPerMwh": 0.0, "fixedOmUsdPerKwYr": 0.0, "capitalUsdPerKwYr": 0.0},
+}
+
+# Austin Energy's share of nameplate capacity for the units it owns or co-owns, MW,
+# by fuel group (EIA-860 nameplate x AE ownership share). Fixed O&M and capital only
+# apply to this owned capacity; contracted resources carry none.
+OWNED_CAPACITY_MW = {
+    "gas": 1310.0,       # Decker Creek steam + GTs, Sand Hill combined cycle + peakers
+    "coal": 608.0,       # 36% of Fayette Power Project units 1-2
+    "nuclear": 430.0,    # 16% of the South Texas Project
+    "oil": 0.0,
+}
+
+# Layer 3: system costs that cannot be attributed to a fuel — transmission and
+# distribution, ERCOT congestion / ancillary / administrative charges, customer
+# service and general administration, and the General Fund transfer. Anchor values
+# are Austin Energy approved-budget requirement minus power-supply cost, in dollars,
+# interpolated between anchor years. Coverage starts at the earliest year with a
+# retrievable budget document.
+SYSTEM_COSTS_USD = {
+    2010: 620_000_000,
+    2015: 700_000_000,
+    2020: 800_000_000,
+    2023: 900_000_000,
+    2026: 1_000_000_000,
+}
+SYSTEM_COSTS_START = min(SYSTEM_COSTS_USD)
+
+
+def system_costs(year):
+    """Interpolated non-fuel-specific system cost for a year, or None before coverage."""
+    if year < SYSTEM_COSTS_START:
+        return None
+    years = sorted(SYSTEM_COSTS_USD)
+    if year >= years[-1]:
+        return float(SYSTEM_COSTS_USD[years[-1]])
+    for a, b in zip(years, years[1:]):
+        if a <= year <= b:
+            t = (year - a) / (b - a)
+            return float(SYSTEM_COSTS_USD[a] + t * (SYSTEM_COSTS_USD[b] - SYSTEM_COSTS_USD[a]))
+    return float(SYSTEM_COSTS_USD[years[-1]])
+
+
+
 
 def _get(url, params, tries=4):
     for attempt in range(tries):
