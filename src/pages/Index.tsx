@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin, Zap, Car, Wrench, Leaf } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CampaignPopup from "@/components/CampaignPopup";
 import { useSeo } from "@/hooks/use-seo";
 import {
@@ -28,6 +28,7 @@ import {
 import { calcEVResults, DEFAULT_EV_INPUTS } from "@/lib/ev-model";
 import { evAdoptionSeries } from "@/data/ev-adoption";
 import FeatureCard from "@/components/FeatureCard";
+import { loadPowerMoney, FUEL_META, FUEL_ORDER, type FuelKey } from "@/lib/power-money";
 
 const PRI = "hsl(var(--primary))";
 const BLUE = "#3b82f6";
@@ -103,6 +104,25 @@ const Index = () => {
       "Data-driven insights for solar adoption, energy efficiency, and battery storage in Austin. Empowering residents and policymakers to accelerate clean energy transition.",
   });
   const navigate = useNavigate();
+
+  // Real fuel-spending snapshot used by the Power Money card preview.
+  const [powerMoneyPreview, setPowerMoneyPreview] = useState<Record<string, number>[]>([]);
+  useEffect(() => {
+    loadPowerMoney()
+      .then((d) => {
+        const rows = d.years
+          .filter((y) => !y.partial)
+          .slice(-8)
+          .map((y) => {
+            const row: Record<string, number> = { year: y.year };
+            for (const f of FUEL_ORDER) row[f] = Math.round((y.fuels[f]?.totalUsd ?? 0) / 1_000_000);
+            return row;
+          });
+        setPowerMoneyPreview(rows);
+      })
+      .catch(() => setPowerMoneyPreview([]));
+  }, []);
+
 
   const solarCumulative = useMemo(() => {
     const SAMPLE_KW = 8;
@@ -365,7 +385,39 @@ const Index = () => {
                   </div>
                 }
               />
+
+              <FeatureCard
+                to="/power-money"
+                title="Power Money"
+                description="How many dollars Austin Energy customers spend on coal, gas, nuclear, wind and solar each year — system totals and per household."
+                cta="See the Spending"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 px-3 pt-4 pb-1 border-b">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart data={powerMoneyPreview} margin={{ left: 0, right: 4, top: 2, bottom: 0 }}>
+                        <XAxis
+                          dataKey="year"
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={32}
+                          tickFormatter={(v) => `$${v}M`}
+                        />
+                        {FUEL_ORDER.map((f) => (
+                          <Bar key={f} dataKey={f} stackId="money" fill={FUEL_META[f as FuelKey].color} />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                }
+              />
             </div>
+
           </div>
 
           {/* ── Personal ── */}
