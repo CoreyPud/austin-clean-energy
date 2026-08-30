@@ -310,3 +310,78 @@ export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
 
 /** Chart color for the federal-support bars — deliberately distinct from every fuel color. */
 export const FEDERAL_META = { label: "Federal support", color: "#0d9488" };
+
+// ---------------------------------------------------------------------------
+// Combined cost: what Austin Energy paid plus what federal taxpayers carried.
+// ---------------------------------------------------------------------------
+
+export interface TotalCostRow {
+  key: FederalKey;
+  label: string;
+  color: string;
+  /** fuel purchases or contracted energy price, $/MWh */
+  fuelRate: number;
+  /** modeled plant O&M + capital, $/MWh */
+  nonFuelRate: number;
+  /** allocated system delivery costs, $/MWh */
+  systemRate: number;
+  /** what Austin Energy paid, all three layers, $/MWh */
+  aeRate: number;
+  /** federal support attributable to this generation, $/MWh */
+  federalRate: number;
+  /** extra width of the broader-estimate band above the federal rate, $/MWh */
+  broaderBand: number;
+  broaderHigh: number;
+  /** true when no defensible federal figure exists for this source */
+  federalUnknown: boolean;
+  basis: SupportBasis | null;
+  what: string | null;
+  /** aeRate + federalRate */
+  combinedRate: number;
+  /** share of combinedRate carried by Austin Energy ratepayers, 0-1 */
+  ratepayerShare: number;
+  /** share of combinedRate carried by federal taxpayers, 0-1 */
+  taxpayerShare: number;
+  mwh: number;
+  /** combinedRate x MWh, $ */
+  combinedTotalUsd: number;
+  /** federalRate x MWh, $ */
+  federalTotalUsd: number;
+}
+
+/**
+ * Joins the delivered-cost rows with the federal-support rows on source key so a
+ * single bar shows the whole cost of a megawatt-hour regardless of who paid it.
+ * Sources with no defensible federal figure keep their Austin Energy cost and are
+ * flagged `federalUnknown` rather than being credited a zero.
+ */
+export function toTotalCostRows(comparisonRows: ComparisonRow[], year: number): TotalCostRow[] {
+  return comparisonRows
+    .map((r): TotalCostRow => {
+      const rate = federalRate(r.key, year);
+      const federal = rate?.statutory ?? 0;
+      const combined = +(r.deliveredRate + federal).toFixed(2);
+      return {
+        key: r.key,
+        label: r.label,
+        color: r.color,
+        fuelRate: r.fuelRate,
+        nonFuelRate: r.nonFuelRate,
+        systemRate: r.systemRate,
+        aeRate: r.deliveredRate,
+        federalRate: federal,
+        broaderBand: rate ? +Math.max(0, rate.broaderHigh - rate.statutory).toFixed(2) : 0,
+        broaderHigh: rate?.broaderHigh ?? 0,
+        federalUnknown: rate === null,
+        basis: rate?.basis ?? null,
+        what: rate?.what ?? null,
+        combinedRate: combined,
+        ratepayerShare: combined > 0 ? r.deliveredRate / combined : 0,
+        taxpayerShare: combined > 0 ? federal / combined : 0,
+        mwh: r.mwh,
+        combinedTotalUsd: Math.round(combined * r.mwh),
+        federalTotalUsd: Math.round(federal * r.mwh),
+      };
+    })
+    .sort((a, b) => b.combinedRate - a.combinedRate);
+}
