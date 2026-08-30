@@ -39,6 +39,17 @@ import {
   type FuelKey,
   type PowerMoneyData,
 } from "@/lib/power-money";
+import {
+  localSolarSeries,
+  localBatterySeries,
+  localSolarYear,
+  batteryUsdPerKwYear,
+  amortizedRebateUsdPerMwh,
+  LOCAL_RATES,
+  LOCAL_SOURCES,
+  GAS_PEAKER_USD_PER_KW_YEAR,
+} from "@/lib/local-resources";
+
 
 const PowerMoney = () => {
   useSeo({
