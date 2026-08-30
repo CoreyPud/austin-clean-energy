@@ -141,6 +141,8 @@ const PowerMoney = () => {
         setSelectedYear(year);
         setCompareYear(year);
         setFederalYear(year);
+        setTotalCostYear(year);
+
 
       })
       .catch((e) => setError(e?.message ?? "Failed to load data"));
