@@ -1164,6 +1164,8 @@ const PowerMoney = () => {
                         <th className="py-2 pr-3 text-right">AE paid $/MWh</th>
                         <th className="py-2 pr-3 text-right">Federal $/MWh</th>
                         <th className="py-2 pr-3 text-right">Combined $/MWh</th>
+                        <th className="py-2 pr-3 text-right">Broader federal range $/MWh</th>
+
                         <th className="py-2 pr-3 text-right">Combined $ total</th>
                         <th className="py-2">Who paid</th>
                       </tr>
