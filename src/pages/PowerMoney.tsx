@@ -137,6 +137,8 @@ const PowerMoney = () => {
         const year = (full ?? d.years[d.years.length - 1])?.year ?? null;
         setSelectedYear(year);
         setCompareYear(year);
+        setFederalYear(year);
+
       })
       .catch((e) => setError(e?.message ?? "Failed to load data"));
   }, []);
