@@ -57,6 +57,8 @@ import {
   FEDERAL_ASSUMPTIONS,
   FEDERAL_SOURCES,
   type FederalRow,
+  type TotalCostRow,
+
 } from "@/lib/federal-support";
 
 
