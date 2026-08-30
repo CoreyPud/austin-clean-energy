@@ -50,6 +50,61 @@ import {
   GAS_PEAKER_USD_PER_KW_YEAR,
 } from "@/lib/local-resources";
 
+interface TipRow {
+  color: string;
+  opacity?: number;
+  dashed?: boolean;
+  label: string;
+  value: string;
+}
+
+/**
+ * Shared tooltip that shows a colour swatch matching the exact bar segment or line it
+ * describes, so a hovered number is unambiguous.
+ */
+const SwatchTooltip = ({ header, note, rows }: { header: string; note?: string; rows: TipRow[] }) => {
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-md border bg-popover px-3 py-2 text-xs shadow-md">
+      <p className="font-medium text-popover-foreground">{header}</p>
+      <div className="mt-1.5 space-y-1">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center gap-2">
+            {r.dashed ? (
+              <span
+                className="inline-block h-0 w-3 shrink-0 border-t-2 border-dashed"
+                style={{ borderColor: r.color, opacity: r.opacity ?? 1 }}
+              />
+            ) : (
+              <span
+                className="inline-block h-3 w-3 shrink-0 rounded-sm"
+                style={{ backgroundColor: r.color, opacity: r.opacity ?? 1 }}
+              />
+            )}
+            <span className="text-muted-foreground">{r.label}</span>
+            <span className="ml-auto pl-3 font-medium text-popover-foreground">{r.value}</span>
+          </div>
+        ))}
+      </div>
+      {note && <p className="mt-2 max-w-[16rem] text-[11px] leading-snug text-muted-foreground">{note}</p>}
+    </div>
+  );
+};
+
+/** Segment meanings differ for behind-the-meter local solar, so labels are per row. */
+const segmentLabels = (row: ComparisonRow | null) =>
+  row?.key === "localSolar"
+    ? {
+        fuel: "Value of Solar bill credit",
+        nonFuel: `Rebate, amortized over ${LOCAL_RATES.systemLifeYears} years`,
+        system: "System delivery costs (n/a — behind the meter)",
+      }
+    : {
+        fuel: "Fuel / contracted energy",
+        nonFuel: "Plant O&M + capital (est.)",
+        system: "System delivery costs (est., spread per MWh)",
+      };
+
 
 const PowerMoney = () => {
   useSeo({
@@ -282,13 +337,24 @@ const PowerMoney = () => {
                         tickFormatter={(v) => (basis === "total" ? usdCompact(Number(v)) : usd(Number(v)))}
                       />
                       <Tooltip
-                        formatter={(v: number, name: string) => [
-                          basis === "total" ? usd(Number(v)) : usd(Number(v), 2),
-                          name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name,
-                        ]}
-                        labelFormatter={(l) => `Year ${l}`}
-                        contentStyle={{ fontSize: 12 }}
+                        cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const rows: TipRow[] = payload
+                            .filter((p) => Number(p.value) > 0)
+                            .reverse()
+                            .map((p) => ({
+                              color: String(p.color ?? p.fill ?? "#888"),
+                              label:
+                                p.dataKey === SYSTEM_KEY
+                                  ? SYSTEM_META.label
+                                  : FUEL_META[p.dataKey as FuelKey]?.label ?? String(p.dataKey),
+                              value: basis === "total" ? usd(Number(p.value)) : usd(Number(p.value), 2),
+                            }));
+                          return <SwatchTooltip header={`Year ${label}`} rows={rows} />;
+                        }}
                       />
+
                       <Legend
                         formatter={(name) =>
                           name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name
@@ -338,13 +404,20 @@ const PowerMoney = () => {
                       <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={1} />
                       <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
                       <Tooltip
-                        formatter={(v: number, name: string) => [
-                          `$${Number(v).toFixed(2)}/MWh`,
-                          FUEL_META[name as FuelKey]?.label ?? name,
-                        ]}
-                        labelFormatter={(l) => `Year ${l}`}
-                        contentStyle={{ fontSize: 12 }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const rows: TipRow[] = payload
+                            .filter((p) => typeof p.value === "number")
+                            .map((p) => ({
+                              color: String(p.color ?? p.stroke ?? "#888"),
+                              dashed: ["wind", "solar", "nuclear", "biomass", "hydro"].includes(String(p.dataKey)),
+                              label: FUEL_META[p.dataKey as FuelKey]?.label ?? String(p.dataKey),
+                              value: `$${Number(p.value).toFixed(2)}/MWh`,
+                            }));
+                          return <SwatchTooltip header={`Year ${label}`} rows={rows} />;
+                        }}
                       />
+
                       <Legend
                         formatter={(name) => FUEL_META[name as FuelKey]?.label ?? name}
                         wrapperStyle={{ fontSize: 12 }}
@@ -418,33 +491,55 @@ const PowerMoney = () => {
                         tick={{ fontSize: 12 }}
                       />
                       <Tooltip
-                        formatter={(v: number, name: string) => [
-                          `$${Number(v).toFixed(2)}/MWh`,
-                          name === "fuelRate"
-                            ? "Fuel / contracted energy"
-                            : name === "nonFuelRate"
-                              ? "Plant O&M + capital (est.)"
-                              : "System delivery costs (est., spread per MWh)",
-                        ]}
-                        labelFormatter={(l, payload) => {
-                          const row = (payload?.[0]?.payload ?? null) as ComparisonRow | null;
-                          if (!row) return String(l);
-                          return `${row.label} — $${row.deliveredRate.toFixed(2)}/MWh delivered · ${Math.round(
-                            row.mwh,
-                          ).toLocaleString()} MWh (${(row.share * 100).toFixed(1)}% of generation)`;
+                        cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const row = (payload[0]?.payload ?? null) as ComparisonRow | null;
+                          if (!row) return null;
+                          const names = segmentLabels(row);
+                          // Bottom-up so the rows read in the same order as the stacked segments.
+                          const rows: TipRow[] = [
+                            { key: "fuelRate", color: row.color, label: names.fuel },
+                            { key: "nonFuelRate", color: row.color, opacity: 0.4, label: names.nonFuel },
+                            { key: "systemRate", color: SYSTEM_META.color, label: names.system },
+                          ]
+                            .map((s) => ({
+                              ...s,
+                              raw: Number(payload.find((p) => p.dataKey === s.key)?.value ?? 0),
+                            }))
+                            .filter((s) => s.raw > 0)
+                            .map((s) => ({
+                              color: s.color,
+                              opacity: s.opacity,
+                              label: s.label,
+                              value: `$${s.raw.toFixed(2)}/MWh`,
+                            }));
+                          return (
+                            <SwatchTooltip
+                              header={`${row.label} — $${row.deliveredRate.toFixed(2)}/MWh · ${Math.round(
+                                row.mwh,
+                              ).toLocaleString()} MWh (${(row.share * 100).toFixed(1)}% of generation)`}
+                              note={
+                                row.key === "localSolar"
+                                  ? "Customers own and maintain rooftop systems, so no O&M or capital is charged here, and the power never crosses the grid."
+                                  : undefined
+                              }
+                              rows={rows}
+                            />
+                          );
                         }}
-                        contentStyle={{ fontSize: 12 }}
                       />
                       <Legend
                         formatter={(name) =>
                           name === "fuelRate"
-                            ? "Fuel / contracted energy"
+                            ? "Energy payment (fuel, contract, or bill credit)"
                             : name === "nonFuelRate"
-                              ? "Plant O&M + capital (est.)"
+                              ? "Plant O&M + capital, or amortized rebate"
                               : "System delivery costs (est.)"
                         }
                         wrapperStyle={{ fontSize: 12 }}
                       />
+
                       <Bar dataKey="fuelRate" stackId="rate" fill="#64748b" radius={[0, 0, 0, 0]}>
                         {compareRows.map((r) => (
                           <Cell key={r.key} fill={r.color} />
@@ -491,12 +586,16 @@ const PowerMoney = () => {
                   energy (fuel oil, most years) can look extreme either way.
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Local solar is the one bar that works differently: it is rooftop generation Austin Energy never
-                  owns and never has to move across the grid, so it carries no system delivery segment. Its cost is
-                  what the utility actually pays out — the Value of Solar bill credit of{" "}
-                  {(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh, plus the up-front rebate spread over a{" "}
-                  {LOCAL_RATES.systemLifeYears}-year system life.
+                  Local solar is the one bar whose segments mean something different. Austin Energy does not own,
+                  operate or maintain these systems — customers do, out of their own pockets — so no O&amp;M or
+                  capital cost is charged to it. Its two segments are the money the utility actually pays out: the
+                  Value of Solar bill credit of {(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh, and the
+                  up-front rebate spread over a {LOCAL_RATES.systemLifeYears}-year system life. There is no system
+                  delivery segment because rooftop power never crosses the transmission or distribution system.
+                  Program administration and permitting review are internal Austin Energy overhead that already sits
+                  inside the system-cost layer above, so they are not counted again here.
                 </p>
+
 
               </CardContent>
             </Card>
@@ -515,14 +614,17 @@ const PowerMoney = () => {
               <CardContent className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground">Local solar, all-in cost</p>
+                    <p className="text-xs text-muted-foreground">Local solar, cost to Austin Energy</p>
                     <p className="text-2xl font-bold">
                       ${(LOCAL_RATES.vosUsdPerMwh + amortizedRebateUsdPerMwh(2026)).toFixed(0)}
                       <span className="text-sm font-normal text-muted-foreground">/MWh</span>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Value of Solar credit plus amortized rebate. No fuel, no plant, no delivery.
+                      Value of Solar bill credit ({(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh) plus the
+                      rebate amortized over {LOCAL_RATES.systemLifeYears} years. No O&amp;M or capital — customers own
+                      and maintain their own equipment — and no delivery cost.
                     </p>
+
                   </div>
                   <div className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground">Local batteries, capacity cost</p>
