@@ -49,10 +49,8 @@ const Swatch = ({ fuel }: { fuel: Milestone["fuel"] }) => (
   />
 );
 
-// Timeline geometry for the tenure chart.
-const TL_START = 1945;
-const TL_END = 2027;
-const pct = (year: number) => ((year - TL_START) / (TL_END - TL_START)) * 100;
+
+
 
 const PeopleWithPower = () => {
   useSeo({
