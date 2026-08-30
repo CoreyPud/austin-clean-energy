@@ -50,6 +50,61 @@ import {
   GAS_PEAKER_USD_PER_KW_YEAR,
 } from "@/lib/local-resources";
 
+interface TipRow {
+  color: string;
+  opacity?: number;
+  dashed?: boolean;
+  label: string;
+  value: string;
+}
+
+/**
+ * Shared tooltip that shows a colour swatch matching the exact bar segment or line it
+ * describes, so a hovered number is unambiguous.
+ */
+const SwatchTooltip = ({ header, note, rows }: { header: string; note?: string; rows: TipRow[] }) => {
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-md border bg-popover px-3 py-2 text-xs shadow-md">
+      <p className="font-medium text-popover-foreground">{header}</p>
+      <div className="mt-1.5 space-y-1">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center gap-2">
+            {r.dashed ? (
+              <span
+                className="inline-block h-0 w-3 shrink-0 border-t-2 border-dashed"
+                style={{ borderColor: r.color, opacity: r.opacity ?? 1 }}
+              />
+            ) : (
+              <span
+                className="inline-block h-3 w-3 shrink-0 rounded-sm"
+                style={{ backgroundColor: r.color, opacity: r.opacity ?? 1 }}
+              />
+            )}
+            <span className="text-muted-foreground">{r.label}</span>
+            <span className="ml-auto pl-3 font-medium text-popover-foreground">{r.value}</span>
+          </div>
+        ))}
+      </div>
+      {note && <p className="mt-2 max-w-[16rem] text-[11px] leading-snug text-muted-foreground">{note}</p>}
+    </div>
+  );
+};
+
+/** Segment meanings differ for behind-the-meter local solar, so labels are per row. */
+const segmentLabels = (row: ComparisonRow | null) =>
+  row?.key === "localSolar"
+    ? {
+        fuel: "Value of Solar bill credit",
+        nonFuel: `Rebate, amortized over ${LOCAL_RATES.systemLifeYears} years`,
+        system: "System delivery costs (n/a — behind the meter)",
+      }
+    : {
+        fuel: "Fuel / contracted energy",
+        nonFuel: "Plant O&M + capital (est.)",
+        system: "System delivery costs (est., spread per MWh)",
+      };
+
 
 const PowerMoney = () => {
   useSeo({
