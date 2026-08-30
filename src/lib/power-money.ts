@@ -187,3 +187,50 @@ export const usdCompact = (n: number) => {
   if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
   return usd(n);
 };
+
+export interface ComparisonRow {
+  key: FuelKey;
+  label: string;
+  color: string;
+  /** fuel purchases or contracted energy price, $/MWh */
+  fuelRate: number;
+  /** estimated plant O&M + capital / debt service, $/MWh (0 for PPA resources) */
+  nonFuelRate: number;
+  allInRate: number;
+  mwh: number;
+  /** share of that year's total generation, 0-1 */
+  share: number;
+  /** true when the fuel dollars come from reported EIA fuel costs */
+  measured: boolean;
+  /** true when the energy price is a documented contract assumption */
+  contracted: boolean;
+}
+
+/**
+ * One row per source for a single year, all-in $/MWh, cheapest first.
+ * System costs are excluded: they are not attributable to a source.
+ */
+export function toComparisonRows(data: PowerMoneyData, year: number): ComparisonRow[] {
+  const y = data.years.find((r) => r.year === year);
+  if (!y) return [];
+  const rows: ComparisonRow[] = [];
+  for (const key of FUEL_ORDER) {
+    const f = y.fuels[key];
+    if (!f || f.mwh <= 0) continue;
+    const fuelRate = f.totalUsd / f.mwh;
+    const nonFuelRate = f.nonFuelUsd / f.mwh;
+    rows.push({
+      key,
+      label: FUEL_META[key].label,
+      color: FUEL_META[key].color,
+      fuelRate: +fuelRate.toFixed(2),
+      nonFuelRate: +nonFuelRate.toFixed(2),
+      allInRate: +(fuelRate + nonFuelRate).toFixed(2),
+      mwh: f.mwh,
+      share: y.totalMwh > 0 ? f.mwh / y.totalMwh : 0,
+      measured: f.measured,
+      contracted: f.contractedUsd > 0,
+    });
+  }
+  return rows.sort((a, b) => a.allInRate - b.allInRate);
+}
