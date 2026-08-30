@@ -111,12 +111,12 @@ const PeopleWithPower = () => {
             </div>
 
             {/* Milestone markers */}
-            <div className="relative h-16">
+            <div className="relative h-28">
               {milestones.map((m, i) => (
                 <div
                   key={`${m.resource}-${m.year}`}
                   className="absolute -translate-x-1/2 flex flex-col items-center"
-                  style={{ left: `${pct(m.sortYear)}%`, top: i % 2 === 0 ? 0 : "2rem" }}
+                  style={{ left: `${pct(m.sortYear)}%`, top: `${(i % 4) * 1.75}rem` }}
                 >
                   <span
                     className="h-3 w-3 rounded-full border-2 border-background"
