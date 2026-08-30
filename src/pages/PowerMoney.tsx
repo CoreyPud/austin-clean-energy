@@ -760,19 +760,14 @@ const PowerMoney = () => {
                         }
                         wrapperStyle={{ fontSize: 12 }}
                       />
-                      <Bar dataKey="statutoryRate" stackId="fed" fill={FEDERAL_META.color}>
-                        <LabelList
-                          dataKey="statutoryRate"
-                          position="insideRight"
-                          formatter={(v: number) => `$${Number(v).toFixed(2)}`}
-                          style={{ fontSize: 11, fill: "#ffffff", fontWeight: 500 }}
-                        />
-                      </Bar>
+                      <Bar dataKey="statutoryRate" stackId="fed" fill={FEDERAL_META.color} />
                       <Bar dataKey="broaderBand" stackId="fed" fill={FEDERAL_META.color} fillOpacity={0.3} radius={[0, 3, 3, 0]}>
                         <LabelList
-                          dataKey="broaderHigh"
+                          dataKey="statutoryRate"
                           position="right"
-                          formatter={(v: number) => `up to $${Number(v).toFixed(0)}`}
+                          formatter={(v: number) =>
+                            Number(v) >= 5 ? `$${Number(v).toFixed(0)}/MWh` : `$${Number(v).toFixed(2)}/MWh`
+                          }
                           style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                         />
                       </Bar>
