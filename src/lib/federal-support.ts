@@ -297,6 +297,8 @@ export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
         broaderHigh: rate.broaderHigh,
         basis: rate.basis,
         what: rate.what,
+        components: rate.components,
+
         mwh: r.mwh,
         totalUsd: Math.round(rate.statutory * r.mwh),
         deliveredRate: r.deliveredRate,
