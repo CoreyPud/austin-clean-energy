@@ -14,11 +14,19 @@
 // documented analyst estimate. Nothing here is a guess: where a defensible number does
 // not exist, the source is omitted rather than filled in.
 
-import type { FuelKey } from "./power-money";
+import type { ComparisonRow, FuelKey } from "./power-money";
 
 export type FederalKey = FuelKey | "localSolar";
 
 export type SupportBasis = "statutory" | "estimate";
+
+/** One named tax provision inside a source's federal support rate. */
+export interface SupportComponent {
+  label: string;
+  usdPerMwh: number;
+  /** short note on where the figure comes from */
+  source: string;
+}
 
 export interface FederalRate {
   /** plant-level federal support attributable to this generation, $/MWh */
@@ -30,7 +38,10 @@ export interface FederalRate {
   basis: SupportBasis;
   /** what the statutory number is */
   what: string;
+  /** itemised provisions behind `statutory`, where they can be separated */
+  components?: SupportComponent[];
 }
+
 
 /** Conversion assumptions for the credits that are capital-based rather than per-MWh. */
 export const FEDERAL_ASSUMPTIONS = {
