@@ -70,7 +70,7 @@ const PeopleWithPower = () => {
     <div className="min-h-screen bg-background">
       <PageHeader
         title="People With Power"
-        subtitle="Every fuel Austin Energy added arrived on somebody's watch. This page lines up the utility's leadership with the first appearance of each type of generation — and says plainly where the public record runs out."
+        subtitle="Every plant Austin Energy signed up for — and every one it shut down — happened on somebody's watch. This page lines up the utility's leadership with those decisions, from the 1950s gas plants to the 2026 vote for new gas peakers, and says plainly where the public record runs out."
         contentClassName="max-w-6xl mx-auto px-4"
       />
 
