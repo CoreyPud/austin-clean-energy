@@ -195,23 +195,68 @@ export function federalRate(key: FederalKey, year: number): FederalRate | null {
             : "No generation-based federal credit existed for reactors online in 1988",
       };
     }
-    case "gas":
+    case "gas": {
+      // Derived, not published: EIA's FY2016-2022 subsidy report gives dollar totals for
+      // "natural gas and petroleum liquids" but dropped the per-MWh table older editions
+      // carried, so these are the JCT/EIA provision totals divided by US gas-fired
+      // generation (~1,689 TWh in 2022), with roughly half of each oil-and-gas provision
+      // credited to gas rather than oil.
+      const gasComponents: SupportComponent[] = [
+        {
+          label: "Expensing of intangible drilling costs (IRC 263(c))",
+          usdPerMwh: 0.21,
+          source: "$720M FY2022 oil-and-gas total, half credited to gas, over 1,689 TWh gas generation",
+        },
+        {
+          label: "Percentage over cost depletion (IRC 611/613)",
+          usdPerMwh: 0.36,
+          source: "~$1.2B/yr oil-and-gas portion, half credited to gas, over 1,689 TWh gas generation",
+        },
+        {
+          label: "Accelerated depreciation on gas plant (MACRS)",
+          usdPerMwh: macrs,
+          source: "20-year MACRS shield at the 21% corporate rate, plant-level estimate",
+        },
+      ];
+      const statutory = +gasComponents.reduce((s, c) => s + c.usdPerMwh, 0).toFixed(2);
       return {
-        statutory: +(0.35 + macrs).toFixed(2),
-        broaderLow: 0.2,
-        broaderHigh: 2.0,
+        statutory,
+        broaderLow: statutory,
+        // Upper bound: Oil Change International's ~$35B/yr federal fossil production
+        // subsidy total, with the entire gas-attributable share (~35% of US gas goes to
+        // electric power) landing on power-sector generation.
+        broaderHigh: 7.25,
         basis: "estimate",
         what:
           "Intangible drilling costs, percentage depletion and accelerated depreciation, allocated to power-sector gas",
+        components: gasComponents,
       };
-    case "coal":
+    }
+    case "coal": {
+      const coalComponents: SupportComponent[] = [
+        {
+          label: "Coal tax provisions (percentage depletion, black lung, royalty capital gains)",
+          usdPerMwh: 0.71,
+          source: "$590M FY2022 EIA coal tax expenditures over 828 TWh US coal generation",
+        },
+        {
+          label: "Accelerated depreciation on coal plant (MACRS)",
+          usdPerMwh: macrs,
+          source: "20-year MACRS shield at the 21% corporate rate, plant-level estimate",
+        },
+      ];
+      const statutory = +coalComponents.reduce((s, c) => s + c.usdPerMwh, 0).toFixed(2);
       return {
-        statutory: +(0.5 + macrs).toFixed(2),
-        broaderLow: 0.3,
-        broaderHigh: 2.0,
+        statutory,
+        broaderLow: 0.71,
+        // Adds EIA's $280M FY2022 coal R&D and a state-and-indirect allowance.
+        broaderHigh: 2.75,
         basis: "estimate",
-        what: "Coal percentage depletion, black-lung credit and accelerated depreciation",
+        what: "Coal percentage depletion, black-lung and royalty provisions plus accelerated depreciation",
+        components: coalComponents,
       };
+    }
+
     default:
       return null;
   }
