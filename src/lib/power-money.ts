@@ -209,8 +209,6 @@ export interface ComparisonRow {
   measured: boolean;
   /** true when the energy price is a documented contract assumption */
   contracted: boolean;
-  /** true for behind-the-meter local resources, which carry no system delivery segment */
-  local?: boolean;
 }
 
 

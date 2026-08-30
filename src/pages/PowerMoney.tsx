@@ -98,7 +98,6 @@ const PowerMoney = () => {
         share: totalMwh > 0 ? local.mwh / totalMwh : 0,
         measured: false,
         contracted: true,
-        local: true,
       });
     }
     return rows.sort((a, b) => a.deliveredRate - b.deliveredRate);
