@@ -586,12 +586,16 @@ const PowerMoney = () => {
                   energy (fuel oil, most years) can look extreme either way.
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Local solar is the one bar that works differently: it is rooftop generation Austin Energy never
-                  owns and never has to move across the grid, so it carries no system delivery segment. Its cost is
-                  what the utility actually pays out — the Value of Solar bill credit of{" "}
-                  {(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh, plus the up-front rebate spread over a{" "}
-                  {LOCAL_RATES.systemLifeYears}-year system life.
+                  Local solar is the one bar whose segments mean something different. Austin Energy does not own,
+                  operate or maintain these systems — customers do, out of their own pockets — so no O&amp;M or
+                  capital cost is charged to it. Its two segments are the money the utility actually pays out: the
+                  Value of Solar bill credit of {(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh, and the
+                  up-front rebate spread over a {LOCAL_RATES.systemLifeYears}-year system life. There is no system
+                  delivery segment because rooftop power never crosses the transmission or distribution system.
+                  Program administration and permitting review are internal Austin Energy overhead that already sits
+                  inside the system-cost layer above, so they are not counted again here.
                 </p>
+
 
               </CardContent>
             </Card>
