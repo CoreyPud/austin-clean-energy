@@ -113,6 +113,31 @@ const segmentLabels = (row: ComparisonRow | null) =>
         system: "System delivery costs (est., spread per MWh)",
       };
 
+/** Utility-scale sources plus behind-the-meter local solar, priced the same way. */
+const rowsForYear = (data: PowerMoneyData, year: number): ComparisonRow[] => {
+  const rows = toComparisonRows(data, year);
+  const local = localSolarYear(year);
+  const totalMwh = data.years.find((y) => y.year === year)?.totalMwh ?? 0;
+  if (local && local.mwh > 0) {
+    rows.push({
+      key: "localSolar",
+      label: "Local solar",
+      color: "#f59e0b",
+      fuelRate: LOCAL_RATES.vosUsdPerMwh,
+      nonFuelRate: amortizedRebateUsdPerMwh(local.year),
+      systemRate: 0,
+      allInRate: local.usdPerMwh,
+      deliveredRate: local.usdPerMwh,
+      mwh: local.mwh,
+      share: totalMwh > 0 ? local.mwh / totalMwh : 0,
+      measured: false,
+      contracted: true,
+    });
+  }
+  return rows;
+};
+
+
 
 const PowerMoney = () => {
   useSeo({
