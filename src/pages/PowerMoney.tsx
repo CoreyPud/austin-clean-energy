@@ -947,7 +947,284 @@ const PowerMoney = () => {
               </CardContent>
             </Card>
 
+            {/* What it really cost, all payers */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Layers className="h-5 w-5" /> What it really cost, all payers
+                    </CardTitle>
+                    <CardDescription>
+                      The two charts above added together: what Austin Energy paid for a megawatt-hour in{" "}
+                      {totalCostYear ?? "—"} stacked on top of what federal taxpayers carried, so each bar is the
+                      whole cost of that power regardless of who wrote the check.
+                    </CardDescription>
+                  </div>
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={totalCostYear ?? ""}
+                    onChange={(e) => setTotalCostYear(Number(e.target.value))}
+                    aria-label="Total cost year"
+                  >
+                    {data.years.map((y) => (
+                      <option key={y.year} value={y.year}>
+                        {y.year}
+                        {y.partial ? " (partial)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {totalCostSummary && (
+                  <div className="grid gap-4 sm:grid-cols-3 mb-5">
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Combined cost of Austin Energy's supply, {totalCostYear}
+                        {totalCostSummary.partial ? " (partial year)" : ""}
+                      </p>
+                      <p className="text-2xl font-bold">{usdCompact(totalCostSummary.combinedUsd)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {usdCompact(totalCostSummary.aeUsd)} paid by Austin Energy ratepayers,{" "}
+                        {usdCompact(totalCostSummary.federalUsd)} by federal taxpayers.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">Carried by federal taxpayers</p>
+                      <p className="text-2xl font-bold">
+                        {(totalCostSummary.taxpayerShare * 100).toFixed(1)}
+                        <span className="text-sm font-normal text-muted-foreground">%</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Share of the combined cost that did not come out of an Austin electric bill.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">Per residential household equivalent</p>
+                      <p className="text-2xl font-bold">
+                        {usd(totalCostSummary.perHouseholdUsd, 2)}
+                        <span className="text-sm font-normal text-muted-foreground">/yr</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Combined cost spread across residential customers using the residential share of sales — for
+                        scale only, since the federal part is funded nationally.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ height: Math.max(240, totalCostRows.length * 54 + 60) }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={totalCostRows} layout="vertical" margin={{ left: 8, right: 84 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                      <YAxis type="category" dataKey="label" width={92} tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const row = (payload[0]?.payload ?? null) as TotalCostRow | null;
+                          if (!row) return null;
+                          const labels = segmentLabels(
+                            row.key === "localSolar" ? ({ key: "localSolar" } as ComparisonRow) : null,
+                          );
+                          const rows: TipRow[] = [];
+                          if (row.fuelRate > 0)
+                            rows.push({
+                              color: row.color,
+                              label: labels.fuel,
+                              value: `$${row.fuelRate.toFixed(2)}/MWh`,
+                            });
+                          if (row.nonFuelRate > 0)
+                            rows.push({
+                              color: row.color,
+                              opacity: 0.55,
+                              label: labels.nonFuel,
+                              value: `$${row.nonFuelRate.toFixed(2)}/MWh`,
+                            });
+                          if (row.systemRate > 0)
+                            rows.push({
+                              color: SYSTEM_META.color,
+                              label: labels.system,
+                              value: `$${row.systemRate.toFixed(2)}/MWh`,
+                            });
+                          if (row.federalRate > 0)
+                            rows.push({
+                              color: FEDERAL_META.color,
+                              label: "Federal tax credits and provisions",
+                              value: `$${row.federalRate.toFixed(2)}/MWh`,
+                            });
+                          if (row.broaderBand > 0)
+                            rows.push({
+                              color: FEDERAL_META.color,
+                              opacity: 0.3,
+                              label: "Broader federal estimates, combined up to",
+                              value: `$${(row.aeRate + row.broaderHigh).toFixed(2)}/MWh`,
+                            });
+                          return (
+                            <SwatchTooltip
+                              header={`${row.label} — $${row.combinedRate.toFixed(2)}/MWh combined`}
+                              note={
+                                row.federalUnknown
+                                  ? "No defensible federal per-MWh figure exists for this source, so the bar shows only what Austin Energy paid."
+                                  : `Austin Energy ratepayers carried ${(row.ratepayerShare * 100).toFixed(
+                                      0,
+                                    )}%, federal taxpayers ${(row.taxpayerShare * 100).toFixed(0)}%.`
+                              }
+                              rows={rows}
+                            />
+                          );
+                        }}
+                      />
+                      <Legend
+                        formatter={(name) =>
+                          name === "fuelRate"
+                            ? "Fuel / contracted energy"
+                            : name === "nonFuelRate"
+                              ? "Plant O&M + capital (est.)"
+                              : name === "systemRate"
+                                ? "System delivery costs (est.)"
+                                : name === "federalRate"
+                                  ? "Federal support"
+                                  : "Broader federal estimates (range)"
+                        }
+                        wrapperStyle={{ fontSize: 12 }}
+                      />
+                      <Bar dataKey="fuelRate" stackId="all">
+                        {totalCostRows.map((r) => (
+                          <Cell key={r.key} fill={r.color} />
+                        ))}
+                      </Bar>
+                      <Bar dataKey="nonFuelRate" stackId="all">
+                        {totalCostRows.map((r) => (
+                          <Cell key={r.key} fill={r.color} fillOpacity={0.55} />
+                        ))}
+                      </Bar>
+                      <Bar dataKey="systemRate" stackId="all" fill={SYSTEM_META.color} />
+                      <Bar dataKey="federalRate" stackId="all" fill={FEDERAL_META.color} />
+                      <Bar
+                        dataKey="broaderBand"
+                        stackId="all"
+                        fill={FEDERAL_META.color}
+                        fillOpacity={0.3}
+                        radius={[0, 3, 3, 0]}
+                      >
+                        <LabelList
+                          dataKey="combinedRate"
+                          position="right"
+                          formatter={(v: number) => `$${Number(v).toFixed(0)}/MWh`}
+                          style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs text-muted-foreground">
+                        <th className="py-2 pr-3">Source</th>
+                        <th className="py-2 pr-3 text-right">MWh</th>
+                        <th className="py-2 pr-3 text-right">AE paid $/MWh</th>
+                        <th className="py-2 pr-3 text-right">Federal $/MWh</th>
+                        <th className="py-2 pr-3 text-right">Combined $/MWh</th>
+                        <th className="py-2 pr-3 text-right">Combined $ total</th>
+                        <th className="py-2">Who paid</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {totalCostRows.map((r) => (
+                        <tr key={r.key} className="border-b last:border-0">
+                          <td className="py-2 pr-3">
+                            <span className="inline-flex items-center gap-2">
+                              <span
+                                className="inline-block h-2.5 w-2.5 rounded-sm"
+                                style={{ backgroundColor: r.color }}
+                              />
+                              {r.label}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-3 text-right">{Math.round(r.mwh).toLocaleString()}</td>
+                          <td className="py-2 pr-3 text-right">${r.aeRate.toFixed(2)}</td>
+                          <td className="py-2 pr-3 text-right">
+                            {r.federalUnknown ? (
+                              <span className="text-muted-foreground">not estimated</span>
+                            ) : (
+                              `$${r.federalRate.toFixed(2)}`
+                            )}
+                          </td>
+                          <td className="py-2 pr-3 text-right font-medium">${r.combinedRate.toFixed(2)}</td>
+                          <td className="py-2 pr-3 text-right">{usdCompact(r.combinedTotalUsd)}</td>
+                          <td className="py-2 text-xs text-muted-foreground">
+                            {r.federalUnknown
+                              ? "Ratepayers only (federal not estimated)"
+                              : `${(r.ratepayerShare * 100).toFixed(0)}% ratepayers / ${(
+                                  r.taxpayerShare * 100
+                                ).toFixed(0)}% taxpayers`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-2 mt-4">
+                  <p>
+                    <span className="font-medium text-foreground">What this bar is.</span> The first three segments are
+                    Austin Energy's own cost, identical to the side-by-side chart above. The teal segment on the end is
+                    federal support for the same megawatt-hours, and the pale teal tail is the top of the broader
+                    published range. Added together they are the cost of that electricity to everyone who paid for it —
+                    Austin ratepayers plus federal taxpayers — which is a bigger number than the cost of Austin
+                    Energy's power supply on its own.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">
+                      Why the gas bar barely moves and the wind bar does.
+                    </span>{" "}
+                    Renewable credits are written per project and per megawatt-hour, so the whole credit lands on the
+                    same MWh this chart is pricing. Fossil support works the other way: it is upstream and volumetric,
+                    attached to producing the gas rather than burning it, and only about a third of US natural gas goes
+                    to electric power at all — the rest heats buildings, runs industry, feeds petrochemicals or ships
+                    out as LNG. Divide a national tax-expenditure total across all of that and a couple of dollars per
+                    power-sector MWh is what is left. The asymmetry is real, but it also means a sharp number is being
+                    compared against a blurry one.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Where the fossil numbers come from.</span> EIA's most
+                    recent subsidy report puts FY2022 federal support at $2.3B for natural gas and petroleum liquids
+                    combined and $873M for coal. EIA no longer publishes the per-MWh table older editions carried, so
+                    the gas and coal bars here are those provision totals divided by US gas-fired and coal-fired
+                    generation, with roughly half of each oil-and-gas provision credited to gas rather than oil. That
+                    is a derivation, not an agency-published figure, and it is why those bars are labeled as modeled
+                    estimates.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Not everything that helps gas is in here.</span> Much
+                    of the oil-and-gas subsidy total people have heard about accrues to oil revenue inside integrated
+                    producers, and none of that is credited to gas. Excluded entirely: federal leasing and royalty
+                    terms, pipeline rate treatment, ERCOT market design and scarcity pricing, and the State of Texas's
+                    own below-market loans to new gas plants through the $7.2B Texas Energy Fund generation program.
+                    Those are real advantages. They are not federal tax credits, and no one publishes them as $/MWh, so
+                    they are named here rather than guessed at in the bar.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Health and climate are not priced.</span> The IMF's
+                    much-larger fossil subsidy figures — roughly $750B/yr for the US — are almost entirely unpriced
+                    pollution and climate damage, not checks anyone wrote. That is a different kind of accounting and
+                    it is deliberately excluded from these bars. If it were included, the ordering would change.
+                  </p>
+                  <p>
+                    Hydro, biomass and fuel oil carry no federal estimate, so their bars show Austin Energy's cost only
+                    and the table marks them as such rather than implying zero support.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Local solar and batteries */}
+
 
             <Card>
               <CardHeader>
