@@ -1216,11 +1216,13 @@ const PowerMoney = () => {
                   <p>
                     <span className="font-medium text-foreground">What this bar is.</span> The first three segments are
                     Austin Energy's own cost, identical to the side-by-side chart above. The teal segment on the end is
-                    federal support for the same megawatt-hours, and the pale teal tail is the top of the broader
-                    published range. Added together they are the cost of that electricity to everyone who paid for it —
-                    Austin ratepayers plus federal taxpayers — which is a bigger number than the cost of Austin
-                    Energy's power supply on its own.
+                    federal support for the same megawatt-hours. Bar length is always the combined $/MWh printed at the
+                    end, so a longer bar is always a bigger number. The thin teal whisker past the bar end is not cost —
+                    it marks how far the broader published estimate range reaches, and the exact range is in the table.
+                    Added together, ratepayer and taxpayer cost is a bigger number than Austin Energy's power supply
+                    cost on its own.
                   </p>
+
                   <p>
                     <span className="font-medium text-foreground">
                       Why the gas bar barely moves and the wind bar does.
