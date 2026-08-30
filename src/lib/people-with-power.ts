@@ -197,7 +197,28 @@ export const SOURCES: Record<string, { label: string; url: string }> = {
     label: "Austin American-Statesman — AE poised to test its first storage system (2016)",
     url: "https://www.statesman.com/story/news/2016/09/04/austin-energy-poised-to-test-its-first-energy-storage-system/9995279007/",
   },
+  webbervilleRca: {
+    label: "City of Austin Council item — Gemini Solar 30 MW PPA (Feb. 12, 2009)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=125999",
+  },
+  webbervillePvTech: {
+    label: "PV Tech — Austin City Council approves 30 MW solar plant, chooses Gemini Solar (2009)",
+    url: "https://www.pv-tech.org/austin_city_council_approves_30-mw_solar_power_plant_chooses_gemini_solar/",
+  },
+  nacogdochesRca: {
+    label: "City of Austin — Resource Management Commission recommendation, 20-year biomass PPA (Aug. 19, 2008)",
+    url: "https://www.austintexas.gov/edims/document.cfm?id=120178",
+  },
+  nacogdochesCouncil: {
+    label: "Austin Monitor — Council takes next step toward contract for biomass plant (Aug. 2008)",
+    url: "https://austinmonitor.com/stories/2008/08/council-takes-next-step-toward-contract-for-biomass-plant/",
+  },
+  aeRenewables: {
+    label: "Austin Energy — Renewable Power Generation (utility-scale fleet table)",
+    url: "https://austinenergy.com/about/company-profile/environment/renewable-power-generation",
+  },
 };
+
 
 export const LEADERS: Leader[] = [
   {
