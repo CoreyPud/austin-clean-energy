@@ -473,33 +473,55 @@ const PowerMoney = () => {
                         tick={{ fontSize: 12 }}
                       />
                       <Tooltip
-                        formatter={(v: number, name: string) => [
-                          `$${Number(v).toFixed(2)}/MWh`,
-                          name === "fuelRate"
-                            ? "Fuel / contracted energy"
-                            : name === "nonFuelRate"
-                              ? "Plant O&M + capital (est.)"
-                              : "System delivery costs (est., spread per MWh)",
-                        ]}
-                        labelFormatter={(l, payload) => {
-                          const row = (payload?.[0]?.payload ?? null) as ComparisonRow | null;
-                          if (!row) return String(l);
-                          return `${row.label} — $${row.deliveredRate.toFixed(2)}/MWh delivered · ${Math.round(
-                            row.mwh,
-                          ).toLocaleString()} MWh (${(row.share * 100).toFixed(1)}% of generation)`;
+                        cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const row = (payload[0]?.payload ?? null) as ComparisonRow | null;
+                          if (!row) return null;
+                          const names = segmentLabels(row);
+                          // Bottom-up so the rows read in the same order as the stacked segments.
+                          const rows: TipRow[] = [
+                            { key: "fuelRate", color: row.color, label: names.fuel },
+                            { key: "nonFuelRate", color: row.color, opacity: 0.4, label: names.nonFuel },
+                            { key: "systemRate", color: SYSTEM_META.color, label: names.system },
+                          ]
+                            .map((s) => ({
+                              ...s,
+                              raw: Number(payload.find((p) => p.dataKey === s.key)?.value ?? 0),
+                            }))
+                            .filter((s) => s.raw > 0)
+                            .map((s) => ({
+                              color: s.color,
+                              opacity: s.opacity,
+                              label: s.label,
+                              value: `$${s.raw.toFixed(2)}/MWh`,
+                            }));
+                          return (
+                            <SwatchTooltip
+                              header={`${row.label} — $${row.deliveredRate.toFixed(2)}/MWh · ${Math.round(
+                                row.mwh,
+                              ).toLocaleString()} MWh (${(row.share * 100).toFixed(1)}% of generation)`}
+                              note={
+                                row.key === "localSolar"
+                                  ? "Customers own and maintain rooftop systems, so no O&M or capital is charged here, and the power never crosses the grid."
+                                  : undefined
+                              }
+                              rows={rows}
+                            />
+                          );
                         }}
-                        contentStyle={{ fontSize: 12 }}
                       />
                       <Legend
                         formatter={(name) =>
                           name === "fuelRate"
-                            ? "Fuel / contracted energy"
+                            ? "Energy payment (fuel, contract, or bill credit)"
                             : name === "nonFuelRate"
-                              ? "Plant O&M + capital (est.)"
+                              ? "Plant O&M + capital, or amortized rebate"
                               : "System delivery costs (est.)"
                         }
                         wrapperStyle={{ fontSize: 12 }}
                       />
+
                       <Bar dataKey="fuelRate" stackId="rate" fill="#64748b" radius={[0, 0, 0, 0]}>
                         {compareRows.map((r) => (
                           <Cell key={r.key} fill={r.color} />
