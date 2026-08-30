@@ -288,9 +288,23 @@ export const FEDERAL_SOURCES = [
     url: "https://atb.nrel.gov/",
   },
   {
-    label: "Oil Change International, Paying for Climate Chaos — broader fossil support estimates",
-    url: "https://priceofoil.org/",
+    label:
+      "Oil Change International, Paying for Climate Chaos (2025) — ~$35B/yr federal fossil production subsidies",
+    url: "https://oilchange.org/publications/paying-for-climate-chaos-us-subsidies-fossil-fuels/",
   },
+  {
+    label: "EESI, Proposals to Reduce Fossil Fuel Subsidies — reconciles the competing subsidy totals",
+    url: "https://www.eesi.org/papers/view/fact-sheet-proposals-to-reduce-fossil-fuel-subsidies-january-2024",
+  },
+  {
+    label: "EIA, Use of natural gas — sector shares behind the power-generation allocation",
+    url: "https://www.eia.gov/energyexplained/natural-gas/use-of-natural-gas.php",
+  },
+  {
+    label: "PUCT Texas Energy Fund — state low-cost loans to new gas generation (excluded, no published $/MWh)",
+    url: "https://www.puc.texas.gov/industry/electric/business/texas-energy-fund/",
+  },
+
 ];
 
 export interface FederalRow {
