@@ -284,7 +284,7 @@ interface RowInput {
  */
 export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
   return rows
-    .map((r) => {
+    .map((r): FederalRow | null => {
       const rate = federalRate(r.key, year);
       if (!rate) return null;
       return {
