@@ -235,6 +235,33 @@ const PowerMoney = () => {
     };
   }, [data, federalYear, federalRows]);
 
+  // Combined cost: what Austin Energy paid plus what federal taxpayers carried.
+  const totalCostRows = useMemo<TotalCostRow[]>(
+    () =>
+      !data || totalCostYear === null
+        ? []
+        : toTotalCostRows(rowsForYear(data, totalCostYear), totalCostYear),
+    [data, totalCostYear],
+  );
+
+  const totalCostSummary = useMemo(() => {
+    if (!data || totalCostYear === null || totalCostRows.length === 0) return null;
+    const y = data.years.find((r) => r.year === totalCostYear);
+    if (!y) return null;
+    const combinedUsd = totalCostRows.reduce((s, r) => s + r.combinedTotalUsd, 0);
+    const federalUsd = totalCostRows.reduce((s, r) => s + r.federalTotalUsd, 0);
+    const households = y.resCustomers / data.assumptions.residentialShareOfSales;
+    return {
+      combinedUsd,
+      federalUsd,
+      aeUsd: combinedUsd - federalUsd,
+      taxpayerShare: combinedUsd > 0 ? federalUsd / combinedUsd : 0,
+      perHouseholdUsd: households > 0 ? combinedUsd / households : 0,
+      partial: y.partial,
+    };
+  }, [data, totalCostYear, totalCostRows]);
+
+
 
   const localSolar = useMemo(() => localSolarSeries(), []);
   const localBattery = useMemo(() => localBatterySeries(), []);
