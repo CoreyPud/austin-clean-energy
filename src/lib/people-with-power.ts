@@ -25,19 +25,30 @@ export interface Milestone {
   /** Resource family, used for coloring. */
   fuel: "gas" | "coal" | "nuclear" | "wind" | "biomass" | "solar" | "localSolar" | "battery";
   resource: string;
-  /** Display year or year range. */
+  /** Display year or year range for first operation / program launch. */
   year: string;
   /** Numeric year used for sorting. */
   sortYear: number;
   what: string;
-  /** Name of the leader in office, or null when the record does not document one. */
+  /** Name of the leader in office at first operation, or null when not documented. */
   leader: string | null;
   /** Caveat about the leader attribution or the date itself. */
   note: string | null;
   /** Documented public framing by that leader at the time, or null. */
   framing: string | null;
   sources: string[];
+  /** Date the contract / program was authorized, e.g. "Feb. 12, 2009". Null when not documented. */
+  contractDate: string | null;
+  /** Numeric year for sorting by contract date; falls back to sortYear when unknown. */
+  contractSortYear: number | null;
+  /** Leader running the utility when the contract was authorized, or null. */
+  contractLeader: string | null;
+  /** Caveat about the contract date or its leader attribution. */
+  contractNote: string | null;
+  /** Sources for the contract date. */
+  contractSources: string[];
 }
+
 
 export const FUEL_COLOR: Record<Milestone["fuel"], string> = {
   gas: "#d97706",
