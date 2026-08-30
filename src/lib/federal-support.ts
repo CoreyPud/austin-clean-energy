@@ -260,9 +260,11 @@ export interface FederalRow {
   broaderHigh: number;
   basis: SupportBasis;
   what: string;
+  components?: SupportComponent[];
   mwh: number;
   /** statutory rate x MWh, $ */
   totalUsd: number;
+
   /** what Austin Energy paid per MWh, for the side-by-side line */
   deliveredRate: number;
 }
