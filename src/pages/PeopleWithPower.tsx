@@ -151,6 +151,67 @@ const PeopleWithPower = () => {
           </CardContent>
         </Card>
 
+        {/* Retirements table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Plants retired and wound down</CardTitle>
+            <CardDescription>
+              Shutting a plant is a decision too, and it often outlives the leader who made it.
+              Sorted by when the closure was decided.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="py-2 pr-3">Plant</th>
+                  <th className="py-2 pr-3">Closure decided</th>
+                  <th className="py-2 pr-3">Leading Austin Energy at the decision</th>
+                  <th className="py-2 pr-3">Actually stopped</th>
+                  <th className="py-2 pr-3">What happened</th>
+                  <th className="py-2">Sources</th>
+                </tr>
+              </thead>
+              <tbody>
+                {retirements.map((r) => (
+                  <tr key={`r-${r.resource}`} className="border-b border-border/60 align-top">
+                    <td className="py-3 pr-3">
+                      <span className="flex items-center gap-2 font-medium text-foreground">
+                        <Swatch fuel={r.fuel} />
+                        {FUEL_LABEL[r.fuel]}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">{r.resource}</span>
+                    </td>
+                    <td className="py-3 pr-3 text-xs font-medium text-foreground">
+                      {r.decisionDate ?? NOT_DOCUMENTED}
+                    </td>
+                    <td className="py-3 pr-3 font-medium text-foreground">
+                      {r.decisionLeader ?? NOT_DOCUMENTED}
+                    </td>
+                    <td className="py-3 pr-3 text-xs">
+                      <span className="text-foreground">{r.closedDate}</span>
+                      <span className="mt-1 block text-muted-foreground">
+                        {r.closedLeader ? `under ${r.closedLeader}` : "leader at shutdown not documented"}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-3 max-w-sm text-muted-foreground">
+                      {r.what}
+                      {r.note && (
+                        <span className="mt-1 block text-xs italic">{r.note}</span>
+                      )}
+                    </td>
+                    <td className="py-3">
+                      <SourceLinks keys={r.sources} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+
+
         {/* Tenure list */}
         <Card>
           <CardHeader>
