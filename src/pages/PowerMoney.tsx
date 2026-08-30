@@ -52,16 +52,25 @@ const PowerMoney = () => {
   const [basis, setBasis] = useState<Basis>("total");
   const [layer, setLayer] = useState<CostLayer>("fuel");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [compareYear, setCompareYear] = useState<number | null>(null);
 
   useEffect(() => {
     loadPowerMoney()
       .then((d) => {
         setData(d);
         const full = [...d.years].reverse().find((y) => !y.partial);
-        setSelectedYear((full ?? d.years[d.years.length - 1])?.year ?? null);
+        const year = (full ?? d.years[d.years.length - 1])?.year ?? null;
+        setSelectedYear(year);
+        setCompareYear(year);
       })
       .catch((e) => setError(e?.message ?? "Failed to load data"));
   }, []);
+
+  const compareRows = useMemo<ComparisonRow[]>(
+    () => (data && compareYear !== null ? toComparisonRows(data, compareYear) : []),
+    [data, compareYear],
+  );
+
 
   const fuels = useMemo<FuelKey[]>(() => (data ? fuelsPresent(data) : []), [data]);
   const chartRows = useMemo(() => (data ? toChartRows(data, basis, layer) : []), [data, basis, layer]);
