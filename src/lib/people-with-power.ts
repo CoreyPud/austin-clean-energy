@@ -236,7 +236,92 @@ export const SOURCES: Record<string, { label: string; url: string }> = {
     label: "Austin Energy — Renewable Power Generation (utility-scale fleet table)",
     url: "https://austinenergy.com/about/company-profile/environment/renewable-power-generation",
   },
+  leeChronicle: {
+    label: "Austin Chronicle — Utility Player (Milton Lee profile)",
+    url: "https://www.austinchronicle.com/news/utility-player-11731343/",
+  },
+  leeMinutes: {
+    label: "Austin City Council minutes referencing GM Milton Lee (1997)",
+    url: "https://www.austintexas.gov/edims/document.cfm?id=56808",
+  },
+  seaholmHistory: {
+    label: "Seaholm Development — plant history (generation ends 1989, final shutdown 1996)",
+    url: "https://www.seaholmdevelopment.com/history.html",
+  },
+  hollyClosure1995: {
+    label: "City of Austin Council backup — Holly Street phased closure resolution (Jan. 19, 1995)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=144574",
+  },
+  hollyChronicle2007: {
+    label: "Austin Chronicle — Holly Power Plant to Close, Really! (2007)",
+    url: "https://www.austinchronicle.com/news/holly-power-plant-to-close-really-11730018/",
+  },
+  deckerMonitor: {
+    label: "Austin Monitor — Decker Creek Power Station finally closing (June 2020)",
+    url: "https://austinmonitor.com/stories/2020/06/decker-creek-power-station-finally-closing/",
+  },
+  deckerPortfolio: {
+    label: "Austin Energy Generation Portfolio Update (Nov. 16, 2021) — Decker Unit 2 shutdown, Fayette talks stalled",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=371411",
+  },
+  genPlan2030: {
+    label: "City of Austin — 2030 Austin Energy Generation Plan resolution materials (2020)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=370826",
+  },
+  fayetteWatson: {
+    label: "Austin American-Statesman — Watson proposes halting Fayette exit, targets 2029 (Feb. 2024)",
+    url: "https://www.statesman.com/story/news/local/2024/02/23/kirk-watson-austin-energy-fayette-power-plant-halt-plans-back-out-2029-coal-powered-plants-texas/72659137007/",
+  },
+  aeOpsQ4Fy2025: {
+    label: "Austin Energy Q4 FY2025 Operations Update — Fayette still listed as an active resource",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=462166",
+  },
+  roserockRca: {
+    label: "City of Austin Council — Roserock/2014 solar PPA award materials",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=239849",
+  },
+  roserockStatesman: {
+    label: "Austin American-Statesman — first of three contracted solar plants comes online (April 2017)",
+    url: "https://digital.olivesoftware.com/Olive/ODN/AustinAmericanStatesman/shared/ShowArticle.aspx?doc=AAS%2F2017%2F04%2F09&entity=Ar00106",
+  },
+  wind2017Rca: {
+    label: "City of Austin Council item — 15-year PPA, 200 MW wind facility (June 22, 2017)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=279145",
+  },
+  blacklandRca: {
+    label: "City of Austin Council item — East Blackland Solar 144 MW PPA (Oct. 18, 2018)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=307252",
+  },
+  wind2019Rca: {
+    label: "City of Austin Council item — 170 MW wind PPA with Pattern Energy (March 7, 2019)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=315317",
+  },
+  communitySolarRate: {
+    label: "City of Austin Council item — community solar rate for Customer Assistance Program (Dec. 14, 2017)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=289226",
+  },
+  laLoma: {
+    label: "Austin Community Solar — La Loma community solar project",
+    url: "https://austincommunitysolar.com/",
+  },
+  jupiterRca: {
+    label: "City of Austin Council item — battery tolling agreement, Balcones Ridge Resiliency (July 24, 2025)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=454800",
+  },
+  jupiterRelease: {
+    label: "Austin Energy — Austin Energy signs battery storage deal (Oct. 23, 2025)",
+    url: "https://austinenergy.com/about/news/news-releases/2025/Austin-Energy-signs-Battery-Storage-Deal",
+  },
+  peaker2026Rca: {
+    label: "City of Austin Council item 26-1880 — local natural gas peaker generation (May 19, 2026)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=473412",
+  },
+  peakerKut: {
+    label: "KUT — Austin Energy to build new natural gas plant (May 2026)",
+    url: "https://www.kut.org/energy-environment/2026-05-21/austin-energy-tx-new-natural-gas-electricity-plant",
+  },
 };
+
 
 
 export const LEADERS: Leader[] = [
