@@ -1107,7 +1107,7 @@ const PowerMoney = () => {
                                 ? "System delivery costs (est.)"
                                 : name === "federalRate"
                                   ? "Federal support"
-                                  : "Broader federal estimates (range)"
+                                   : "Broader federal estimate (upper bound)"
                         }
                         wrapperStyle={{ fontSize: 12 }}
                       />
@@ -1122,21 +1122,35 @@ const PowerMoney = () => {
                         ))}
                       </Bar>
                       <Bar dataKey="systemRate" stackId="all" fill={SYSTEM_META.color} />
-                      <Bar dataKey="federalRate" stackId="all" fill={FEDERAL_META.color} />
-                      <Bar
-                        dataKey="broaderBand"
-                        stackId="all"
-                        fill={FEDERAL_META.color}
-                        fillOpacity={0.3}
-                        radius={[0, 3, 3, 0]}
-                      >
+                      <Bar dataKey="federalRate" stackId="all" fill={FEDERAL_META.color} radius={[0, 3, 3, 0]}>
                         <LabelList
                           dataKey="combinedRate"
                           position="right"
+                          offset={10}
                           formatter={(v: number) => `$${Number(v).toFixed(0)}/MWh`}
                           style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                         />
                       </Bar>
+                      {/* Uncertainty whisker: drawn past the bar end as a thin range marker,
+                          never as a cost segment, so bar length always means combined $/MWh. */}
+                      <Bar
+                        dataKey="broaderBand"
+                        stackId="all"
+                        fill={FEDERAL_META.color}
+                        legendType="plainline"
+                        shape={(props: { x?: number; y?: number; width?: number; height?: number }) => {
+                          const { x = 0, y = 0, width = 0, height = 0 } = props;
+                          if (width <= 0) return <g />;
+                          const mid = y + height / 2;
+                          return (
+                            <g stroke={FEDERAL_META.color} strokeOpacity={0.55} strokeWidth={1.5} fill="none">
+                              <line x1={x} y1={mid} x2={x + width} y2={mid} />
+                              <line x1={x + width} y1={mid - 5} x2={x + width} y2={mid + 5} />
+                            </g>
+                          );
+                        }}
+                      />
+
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
