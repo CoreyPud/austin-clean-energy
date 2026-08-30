@@ -14,11 +14,19 @@
 // documented analyst estimate. Nothing here is a guess: where a defensible number does
 // not exist, the source is omitted rather than filled in.
 
-import type { FuelKey } from "./power-money";
+import type { ComparisonRow, FuelKey } from "./power-money";
 
 export type FederalKey = FuelKey | "localSolar";
 
 export type SupportBasis = "statutory" | "estimate";
+
+/** One named tax provision inside a source's federal support rate. */
+export interface SupportComponent {
+  label: string;
+  usdPerMwh: number;
+  /** short note on where the figure comes from */
+  source: string;
+}
 
 export interface FederalRate {
   /** plant-level federal support attributable to this generation, $/MWh */
@@ -30,7 +38,10 @@ export interface FederalRate {
   basis: SupportBasis;
   /** what the statutory number is */
   what: string;
+  /** itemised provisions behind `statutory`, where they can be separated */
+  components?: SupportComponent[];
 }
+
 
 /** Conversion assumptions for the credits that are capital-based rather than per-MWh. */
 export const FEDERAL_ASSUMPTIONS = {
@@ -184,23 +195,68 @@ export function federalRate(key: FederalKey, year: number): FederalRate | null {
             : "No generation-based federal credit existed for reactors online in 1988",
       };
     }
-    case "gas":
+    case "gas": {
+      // Derived, not published: EIA's FY2016-2022 subsidy report gives dollar totals for
+      // "natural gas and petroleum liquids" but dropped the per-MWh table older editions
+      // carried, so these are the JCT/EIA provision totals divided by US gas-fired
+      // generation (~1,689 TWh in 2022), with roughly half of each oil-and-gas provision
+      // credited to gas rather than oil.
+      const gasComponents: SupportComponent[] = [
+        {
+          label: "Expensing of intangible drilling costs (IRC 263(c))",
+          usdPerMwh: 0.21,
+          source: "$720M FY2022 oil-and-gas total, half credited to gas, over 1,689 TWh gas generation",
+        },
+        {
+          label: "Percentage over cost depletion (IRC 611/613)",
+          usdPerMwh: 0.36,
+          source: "~$1.2B/yr oil-and-gas portion, half credited to gas, over 1,689 TWh gas generation",
+        },
+        {
+          label: "Accelerated depreciation on gas plant (MACRS)",
+          usdPerMwh: macrs,
+          source: "20-year MACRS shield at the 21% corporate rate, plant-level estimate",
+        },
+      ];
+      const statutory = +gasComponents.reduce((s, c) => s + c.usdPerMwh, 0).toFixed(2);
       return {
-        statutory: +(0.35 + macrs).toFixed(2),
-        broaderLow: 0.2,
-        broaderHigh: 2.0,
+        statutory,
+        broaderLow: statutory,
+        // Upper bound: Oil Change International's ~$35B/yr federal fossil production
+        // subsidy total, with the entire gas-attributable share (~35% of US gas goes to
+        // electric power) landing on power-sector generation.
+        broaderHigh: 7.25,
         basis: "estimate",
         what:
           "Intangible drilling costs, percentage depletion and accelerated depreciation, allocated to power-sector gas",
+        components: gasComponents,
       };
-    case "coal":
+    }
+    case "coal": {
+      const coalComponents: SupportComponent[] = [
+        {
+          label: "Coal tax provisions (percentage depletion, black lung, royalty capital gains)",
+          usdPerMwh: 0.71,
+          source: "$590M FY2022 EIA coal tax expenditures over 828 TWh US coal generation",
+        },
+        {
+          label: "Accelerated depreciation on coal plant (MACRS)",
+          usdPerMwh: macrs,
+          source: "20-year MACRS shield at the 21% corporate rate, plant-level estimate",
+        },
+      ];
+      const statutory = +coalComponents.reduce((s, c) => s + c.usdPerMwh, 0).toFixed(2);
       return {
-        statutory: +(0.5 + macrs).toFixed(2),
-        broaderLow: 0.3,
-        broaderHigh: 2.0,
+        statutory,
+        broaderLow: 0.71,
+        // Adds EIA's $280M FY2022 coal R&D and a state-and-indirect allowance.
+        broaderHigh: 2.75,
         basis: "estimate",
-        what: "Coal percentage depletion, black-lung credit and accelerated depreciation",
+        what: "Coal percentage depletion, black-lung and royalty provisions plus accelerated depreciation",
+        components: coalComponents,
       };
+    }
+
     default:
       return null;
   }
@@ -232,9 +288,23 @@ export const FEDERAL_SOURCES = [
     url: "https://atb.nrel.gov/",
   },
   {
-    label: "Oil Change International, Paying for Climate Chaos — broader fossil support estimates",
-    url: "https://priceofoil.org/",
+    label:
+      "Oil Change International, Paying for Climate Chaos (2025) — ~$35B/yr federal fossil production subsidies",
+    url: "https://oilchange.org/publications/paying-for-climate-chaos-us-subsidies-fossil-fuels/",
   },
+  {
+    label: "EESI, Proposals to Reduce Fossil Fuel Subsidies — reconciles the competing subsidy totals",
+    url: "https://www.eesi.org/papers/view/fact-sheet-proposals-to-reduce-fossil-fuel-subsidies-january-2024",
+  },
+  {
+    label: "EIA, Use of natural gas — sector shares behind the power-generation allocation",
+    url: "https://www.eia.gov/energyexplained/natural-gas/use-of-natural-gas.php",
+  },
+  {
+    label: "PUCT Texas Energy Fund — state low-cost loans to new gas generation (excluded, no published $/MWh)",
+    url: "https://www.puc.texas.gov/industry/electric/business/texas-energy-fund/",
+  },
+
 ];
 
 export interface FederalRow {
@@ -249,9 +319,11 @@ export interface FederalRow {
   broaderHigh: number;
   basis: SupportBasis;
   what: string;
+  components?: SupportComponent[];
   mwh: number;
   /** statutory rate x MWh, $ */
   totalUsd: number;
+
   /** what Austin Energy paid per MWh, for the side-by-side line */
   deliveredRate: number;
 }
@@ -271,7 +343,7 @@ interface RowInput {
  */
 export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
   return rows
-    .map((r) => {
+    .map((r): FederalRow | null => {
       const rate = federalRate(r.key, year);
       if (!rate) return null;
       return {
@@ -284,10 +356,12 @@ export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
         broaderHigh: rate.broaderHigh,
         basis: rate.basis,
         what: rate.what,
+        components: rate.components,
+
         mwh: r.mwh,
         totalUsd: Math.round(rate.statutory * r.mwh),
         deliveredRate: r.deliveredRate,
-      } satisfies FederalRow;
+      };
     })
     .filter((r): r is FederalRow => r !== null)
     .sort((a, b) => b.statutoryRate - a.statutoryRate);
@@ -295,3 +369,78 @@ export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
 
 /** Chart color for the federal-support bars — deliberately distinct from every fuel color. */
 export const FEDERAL_META = { label: "Federal support", color: "#0d9488" };
+
+// ---------------------------------------------------------------------------
+// Combined cost: what Austin Energy paid plus what federal taxpayers carried.
+// ---------------------------------------------------------------------------
+
+export interface TotalCostRow {
+  key: FederalKey;
+  label: string;
+  color: string;
+  /** fuel purchases or contracted energy price, $/MWh */
+  fuelRate: number;
+  /** modeled plant O&M + capital, $/MWh */
+  nonFuelRate: number;
+  /** allocated system delivery costs, $/MWh */
+  systemRate: number;
+  /** what Austin Energy paid, all three layers, $/MWh */
+  aeRate: number;
+  /** federal support attributable to this generation, $/MWh */
+  federalRate: number;
+  /** extra width of the broader-estimate band above the federal rate, $/MWh */
+  broaderBand: number;
+  broaderHigh: number;
+  /** true when no defensible federal figure exists for this source */
+  federalUnknown: boolean;
+  basis: SupportBasis | null;
+  what: string | null;
+  /** aeRate + federalRate */
+  combinedRate: number;
+  /** share of combinedRate carried by Austin Energy ratepayers, 0-1 */
+  ratepayerShare: number;
+  /** share of combinedRate carried by federal taxpayers, 0-1 */
+  taxpayerShare: number;
+  mwh: number;
+  /** combinedRate x MWh, $ */
+  combinedTotalUsd: number;
+  /** federalRate x MWh, $ */
+  federalTotalUsd: number;
+}
+
+/**
+ * Joins the delivered-cost rows with the federal-support rows on source key so a
+ * single bar shows the whole cost of a megawatt-hour regardless of who paid it.
+ * Sources with no defensible federal figure keep their Austin Energy cost and are
+ * flagged `federalUnknown` rather than being credited a zero.
+ */
+export function toTotalCostRows(comparisonRows: ComparisonRow[], year: number): TotalCostRow[] {
+  return comparisonRows
+    .map((r): TotalCostRow => {
+      const rate = federalRate(r.key, year);
+      const federal = rate?.statutory ?? 0;
+      const combined = +(r.deliveredRate + federal).toFixed(2);
+      return {
+        key: r.key,
+        label: r.label,
+        color: r.color,
+        fuelRate: r.fuelRate,
+        nonFuelRate: r.nonFuelRate,
+        systemRate: r.systemRate,
+        aeRate: r.deliveredRate,
+        federalRate: federal,
+        broaderBand: rate ? +Math.max(0, rate.broaderHigh - rate.statutory).toFixed(2) : 0,
+        broaderHigh: rate?.broaderHigh ?? 0,
+        federalUnknown: rate === null,
+        basis: rate?.basis ?? null,
+        what: rate?.what ?? null,
+        combinedRate: combined,
+        ratepayerShare: combined > 0 ? r.deliveredRate / combined : 0,
+        taxpayerShare: combined > 0 ? federal / combined : 0,
+        mwh: r.mwh,
+        combinedTotalUsd: Math.round(combined * r.mwh),
+        federalTotalUsd: Math.round(federal * r.mwh),
+      };
+    })
+    .sort((a, b) => b.combinedRate - a.combinedRate);
+}
