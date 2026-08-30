@@ -97,6 +97,7 @@ const AppRoutes = () => {
           <Route path="/load-growth" element={<LoadGrowth />} />
           <Route path="/import-capacity" element={<ImportCapacity />} />
           <Route path="/power-money" element={<PowerMoney />} />
+          <Route path="/people-with-power" element={<PeopleWithPower />} />
         </Route>
 
         {/* Pages without footer */}
