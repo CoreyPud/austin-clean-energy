@@ -66,10 +66,37 @@ const PowerMoney = () => {
       .catch((e) => setError(e?.message ?? "Failed to load data"));
   }, []);
 
-  const compareRows = useMemo<ComparisonRow[]>(
-    () => (data && compareYear !== null ? toComparisonRows(data, compareYear) : []),
-    [data, compareYear],
-  );
+  // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
+  // the Value of Solar credit and rebates instead of fuel and plant costs.
+  const compareRows = useMemo<ComparisonRow[]>(() => {
+    if (!data || compareYear === null) return [];
+    const rows = toComparisonRows(data, compareYear);
+    const local = localSolarYear(compareYear);
+    const totalMwh = data.years.find((y) => y.year === compareYear)?.totalMwh ?? 0;
+    if (local && local.mwh > 0) {
+      rows.push({
+        key: "localSolar",
+        label: "Local solar",
+        color: "#f59e0b",
+        fuelRate: LOCAL_RATES.vosUsdPerMwh,
+        nonFuelRate: amortizedRebateUsdPerMwh(local.year),
+        systemRate: 0,
+        allInRate: local.usdPerMwh,
+        deliveredRate: local.usdPerMwh,
+        mwh: local.mwh,
+        share: totalMwh > 0 ? local.mwh / totalMwh : 0,
+        measured: false,
+        contracted: true,
+        local: true,
+      });
+    }
+    return rows.sort((a, b) => a.deliveredRate - b.deliveredRate);
+  }, [data, compareYear]);
+
+  const localSolar = useMemo(() => localSolarSeries(), []);
+  const localBattery = useMemo(() => localBatterySeries(), []);
+  const batteryRate = useMemo(() => batteryUsdPerKwYear(), []);
+
 
 
   const fuels = useMemo<FuelKey[]>(() => (data ? fuelsPresent(data) : []), [data]);
