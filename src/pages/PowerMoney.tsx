@@ -3,7 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Info, DollarSign, Flame, Home, TrendingDown, Scale } from "lucide-react";
+import { Info, DollarSign, Flame, Home, TrendingDown, Scale, Sun } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
