@@ -49,6 +49,25 @@ export interface Milestone {
   contractSources: string[];
 }
 
+export interface Retirement {
+  fuel: Milestone["fuel"];
+  resource: string;
+  /** Display date of the closure decision / council action, or null when not documented. */
+  decisionDate: string | null;
+  /** Numeric year for sorting. */
+  decisionSortYear: number;
+  /** Leader running the utility when the closure was decided, or null. */
+  decisionLeader: string | null;
+  /** Display date the units actually stopped running, or a status line if still running. */
+  closedDate: string;
+  /** Leader in office at actual shutdown, or null when not documented / not yet closed. */
+  closedLeader: string | null;
+  what: string;
+  note: string | null;
+  sources: string[];
+}
+
+
 
 export const FUEL_COLOR: Record<Milestone["fuel"], string> = {
   gas: "#d97706",
