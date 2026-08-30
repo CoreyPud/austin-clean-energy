@@ -60,7 +60,8 @@ const PeopleWithPower = () => {
   });
 
   const milestones = sortedMilestones();
-  const decades = [1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
+  const byContract = milestonesByContract();
+
 
   return (
     <div className="min-h-screen bg-background">
