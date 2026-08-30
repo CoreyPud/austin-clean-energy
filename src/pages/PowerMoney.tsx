@@ -337,13 +337,24 @@ const PowerMoney = () => {
                         tickFormatter={(v) => (basis === "total" ? usdCompact(Number(v)) : usd(Number(v)))}
                       />
                       <Tooltip
-                        formatter={(v: number, name: string) => [
-                          basis === "total" ? usd(Number(v)) : usd(Number(v), 2),
-                          name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name,
-                        ]}
-                        labelFormatter={(l) => `Year ${l}`}
-                        contentStyle={{ fontSize: 12 }}
+                        cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const rows: TipRow[] = payload
+                            .filter((p) => Number(p.value) > 0)
+                            .reverse()
+                            .map((p) => ({
+                              color: String(p.color ?? p.fill ?? "#888"),
+                              label:
+                                p.dataKey === SYSTEM_KEY
+                                  ? SYSTEM_META.label
+                                  : FUEL_META[p.dataKey as FuelKey]?.label ?? String(p.dataKey),
+                              value: basis === "total" ? usd(Number(p.value)) : usd(Number(p.value), 2),
+                            }));
+                          return <SwatchTooltip header={`Year ${label}`} rows={rows} />;
+                        }}
                       />
+
                       <Legend
                         formatter={(name) =>
                           name === SYSTEM_KEY ? SYSTEM_META.label : FUEL_META[name as FuelKey]?.label ?? name
