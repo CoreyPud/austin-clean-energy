@@ -83,88 +83,92 @@ const PeopleWithPower = () => {
           </AlertDescription>
         </Alert>
 
-        {/* Tenure timeline */}
+        {/* Contract-date table */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              Leadership timeline and fuel firsts
+              Who was leading Austin Energy when the contract was signed
             </CardTitle>
             <CardDescription>
-              Bars are documented tenures. Markers are the first year each resource type showed up
-              in Austin Energy's portfolio. Gaps in the bars are eras where no named utility
-              director is documented in public sources.
+              Sorted by the date the deal was authorized, not the date the plant started running.
+              The contract date is the one that reflects who actually made the decision — projects
+              routinely come online years later, under someone else.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Decade axis */}
-            <div className="relative h-5 border-b border-border">
-              {decades.map((d) => (
-                <span
-                  key={d}
-                  className="absolute -translate-x-1/2 text-xs text-muted-foreground"
-                  style={{ left: `${pct(d)}%` }}
-                >
-                  {d}
-                </span>
-              ))}
-            </div>
-
-            {/* Milestone markers */}
-            <div className="relative h-28">
-              {milestones.map((m, i) => (
-                <div
-                  key={`${m.resource}-${m.year}`}
-                  className="absolute -translate-x-1/2 flex flex-col items-center"
-                  style={{ left: `${pct(m.sortYear)}%`, top: `${(i % 4) * 1.75}rem` }}
-                >
-                  <span
-                    className="h-3 w-3 rounded-full border-2 border-background"
-                    style={{ backgroundColor: FUEL_COLOR[m.fuel] }}
-                  />
-                  <span className="mt-1 whitespace-nowrap text-[10px] font-medium text-foreground">
-                    {FUEL_LABEL[m.fuel]} {m.year}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Tenure bars */}
-            <div className="space-y-2">
-              {LEADERS.map((l) => {
-                const start = l.startYear;
-                const end = l.endYear ?? 2026;
-                const known = start !== null;
-                return (
-                  <div key={l.name} className="flex items-center gap-3">
-                    <span className="w-32 shrink-0 text-xs font-medium text-foreground">
-                      {l.name}
-                    </span>
-                    <div className="relative h-5 flex-1 rounded bg-muted">
-                      {known ? (
-                        <div
-                          className="absolute h-5 rounded bg-primary/80"
-                          style={{
-                            left: `${pct(start)}%`,
-                            width: `${Math.max(pct(end) - pct(start), 1.2)}%`,
-                          }}
-                          title={`${l.name}: ${l.tenure}`}
-                        />
-                      ) : (
-                        <span className="absolute left-2 top-0.5 text-[10px] text-muted-foreground italic">
-                          tenure dates not documented
-                        </span>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="py-2 pr-3">Resource</th>
+                  <th className="py-2 pr-3">Contract date</th>
+                  <th className="py-2 pr-3">Leading Austin Energy at contract</th>
+                  <th className="py-2 pr-3">First operation</th>
+                  <th className="py-2">Sources</th>
+                </tr>
+              </thead>
+              <tbody>
+                {byContract.map((m) => (
+                  <tr
+                    key={`c-${m.resource}`}
+                    className="border-b border-border/60 align-top"
+                  >
+                    <td className="py-3 pr-3">
+                      <span className="flex items-center gap-2 font-medium text-foreground">
+                        <Swatch fuel={m.fuel} />
+                        {FUEL_LABEL[m.fuel]}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">{m.resource}</span>
+                    </td>
+                    <td className="py-3 pr-3 text-xs">
+                      <span className="font-medium text-foreground">
+                        {m.contractDate ?? NOT_DOCUMENTED}
+                      </span>
+                      {m.contractNote && (
+                        <span className="mt-1 block text-muted-foreground">{m.contractNote}</span>
                       )}
-                    </div>
-                    <span className="hidden w-40 shrink-0 text-[11px] text-muted-foreground sm:block">
-                      {l.tenure}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                    </td>
+                    <td className="py-3 pr-3 font-medium text-foreground">
+                      {m.contractLeader ?? NOT_DOCUMENTED}
+                    </td>
+                    <td className="py-3 pr-3 whitespace-nowrap text-xs text-muted-foreground">
+                      {m.year}
+                      {m.leader && (
+                        <span className="mt-1 block">under {m.leader}</span>
+                      )}
+                    </td>
+                    <td className="py-3">
+                      <SourceLinks keys={m.contractSources} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </CardContent>
         </Card>
+
+        {/* Tenure list */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Documented tenures</CardTitle>
+            <CardDescription>
+              Gaps are eras where no named utility director is documented in public sources.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-sm">
+              <tbody>
+                {LEADERS.map((l) => (
+                  <tr key={l.name} className="border-b border-border/60">
+                    <td className="py-2 pr-3 font-medium text-foreground">{l.name}</td>
+                    <td className="py-2 text-muted-foreground">{l.tenure}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
 
         {/* Fuel-firsts table */}
         <Card>
