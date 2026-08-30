@@ -236,3 +236,59 @@ export const FEDERAL_SOURCES = [
     url: "https://priceofoil.org/",
   },
 ];
+
+export interface FederalRow {
+  key: FederalKey;
+  label: string;
+  color: string;
+  /** plant-level federal support, $/MWh */
+  statutoryRate: number;
+  /** extra width of the broader-estimate band above the statutory rate, $/MWh */
+  broaderBand: number;
+  broaderLow: number;
+  broaderHigh: number;
+  basis: SupportBasis;
+  what: string;
+  mwh: number;
+  /** statutory rate x MWh, $ */
+  totalUsd: number;
+  /** what Austin Energy paid per MWh, for the side-by-side line */
+  deliveredRate: number;
+}
+
+interface RowInput {
+  key: FederalKey;
+  label: string;
+  color: string;
+  mwh: number;
+  deliveredRate: number;
+}
+
+/**
+ * Federal support rows for one year, largest support first. Built from the same
+ * megawatt-hours as the delivered-cost comparison, so the two read together.
+ * Sources with no defensible per-MWh estimate are dropped rather than shown as zero.
+ */
+export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
+  return rows
+    .map((r) => {
+      const rate = federalRate(r.key, year);
+      if (!rate) return null;
+      return {
+        key: r.key,
+        label: r.label,
+        color: r.color,
+        statutoryRate: rate.statutory,
+        broaderBand: +Math.max(0, rate.broaderHigh - rate.statutory).toFixed(2),
+        broaderLow: rate.broaderLow,
+        broaderHigh: rate.broaderHigh,
+        basis: rate.basis,
+        what: rate.what,
+        mwh: r.mwh,
+        totalUsd: Math.round(rate.statutory * r.mwh),
+        deliveredRate: r.deliveredRate,
+      } satisfies FederalRow;
+    })
+    .filter((r): r is FederalRow => r !== null)
+    .sort((a, b) => b.statutoryRate - a.statutoryRate);
+}
