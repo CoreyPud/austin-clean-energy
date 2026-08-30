@@ -62,6 +62,8 @@ const PeopleWithPower = () => {
 
   const milestones = sortedMilestones();
   const byContract = milestonesByContract();
+  const retirements = sortedRetirements();
+
 
 
   return (
