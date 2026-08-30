@@ -49,6 +49,13 @@ import {
   LOCAL_SOURCES,
   GAS_PEAKER_USD_PER_KW_YEAR,
 } from "@/lib/local-resources";
+import {
+  toFederalRows,
+  FEDERAL_ASSUMPTIONS,
+  FEDERAL_SOURCES,
+  type FederalRow,
+} from "@/lib/federal-support";
+
 
 interface TipRow {
   color: string;
