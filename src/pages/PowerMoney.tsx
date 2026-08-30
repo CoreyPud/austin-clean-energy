@@ -1116,7 +1116,7 @@ const PowerMoney = () => {
                           <Cell key={r.key} fill={r.color} />
                         ))}
                       </Bar>
-                      <Bar dataKey="nonFuelRate" stackId="all">
+                      <Bar dataKey="nonFuelRate" stackId="all" fill="#94a3b8">
                         {totalCostRows.map((r) => (
                           <Cell key={r.key} fill={r.color} fillOpacity={0.55} />
                         ))}
