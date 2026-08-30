@@ -1547,6 +1547,13 @@ const PowerMoney = () => {
                       chart on this site.
                     </li>
                   </ul>
+                  <p className="mt-2">
+                    For who was running Austin Energy when each of these resources was first added, see{" "}
+                    <a href="/people-with-power" className="text-primary hover:underline">
+                      People With Power
+                    </a>
+                    .
+                  </p>
                 </div>
 
                 <div>

@@ -70,6 +70,12 @@ const publicPages = [
     icon: Activity,
   },
   {
+    path: "/people-with-power",
+    title: "People With Power",
+    description: "Which Austin Energy general manager was in office when each type of fuel first entered the portfolio.",
+    icon: Users,
+  },
+  {
     path: "/join-the-community",
     title: "Join the Community",
     description: "Sign up to join the Austin Clean Energy volunteer Slack community.",
