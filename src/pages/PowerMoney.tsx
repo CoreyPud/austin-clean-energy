@@ -400,7 +400,7 @@ const PowerMoney = () => {
                         }
                         wrapperStyle={{ fontSize: 12 }}
                       />
-                      <Bar dataKey="fuelRate" stackId="rate" radius={[0, 0, 0, 0]}>
+                      <Bar dataKey="fuelRate" stackId="rate" fill="#64748b" radius={[0, 0, 0, 0]}>
                         {compareRows.map((r) => (
                           <Cell key={r.key} fill={r.color} />
                         ))}
