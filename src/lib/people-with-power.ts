@@ -349,6 +349,19 @@ export const LEADERS: Leader[] = [
     sources: ["nrcMoore", "councilMinutes1990"],
   },
   {
+    name: "Milton Lee",
+    tenure: "Documented as general manager in the 1990s (exact dates not documented)",
+    startYear: null,
+    endYear: 1997,
+    title: "General Manager, Austin Energy",
+    cameFrom: null,
+    background: "Career utility executive; left Austin for the private power sector in the late 1990s",
+    perspective:
+      "Ran the utility through the Holly closure fight and the end of downtown generation, then went on to lead CPS Energy in San Antonio — the public record shows a conventional utility-operations profile rather than a stated energy philosophy.",
+    sources: ["leeChronicle", "leeMinutes"],
+  },
+
+  {
     name: "Juan Garza",
     tenure: "General manager through January 2008 (start year not documented)",
     startYear: null,
