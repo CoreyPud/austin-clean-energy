@@ -189,7 +189,7 @@ export const usdCompact = (n: number) => {
 };
 
 export interface ComparisonRow {
-  key: FuelKey;
+  key: FuelKey | "localSolar";
   label: string;
   color: string;
   /** fuel purchases or contracted energy price, $/MWh */
@@ -209,7 +209,10 @@ export interface ComparisonRow {
   measured: boolean;
   /** true when the energy price is a documented contract assumption */
   contracted: boolean;
+  /** true for behind-the-meter local resources, which carry no system delivery segment */
+  local?: boolean;
 }
+
 
 /**
  * One row per source for a single year, delivered $/MWh, cheapest first.
