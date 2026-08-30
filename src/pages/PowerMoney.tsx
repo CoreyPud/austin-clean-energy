@@ -648,7 +648,244 @@ const PowerMoney = () => {
               </CardContent>
             </Card>
 
+            {/* Who else paid: federal support by source */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Landmark className="h-5 w-5" /> Who else paid: federal support by source
+                    </CardTitle>
+                    <CardDescription>
+                      Everything above is what Austin Energy paid. This is what federal taxpayers carried for the
+                      same megawatt-hours in {federalYear ?? "—"}, through production and investment tax credits and
+                      fuel-specific tax provisions.
+                    </CardDescription>
+                  </div>
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={federalYear ?? ""}
+                    onChange={(e) => setFederalYear(Number(e.target.value))}
+                    aria-label="Federal support year"
+                  >
+                    {data.years.map((y) => (
+                      <option key={y.year} value={y.year}>
+                        {y.year}
+                        {y.partial ? " (partial)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {federalSummary && (
+                  <div className="grid gap-4 sm:grid-cols-2 mb-5">
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Federal support behind Austin Energy's supply, {federalYear}
+                        {federalSummary.partial ? " (partial year)" : ""}
+                      </p>
+                      <p className="text-2xl font-bold">{usdCompact(federalSummary.totalUsd)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tax credits and tax provisions claimed by the developers, PPA counterparties and homeowners
+                        who supply or offset this load — not money that passes through Austin Energy.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">Per residential household equivalent</p>
+                      <p className="text-2xl font-bold">
+                        {usd(federalSummary.perHouseholdUsd, 2)}
+                        <span className="text-sm font-normal text-muted-foreground">/yr</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        The same total spread across Austin Energy's residential customers, using the residential
+                        share of sales — for scale only, since federal support is funded nationally.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ height: Math.max(220, federalRows.length * 54 + 60) }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={federalRows} layout="vertical" margin={{ left: 8, right: 72 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                      <YAxis type="category" dataKey="label" width={92} tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const row = (payload[0]?.payload ?? null) as FederalRow | null;
+                          if (!row) return null;
+                          const rows: TipRow[] = [
+                            {
+                              color: FEDERAL_META.color,
+                              label: "Federal tax credits and provisions (solid bar)",
+                              value: `$${row.statutoryRate.toFixed(2)}/MWh`,
+                            },
+                          ];
+                          if (row.broaderBand > 0)
+                            rows.push({
+                              color: FEDERAL_META.color,
+                              opacity: 0.3,
+                              label: `Broader estimates, up to (pale end of bar)`,
+                              value: `$${row.broaderHigh.toFixed(2)}/MWh`,
+                            });
+                          rows.push({
+                            color: row.color,
+                            label: "What Austin Energy paid (other chart above)",
+                            value: `$${row.deliveredRate.toFixed(2)}/MWh`,
+                          });
+                          return (
+                            <SwatchTooltip
+                              header={`${row.label} — ${usdCompact(row.totalUsd)} of federal support on ${Math.round(
+                                row.mwh,
+                              ).toLocaleString()} MWh`}
+                              note={`${row.what}. ${
+                                row.basis === "statutory"
+                                  ? "Credit rate written into the tax code."
+                                  : "Analyst estimate, not an agency-published per-MWh figure."
+                              }`}
+                              rows={rows}
+                            />
+                          );
+                        }}
+                      />
+                      <Legend
+                        formatter={(name) =>
+                          name === "statutoryRate"
+                            ? "Federal tax credits and provisions ($/MWh)"
+                            : "Broader estimates (range, weaker attribution)"
+                        }
+                        wrapperStyle={{ fontSize: 12 }}
+                      />
+                      <Bar dataKey="statutoryRate" stackId="fed" fill={FEDERAL_META.color} />
+                      <Bar dataKey="broaderBand" stackId="fed" fill={FEDERAL_META.color} fillOpacity={0.3} radius={[0, 3, 3, 0]}>
+                        <LabelList
+                          dataKey="statutoryRate"
+                          position="right"
+                          formatter={(v: number) => `$${Number(v).toFixed(0)}`}
+                          style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs text-muted-foreground">
+                        <th className="py-2 pr-3">Source</th>
+                        <th className="py-2 pr-3 text-right">Federal $/MWh</th>
+                        <th className="py-2 pr-3 text-right">Broader range</th>
+                        <th className="py-2 pr-3 text-right">MWh</th>
+                        <th className="py-2 pr-3 text-right">Federal $ total</th>
+                        <th className="py-2 pr-3 text-right">AE paid $/MWh</th>
+                        <th className="py-2">Basis</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {federalRows.map((r) => (
+                        <tr key={r.key} className="border-b last:border-0">
+                          <td className="py-2 pr-3">
+                            <span className="inline-flex items-center gap-2">
+                              <span
+                                className="inline-block h-2.5 w-2.5 rounded-sm"
+                                style={{ backgroundColor: r.color }}
+                              />
+                              {r.label}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-3 text-right font-medium">${r.statutoryRate.toFixed(2)}</td>
+                          <td className="py-2 pr-3 text-right text-muted-foreground">
+                            ${r.broaderLow.toFixed(2)}–${r.broaderHigh.toFixed(2)}
+                          </td>
+                          <td className="py-2 pr-3 text-right">{Math.round(r.mwh).toLocaleString()}</td>
+                          <td className="py-2 pr-3 text-right">{usdCompact(r.totalUsd)}</td>
+                          <td className="py-2 pr-3 text-right">${r.deliveredRate.toFixed(2)}</td>
+                          <td className="py-2 text-xs text-muted-foreground">
+                            {r.basis === "statutory" ? "Statutory credit rate" : "Modeled estimate"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-2 mt-4">
+                  <p>
+                    <span className="font-medium text-foreground">How to read the bars.</span> The solid teal segment
+                    is federal support that can be tied to this generation: the Section 45/45Y production tax credit
+                    for wind, the Section 48 investment tax credit for utility-scale solar, the Section 25D credit for
+                    rooftop solar, the Section 45U nuclear credit from 2024, and fuel-specific provisions plus
+                    accelerated depreciation for gas and coal. The pale teal extension is the{" "}
+                    <span className="font-medium text-foreground">broader-estimate band</span> — the top of a
+                    published range rather than a number anyone has measured. Each source's own color appears in the
+                    tooltip next to what Austin Energy paid, matching the comparison chart above.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Austin Energy claims none of this.</span> A
+                    municipal utility is tax-exempt, so it cannot take a tax credit. The value goes to the private
+                    developers and power-purchase counterparties who own the wind and solar farms, and to homeowners
+                    who install rooftop systems. It reaches Austin indirectly, as a lower contract price or a lower
+                    install price — which is exactly why the utility-scale wind and solar contract prices in the
+                    charts above are as low as they are.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Fossil bars are the weak part.</span> Intangible
+                    drilling costs, percentage depletion and the rest are upstream provisions that accrue to
+                    producers, not per-megawatt-hour payments to a power plant. Converting them to $/MWh of Austin
+                    Energy gas or coal generation means dividing national tax-expenditure totals by national
+                    generation, which is defensible as an order of magnitude and nothing more. Broader fossil
+                    estimates that include foreign tax treatment and federal R&amp;D do not convert cleanly to
+                    $/MWh at all, so the high end of those bands is deliberately conservative rather than the
+                    headline numbers advocacy groups publish.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Capital credits are levelized, not billed.</span>{" "}
+                    The ITC and 25D are one-time credits on construction cost, so turning them into $/MWh requires
+                    assumptions: $
+                    {FEDERAL_ASSUMPTIONS.utilityPvCapexUsdPerKw.toLocaleString()}/kW utility PV capex at a{" "}
+                    {(FEDERAL_ASSUMPTIONS.utilityPvCapacityFactor * 100).toFixed(0)}% capacity factor, $
+                    {FEDERAL_ASSUMPTIONS.residentialPvUsdPerWatt.toFixed(2)}/W residential installs at{" "}
+                    {FEDERAL_ASSUMPTIONS.residentialYieldKwhPerKwYear.toLocaleString()} kWh/kW-yr, a{" "}
+                    {FEDERAL_ASSUMPTIONS.lifeYears}-year life and a{" "}
+                    {(FEDERAL_ASSUMPTIONS.discountRate * 100).toFixed(0)}% real discount rate. Change the
+                    assumptions and the solar bars move.
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">What is not here.</span> Hydro, biomass and fuel oil
+                    are dropped because no defensible per-MWh federal figure exists for them in this mix. State and
+                    local incentives are excluded. Health and climate externalities are excluded too — that is a
+                    different question and is not being smuggled into these bars. Note also that the residential
+                    credit ended for systems placed in service after December 31, 2025, and new wind and solar
+                    credits are being phased out under the 2025 tax law, so recent years are not a guide to future
+                    ones.
+                  </p>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Sources</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {FEDERAL_SOURCES.map((s) => (
+                        <li key={s.url}>
+                          <a
+                            href={s.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            {s.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Local solar and batteries */}
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
