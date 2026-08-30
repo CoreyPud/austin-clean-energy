@@ -126,6 +126,8 @@ const PowerMoney = () => {
   const [layer, setLayer] = useState<CostLayer>("fuel");
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [compareYear, setCompareYear] = useState<number | null>(null);
+  const [federalYear, setFederalYear] = useState<number | null>(null);
+
 
   useEffect(() => {
     loadPowerMoney()
