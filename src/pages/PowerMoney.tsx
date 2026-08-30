@@ -169,6 +169,43 @@ const PowerMoney = () => {
     return rows.sort((a, b) => a.deliveredRate - b.deliveredRate);
   }, [data, compareYear]);
 
+  // Federal support behind the same megawatt-hours, for its own year selector.
+  const federalRows = useMemo<FederalRow[]>(() => {
+    if (!data || federalYear === null) return [];
+    const rows = toComparisonRows(data, federalYear).map((r) => ({
+      key: r.key,
+      label: r.label,
+      color: r.color,
+      mwh: r.mwh,
+      deliveredRate: r.deliveredRate,
+    }));
+    const local = localSolarYear(federalYear);
+    if (local && local.mwh > 0) {
+      rows.push({
+        key: "localSolar",
+        label: "Local solar",
+        color: "#f59e0b",
+        mwh: local.mwh,
+        deliveredRate: local.usdPerMwh,
+      });
+    }
+    return toFederalRows(rows, federalYear);
+  }, [data, federalYear]);
+
+  const federalSummary = useMemo(() => {
+    if (!data || federalYear === null || federalRows.length === 0) return null;
+    const y = data.years.find((r) => r.year === federalYear);
+    if (!y) return null;
+    const totalUsd = federalRows.reduce((s, r) => s + r.totalUsd, 0);
+    const households = y.resCustomers / data.assumptions.residentialShareOfSales;
+    return {
+      totalUsd,
+      perHouseholdUsd: households > 0 ? totalUsd / households : 0,
+      partial: y.partial,
+    };
+  }, [data, federalYear, federalRows]);
+
+
   const localSolar = useMemo(() => localSolarSeries(), []);
   const localBattery = useMemo(() => localBatterySeries(), []);
   const batteryRate = useMemo(() => batteryUsdPerKwYear(), []);
