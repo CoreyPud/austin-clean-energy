@@ -25,19 +25,30 @@ export interface Milestone {
   /** Resource family, used for coloring. */
   fuel: "gas" | "coal" | "nuclear" | "wind" | "biomass" | "solar" | "localSolar" | "battery";
   resource: string;
-  /** Display year or year range. */
+  /** Display year or year range for first operation / program launch. */
   year: string;
   /** Numeric year used for sorting. */
   sortYear: number;
   what: string;
-  /** Name of the leader in office, or null when the record does not document one. */
+  /** Name of the leader in office at first operation, or null when not documented. */
   leader: string | null;
   /** Caveat about the leader attribution or the date itself. */
   note: string | null;
   /** Documented public framing by that leader at the time, or null. */
   framing: string | null;
   sources: string[];
+  /** Date the contract / program was authorized, e.g. "Feb. 12, 2009". Null when not documented. */
+  contractDate: string | null;
+  /** Numeric year for sorting by contract date; falls back to sortYear when unknown. */
+  contractSortYear: number | null;
+  /** Leader running the utility when the contract was authorized, or null. */
+  contractLeader: string | null;
+  /** Caveat about the contract date or its leader attribution. */
+  contractNote: string | null;
+  /** Sources for the contract date. */
+  contractSources: string[];
 }
+
 
 export const FUEL_COLOR: Record<Milestone["fuel"], string> = {
   gas: "#d97706",
@@ -186,7 +197,28 @@ export const SOURCES: Record<string, { label: string; url: string }> = {
     label: "Austin American-Statesman — AE poised to test its first storage system (2016)",
     url: "https://www.statesman.com/story/news/2016/09/04/austin-energy-poised-to-test-its-first-energy-storage-system/9995279007/",
   },
+  webbervilleRca: {
+    label: "City of Austin Council item — Gemini Solar 30 MW PPA (Feb. 12, 2009)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=125999",
+  },
+  webbervillePvTech: {
+    label: "PV Tech — Austin City Council approves 30 MW solar plant, chooses Gemini Solar (2009)",
+    url: "https://www.pv-tech.org/austin_city_council_approves_30-mw_solar_power_plant_chooses_gemini_solar/",
+  },
+  nacogdochesRca: {
+    label: "City of Austin — Resource Management Commission recommendation, 20-year biomass PPA (Aug. 19, 2008)",
+    url: "https://www.austintexas.gov/edims/document.cfm?id=120178",
+  },
+  nacogdochesCouncil: {
+    label: "Austin Monitor — Council takes next step toward contract for biomass plant (Aug. 2008)",
+    url: "https://austinmonitor.com/stories/2008/08/council-takes-next-step-toward-contract-for-biomass-plant/",
+  },
+  aeRenewables: {
+    label: "Austin Energy — Renewable Power Generation (utility-scale fleet table)",
+    url: "https://austinenergy.com/about/company-profile/environment/renewable-power-generation",
+  },
 };
+
 
 export const LEADERS: Leader[] = [
   {
@@ -299,6 +331,12 @@ export const MILESTONES: Milestone[] = [
     note: "Predates the modern general manager role — no named utility director is documented for this year.",
     framing: null,
     sources: ["seaholm"],
+    contractDate: null,
+    contractSortYear: null,
+    contractLeader: null,
+    contractNote:
+      "City-built plant, not a purchase contract. No authorization date or named utility director is documented.",
+    contractSources: ["seaholm"],
   },
   {
     fuel: "gas",
@@ -310,6 +348,12 @@ export const MILESTONES: Milestone[] = [
     note: "No named utility director documented for this year.",
     framing: null,
     sources: ["holly"],
+    contractDate: null,
+    contractSortYear: null,
+    contractLeader: null,
+    contractNote:
+      "City-built plant. The Council authorization date and the utility director at the time are not documented.",
+    contractSources: ["holly"],
   },
   {
     fuel: "coal",
@@ -321,6 +365,12 @@ export const MILESTONES: Milestone[] = [
     note: "No named Austin utility director is documented in public sources at the time Unit 1 came online.",
     framing: null,
     sources: ["fayetteEia", "fayette"],
+    contractDate: null,
+    contractSortYear: null,
+    contractLeader: null,
+    contractNote:
+      "The joint-ownership agreement with LCRA dates to the early 1970s, but no precise authorization date or named Austin utility director is documented.",
+    contractSources: ["fayette"],
   },
   {
     fuel: "nuclear",
@@ -332,6 +382,12 @@ export const MILESTONES: Milestone[] = [
     note: "The director at startup is not documented. John Moore is documented as Director, Electric Utility from 1989, handling STP oversight with the NRC.",
     framing: null,
     sources: ["stpLicense", "nrcMoore"],
+    contractDate: null,
+    contractSortYear: null,
+    contractLeader: null,
+    contractNote:
+      "Austin's participation dates to a 1970s bond-backed agreement; no exact authorization date or utility director of record is documented here.",
+    contractSources: ["stpLicense"],
   },
   {
     fuel: "wind",
@@ -343,54 +399,87 @@ export const MILESTONES: Milestone[] = [
     note: "Sources conflict on the online year (1996 phase vs. 1999 full operation), and no Austin Energy director is documented as the decision-maker on this regional contract.",
     framing: null,
     sources: ["delawareMountain"],
+    contractDate: null,
+    contractSortYear: null,
+    contractLeader: null,
+    contractNote:
+      "Austin Energy describes buying wind power \"since the 1990s\" but publishes no contract date for its first wind purchase, and no signing date is documented.",
+    contractSources: ["aeRenewables"],
   },
   {
     fuel: "localSolar",
     resource: "Solar PV rebate program ($5/watt)",
-    year: "2004",
+    year: "June 2004 (program launch)",
     sortYear: 2004,
-    what: "Council approves customer-sited solar rebates on May 27, 2004; the program launches that June — the start of rooftop solar as an Austin Energy resource.",
+    what: "Council approves customer-sited solar rebates; the program launches that June — the start of rooftop solar as an Austin Energy resource.",
     leader: "Juan Garza",
     note: "Garza is documented as general manager through January 2008; his start year is not documented, so his tenure covering 2004 is inferred from that endpoint.",
     framing: null,
     sources: ["rebateRca", "rebateChronicle"],
+    contractDate: "May 27, 2004",
+    contractSortYear: 2004,
+    contractLeader: "Juan Garza",
+    contractNote: "Council approval of the rebate program rather than a generation contract.",
+    contractSources: ["rebateRca"],
   },
   {
     fuel: "solar",
     resource: "Webberville Solar Farm (30 MW)",
-    year: "2012",
+    year: "January 2012",
     sortYear: 2012,
-    what: "Austin Energy's first utility-scale solar plant is activated on January 6, 2012.",
+    what: "Austin Energy's first utility-scale solar plant is activated on January 6, 2012 under a 25-year PPA with Gemini Solar.",
     leader: "Larry Weis",
     note: null,
     framing: null,
-    sources: ["webberville"],
+    sources: ["webberville", "aeRenewables"],
+    contractDate: "Feb. 12, 2009 (Council authorization; award announced March 2009)",
+    contractSortYear: 2009,
+    contractLeader: "Roger Duncan",
+    contractNote:
+      "Decided three years before the ribbon-cutting: Duncan was general manager when Council authorized the PPA, Weis when it came online.",
+    contractSources: ["webbervilleRca", "webbervillePvTech"],
   },
   {
     fuel: "biomass",
-    resource: "Nacogdoches Generating Facility (115 MW)",
-    year: "2012",
+    resource: "Nacogdoches Generating Facility (105 MW)",
+    year: "Mid-2012",
     sortYear: 2012.5,
-    what: "A 20-year biomass power purchase agreement begins commercial operation in mid-2012.",
+    what: "A 20-year biomass power purchase agreement begins commercial operation. Austin Energy bought the plant outright in 2019.",
     leader: "Larry Weis",
     note: null,
     framing: null,
-    sources: ["nacogdoches"],
+    sources: ["nacogdoches", "aeRenewables"],
+    contractDate: "August 2008",
+    contractSortYear: 2008,
+    contractLeader: "Roger Duncan",
+    contractNote:
+      "Council authorized negotiation of the $2.3 billion, 20-year PPA in August 2008, on Duncan's watch, four years before the plant ran.",
+    contractSources: ["nacogdochesRca", "nacogdochesCouncil"],
   },
   {
     fuel: "battery",
     resource: "Kingsbery substation storage; community-solar battery",
-    year: "2015 – 2016",
+    year: "September 2016 (first test)",
     sortYear: 2015,
-    what: "Council authorizes Austin Energy's first grid battery contract in October 2015; the system is tested in September 2016.",
-    leader: "Larry Weis, then Jackie Sargent",
-    note: "The contract was authorized under Weis; the system was commissioned after Sargent took over in August 2016.",
+    what: "Austin Energy's first grid battery is contracted in 2015 and tested in September 2016.",
+    leader: "Jackie Sargent",
+    note: "The system was commissioned after Sargent took over in August 2016.",
     framing: null,
     sources: ["batteryRca", "batteryStatesman"],
+    contractDate: "October 2015",
+    contractSortYear: 2015,
+    contractLeader: "Larry Weis",
+    contractNote: "Council authorized the storage contract while Weis was general manager.",
+    contractSources: ["batteryRca"],
   },
 ];
 
 export const sortedMilestones = () => [...MILESTONES].sort((a, b) => a.sortYear - b.sortYear);
+
+/** Sorted by contract authorization date, falling back to first-operation year when undocumented. */
+export const milestonesByContract = () =>
+  [...MILESTONES].sort((a, b) => (a.contractSortYear ?? a.sortYear) - (b.contractSortYear ?? b.sortYear));
+
 
 export const leaderByName = (name: string | null) =>
   name ? LEADERS.find((l) => name.includes(l.name)) ?? null : null;
