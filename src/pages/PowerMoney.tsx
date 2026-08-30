@@ -896,15 +896,27 @@ const PowerMoney = () => {
                     charts above are as low as they are.
                   </p>
                   <p>
-                    <span className="font-medium text-foreground">Fossil bars are the weak part.</span> Intangible
-                    drilling costs, percentage depletion and the rest are upstream provisions that accrue to
-                    producers, not per-megawatt-hour payments to a power plant. Converting them to $/MWh of Austin
-                    Energy gas or coal generation means dividing national tax-expenditure totals by national
-                    generation, which is defensible as an order of magnitude and nothing more. Broader fossil
-                    estimates that include foreign tax treatment and federal R&amp;D do not convert cleanly to
-                    $/MWh at all, so the high end of those bands is deliberately conservative rather than the
-                    headline numbers advocacy groups publish.
+                    <span className="font-medium text-foreground">Why gas looks so small.</span> Renewable credits are
+                    written per project and per megawatt-hour, so the entire credit lands on the MWh being priced.
+                    Fossil support is upstream and volumetric — intangible drilling costs and percentage depletion
+                    accrue to producers for getting gas out of the ground, not to a power plant for burning it — and
+                    only about a third of US natural gas goes to electric power at all. The rest heats buildings, runs
+                    industry, feeds petrochemicals or leaves as LNG. EIA's FY2022 report puts federal support for
+                    natural gas and petroleum liquids at $2.3B combined and coal at $873M; spread that across national
+                    generation and the result is a couple of dollars per MWh. It is an order of magnitude, not a
+                    measurement.
                   </p>
+                  <p>
+                    <span className="font-medium text-foreground">Oil, not gas, and not everything.</span> Much of the
+                    oil-and-gas subsidy total people have heard about accrues to oil revenue inside integrated
+                    producers, and none of that is credited to gas here. Also excluded: federal leasing and royalty
+                    terms, pipeline rate treatment, ERCOT market design, and Texas's own below-market loans to new gas
+                    plants through the $7.2B Texas Energy Fund generation program. Those are real advantages that are
+                    not federal tax credits and that nobody publishes as $/MWh, so they are named rather than guessed
+                    at. The broader-estimate band tops out at the gas-attributable slice of Oil Change International's
+                    ~$35B/yr federal production-subsidy total.
+                  </p>
+
                   <p>
                     <span className="font-medium text-foreground">Capital credits are levelized, not billed.</span>{" "}
                     The ITC and 25D are one-time credits on construction cost, so turning them into $/MWh requires
