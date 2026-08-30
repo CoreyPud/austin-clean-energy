@@ -49,6 +49,25 @@ export interface Milestone {
   contractSources: string[];
 }
 
+export interface Retirement {
+  fuel: Milestone["fuel"];
+  resource: string;
+  /** Display date of the closure decision / council action, or null when not documented. */
+  decisionDate: string | null;
+  /** Numeric year for sorting. */
+  decisionSortYear: number;
+  /** Leader running the utility when the closure was decided, or null. */
+  decisionLeader: string | null;
+  /** Display date the units actually stopped running, or a status line if still running. */
+  closedDate: string;
+  /** Leader in office at actual shutdown, or null when not documented / not yet closed. */
+  closedLeader: string | null;
+  what: string;
+  note: string | null;
+  sources: string[];
+}
+
+
 
 export const FUEL_COLOR: Record<Milestone["fuel"], string> = {
   gas: "#d97706",
@@ -217,7 +236,92 @@ export const SOURCES: Record<string, { label: string; url: string }> = {
     label: "Austin Energy — Renewable Power Generation (utility-scale fleet table)",
     url: "https://austinenergy.com/about/company-profile/environment/renewable-power-generation",
   },
+  leeChronicle: {
+    label: "Austin Chronicle — Utility Player (Milton Lee profile)",
+    url: "https://www.austinchronicle.com/news/utility-player-11731343/",
+  },
+  leeMinutes: {
+    label: "Austin City Council minutes referencing GM Milton Lee (1997)",
+    url: "https://www.austintexas.gov/edims/document.cfm?id=56808",
+  },
+  seaholmHistory: {
+    label: "Seaholm Development — plant history (generation ends 1989, final shutdown 1996)",
+    url: "https://www.seaholmdevelopment.com/history.html",
+  },
+  hollyClosure1995: {
+    label: "City of Austin Council backup — Holly Street phased closure resolution (Jan. 19, 1995)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=144574",
+  },
+  hollyChronicle2007: {
+    label: "Austin Chronicle — Holly Power Plant to Close, Really! (2007)",
+    url: "https://www.austinchronicle.com/news/holly-power-plant-to-close-really-11730018/",
+  },
+  deckerMonitor: {
+    label: "Austin Monitor — Decker Creek Power Station finally closing (June 2020)",
+    url: "https://austinmonitor.com/stories/2020/06/decker-creek-power-station-finally-closing/",
+  },
+  deckerPortfolio: {
+    label: "Austin Energy Generation Portfolio Update (Nov. 16, 2021) — Decker Unit 2 shutdown, Fayette talks stalled",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=371411",
+  },
+  genPlan2030: {
+    label: "City of Austin — 2030 Austin Energy Generation Plan resolution materials (2020)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=370826",
+  },
+  fayetteWatson: {
+    label: "Austin American-Statesman — Watson proposes halting Fayette exit, targets 2029 (Feb. 2024)",
+    url: "https://www.statesman.com/story/news/local/2024/02/23/kirk-watson-austin-energy-fayette-power-plant-halt-plans-back-out-2029-coal-powered-plants-texas/72659137007/",
+  },
+  aeOpsQ4Fy2025: {
+    label: "Austin Energy Q4 FY2025 Operations Update — Fayette still listed as an active resource",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=462166",
+  },
+  roserockRca: {
+    label: "City of Austin Council — Roserock/2014 solar PPA award materials",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=239849",
+  },
+  roserockStatesman: {
+    label: "Austin American-Statesman — first of three contracted solar plants comes online (April 2017)",
+    url: "https://digital.olivesoftware.com/Olive/ODN/AustinAmericanStatesman/shared/ShowArticle.aspx?doc=AAS%2F2017%2F04%2F09&entity=Ar00106",
+  },
+  wind2017Rca: {
+    label: "City of Austin Council item — 15-year PPA, 200 MW wind facility (June 22, 2017)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=279145",
+  },
+  blacklandRca: {
+    label: "City of Austin Council item — East Blackland Solar 144 MW PPA (Oct. 18, 2018)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=307252",
+  },
+  wind2019Rca: {
+    label: "City of Austin Council item — 170 MW wind PPA with Pattern Energy (March 7, 2019)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=315317",
+  },
+  communitySolarRate: {
+    label: "City of Austin Council item — community solar rate for Customer Assistance Program (Dec. 14, 2017)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=289226",
+  },
+  laLoma: {
+    label: "Austin Community Solar — La Loma community solar project",
+    url: "https://austincommunitysolar.com/",
+  },
+  jupiterRca: {
+    label: "City of Austin Council item — battery tolling agreement, Balcones Ridge Resiliency (July 24, 2025)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=454800",
+  },
+  jupiterRelease: {
+    label: "Austin Energy — Austin Energy signs battery storage deal (Oct. 23, 2025)",
+    url: "https://austinenergy.com/about/news/news-releases/2025/Austin-Energy-signs-Battery-Storage-Deal",
+  },
+  peaker2026Rca: {
+    label: "City of Austin Council item 26-1880 — local natural gas peaker generation (May 19, 2026)",
+    url: "https://services.austintexas.gov/edims/document.cfm?id=473412",
+  },
+  peakerKut: {
+    label: "KUT — Austin Energy to build new natural gas plant (May 2026)",
+    url: "https://www.kut.org/energy-environment/2026-05-21/austin-energy-tx-new-natural-gas-electricity-plant",
+  },
 };
+
 
 
 export const LEADERS: Leader[] = [
@@ -244,6 +348,19 @@ export const LEADERS: Leader[] = [
       "Represented Austin's stake in the South Texas Project before the NRC and carried routine Electric Utility Commission business to Council — the public record shows an oversight-and-administration role rather than a stated energy philosophy.",
     sources: ["nrcMoore", "councilMinutes1990"],
   },
+  {
+    name: "Milton Lee",
+    tenure: "Documented as general manager in the 1990s (exact dates not documented)",
+    startYear: null,
+    endYear: 1997,
+    title: "General Manager, Austin Energy",
+    cameFrom: null,
+    background: "Career utility executive; left Austin for the private power sector in the late 1990s",
+    perspective:
+      "Ran the utility through the Holly closure fight and the end of downtown generation, then went on to lead CPS Energy in San Antonio — the public record shows a conventional utility-operations profile rather than a stated energy philosophy.",
+    sources: ["leeChronicle", "leeMinutes"],
+  },
+
   {
     name: "Juan Garza",
     tenure: "General manager through January 2008 (start year not documented)",
@@ -472,7 +589,180 @@ export const MILESTONES: Milestone[] = [
     contractNote: "Council authorized the storage contract while Weis was general manager.",
     contractSources: ["batteryRca"],
   },
+  {
+    fuel: "solar",
+    resource: "Roserock Solar (157.5 MW AC, Pecos County)",
+    year: "Late 2016 / early 2017",
+    sortYear: 2016.5,
+    what: "The first of the large West Texas solar PPAs Austin Energy contracted in the mid-2010s reaches commercial operation.",
+    leader: "Jackie Sargent",
+    note: "Reporting places first power in late 2016 / spring 2017, after Sargent took office in August 2016.",
+    framing: null,
+    sources: ["roserockStatesman", "aeRenewables"],
+    contractDate: "2014 – 2015 solar procurement authorization",
+    contractSortYear: 2014,
+    contractLeader: "Larry Weis",
+    contractNote:
+      "Council's October 2015 action authorized up to 350 MW of new solar PPAs on Weis's watch; the exact signing date for this specific plant is not documented.",
+    contractSources: ["roserockRca"],
+  },
+  {
+    fuel: "localSolar",
+    resource: "Community solar (La Loma, Kingsbery substation)",
+    year: "2018",
+    sortYear: 2018,
+    what: "Renters and customers who cannot put panels on their own roof can subscribe to a local solar array, with a discounted rate for Customer Assistance Program households.",
+    leader: "Jackie Sargent",
+    note: null,
+    framing: null,
+    sources: ["laLoma", "communitySolarRate"],
+    contractDate: "Dec. 14, 2017 (community solar rate approval)",
+    contractSortYear: 2017,
+    contractLeader: "Jackie Sargent",
+    contractNote:
+      "Council approved the community solar rate structure; the underlying project PPA date is not documented.",
+    contractSources: ["communitySolarRate"],
+  },
+  {
+    fuel: "wind",
+    resource: "200 MW wind PPA (facility unnamed in the council item)",
+    year: "First operation not documented",
+    sortYear: 2017.5,
+    what: "A 15-year power purchase agreement for 200 MW of wind, part of the build-out that pushed Austin Energy's renewable share past half its supply.",
+    leader: null,
+    note: "The council item does not name the facility and no first-operation date is documented.",
+    framing: null,
+    sources: ["wind2017Rca"],
+    contractDate: "June 22, 2017",
+    contractSortYear: 2017,
+    contractLeader: "Jackie Sargent",
+    contractNote: null,
+    contractSources: ["wind2017Rca"],
+  },
+  {
+    fuel: "solar",
+    resource: "East Blackland Solar Project 1 (144 MW)",
+    year: "First operation not documented",
+    sortYear: 2018.5,
+    what: "A 15-year, roughly $165 million solar PPA — about $11 million a year — for capacity east of Austin.",
+    leader: null,
+    note: "No commercial-operation date for this plant is documented in the sources checked.",
+    framing: null,
+    sources: ["blacklandRca"],
+    contractDate: "Oct. 18, 2018",
+    contractSortYear: 2018,
+    contractLeader: "Jackie Sargent",
+    contractNote: null,
+    contractSources: ["blacklandRca"],
+  },
+  {
+    fuel: "wind",
+    resource: "170 MW wind PPA (Pattern Energy Group)",
+    year: "First operation not documented",
+    sortYear: 2019,
+    what: "A second large 15-year wind agreement, signed two years after the 200 MW deal.",
+    leader: null,
+    note: "No first-operation date is documented for this contract.",
+    framing: null,
+    sources: ["wind2019Rca"],
+    contractDate: "March 7, 2019",
+    contractSortYear: 2019,
+    contractLeader: "Jackie Sargent",
+    contractNote: null,
+    contractSources: ["wind2019Rca"],
+  },
+  {
+    fuel: "battery",
+    resource: "Balcones Ridge Resiliency battery tolling agreement (up to 100 MW, Jupiter Power)",
+    year: "Not yet in service",
+    sortYear: 2025.5,
+    what: "Austin Energy's first large grid-scale battery deal — up to 20 years, about $14.4 million a year, up to $288 million total.",
+    leader: null,
+    note: "The contract was signed in October 2025; no in-service date has been reported yet.",
+    framing: null,
+    sources: ["jupiterRelease"],
+    contractDate: "July 24, 2025 (Council authorization); signed Oct. 23, 2025",
+    contractSortYear: 2025,
+    contractLeader: "Stuart Reilly",
+    contractNote:
+      "Authorized while Reilly was interim general manager, signed before his permanent appointment in November 2025. The storage RFP behind it went out in February 2025, under Bob Kahn.",
+    contractSources: ["jupiterRca", "jupiterRelease"],
+  },
+  {
+    fuel: "gas",
+    resource: "New local natural gas peaker units",
+    year: "Not yet built",
+    sortYear: 2026,
+    what: "Council backs building new gas-fired peaking generation as part of the resource plan to 2035 — the first new Austin gas capacity in decades. Reporting put the potential cost above $1 billion and criticized the closed-door process.",
+    leader: null,
+    note: "No units are in service; this row tracks the decision, not an operating plant.",
+    framing:
+      "Austin's clean energy future still requires reliable backup generation.",
+    sources: ["peakerKut", "peaker2026Rca", "reillyMessage"],
+    contractDate: "May 19, 2026 (Council item 26-1880)",
+    contractSortYear: 2026,
+    contractLeader: "Stuart Reilly",
+    contractNote:
+      "Approved as a direction to pursue peaker generation; costs were not disclosed publicly at the time of the vote.",
+    contractSources: ["peaker2026Rca", "peakerKut"],
+  },
 ];
+
+export const RETIREMENTS: Retirement[] = [
+  {
+    fuel: "gas",
+    resource: "Seaholm Power Plant (downtown)",
+    decisionDate: null,
+    decisionSortYear: 1989,
+    decisionLeader: null,
+    closedDate: "Stopped generating 1989; last generators shut down 1996",
+    closedLeader: null,
+    what: "Austin's original downtown steam plant goes dark and is later redeveloped into the Seaholm district.",
+    note: "No council action or named utility director is documented for the shutdown decision. Milton Lee is documented as general manager later in the 1990s, but no source ties him to this closure.",
+    sources: ["seaholmHistory", "seaholm"],
+  },
+  {
+    fuel: "gas",
+    resource: "Holly Street Power Plant (East Austin)",
+    decisionDate: "Jan. 19, 1995 (Council resolution for phased closure)",
+    decisionSortYear: 1995,
+    decisionLeader: null,
+    closedDate: "September 2007 (final units)",
+    closedLeader: "Juan Garza",
+    what: "After a decades-long neighborhood campaign — a closure committee was seated in 1993 — Council ordered a phased shutdown and the last units came off in 2007. Decommissioning ran into the 2010s.",
+    note: "No source names the general manager at the 1995 vote; Milton Lee is documented as GM later in the 1990s. Garza is placed at the 2007 closure by his documented tenure through January 2008, not by a source naming him on Holly.",
+    sources: ["hollyClosure1995", "hollyChronicle2007", "holly"],
+  },
+  {
+    fuel: "gas",
+    resource: "Decker Creek steam Units 1 and 2",
+    decisionDate: "March 2020 (2030 Generation Plan, adopted unanimously)",
+    decisionSortYear: 2020,
+    decisionLeader: "Jackie Sargent",
+    closedDate: "Unit 1 fall 2020; Unit 2 March 2022",
+    closedLeader: "Jackie Sargent",
+    what: "Austin Energy retires its two aging gas steam units at Decker. The four gas turbines on the site stayed online.",
+    note: "The four Decker gas turbines were not retired and remain part of the fleet.",
+    sources: ["deckerMonitor", "deckerPortfolio", "genPlan2030"],
+  },
+  {
+    fuel: "coal",
+    resource: "Fayette Power Project — Austin's coal share",
+    decisionDate: "March 2020 (2030 Generation Plan: stop burning coal by end of 2022)",
+    decisionSortYear: 2020,
+    decisionLeader: "Jackie Sargent",
+    closedDate: "Still operating — exit not completed as of the FY2025 Q4 update",
+    closedLeader: null,
+    what: "Council committed to exiting Austin's Fayette coal share by the end of 2022. Negotiations with co-owner LCRA stalled in 2021, Mayor Watson proposed a 2029 divestment target in 2024, and Austin Energy still listed Fayette as an active resource in late 2025.",
+    note: "This is the clearest case of a retirement decision outliving the leader who made it: decided under Sargent, stalled under Kahn, still unresolved under Reilly.",
+    sources: ["genPlan2030", "deckerPortfolio", "fayetteWatson", "aeOpsQ4Fy2025"],
+  },
+];
+
+/** Sorted oldest-first by the year the closure was decided. */
+export const sortedRetirements = () =>
+  [...RETIREMENTS].sort((a, b) => a.decisionSortYear - b.decisionSortYear);
+
 
 export const sortedMilestones = () => [...MILESTONES].sort((a, b) => a.sortYear - b.sortYear);
 
