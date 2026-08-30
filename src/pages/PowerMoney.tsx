@@ -614,14 +614,17 @@ const PowerMoney = () => {
               <CardContent className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground">Local solar, all-in cost</p>
+                    <p className="text-xs text-muted-foreground">Local solar, cost to Austin Energy</p>
                     <p className="text-2xl font-bold">
                       ${(LOCAL_RATES.vosUsdPerMwh + amortizedRebateUsdPerMwh(2026)).toFixed(0)}
                       <span className="text-sm font-normal text-muted-foreground">/MWh</span>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Value of Solar credit plus amortized rebate. No fuel, no plant, no delivery.
+                      Value of Solar bill credit ({(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh) plus the
+                      rebate amortized over {LOCAL_RATES.systemLifeYears} years. No O&amp;M or capital — customers own
+                      and maintain their own equipment — and no delivery cost.
                     </p>
+
                   </div>
                   <div className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground">Local batteries, capacity cost</p>
