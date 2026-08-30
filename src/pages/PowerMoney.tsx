@@ -405,7 +405,7 @@ const PowerMoney = () => {
                           <Cell key={r.key} fill={r.color} />
                         ))}
                       </Bar>
-                      <Bar dataKey="nonFuelRate" stackId="rate" radius={[0, 3, 3, 0]}>
+                      <Bar dataKey="nonFuelRate" stackId="rate" fill="#cbd5e1" radius={[0, 3, 3, 0]}>
                         {compareRows.map((r) => (
                           <Cell key={r.key} fill={r.color} fillOpacity={0.4} />
                         ))}
