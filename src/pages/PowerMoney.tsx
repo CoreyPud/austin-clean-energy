@@ -1122,15 +1122,7 @@ const PowerMoney = () => {
                         ))}
                       </Bar>
                       <Bar dataKey="systemRate" stackId="all" fill={SYSTEM_META.color} />
-                      <Bar dataKey="federalRate" stackId="all" fill={FEDERAL_META.color} radius={[0, 3, 3, 0]}>
-                        <LabelList
-                          dataKey="combinedRate"
-                          position="right"
-                          offset={10}
-                          formatter={(v: number) => `$${Number(v).toFixed(0)}/MWh`}
-                          style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                        />
-                      </Bar>
+                      <Bar dataKey="federalRate" stackId="all" fill={FEDERAL_META.color} radius={[0, 3, 3, 0]} />
                       {/* Uncertainty whisker: drawn past the bar end as a thin range marker,
                           never as a cost segment, so bar length always means combined $/MWh. */}
                       <Bar
@@ -1149,7 +1141,16 @@ const PowerMoney = () => {
                             </g>
                           );
                         }}
-                      />
+                      >
+                        <LabelList
+                          dataKey="combinedRate"
+                          position="right"
+                          offset={10}
+                          formatter={(v: number) => `$${Number(v).toFixed(0)}/MWh`}
+                          style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        />
+                      </Bar>
+
 
                     </BarChart>
                   </ResponsiveContainer>
