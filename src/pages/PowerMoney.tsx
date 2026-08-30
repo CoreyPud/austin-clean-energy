@@ -128,6 +128,8 @@ const PowerMoney = () => {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [compareYear, setCompareYear] = useState<number | null>(null);
   const [federalYear, setFederalYear] = useState<number | null>(null);
+  const [totalCostYear, setTotalCostYear] = useState<number | null>(null);
+
 
 
   useEffect(() => {
