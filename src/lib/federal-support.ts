@@ -292,3 +292,6 @@ export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
     .filter((r): r is FederalRow => r !== null)
     .sort((a, b) => b.statutoryRate - a.statutoryRate);
 }
+
+/** Chart color for the federal-support bars — deliberately distinct from every fuel color. */
+export const FEDERAL_META = { label: "Federal support", color: "#0d9488" };
