@@ -3,7 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Info, DollarSign, Flame, Home, TrendingDown, Scale } from "lucide-react";
+import { Info, DollarSign, Flame, Home, TrendingDown, Scale, Sun } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -39,6 +39,17 @@ import {
   type FuelKey,
   type PowerMoneyData,
 } from "@/lib/power-money";
+import {
+  localSolarSeries,
+  localBatterySeries,
+  localSolarYear,
+  batteryUsdPerKwYear,
+  amortizedRebateUsdPerMwh,
+  LOCAL_RATES,
+  LOCAL_SOURCES,
+  GAS_PEAKER_USD_PER_KW_YEAR,
+} from "@/lib/local-resources";
+
 
 const PowerMoney = () => {
   useSeo({
@@ -66,10 +77,36 @@ const PowerMoney = () => {
       .catch((e) => setError(e?.message ?? "Failed to load data"));
   }, []);
 
-  const compareRows = useMemo<ComparisonRow[]>(
-    () => (data && compareYear !== null ? toComparisonRows(data, compareYear) : []),
-    [data, compareYear],
-  );
+  // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
+  // the Value of Solar credit and rebates instead of fuel and plant costs.
+  const compareRows = useMemo<ComparisonRow[]>(() => {
+    if (!data || compareYear === null) return [];
+    const rows = toComparisonRows(data, compareYear);
+    const local = localSolarYear(compareYear);
+    const totalMwh = data.years.find((y) => y.year === compareYear)?.totalMwh ?? 0;
+    if (local && local.mwh > 0) {
+      rows.push({
+        key: "localSolar",
+        label: "Local solar",
+        color: "#f59e0b",
+        fuelRate: LOCAL_RATES.vosUsdPerMwh,
+        nonFuelRate: amortizedRebateUsdPerMwh(local.year),
+        systemRate: 0,
+        allInRate: local.usdPerMwh,
+        deliveredRate: local.usdPerMwh,
+        mwh: local.mwh,
+        share: totalMwh > 0 ? local.mwh / totalMwh : 0,
+        measured: false,
+        contracted: true,
+      });
+    }
+    return rows.sort((a, b) => a.deliveredRate - b.deliveredRate);
+  }, [data, compareYear]);
+
+  const localSolar = useMemo(() => localSolarSeries(), []);
+  const localBattery = useMemo(() => localBatterySeries(), []);
+  const batteryRate = useMemo(() => batteryUsdPerKwYear(), []);
+
 
 
   const fuels = useMemo<FuelKey[]>(() => (data ? fuelsPresent(data) : []), [data]);
@@ -453,9 +490,142 @@ const PowerMoney = () => {
                   large: check the MWh and share figures, and remember that a source supplying a rounding error of
                   energy (fuel oil, most years) can look extreme either way.
                 </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Local solar is the one bar that works differently: it is rooftop generation Austin Energy never
+                  owns and never has to move across the grid, so it carries no system delivery segment. Its cost is
+                  what the utility actually pays out — the Value of Solar bill credit of{" "}
+                  {(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh, plus the up-front rebate spread over a{" "}
+                  {LOCAL_RATES.systemLifeYears}-year system life.
+                </p>
 
               </CardContent>
             </Card>
+
+            {/* Local solar and batteries */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sun className="h-5 w-5" /> Local solar and batteries
+                </CardTitle>
+                <CardDescription>
+                  What Austin Energy pays for resources sitting on customers' roofs and in their garages, priced
+                  the same way as the plants above.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground">Local solar, all-in cost</p>
+                    <p className="text-2xl font-bold">
+                      ${(LOCAL_RATES.vosUsdPerMwh + amortizedRebateUsdPerMwh(2026)).toFixed(0)}
+                      <span className="text-sm font-normal text-muted-foreground">/MWh</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Value of Solar credit plus amortized rebate. No fuel, no plant, no delivery.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground">Local batteries, capacity cost</p>
+                    <p className="text-2xl font-bold">
+                      ${batteryRate.toFixed(0)}
+                      <span className="text-sm font-normal text-muted-foreground">/kW-yr</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Versus about ${GAS_PEAKER_USD_PER_KW_YEAR}/kW-yr of fixed O&amp;M and capital recovery for a
+                      gas peaker.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground">Local fleet today</p>
+                    <p className="text-2xl font-bold">
+                      {(localSolar[localSolar.length - 1].cumulativeKw / 1000).toFixed(0)}
+                      <span className="text-sm font-normal text-muted-foreground"> MW solar</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Plus {localBattery[localBattery.length - 1].cumulativeBatteries.toLocaleString()} permitted
+                      batteries, roughly {localBattery[localBattery.length - 1].dispatchMw.toFixed(1)} MW of
+                      dispatchable capacity.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs text-muted-foreground">
+                        <th className="py-2 pr-3">Year</th>
+                        <th className="py-2 pr-3 text-right">Solar MW (cum.)</th>
+                        <th className="py-2 pr-3 text-right">Est. MWh</th>
+                        <th className="py-2 pr-3 text-right">Solar credits</th>
+                        <th className="py-2 pr-3 text-right">Solar rebates</th>
+                        <th className="py-2 pr-3 text-right">Batteries (cum.)</th>
+                        <th className="py-2 pr-3 text-right">Battery program</th>
+                        <th className="py-2 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {localSolar.map((s, i) => {
+                        const b = localBattery[i];
+                        return (
+                          <tr key={s.year} className="border-b last:border-0">
+                            <td className="py-2 pr-3 font-medium">
+                              {s.year}
+                              {s.partial ? "*" : ""}
+                            </td>
+                            <td className="py-2 pr-3 text-right">{(s.cumulativeKw / 1000).toFixed(1)}</td>
+                            <td className="py-2 pr-3 text-right">{Math.round(s.mwh).toLocaleString()}</td>
+                            <td className="py-2 pr-3 text-right">{usdCompact(s.vosUsd)}</td>
+                            <td className="py-2 pr-3 text-right">{usdCompact(s.rebateUsd)}</td>
+                            <td className="py-2 pr-3 text-right">{b.cumulativeBatteries.toLocaleString()}</td>
+                            <td className="py-2 pr-3 text-right">{usdCompact(b.totalUsd)}</td>
+                            <td className="py-2 text-right font-medium">
+                              {usdCompact(s.totalUsd + b.totalUsd)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-2">
+                  <p>
+                    Honest take: these are modeled numbers, not Austin Energy's books. Capacity and battery counts
+                    come from City of Austin issued solar permits, so battery counts are a floor — only permits whose
+                    description mentions storage are counted, and permits missing a capacity value undercount MW.
+                    Generation is estimated at {LOCAL_RATES.yieldKwhPerKwYear.toLocaleString()} kWh per installed kW
+                    per year, a PVWatts-class figure for Austin, not metered output. The current Value of Solar rate
+                    is applied to every year rather than the historical rate for that year, so early-year credits are
+                    approximate. Rebates are counted at ${LOCAL_RATES.residentialRebateUsd.toLocaleString()} per
+                    project from 2018 (when the current rebate program started) and $
+                    {LOCAL_RATES.residentialRebateUsdCurrent.toLocaleString()} from 2026, applied to all permits
+                    including commercial projects that actually receive capacity-based or Standard Offer payments
+                    instead. The battery figure combines the ${LOCAL_RATES.batteryRebateUsd} Power Partner rebate with
+                    an assumed ${LOCAL_RATES.batteryAnnualPaymentUsd}/year performance payment and{" "}
+                    {LOCAL_RATES.batteryDispatchKw} kW of dispatchable output per battery; Austin Energy does not
+                    publish the performance formula, so that piece is an estimate.
+                  </p>
+                  <p>* Partial year — permits through the latest available month.</p>
+                  <p>
+                    Sources:{" "}
+                    {LOCAL_SOURCES.map((s, i) => (
+                      <span key={s.url}>
+                        {i > 0 ? " · " : ""}
+                        <a
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:no-underline"
+                        >
+                          {s.label}
+                        </a>
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
 
 
 
