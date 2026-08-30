@@ -327,6 +327,109 @@ const PowerMoney = () => {
               </CardContent>
             </Card>
 
+            {/* Side-by-side all-in cost per source */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Scale className="h-5 w-5" /> Compare sources side by side
+                    </CardTitle>
+                    <CardDescription>
+                      All-in cost per megawatt-hour for every source Austin Energy used in {compareYear ?? "—"} —
+                      wind against gas, coal against solar, on the same axis.
+                    </CardDescription>
+                  </div>
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={compareYear ?? ""}
+                    onChange={(e) => setCompareYear(Number(e.target.value))}
+                    aria-label="Comparison year"
+                  >
+                    {data.years.map((y) => (
+                      <option key={y.year} value={y.year}>
+                        {y.year}
+                        {y.partial ? " (partial)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div style={{ height: Math.max(220, compareRows.length * 54 + 60) }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={compareRows} layout="vertical" margin={{ left: 8, right: 56 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                      <YAxis
+                        type="category"
+                        dataKey="label"
+                        width={92}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip
+                        formatter={(v: number, name: string) => [
+                          `$${Number(v).toFixed(2)}/MWh`,
+                          name === "fuelRate" ? "Fuel / contracted energy" : "Plant O&M + capital (est.)",
+                        ]}
+                        labelFormatter={(l, payload) => {
+                          const row = (payload?.[0]?.payload ?? null) as ComparisonRow | null;
+                          if (!row) return String(l);
+                          return `${row.label} — $${row.allInRate.toFixed(2)}/MWh all-in · ${Math.round(
+                            row.mwh,
+                          ).toLocaleString()} MWh (${(row.share * 100).toFixed(1)}% of generation)`;
+                        }}
+                        contentStyle={{ fontSize: 12 }}
+                      />
+                      <Legend
+                        formatter={(name) =>
+                          name === "fuelRate" ? "Fuel / contracted energy" : "Plant O&M + capital (est.)"
+                        }
+                        wrapperStyle={{ fontSize: 12 }}
+                      />
+                      <Bar dataKey="fuelRate" stackId="rate" radius={[0, 0, 0, 0]}>
+                        {compareRows.map((r) => (
+                          <Cell key={r.key} fill={r.color} />
+                        ))}
+                      </Bar>
+                      <Bar dataKey="nonFuelRate" stackId="rate" radius={[0, 3, 3, 0]}>
+                        {compareRows.map((r) => (
+                          <Cell key={r.key} fill={r.color} fillOpacity={0.4} />
+                        ))}
+                        <LabelList
+                          dataKey="allInRate"
+                          position="right"
+                          formatter={(v: number) => `$${Number(v).toFixed(0)}`}
+                          style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  {compareRows.map((r) => (
+                    <span key={r.key}>
+                      <span className="font-medium text-foreground">{r.label}</span>{" "}
+                      {Math.round(r.mwh).toLocaleString()} MWh · {(r.share * 100).toFixed(1)}%
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Honest take: this is the closest apples-to-apples comparison the public data supports, but the two
+                  bar segments do not mean the same thing for every source. Wind, solar, biomass and hydro come through
+                  power purchase agreements — the contract price is already all-in, so they carry no separate plant
+                  segment and their rate is a documented assumption rather than a reported cost. Gas, coal and nuclear
+                  show reported fuel cost plus modeled O&M and capital / debt service at NREL-range rates, not Austin
+                  Energy's books. System costs — transmission, distribution, ERCOT congestion, administration — are
+                  excluded here because they cannot be attributed to a source; use the full-system layer above for
+                  those. Cheap per MWh does not mean large: check the MWh and share figures, and remember that a source
+                  supplying a rounding error of energy (fuel oil, most years) can look extreme either way.
+                </p>
+              </CardContent>
+            </Card>
+
+
+
             {/* Year detail */}
             <Card>
               <CardHeader>
