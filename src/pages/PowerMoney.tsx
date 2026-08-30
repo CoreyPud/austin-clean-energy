@@ -393,13 +393,20 @@ const PowerMoney = () => {
                       <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={1} />
                       <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
                       <Tooltip
-                        formatter={(v: number, name: string) => [
-                          `$${Number(v).toFixed(2)}/MWh`,
-                          FUEL_META[name as FuelKey]?.label ?? name,
-                        ]}
-                        labelFormatter={(l) => `Year ${l}`}
-                        contentStyle={{ fontSize: 12 }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const rows: TipRow[] = payload
+                            .filter((p) => typeof p.value === "number")
+                            .map((p) => ({
+                              color: String(p.color ?? p.stroke ?? "#888"),
+                              dashed: ["wind", "solar", "nuclear", "biomass", "hydro"].includes(String(p.dataKey)),
+                              label: FUEL_META[p.dataKey as FuelKey]?.label ?? String(p.dataKey),
+                              value: `$${Number(p.value).toFixed(2)}/MWh`,
+                            }));
+                          return <SwatchTooltip header={`Year ${label}`} rows={rows} />;
+                        }}
                       />
+
                       <Legend
                         formatter={(name) => FUEL_META[name as FuelKey]?.label ?? name}
                         wrapperStyle={{ fontSize: 12 }}
