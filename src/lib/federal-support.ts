@@ -302,7 +302,7 @@ export function toFederalRows(rows: RowInput[], year: number): FederalRow[] {
         mwh: r.mwh,
         totalUsd: Math.round(rate.statutory * r.mwh),
         deliveredRate: r.deliveredRate,
-      } satisfies FederalRow;
+      };
     })
     .filter((r): r is FederalRow => r !== null)
     .sort((a, b) => b.statutoryRate - a.statutoryRate);
