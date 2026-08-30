@@ -1192,6 +1192,12 @@ const PowerMoney = () => {
                             )}
                           </td>
                           <td className="py-2 pr-3 text-right font-medium">${r.combinedRate.toFixed(2)}</td>
+                          <td className="py-2 pr-3 text-right text-muted-foreground">
+                            {r.federalUnknown || r.broaderBand <= 0
+                              ? "—"
+                              : `$${r.federalRate.toFixed(2)}–$${r.broaderHigh.toFixed(2)}`}
+                          </td>
+
                           <td className="py-2 pr-3 text-right">{usdCompact(r.combinedTotalUsd)}</td>
                           <td className="py-2 text-xs text-muted-foreground">
                             {r.federalUnknown
