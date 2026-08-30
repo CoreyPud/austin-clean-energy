@@ -196,7 +196,12 @@ export interface ComparisonRow {
   fuelRate: number;
   /** estimated plant O&M + capital / debt service, $/MWh (0 for PPA resources) */
   nonFuelRate: number;
+  /** system delivery costs (T&D, congestion, ancillary, admin) spread evenly per MWh */
+  systemRate: number;
+  /** fuel + plant costs only */
   allInRate: number;
+  /** fuel + plant + system delivery costs */
+  deliveredRate: number;
   mwh: number;
   /** share of that year's total generation, 0-1 */
   share: number;
@@ -207,12 +212,15 @@ export interface ComparisonRow {
 }
 
 /**
- * One row per source for a single year, all-in $/MWh, cheapest first.
- * System costs are excluded: they are not attributable to a source.
+ * One row per source for a single year, delivered $/MWh, cheapest first.
+ * System costs are spread evenly across every MWh generated — they are not
+ * attributable to a source, so every bar carries the same system segment.
  */
 export function toComparisonRows(data: PowerMoneyData, year: number): ComparisonRow[] {
   const y = data.years.find((r) => r.year === year);
   if (!y) return [];
+  const systemRate =
+    y.systemCostsUsd !== null && y.totalMwh > 0 ? +(y.systemCostsUsd / y.totalMwh).toFixed(2) : 0;
   const rows: ComparisonRow[] = [];
   for (const key of FUEL_ORDER) {
     const f = y.fuels[key];
@@ -225,12 +233,15 @@ export function toComparisonRows(data: PowerMoneyData, year: number): Comparison
       color: FUEL_META[key].color,
       fuelRate: +fuelRate.toFixed(2),
       nonFuelRate: +nonFuelRate.toFixed(2),
+      systemRate,
       allInRate: +(fuelRate + nonFuelRate).toFixed(2),
+      deliveredRate: +(fuelRate + nonFuelRate + systemRate).toFixed(2),
       mwh: f.mwh,
       share: y.totalMwh > 0 ? f.mwh / y.totalMwh : 0,
       measured: f.measured,
       contracted: f.contractedUsd > 0,
     });
   }
-  return rows.sort((a, b) => a.allInRate - b.allInRate);
+  return rows.sort((a, b) => a.deliveredRate - b.deliveredRate);
 }
+
