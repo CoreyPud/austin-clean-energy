@@ -785,6 +785,14 @@ const PowerMoney = () => {
                               value: `$${row.statutoryRate.toFixed(2)}/MWh`,
                             },
                           ];
+                          for (const c of row.components ?? [])
+                            rows.push({
+                              color: FEDERAL_META.color,
+                              opacity: 0.7,
+                              label: `— ${c.label}`,
+                              value: `$${c.usdPerMwh.toFixed(2)}/MWh`,
+                            });
+
                           if (row.broaderBand > 0)
                             rows.push({
                               color: FEDERAL_META.color,
