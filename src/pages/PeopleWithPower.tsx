@@ -11,9 +11,10 @@ import {
   FUEL_LABEL,
   sortedMilestones,
   milestonesByContract,
-
+  sortedRetirements,
   type Milestone,
 } from "@/lib/people-with-power";
+
 
 const NOT_DOCUMENTED = (
   <span className="text-muted-foreground italic">not documented</span>
