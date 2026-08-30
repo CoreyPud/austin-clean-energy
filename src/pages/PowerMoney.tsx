@@ -1111,7 +1111,7 @@ const PowerMoney = () => {
                         }
                         wrapperStyle={{ fontSize: 12 }}
                       />
-                      <Bar dataKey="fuelRate" stackId="all">
+                      <Bar dataKey="fuelRate" stackId="all" fill="#64748b">
                         {totalCostRows.map((r) => (
                           <Cell key={r.key} fill={r.color} />
                         ))}
