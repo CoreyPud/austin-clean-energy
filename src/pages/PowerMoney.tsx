@@ -1107,7 +1107,7 @@ const PowerMoney = () => {
                                 ? "System delivery costs (est.)"
                                 : name === "federalRate"
                                   ? "Federal support"
-                                  : "Broader federal estimates (range)"
+                                   : "Broader federal estimate (upper bound)"
                         }
                         wrapperStyle={{ fontSize: 12 }}
                       />
@@ -1122,21 +1122,36 @@ const PowerMoney = () => {
                         ))}
                       </Bar>
                       <Bar dataKey="systemRate" stackId="all" fill={SYSTEM_META.color} />
-                      <Bar dataKey="federalRate" stackId="all" fill={FEDERAL_META.color} />
+                      <Bar dataKey="federalRate" stackId="all" fill={FEDERAL_META.color} radius={[0, 3, 3, 0]} />
+                      {/* Uncertainty whisker: drawn past the bar end as a thin range marker,
+                          never as a cost segment, so bar length always means combined $/MWh. */}
                       <Bar
                         dataKey="broaderBand"
                         stackId="all"
                         fill={FEDERAL_META.color}
-                        fillOpacity={0.3}
-                        radius={[0, 3, 3, 0]}
+                        legendType="plainline"
+                        shape={(props: { x?: number; y?: number; width?: number; height?: number }) => {
+                          const { x = 0, y = 0, width = 0, height = 0 } = props;
+                          if (width <= 0) return <g />;
+                          const mid = y + height / 2;
+                          return (
+                            <g stroke={FEDERAL_META.color} strokeOpacity={0.55} strokeWidth={1.5} fill="none">
+                              <line x1={x} y1={mid} x2={x + width} y2={mid} />
+                              <line x1={x + width} y1={mid - 5} x2={x + width} y2={mid + 5} />
+                            </g>
+                          );
+                        }}
                       >
                         <LabelList
                           dataKey="combinedRate"
                           position="right"
+                          offset={10}
                           formatter={(v: number) => `$${Number(v).toFixed(0)}/MWh`}
                           style={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                         />
                       </Bar>
+
+
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1150,6 +1165,8 @@ const PowerMoney = () => {
                         <th className="py-2 pr-3 text-right">AE paid $/MWh</th>
                         <th className="py-2 pr-3 text-right">Federal $/MWh</th>
                         <th className="py-2 pr-3 text-right">Combined $/MWh</th>
+                        <th className="py-2 pr-3 text-right">Broader federal range $/MWh</th>
+
                         <th className="py-2 pr-3 text-right">Combined $ total</th>
                         <th className="py-2">Who paid</th>
                       </tr>
@@ -1176,6 +1193,12 @@ const PowerMoney = () => {
                             )}
                           </td>
                           <td className="py-2 pr-3 text-right font-medium">${r.combinedRate.toFixed(2)}</td>
+                          <td className="py-2 pr-3 text-right text-muted-foreground">
+                            {r.federalUnknown || r.broaderBand <= 0
+                              ? "—"
+                              : `$${r.federalRate.toFixed(2)}–$${r.broaderHigh.toFixed(2)}`}
+                          </td>
+
                           <td className="py-2 pr-3 text-right">{usdCompact(r.combinedTotalUsd)}</td>
                           <td className="py-2 text-xs text-muted-foreground">
                             {r.federalUnknown
@@ -1194,11 +1217,13 @@ const PowerMoney = () => {
                   <p>
                     <span className="font-medium text-foreground">What this bar is.</span> The first three segments are
                     Austin Energy's own cost, identical to the side-by-side chart above. The teal segment on the end is
-                    federal support for the same megawatt-hours, and the pale teal tail is the top of the broader
-                    published range. Added together they are the cost of that electricity to everyone who paid for it —
-                    Austin ratepayers plus federal taxpayers — which is a bigger number than the cost of Austin
-                    Energy's power supply on its own.
+                    federal support for the same megawatt-hours. Bar length is always the combined $/MWh printed at the
+                    end, so a longer bar is always a bigger number. The thin teal whisker past the bar end is not cost —
+                    it marks how far the broader published estimate range reaches, and the exact range is in the table.
+                    Added together, ratepayer and taxpayer cost is a bigger number than Austin Energy's power supply
+                    cost on its own.
                   </p>
+
                   <p>
                     <span className="font-medium text-foreground">
                       Why the gas bar barely moves and the wind bar does.
