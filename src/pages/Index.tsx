@@ -416,6 +416,26 @@ const Index = () => {
                   </div>
                 }
               />
+
+              <FeatureCard
+                to="/energy-timeline"
+                title="Austin Energy Timeline"
+                description="Key decisions, contracts, retirements, and clean-energy milestones that shaped Austin Energy's electricity mix."
+                cta="View Timeline"
+                preview={
+                  <div
+                    className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3"
+                    style={{ height: 226 }}
+                  >
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <History className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      From first wind contracts to battery tolling agreements
+                    </span>
+                  </div>
+                }
+              />
             </div>
 
           </div>
