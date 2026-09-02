@@ -238,11 +238,13 @@ const PeopleWithPower = () => {
         {/* Fuel-firsts table */}
         <Card>
           <CardHeader>
-            <CardTitle>Who was in charge when each fuel arrived</CardTitle>
+            <CardTitle>Who was in charge when each resource arrived</CardTitle>
             <CardDescription>
-              One row per first-of-its-kind addition. Where the leader at the time cannot be
-              sourced, the row says so instead of naming a likely candidate.
+              First-of-its-kind additions plus the major post-2016 contracts, in operating order.
+              Where the leader at the time cannot be sourced, the row says so instead of naming a
+              likely candidate — and rows for deals that are signed but not yet built say that too.
             </CardDescription>
+
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <table className="w-full text-sm">
