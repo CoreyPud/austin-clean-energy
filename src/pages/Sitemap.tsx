@@ -76,6 +76,12 @@ const publicPages = [
     icon: Users,
   },
   {
+    path: "/energy-timeline",
+    title: "Energy Timeline",
+    description: "Eight years of Austin Energy decisions leading up to the May 2026 closed-session gas peaker approval.",
+    icon: CalendarDays,
+  },
+  {
     path: "/join-the-community",
     title: "Join the Community",
     description: "Sign up to join the Austin Clean Energy volunteer Slack community.",
