@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin, Zap, Car, Wrench, Leaf } from "lucide-react";
+import { ArrowRight, MapPin, Zap, Car, Wrench, Leaf, History } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
 import { useEffect, useMemo, useState } from "react";
 import CampaignPopup from "@/components/CampaignPopup";
