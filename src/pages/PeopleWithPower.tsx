@@ -238,11 +238,13 @@ const PeopleWithPower = () => {
         {/* Fuel-firsts table */}
         <Card>
           <CardHeader>
-            <CardTitle>Who was in charge when each fuel arrived</CardTitle>
+            <CardTitle>Who was in charge when each resource arrived</CardTitle>
             <CardDescription>
-              One row per first-of-its-kind addition. Where the leader at the time cannot be
-              sourced, the row says so instead of naming a likely candidate.
+              First-of-its-kind additions plus the major post-2016 contracts, in operating order.
+              Where the leader at the time cannot be sourced, the row says so instead of naming a
+              likely candidate — and rows for deals that are signed but not yet built say that too.
             </CardDescription>
+
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -372,10 +374,22 @@ const PeopleWithPower = () => {
               for exactly that reason.
             </p>
             <p>
+              Retirements follow the same logic in reverse. Holly's phased closure was ordered in
+              1995 and finished in 2007; the Fayette coal exit was adopted in 2020 with a 2022
+              deadline and still has not happened. Where no source names the general manager at a
+              closure vote, the row says “not documented” rather than inferring from tenure dates.
+            </p>
+            <p>
+              Some post-2016 council items authorize a contract without naming the facility, and
+              several signed deals — the 2025 battery tolling agreement and the 2026 gas peaker
+              decision — have no in-service date yet. Those rows carry the contract date only.
+            </p>
+            <p>
               Wind is a special case: the early West Texas capacity serving the Austin area came
               through regional contracting rather than an Austin Energy build, and sources disagree
               on whether the first phase came online in 1996 or 1999.
             </p>
+
             <p>
               For the dollars behind these resources, see the{" "}
               <a href="/power-money" className="text-primary hover:underline">
