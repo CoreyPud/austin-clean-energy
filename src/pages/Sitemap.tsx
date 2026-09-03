@@ -82,6 +82,12 @@ const publicPages = [
     icon: CalendarDays,
   },
   {
+    path: "/energy-education",
+    title: "Energy Education",
+    description: "Self-paced quiz on Austin utility finance, generation economics, water rates, mobility funding, and demand response.",
+    icon: BookOpen,
+  },
+  {
     path: "/join-the-community",
     title: "Join the Community",
     description: "Sign up to join the Austin Clean Energy volunteer Slack community.",
