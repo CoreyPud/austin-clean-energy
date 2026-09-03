@@ -45,6 +45,7 @@ import ImportCapacity from "./pages/ImportCapacity";
 import PowerMoney from "./pages/PowerMoney";
 import PeopleWithPower from "./pages/PeopleWithPower";
 import EnergyTimeline from "./pages/EnergyTimeline";
+import EnergyEducation from "./pages/EnergyEducation";
 import CouncilOverview from "./pages/CouncilOverview";
 import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
@@ -100,6 +101,7 @@ const AppRoutes = () => {
           <Route path="/power-money" element={<PowerMoney />} />
           <Route path="/people-with-power" element={<PeopleWithPower />} />
           <Route path="/energy-timeline" element={<EnergyTimeline />} />
+          <Route path="/energy-education" element={<EnergyEducation />} />
         </Route>
 
         {/* Pages without footer */}

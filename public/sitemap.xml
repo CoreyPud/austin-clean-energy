@@ -61,6 +61,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://austin-clean-energy.lovable.app/energy-education</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://austin-clean-energy.lovable.app/people-with-power</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

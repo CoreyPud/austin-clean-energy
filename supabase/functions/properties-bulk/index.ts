@@ -155,6 +155,8 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
          WHERE p.in_ae = true
            AND p.centroid_lat IS NOT NULL
            AND p.centroid_lon IS NOT NULL
+           -- Exclude unenriched parcel stubs (no TCAD attributes at all).
+           AND NOT (p.property_type = 'other' AND p.market_value IS NULL)
            AND p.pid > ${lastPid}
          ORDER BY p.pid
          LIMIT ${chunkSize}
@@ -239,23 +241,43 @@ Deno.serve(async (req) => {
     const locked = manifest?.regenerating === true && lockAge < LOCK_STALE_MS;
 
     if (age > TTL_MS && !locked) {
-      // Take the lock before the expensive work so concurrent requests keep serving the
-      // stale copy instead of all regenerating the same payload at once.
       if (manifest) {
+        // Stale-while-revalidate: take the lock (so concurrent requests keep serving the stale
+        // copy instead of all regenerating at once), then hand the rebuild to the runtime and
+        // respond immediately. A full rebuild is a multi-minute ~227k-row scan; blocking the
+        // first unlucky request on it made /explore appear to hang.
         await writeManifest(sb, { ...manifest, regenerating: true, lockAt: new Date().toISOString() });
+        const background = (async () => {
+          try {
+            await regenerate(sb);
+          } catch (e) {
+            console.error("properties-bulk: background regeneration failed", e);
+            // Release the lock so the next stale request retries instead of waiting out LOCK_STALE_MS.
+            await writeManifest(sb, { ...manifest, regenerating: false, lockAt: null });
+          }
+        })();
+        const waitUntil = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } })
+          .EdgeRuntime?.waitUntil;
+        if (waitUntil) {
+          waitUntil(background);
+        } else {
+          // Runtime without waitUntil: the isolate may be torn down early, so fall back to
+          // awaiting (old behavior) rather than silently dropping the regeneration.
+          console.warn("properties-bulk: EdgeRuntime.waitUntil unavailable, awaiting regeneration");
+          await background;
+          const fresh = await readManifest(sb);
+          return wantManifest ? json(fresh ?? manifest) : await servePayload(sb);
+        }
+        // Serve the current (stale) payload/manifest while the rebuild runs.
+        return wantManifest ? json(manifest) : await servePayload(sb);
       }
+      // Nothing cached at all (brand new deployment) — no choice but to block.
       try {
         const fresh = await regenerate(sb);
         return wantManifest ? json(fresh) : await servePayload(sb);
       } catch (e) {
         console.error("properties-bulk: regeneration failed", e);
-        if (manifest) {
-          // Release the lock so the next request can retry rather than waiting out LOCK_STALE_MS.
-          await writeManifest(sb, { ...manifest, regenerating: false, lockAt: null });
-          // Fall through and serve stale data — better than failing the map load.
-        } else {
-          return json({ error: "An internal error occurred." }, 500);
-        }
+        return json({ error: "An internal error occurred." }, 500);
       }
     }
 
