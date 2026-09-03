@@ -23,7 +23,7 @@ const corsHeaders = {
 const BUCKET = "no2-maps";
 const PAYLOAD_PATH = "bulk/properties.json.gz";
 const MANIFEST_PATH = "bulk/manifest.json";
-const TTL_MS = 0; // TEMP stale-path test
+const TTL_MS = 24 * 60 * 60 * 1000;
 // If a regeneration lock is older than this it is assumed dead (function timed out) and
 // the next request is allowed to take over.
 const LOCK_STALE_MS = 5 * 60 * 1000;
@@ -155,6 +155,8 @@ async function regenerate(sb: ReturnType<typeof admin>): Promise<Manifest> {
          WHERE p.in_ae = true
            AND p.centroid_lat IS NOT NULL
            AND p.centroid_lon IS NOT NULL
+           -- Exclude unenriched parcel stubs (no TCAD attributes at all).
+           AND NOT (p.property_type = 'other' AND p.market_value IS NULL)
            AND p.pid > ${lastPid}
          ORDER BY p.pid
          LIMIT ${chunkSize}
