@@ -23,7 +23,7 @@ const corsHeaders = {
 const BUCKET = "no2-maps";
 const PAYLOAD_PATH = "bulk/properties.json.gz";
 const MANIFEST_PATH = "bulk/manifest.json";
-const TTL_MS = 24 * 60 * 60 * 1000;
+const TTL_MS = 0; // TEMP stale-path test
 // If a regeneration lock is older than this it is assumed dead (function timed out) and
 // the next request is allowed to take over.
 const LOCK_STALE_MS = 5 * 60 * 1000;
