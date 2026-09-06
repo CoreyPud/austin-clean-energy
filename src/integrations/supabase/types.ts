@@ -56,6 +56,38 @@ export type Database = {
         }
         Relationships: []
       }
+      agenda_item_votes: {
+        Row: {
+          agenda_item_id: string
+          choice: string
+          created_at: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          agenda_item_id: string
+          choice: string
+          created_at?: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          agenda_item_id?: string
+          choice?: string
+          created_at?: string
+          id?: string
+          ip_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_item_votes_agenda_item_id_fkey"
+            columns: ["agenda_item_id"]
+            isOneToOne: false
+            referencedRelation: "council_decisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cached_stats: {
         Row: {
           id: string
@@ -115,6 +147,81 @@ export type Database = {
           sector_breakdown?: Json | null
           top_employers?: Json | null
           total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      council_decisions: {
+        Row: {
+          body: string | null
+          co_sponsor: string | null
+          data: Json | null
+          decided_at: string | null
+          decided_in_closed_session: boolean
+          id: string
+          imported_at: string
+          is_climate: boolean | null
+          item_number: string | null
+          lead_dept: string | null
+          meeting_date: string | null
+          meeting_year: number | null
+          outcome: string | null
+          significance: string | null
+          source_url: string | null
+          sponsor: string | null
+          status: string
+          sub_depts: string[] | null
+          tags: string[] | null
+          title: string | null
+          topic: string | null
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          co_sponsor?: string | null
+          data?: Json | null
+          decided_at?: string | null
+          decided_in_closed_session?: boolean
+          id: string
+          imported_at?: string
+          is_climate?: boolean | null
+          item_number?: string | null
+          lead_dept?: string | null
+          meeting_date?: string | null
+          meeting_year?: number | null
+          outcome?: string | null
+          significance?: string | null
+          source_url?: string | null
+          sponsor?: string | null
+          status?: string
+          sub_depts?: string[] | null
+          tags?: string[] | null
+          title?: string | null
+          topic?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          co_sponsor?: string | null
+          data?: Json | null
+          decided_at?: string | null
+          decided_in_closed_session?: boolean
+          id?: string
+          imported_at?: string
+          is_climate?: boolean | null
+          item_number?: string | null
+          lead_dept?: string | null
+          meeting_date?: string | null
+          meeting_year?: number | null
+          outcome?: string | null
+          significance?: string | null
+          source_url?: string | null
+          sponsor?: string | null
+          status?: string
+          sub_depts?: string[] | null
+          tags?: string[] | null
+          title?: string | null
+          topic?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1158,6 +1265,22 @@ export type Database = {
       }
     }
     Views: {
+      agenda_item_vote_tallies: {
+        Row: {
+          agenda_item_id: string | null
+          oppose_count: number | null
+          support_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_item_votes_agenda_item_id_fkey"
+            columns: ["agenda_item_id"]
+            isOneToOne: false
+            referencedRelation: "council_decisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
