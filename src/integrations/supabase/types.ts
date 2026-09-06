@@ -176,6 +176,7 @@ export type Database = {
           title: string | null
           topic: string | null
           updated_at: string
+          visible: boolean
         }
         Insert: {
           body?: string | null
@@ -201,6 +202,7 @@ export type Database = {
           title?: string | null
           topic?: string | null
           updated_at?: string
+          visible?: boolean
         }
         Update: {
           body?: string | null
@@ -226,6 +228,7 @@ export type Database = {
           title?: string | null
           topic?: string | null
           updated_at?: string
+          visible?: boolean
         }
         Relationships: []
       }
