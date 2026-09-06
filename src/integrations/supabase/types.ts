@@ -158,6 +158,7 @@ export type Database = {
           data: Json | null
           decided_at: string | null
           decided_in_closed_session: boolean
+          description: string | null
           id: string
           imported_at: string
           is_climate: boolean | null
@@ -182,6 +183,7 @@ export type Database = {
           data?: Json | null
           decided_at?: string | null
           decided_in_closed_session?: boolean
+          description?: string | null
           id: string
           imported_at?: string
           is_climate?: boolean | null
@@ -206,6 +208,7 @@ export type Database = {
           data?: Json | null
           decided_at?: string | null
           decided_in_closed_session?: boolean
+          description?: string | null
           id?: string
           imported_at?: string
           is_climate?: boolean | null
