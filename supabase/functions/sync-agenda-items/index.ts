@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 // One-call council agenda sync for the admin page.
 // Phase 1: CIUR history (already-decided items) -> AI classification -> vote outcomes.
@@ -443,6 +444,26 @@ serve(async (req) => {
       const result = await res.json().catch(() => ({}));
       if (!res.ok || result?.ok !== true) {
         throw new Error(`import-agenda-items failed: ${result?.error ?? res.status}`);
+      }
+    }
+
+    // Record successful sync metadata so the admin page can show last-run time.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (supabaseUrl && serviceRole) {
+      const supabase = createClient(supabaseUrl, serviceRole);
+      const { error: statsError } = await supabase
+        .from("cached_stats")
+        .upsert(
+          {
+            stat_type: "agenda_sync_last_run",
+            value: JSON.stringify({ history: history.stats, upcoming: upcoming.info }),
+            label: "Last agenda items sync",
+          },
+          { onConflict: "stat_type" },
+        );
+      if (statsError) {
+        console.error("failed to record agenda sync stats", statsError);
       }
     }
 
