@@ -447,6 +447,26 @@ serve(async (req) => {
       }
     }
 
+    // Record successful sync metadata so the admin page can show last-run time.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (supabaseUrl && serviceRole) {
+      const supabase = createClient(supabaseUrl, serviceRole);
+      const { error: statsError } = await supabase
+        .from("cached_stats")
+        .upsert(
+          {
+            stat_type: "agenda_sync_last_run",
+            value: JSON.stringify({ history: history.stats, upcoming: upcoming.info }),
+            label: "Last agenda items sync",
+          },
+          { onConflict: "stat_type" },
+        );
+      if (statsError) {
+        console.error("failed to record agenda sync stats", statsError);
+      }
+    }
+
     return json(200, { ok: true, history: history.stats, upcoming: upcoming.info });
   } catch (err) {
     console.error("sync-agenda-items error", err);
