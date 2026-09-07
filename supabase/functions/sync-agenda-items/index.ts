@@ -182,14 +182,15 @@ async function runHistory(lookbackDays: number, apiKey: string) {
 
   const kept = rows
     .map((r) => ({ r, c: classified.get(String(r.item_number ?? "").trim()) }))
+    // The model is not self-consistent between is_climate and significance, so a
+    // routine operational item can still come back is_climate:true. Require both.
+    .filter(({ c }) => c?.is_climate === true && c?.significance !== "routine")
     .map(({ r, c }) => {
       const deptText = `${r.lead_dept ?? ""} ${r.sub_depts ?? ""}`;
       const isCore = CORE_DEPTS.some((d) => deptText.includes(d));
-      const aiClimate = c?.is_climate === true;
-      if (!isCore && !aiClimate) return null;
       return { r, c, visible: isCore };
-    })
-    .filter((x): x is { r: any; c?: Classified; visible: boolean } => x !== null);
+    });
+
 
   const years = [
     ...new Set(kept.map(({ r }) => Number(String(r.agenda_date).slice(0, 4)))),
@@ -279,7 +280,29 @@ async function findNextDraftAgenda() {
   return null;
 }
 
+// The model's item-boundary detection fails on multi-page PDFs: it can emit the
+// same item twice, once clean and once with the next item's text plus a page
+// footer bled onto the end. When one item's text is a prefix of another's
+// (>=80 identical leading chars), the longer one is the corrupted copy.
+const PREFIX_LEN = 80;
+
+function dropBledDuplicates(items: any[]): any[] {
+  const texts = items.map((it) => collapse(it?.posting_language));
+  const drop = new Set<number>();
+  for (let i = 0; i < items.length; i++) {
+    for (let j = 0; j < items.length; j++) {
+      if (i === j) continue;
+      const short = texts[i];
+      const long = texts[j];
+      if (short.length < PREFIX_LEN || long.length <= short.length) continue;
+      if (long.startsWith(short)) drop.add(j);
+    }
+  }
+  return items.filter((_, i) => !drop.has(i));
+}
+
 async function runUpcoming(apiKey: string) {
+
   const found = await findNextDraftAgenda();
   if (!found) return { items: [], info: { found: false } as Record<string, unknown> };
 
@@ -330,11 +353,12 @@ async function runUpcoming(apiKey: string) {
   const raw = Array.isArray(parsed?.items) ? parsed.items : [];
   const meetingDate = found.meetingDate;
 
-  const items = raw
-    .filter((it: any) => it && it.item_number != null)
+  const items = dropBledDuplicates(raw.filter((it: any) => it && it.item_number != null))
     // Enforced in code: the model does not reliably self-apply the zoning-case rule.
     .filter((it: any) => !ZONING_CASE.test(String(it.posting_language ?? "")))
-    .filter((it: any) => it.is_climate === true)
+    // is_climate alone is not enough: the model marks routine items climate too.
+    .filter((it: any) => it.is_climate === true && it.significance !== "routine")
+
     .map((it: any) => {
       const description = collapse(it.posting_language);
       const itemNumber = pad3(it.item_number);
