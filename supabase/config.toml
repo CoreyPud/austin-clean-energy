@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.manage-agenda-items]
 verify_jwt = false
+
+[functions.sync-agenda-items]
+verify_jwt = false
