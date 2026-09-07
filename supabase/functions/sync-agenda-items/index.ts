@@ -331,11 +331,12 @@ async function runUpcoming(apiKey: string) {
   const raw = Array.isArray(parsed?.items) ? parsed.items : [];
   const meetingDate = found.meetingDate;
 
-  const items = raw
-    .filter((it: any) => it && it.item_number != null)
+  const items = dropBledDuplicates(raw.filter((it: any) => it && it.item_number != null))
     // Enforced in code: the model does not reliably self-apply the zoning-case rule.
     .filter((it: any) => !ZONING_CASE.test(String(it.posting_language ?? "")))
-    .filter((it: any) => it.is_climate === true)
+    // is_climate alone is not enough: the model marks routine items climate too.
+    .filter((it: any) => it.is_climate === true && it.significance !== "routine")
+
     .map((it: any) => {
       const description = collapse(it.posting_language);
       const itemNumber = pad3(it.item_number);
