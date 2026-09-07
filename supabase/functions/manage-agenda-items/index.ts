@@ -107,6 +107,32 @@ serve(async (req) => {
       );
     }
 
+    // DELETE - Remove a council_decisions row and cascade its votes
+    if (action === 'delete') {
+      const { id } = params;
+
+      if (!id) {
+        return new Response(
+          JSON.stringify({ error: 'id is required' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+
+      const { error } = await supabase
+        .from('council_decisions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      console.log('Deleted agenda item:', id);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: 'Invalid action' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
