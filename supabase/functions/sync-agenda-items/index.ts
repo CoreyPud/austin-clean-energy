@@ -182,14 +182,15 @@ async function runHistory(lookbackDays: number, apiKey: string) {
 
   const kept = rows
     .map((r) => ({ r, c: classified.get(String(r.item_number ?? "").trim()) }))
+    // The model is not self-consistent between is_climate and significance, so a
+    // routine operational item can still come back is_climate:true. Require both.
+    .filter(({ c }) => c?.is_climate === true && c?.significance !== "routine")
     .map(({ r, c }) => {
       const deptText = `${r.lead_dept ?? ""} ${r.sub_depts ?? ""}`;
       const isCore = CORE_DEPTS.some((d) => deptText.includes(d));
-      const aiClimate = c?.is_climate === true;
-      if (!isCore && !aiClimate) return null;
       return { r, c, visible: isCore };
-    })
-    .filter((x): x is { r: any; c?: Classified; visible: boolean } => x !== null);
+    });
+
 
   const years = [
     ...new Set(kept.map(({ r }) => Number(String(r.agenda_date).slice(0, 4)))),
