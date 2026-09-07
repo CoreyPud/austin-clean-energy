@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 // One-call council agenda sync for the admin page.
 // Phase 1: CIUR history (already-decided items) -> AI classification -> vote outcomes.
