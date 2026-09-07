@@ -280,7 +280,29 @@ async function findNextDraftAgenda() {
   return null;
 }
 
+// The model's item-boundary detection fails on multi-page PDFs: it can emit the
+// same item twice, once clean and once with the next item's text plus a page
+// footer bled onto the end. When one item's text is a prefix of another's
+// (>=80 identical leading chars), the longer one is the corrupted copy.
+const PREFIX_LEN = 80;
+
+function dropBledDuplicates(items: any[]): any[] {
+  const texts = items.map((it) => collapse(it?.posting_language));
+  const drop = new Set<number>();
+  for (let i = 0; i < items.length; i++) {
+    for (let j = 0; j < items.length; j++) {
+      if (i === j) continue;
+      const short = texts[i];
+      const long = texts[j];
+      if (short.length < PREFIX_LEN || long.length <= short.length) continue;
+      if (long.startsWith(short)) drop.add(j);
+    }
+  }
+  return items.filter((_, i) => !drop.has(i));
+}
+
 async function runUpcoming(apiKey: string) {
+
   const found = await findNextDraftAgenda();
   if (!found) return { items: [], info: { found: false } as Record<string, unknown> };
 
