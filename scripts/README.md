@@ -75,7 +75,6 @@ Updates `wcad_enriched.csv` in place. Cache: `wcad_improvement_cache.csv`
 | tcad_acres | Travis County parcel API | Lot size in acres |
 | sub_dec | Travis County parcel API | Subdivision description |
 | entities | Travis County parcel API | Taxing entities |
-| in_ae | Derived | True if situs_zip is in Austin Energy territory ZIP list |
 | has_solar | Derived | True if address matches a solar_installations record |
 | property_type | Derived | Mapped from land_type_desc: single_family, multifamily, condo, commercial, other |
 
@@ -94,7 +93,6 @@ Updates `wcad_enriched.csv` in place. Cache: `wcad_improvement_cache.csv`
 | year_built | WCAD Socrata API (feffyear) | ~20% coverage; nulls filled with 2010 |
 | estimated_roof_sqft | Derived | Same as TotgrossArea (no stories to divide by) |
 | property_type | Derived | Mapped from USECD: single_family, commercial, other |
-| in_ae | Derived | Always true — dataset is pre-filtered to AE ZIPs |
 | has_solar | Derived | True if pID appears in wcad_parcel_matches.csv |
 | county | Constant | "williamson" |
 
@@ -156,3 +154,4 @@ Generate a two-column CSV (pID, year_built) from `wcad_enriched.csv`.
 - **WCAD property types:** Uses USECD codes (RES, CA, C1–C6, L, LTR) rather than TCAD's text land_type_desc. Both map to the same property_type categories.
 - **Supabase anon key** is embedded in the scripts — it is a public anon key, safe to commit.
 - **This data updates annually** — tied to the CAD tax appraisal cycle (certified May–June each year). Solar permit data updates continuously and is handled separately via the admin import tools in the site.
+- **`in_ae` is not part of this pipeline's output, and must never be re-added to it.** It used to be computed here from a situs_zip allowlist, which over-represented AE coverage for ZIPs only partially inside AE territory. The real column in Supabase is derived from the actual AE service-area polygon via a database trigger on `centroid_lat`/`centroid_lon` (see `geo_derivation_setup.sql` -- ask whoever manages the Supabase project if you don't have it handy). `council_district` works the same way and also should never be computed here. Neither script currently sets `centroid_lat`/`centroid_lon` at all, so a genuinely new parcel added by a future pipeline run will need its centroid populated by whatever process already does that today before the trigger can derive `in_ae`/`council_district` for it -- check with whoever manages the Supabase project if that's not clear when this pipeline is next run.

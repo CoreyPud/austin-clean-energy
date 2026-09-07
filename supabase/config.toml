@@ -74,3 +74,18 @@ verify_jwt = false
 
 [functions.installations-geojson]
 verify_jwt = false
+
+[functions.properties-bulk]
+verify_jwt = false
+
+[functions.import-agenda-items]
+verify_jwt = false
+
+[functions.vote-agenda-item]
+verify_jwt = false
+
+[functions.manage-agenda-items]
+verify_jwt = false
+
+[functions.sync-agenda-items]
+verify_jwt = false

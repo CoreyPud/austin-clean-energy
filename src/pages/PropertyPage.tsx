@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import {
-  BarChart, Bar, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from "recharts";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
+import MapTokenLoader from "@/components/MapTokenLoader";
 import { useSolarFilter } from "@/components/SolarFilterPanel";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
@@ -14,19 +12,14 @@ import {
   slugifyAddress,
   classifyProperty,
   computeRecommendation,
-  type SolarRecommendation,
+  fromTcadProperty,
+  estimateProductionPerKw,
+  getCtaCopy,
+  DEFAULT_MONTHLY_BILL,
 } from "@/lib/property-solar";
+import SolarProgramView, { SolarBillingToggle } from "@/components/assessment/SolarProgramView";
 import { formatAssessorAddress } from "@/lib/address-utils";
-import {
-  buildYearModel,
-  buildThirtyYearModel,
-  buildSsoModel,
-  billToMonthlyKwh,
-  type CalcInputs,
-  DEFAULT_MONTHLY_USAGE_KWH,
-  SSO_RATE_UNDER_1MW,
-  SSO_MIN_KW,
-} from "@/lib/solar-model";
+import { billToMonthlyKwh, SSO_MIN_KW } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -45,8 +38,10 @@ const TYPE_COLOR: Record<string, string> = {
   other:         "#6b7280",
 };
 
-const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const fmtKwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`;
+// Keep in sync with fetch-property-solar's MAX_AGE_DAYS -- the edge function enforces this
+// for real, this is just so the client doesn't invoke it on every view of a fresh property.
+const SOLAR_DATA_MAX_AGE_DAYS = 365;
 
 
 interface PropertyData {
@@ -111,197 +106,30 @@ function useNeighborhoodStats(zip: string | null): NeighborhoodStats | null {
   return stats;
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-2xl font-semibold tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
-    </div>
-  );
-}
-
-function CostBreakdown({ rec }: { rec: SolarRecommendation }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-      <p className="text-sm font-medium">Cost breakdown</p>
-      <dl className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Gross install cost</dt>
-          <dd>{fmt$(rec.grossCost)}</dd>
-        </div>
-        {rec.aeRebate > 0 && (
-          <div className="flex justify-between text-green-600 dark:text-green-400">
-            <dt>Austin Energy rebate</dt>
-            <dd>−{fmt$(rec.aeRebate)}</dd>
-          </div>
-        )}
-        <div className="flex justify-between font-medium border-t border-border pt-2">
-          <dt>Net cost</dt>
-          <dd>{fmt$(rec.netCost)}</dd>
-        </div>
-      </dl>
-    </div>
-  );
-}
-
-function SolarCharts({
-  rec,
-  property,
-  annualUsageKwh,
-  isSSO,
-}: {
-  rec: SolarRecommendation;
-  property: PropertyData;
-  annualUsageKwh: number;
-  isSSO: boolean;
-}) {
-  const cls = classifyProperty(property.property_type);
-  const isResidential = cls === "residential";
-
-  const productionPerKw = property.solar_sunshine_hrs
-    ? property.solar_sunshine_hrs * 0.86
-    : 1500;
-
-  const inputs: CalcInputs = useMemo(() => ({
-    annualUsageKwh,
-    systemKw: rec.recommendedKw,
-    batteryKwh: 0,
-    loanTermYears: 0,
-    loanInterestRate: 0,
-    productionPerKw,
-  }), [annualUsageKwh, rec.recommendedKw, productionPerKw]);
-
-  const yearOne    = useMemo(() => buildYearModel(inputs, 0), [inputs]);
-  const thirtyYear = useMemo(() => buildThirtyYearModel(inputs, rec.netCost), [inputs, rec.netCost]);
-  const sso        = useMemo(() => buildSsoModel(rec.recommendedKw, productionPerKw, rec.netCost), [rec.recommendedKw, productionPerKw, rec.netCost]);
-
-  const billData = yearOne.monthlyRows.map(r => ({
-    month: r.month,
-    "Without solar": Math.round(r.billWithoutSolar),
-    "With solar":    Math.round(r.billWithSolar),
-  }));
-
-  const productionData = isSSO
-    ? sso.monthlyRevenue.map(r => ({ month: r.month, "Revenue": r.revenue }))
-    : yearOne.monthlyRows.map(r => ({
-        month: r.month,
-        "Production":  Math.round(r.solar),
-        "Consumption": Math.round(r.usage),
-      }));
-
-  const cumulativeSource = isSSO ? sso.cumulativeByYear : thirtyYear.cumulativeByYear;
-  const cumulativeKey    = isSSO ? "Net revenue" : "Net savings";
-  const cumulativeData   = cumulativeSource.map(d => ({
-    year: `Yr ${d.year}`,
-    [cumulativeKey]: d.cumulative,
-  }));
-
-  const net25      = cumulativeSource[24]?.cumulative ?? 0;
-  const paybackYr  = isSSO ? sso.paybackYear : thirtyYear.paybackYear;
-
-  return (
-    <div className="space-y-8">
-      {/* Bill comparison — residential only (irrelevant under SSO) */}
-      {isResidential && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Monthly bill: with vs. without solar</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={billData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={44} />
-              <Tooltip formatter={(v: number) => `$${v}`} />
-              <Legend />
-              <Bar dataKey="Without solar" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="With solar"    fill="hsl(var(--primary))"   radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* Monthly production / revenue */}
-      <div className="space-y-2">
-        <p className="text-sm font-medium">
-          {isSSO
-            ? "Estimated monthly revenue"
-            : isResidential
-            ? "Monthly production vs. consumption"
-            : "Estimated monthly production"}
-        </p>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={productionData} barGap={2} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={isSSO ? v => `$${v}` : undefined} width={44} />
-            <Tooltip formatter={(v: number) => isSSO ? `$${Math.round(v)}` : `${Math.round(v)} kWh`} />
-            <Legend />
-            {isSSO
-              ? <Bar dataKey="Revenue" fill="#047857" radius={[3, 3, 0, 0]} />
-              : <>
-                  <Bar dataKey="Production"  fill="hsl(var(--primary))"              radius={[3, 3, 0, 0]} />
-                  {isResidential && <Bar dataKey="Consumption" fill="hsl(var(--muted-foreground) / 0.4)" radius={[3, 3, 0, 0]} />}
-                </>
-            }
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* 30-year cumulative */}
-      <div className="space-y-2">
-        <div className="flex items-baseline gap-2">
-          <span className={`text-3xl font-bold tabular-nums ${net25 >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-            {fmt$(net25)}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {isSSO ? "25-year net revenue" : "25-year net savings"}
-          </span>
-        </div>
-        <p className="text-sm font-medium">
-          {isSSO ? "Cumulative net revenue over 30 years" : "Cumulative net savings over 30 years"}
-        </p>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={cumulativeData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="year" tick={{ fontSize: 10 }} interval={4} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} width={48} />
-            <Tooltip formatter={(v: number) => fmt$(v)} />
-            <Bar dataKey={cumulativeKey} radius={[3, 3, 0, 0]}>
-              {cumulativeData.map((entry, i) => (
-                <Cell key={i} fill={Number(entry[cumulativeKey]) >= 0 ? "#047857" : "#b91c1c"} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        {paybackYr && (
-          <p className="text-xs text-center text-muted-foreground">
-            System pays for itself in year {paybackYr}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function PropertyPage() {
   const { pid } = useParams<{ pid: string }>();
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [loading, setLoading]   = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState(150);
+  const [commercialMonthlyBill, setCommercialMonthlyBill] = useState(DEFAULT_MONTHLY_BILL.commercial);
   // null = follow the default sizing; a number = user has chosen a system size.
   const [systemKwOverride, setSystemKwOverride] = useState<number | null>(null);
-  const [solarPanels,      setSolarPanels]      = useState<SolarPanel[]>([]);
+  const [costPerWOverride, setCostPerWOverride] = useState<number | null>(null);
+  // Only meaningful when ssoEligible; properties too small for SSO always show VoS regardless.
+  const [billingMode, setBillingMode] = useState<"sso" | "vos">("sso");
+  // undefined = we don't know yet (never checked, or a check is in flight); [] = checked and
+  // confirmed no panels; populated = the real layout. SatellitePane renders each distinctly so
+  // the marker/loading view doesn't flicker between "unknown" and "confirmed empty".
+  const [solarPanels,      setSolarPanels]      = useState<SolarPanel[] | undefined>(undefined);
+  const [fetchingSolar,    setFetchingSolar]    = useState(false);
   const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
   const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
   const [segmentPitches,   setSegmentPitches]   = useState<Record<number, number>>({});
 
 
-  useEffect(() => {
-    if (!pid) return;
-    setLoading(true);
-    setSystemKwOverride(null); // a new property starts at its own recommended size
-    Promise.all([
+  const loadProperty = async (pid: string) => {
+    const [{ data, error }, { data: segs }] = await Promise.all([
       supabase
         .from("tcad_properties")
         .select("pid, situs_address, situs_zip, property_type, year_built, market_value, estimated_roof_sqft, land_type_desc, centroid_lat, centroid_lon, solar_fetched_at, solar_max_panels, solar_panel_capacity_w, solar_sunshine_hrs, solar_sunshine_median, solar_max_area_m2, solar_imagery_quality, solar_imagery_date, solar_panels_layout")
@@ -311,34 +139,68 @@ export default function PropertyPage() {
         .from("tcad_roof_segments")
         .select("segment_index, azimuth_deg, pitch_deg")
         .eq("pid", pid),
-    ]).then(([{ data, error }, { data: segs }]) => {
-      setLoading(false);
-      if (error || !data) { setNotFound(true); return; }
-      setProperty(data as PropertyData);
-      const az: Record<number, number> = {};
-      const pt: Record<number, number> = {};
-      (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; pt[s.segment_index] = s.pitch_deg; });
-      setSegmentAzimuths(az);
-      setSegmentPitches(pt);
-      const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
-      if (layout?.p?.length) {
-        const [refLat, refLon] = layout.ref;
-        setSolarPanels(layout.p.map(([dlat, dlon, o, kwh, si]) => ({
-          lat: refLat + dlat / 1e6,
-          lon: refLon + dlon / 1e6,
-          orientation: o ? "LANDSCAPE" : "PORTRAIT",
-          yearlyEnergyDcKwh: kwh,
-          segmentIndex: si,
-        })));
-        setPanelDims({ h: 1.879, w: 1.045 });
-      }
-    });
+    ]);
+    if (error || !data) { setNotFound(true); return; }
+    setProperty(data as PropertyData);
+    const az: Record<number, number> = {};
+    const pt: Record<number, number> = {};
+    (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; pt[s.segment_index] = s.pitch_deg; });
+    setSegmentAzimuths(az);
+    setSegmentPitches(pt);
+    const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
+    if (layout?.p?.length) {
+      const [refLat, refLon] = layout.ref;
+      setSolarPanels(layout.p.map(([dlat, dlon, o, kwh, si]) => ({
+        lat: refLat + dlat / 1e6,
+        lon: refLon + dlon / 1e6,
+        orientation: o ? "LANDSCAPE" : "PORTRAIT",
+        yearlyEnergyDcKwh: kwh,
+        segmentIndex: si,
+      })));
+      setPanelDims({ h: 1.879, w: 1.045 });
+    } else if (data.solar_fetched_at) {
+      // Checked, confirmed no panels -- distinct from "haven't checked yet" (undefined).
+      setSolarPanels([]);
+    } else {
+      setSolarPanels(undefined);
+    }
+  };
+
+  useEffect(() => {
+    if (!pid) return;
+    setLoading(true);
+    setSystemKwOverride(null); // a new property starts at its own recommended size
+    setBillingMode("sso"); // default to SSO whenever eligible; VoS is a deliberate opt-in
+    loadProperty(pid).finally(() => setLoading(false));
   }, [pid]);
+
+  // Never fetched (or fetched over a year ago) Google Solar data for this parcel -- pull it
+  // now, same on-demand fetch the calculator already does for arbitrary addresses, just
+  // persisted here since it's a known TCAD pid. fetch-property-solar enforces the actual
+  // staleness threshold and a global rate limit server-side; this is just the client-side
+  // mirror of "is it worth asking" so an up-to-date property doesn't invoke on every view.
+  // Re-reads once it lands so panels/charts pick it up.
+  useEffect(() => {
+    if (!pid || !property) return;
+    const fetchedAt = property.solar_fetched_at ? new Date(property.solar_fetched_at).getTime() : null;
+    const isStale = fetchedAt == null || Date.now() - fetchedAt > SOLAR_DATA_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    if (!isStale) return;
+    // Only show a loading state for a true first fetch -- a background staleness refresh has
+    // perfectly good (if slightly old) data to keep showing while it silently checks for newer.
+    const isFirstFetch = fetchedAt == null;
+    if (isFirstFetch) setFetchingSolar(true);
+    supabase.functions.invoke("fetch-property-solar", { body: { pid } })
+      .then(({ data, error }) => {
+        if (error || !data?.ok || data.alreadyFetched || data.rateLimited) return;
+        return loadProperty(pid);
+      })
+      .finally(() => { if (isFirstFetch) setFetchingSolar(false); });
+  }, [pid, property]);
 
   const nbStats = useNeighborhoodStats(property?.situs_zip ?? null);
 
   const solarFilter = useSolarFilter({
-    panels:       solarPanels.length ? solarPanels : undefined,
+    panels:       solarPanels,
     propertyType: property?.property_type,
     azimuths:     segmentAzimuths,
   });
@@ -365,52 +227,60 @@ export default function PropertyPage() {
   const isMultifamily  = cls === "multifamily";
   const isCommercial   = !isResidential && !isMultifamily;
 
-  // Residential sizing tracks the user's bill; the recommendation reads it directly.
+  // Residential sizing tracks the user's bill; commercial (under VoS) tracks its own bill
+  // input below; the recommendation reads whichever applies directly.
   const residentialAnnualUsage = billToMonthlyKwh(monthlyBill) * 12;
+  const commercialAnnualUsage = billToMonthlyKwh(commercialMonthlyBill) * 12;
 
   // Size the system off the buildable layout (setbacks, low-TSRF panels and rooftop
-  // walkways removed) rather than Google's raw maximum, so every figure downstream —
-  // kW, cost, rebate, production, payback, SSO — reflects what can actually be built.
+  // walkways removed) rather than Google's raw maximum, so every figure downstream
+  // (kW, cost, rebate, production, payback, SSO) reflects what can actually be built.
   // Bill and manual override both feed in here so the stat cards stay in sync.
   const buildablePanels = solarFilter.filteredPanelCount ?? property.solar_max_panels;
-  const rec = computeRecommendation(
-    { ...property, solar_max_panels: buildablePanels },
-    {
-      annualUsageKwh: isResidential ? residentialAnnualUsage : null,
-      systemKwOverride,
-    },
-  );
+  const siteInput = fromTcadProperty({ ...property, solar_max_panels: buildablePanels });
+  const rec = computeRecommendation(siteInput, {
+    annualUsageKwh: isResidential ? residentialAnnualUsage : isCommercial ? commercialAnnualUsage : null,
+    systemKwOverride,
+    billingMode: isCommercial && billingMode === "sso" ? "sso" : "vos",
+    costPerWOverride,
+  });
+  // The natural default size (no manual override) for the current billing mode -- used only
+  // by SolarProgramView's "reset to recommended" comparison link, single-sourced the same way
+  // as `rec` but without systemKwOverride.
+  const recNatural = computeRecommendation(siteInput, {
+    annualUsageKwh: isResidential ? residentialAnnualUsage : isCommercial ? commercialAnnualUsage : null,
+    billingMode: isCommercial && billingMode === "sso" ? "sso" : "vos",
+  });
   const hasSolar = !!property.solar_fetched_at && property.solar_max_panels != null;
   const address  = formatAssessorAddress(property.situs_address) || `Property ${property.pid}`;
   const typeLabel = TYPE_LABEL[property.property_type ?? ""] ?? "Other";
   const typeColor = TYPE_COLOR[property.property_type ?? ""] ?? "#6b7280";
   const roofSqft  = property.solar_max_area_m2
-    ? Math.round(property.solar_max_area_m2 * 10.764).toLocaleString()
+    ? Math.round(property.solar_max_area_m2 * 10.764)
     : property.estimated_roof_sqft
-    ? Math.round(property.estimated_roof_sqft).toLocaleString()
+    ? Math.round(property.estimated_roof_sqft)
+    : null;
+  const sunshineHrsDisplay = property.solar_sunshine_median != null
+    ? `${Math.round(property.solar_sunshine_median).toLocaleString()} hrs/yr`
+    : property.solar_sunshine_hrs != null
+    ? `${Math.round(property.solar_sunshine_hrs).toLocaleString()} hrs/yr`
     : null;
 
+  // Matches SolarProgramView's own internal ssoEligible formula exactly -- this page's
+  // surrounding copy (bill input gating, CTA) needs to agree with what the shared view decides.
   const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_MIN_KW;
 
+  const productionPerKw = estimateProductionPerKw(property.solar_sunshine_hrs);
+
+  // Multifamily has no real bill/usage concept (virtual net metering) -- production is used
+  // as a benign proxy purely so downstream charts have a non-zero number to plot against.
   const annualUsageKwh = isResidential
     ? residentialAnnualUsage
-    : (rec?.annualProductionKwh ?? DEFAULT_MONTHLY_USAGE_KWH * 12);
+    : isCommercial
+    ? commercialAnnualUsage
+    : (rec?.annualProductionKwh ?? 0);
 
-  const ctaTitle = isResidential
-    ? "Want help navigating your solar options?"
-    : isMultifamily
-    ? "Questions about multifamily solar in Austin?"
-    : ssoEligible
-    ? "Want help evaluating the Standard Offer for your property?"
-    : "Want help evaluating solar for your commercial property?";
-
-  const ctaDescription = isResidential
-    ? "We're an independent resource, not a solar installer. We help Austin homeowners understand rebates, what questions to ask installers, and whether solar actually pencils out for their situation."
-    : isMultifamily
-    ? "We're not a solar company — we're an independent resource. Austin Energy's multifamily programs change frequently and eligibility can be complicated. We can help you figure out what's currently available and whether it makes sense for your building."
-    : ssoEligible
-    ? "We're not a solar installer — we're an independent resource. The Standard Offer is compelling for large commercial properties, but navigating AE's interconnection process and finding the right installer takes work. We can help you ask the right questions."
-    : "We're not a solar installer — we're an independent resource. We can help you evaluate whether solar makes financial sense for your property and what to ask commercial installers about sizing, rates, and AE's rebate process.";
+  const { title: ctaTitle, description: ctaDescription } = getCtaCopy(cls, ssoEligible);
 
   return (
     <div className="min-h-screen bg-background">
@@ -418,37 +288,65 @@ export default function PropertyPage() {
 
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">{address}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold tracking-tight">{address}</h1>
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded-full text-white shrink-0"
+              style={{ backgroundColor: typeColor }}
+            >
+              {typeLabel}
+            </span>
+          </div>
           {property.situs_zip && (
             <p className="text-muted-foreground text-sm">Austin, TX {property.situs_zip}</p>
           )}
         </div>
 
-        {/* Satellite map */}
+        {/* Satellite map -- while the first-ever fetch is in flight, show a map-sized
+            placeholder instead of mounting SatellitePane at all, so there's no Mapbox instance
+            to spin up just to immediately swap out, and no size jump once it's ready. */}
         {property.centroid_lat != null && property.centroid_lon != null && (
-          <div className="space-y-3">
-            <SatellitePane
-              lat={property.centroid_lat}
-              lon={property.centroid_lon}
-              className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
-              {...solarFilter.paneProps}
-              panelHeightM={panelDims?.h}
-              panelWidthM={panelDims?.w}
-              segmentAzimuths={segmentAzimuths}
-              segmentPitches={segmentPitches}
-              selectedPanelCount={rec
-                ? Math.round((rec.recommendedKw * 1000) / (property.solar_panel_capacity_w ?? 400))
-                : undefined}
-            />
-          </div>
+          fetchingSolar ? (
+            <div className="w-full h-[32rem] rounded-lg border border-border bg-muted flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <p className="text-sm">Fetching solar data for this roof…</p>
+            </div>
+          ) : (
+            <MapTokenLoader>
+              <SatellitePane
+                lat={property.centroid_lat}
+                lon={property.centroid_lon}
+                className="w-full h-[32rem] rounded-lg overflow-hidden border border-border"
+                {...solarFilter.paneProps}
+                panelHeightM={panelDims?.h}
+                panelWidthM={panelDims?.w}
+                segmentAzimuths={segmentAzimuths}
+                segmentPitches={segmentPitches}
+                selectedPanelCount={rec
+                  ? Math.round((rec.recommendedKw * 1000) / (property.solar_panel_capacity_w ?? 400))
+                  : undefined}
+              />
+            </MapTokenLoader>
+          )
         )}
 
         {/* No solar data states */}
-        {!hasSolar && (
+        {!hasSolar && fetchingSolar && (
+          <div className="rounded-lg border border-border p-6 text-center space-y-2">
+            <p className="font-medium flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Fetching solar data
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Pulling roof and sunshine data for this property from Google Solar.
+            </p>
+          </div>
+        )}
+        {!hasSolar && !fetchingSolar && (
           <div className="rounded-lg border border-border p-6 text-center space-y-2">
             <p className="font-medium">No Google Solar data available for this property</p>
             <p className="text-sm text-muted-foreground">
-              Solar potential data hasn't been fetched for this address yet.
+              Google hasn't imaged this roof yet, so we can't estimate solar potential here.
             </p>
           </div>
         )}
@@ -463,6 +361,14 @@ export default function PropertyPage() {
 
         {hasSolar && rec && (
           <>
+            <SolarBillingToggle
+              rec={rec}
+              propertyClass={cls}
+              billingMode={billingMode}
+              onBillingModeChange={setBillingMode}
+              systemKw={rec.recommendedKw}
+            />
+
             {/* Bill input for residential */}
             {isResidential && (
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -481,174 +387,45 @@ export default function PropertyPage() {
               </div>
             )}
 
-            {/* Recommended system hero */}
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-base font-semibold">
-                  Recommended system
-                  <span className="text-muted-foreground font-normal text-sm ml-2">
-                    {isResidential
-                      ? "sized to offset your bill"
-                      : isMultifamily
-                      ? "maximum roof capacity"
-                      : ssoEligible
-                      ? "maximum roof capacity · Standard Offer"
-                      : "maximum roof capacity"}
-                  </span>
-                </h2>
-                {isResidential && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Austin Energy's{" "}
-                    <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
-                    {" "}credits all your production at $0.126/kWh against your bill. Once credits cover your bill, additional production doesn't improve payback — so we size to match your consumption.
-                  </p>
-                )}
-                {isMultifamily && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Austin Energy offers solar rebates and incentives for multifamily properties. See{" "}
-                    <a href="https://austinenergy.com/green-power/solar-solutions/for-your-multifamily" target="_blank" rel="noopener noreferrer" className="underline">AE's multifamily solar page</a>
-                    {" "}for current program options — availability and eligibility change frequently.
-                  </p>
-                )}
-                {isCommercial && ssoEligible && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Under Austin Energy's{" "}
-                    <a href="https://austinenergy.com/green-power/solar-solutions/solar-standard-offer-program" target="_blank" rel="noopener noreferrer" className="underline">Standard Offer program</a>
-                    , AE pays you a fixed rate ({(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh) for every kilowatt-hour your system produces — regardless of what you consume. Unlike bill-offset solar, this is a standalone revenue stream: your electricity bill stays the same and you simply earn on top of it. Because revenue scales directly with output, there's no ceiling on useful system size — maximum roof capacity is the right starting point. Minimum system size is {SSO_MIN_KW} kW.
-                  </p>
-                )}
-                {isCommercial && !ssoEligible && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Austin Energy's{" "}
-                    <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
-                    {" "}credits all your production at $0.126/kWh regardless of how much you consume — unused monthly credits carry forward, and AE pays out any remaining balance. Maximum roof capacity is a reasonable starting point. Your system is under the {SSO_MIN_KW} kW minimum for the Standard Offer program, but the economics of VoS are still favorable at larger sizes.
-                  </p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard
-                  label="System size"
-                  value={`${rec.recommendedKw} kW`}
-                  sub={`of ${rec.maxKw} kW max`}
-                />
-                <StatCard
-                  label="Net cost"
-                  value={fmt$(rec.netCost)}
-                  sub={rec.aeRebate > 0 ? "after AE rebate" : undefined}
-                />
-                <StatCard
-                  label={ssoEligible ? "Annual revenue (est.)" : "Annual production"}
-                  value={ssoEligible
-                    ? fmt$(rec.annualProductionKwh * SSO_RATE_UNDER_1MW)
-                    : fmtKwh(rec.annualProductionKwh)}
-                />
-                <StatCard
-                  label="Est. payback"
-                  value={`${rec.paybackYears} yr`}
-                  sub={ssoEligible
-                    ? `${fmt$(rec.annualSavings)}/yr revenue`
-                    : `${fmt$(rec.annualSavings)}/yr savings`}
-                />
-              </div>
-
-              {/* Adjust system size away from the default */}
+            {/* Bill input for commercial (VoS only, SSO revenue doesn't depend on usage) */}
+            {isCommercial && billingMode === "vos" && (
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex justify-between items-baseline">
-                  <p className="text-sm font-medium">System size</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-bold tabular-nums">{rec.recommendedKw} kW</span>
-                    {systemKwOverride != null && (
-                      <button
-                        type="button"
-                        onClick={() => setSystemKwOverride(null)}
-                        className="text-xs text-primary underline"
-                      >
-                        Reset
-                      </button>
-                    )}
-                  </div>
+                  <p className="text-sm font-medium">Monthly electricity bill</p>
+                  <span className="text-lg font-bold tabular-nums">${commercialMonthlyBill}</span>
                 </div>
                 <Slider
-                  min={1}
-                  max={Math.max(1, Math.ceil(rec.maxKw))}
-                  step={rec.maxKw > 50 ? 1 : 0.5}
-                  value={[rec.recommendedKw]}
-                  onValueChange={([v]) => setSystemKwOverride(v)}
+                  min={200} max={10000} step={100}
+                  value={[commercialMonthlyBill]}
+                  onValueChange={([v]) => setCommercialMonthlyBill(v)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  {systemKwOverride != null
-                    ? `Custom size · up to ${rec.maxKw} kW buildable`
-                    : isResidential
-                    ? `Sized to your bill · up to ${rec.maxKw} kW buildable`
-                    : `Maximum buildable roof capacity (${rec.maxKw} kW)`}
+                  ≈ {fmtKwh(Math.round(billToMonthlyKwh(commercialMonthlyBill)))} / month · {fmtKwh(Math.round(commercialAnnualUsage))} / year
                 </p>
               </div>
-            </div>
+            )}
 
-            <CostBreakdown rec={rec} />
-
-            {/* Charts */}
-            <div className="rounded-lg border border-border bg-card p-6">
-              <SolarCharts rec={rec} property={property} annualUsageKwh={annualUsageKwh} isSSO={ssoEligible} />
-            </div>
-
-            {/* Solar potential */}
-            <div className="space-y-3">
-              <h2 className="text-base font-semibold">Solar potential</h2>
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                <div className="col-span-2 sm:col-span-1">
-                  <dt className="text-muted-foreground">Sun score</dt>
-                  <dd className="font-medium">
-                    {property.solar_sunshine_median != null
-                      ? `${Math.round(property.solar_sunshine_median).toLocaleString()} hrs/yr`
-                      : property.solar_sunshine_hrs != null
-                      ? `${Math.round(property.solar_sunshine_hrs).toLocaleString()} hrs/yr`
-                      : "—"}
-                  </dd>
-                  <dd className="text-xs text-muted-foreground mt-0.5">
-                    Peak sun-hours adjusted for this roof's orientation, tilt, shading from trees and nearby structures, and Austin's solar path — not a generic city-wide average.
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Max system</dt>
-                  <dd className="font-medium">{rec.maxKw} kW ({buildablePanels?.toLocaleString()} panels)</dd>
-                </div>
-                {roofSqft && (
-                  <div>
-                    <dt className="text-muted-foreground">Usable roof area</dt>
-                    <dd className="font-medium">{roofSqft} sqft</dd>
-                  </div>
-                )}
-                {property.solar_imagery_date && (
-                  <div>
-                    <dt className="text-muted-foreground">Imagery</dt>
-                    <dd className="font-medium">
-                      {property.solar_imagery_quality} · {property.solar_imagery_date}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-
-            {/* Assumptions */}
-            <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
-              <p className="font-medium text-foreground">How we calculated this</p>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average — get real quotes to verify)</li>
-                <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
-                {isResidential && <li>Savings rate: Austin Energy Value of Solar ($0.126/kWh on all production)</li>}
-                {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
-                {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
-                {isCommercial && ssoEligible && <li>Revenue rate: Austin Energy Standard Offer ({(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh, systems under 1 MW)</li>}
-                {isCommercial && ssoEligible && <li>System sized to maximum roof capacity; AE commercial capacity rebate ($0.70/W, up to 100 kW) applied</li>}
-                {isCommercial && !ssoEligible && <li>Rate: Austin Energy Value of Solar ($0.126/kWh on all production, unused credits carry forward); AE commercial capacity rebate ($0.70/W, up to 100 kW) applied</li>}
-                {isCommercial && !ssoEligible && <li>System sized to maximum roof capacity</li>}
-              </ul>
-            </div>
+            <SolarProgramView
+              rec={rec}
+              recommendedKw={recNatural?.recommendedKw ?? null}
+              propertyClass={cls}
+              systemKw={rec.recommendedKw}
+              onSystemKwChange={setSystemKwOverride}
+              billingMode={billingMode}
+              onBillingModeChange={setBillingMode}
+              annualUsageKwh={annualUsageKwh}
+              productionPerKw={productionPerKw}
+              sunshineHrsDisplay={sunshineHrsDisplay}
+              roofSqft={roofSqft}
+              panelCount={buildablePanels}
+              imageryQuality={property.solar_imagery_quality}
+              imageryDate={property.solar_imagery_date}
+              onCostPerWChange={setCostPerWOverride}
+            />
           </>
         )}
 
-        {/* Solar in your neighborhood — residential only */}
+        {/* Solar in your neighborhood, residential only */}
         {isResidential && nbStats && property.situs_zip && (
           <>
             <SectionHeading title="Solar in your neighborhood" />

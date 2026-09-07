@@ -41,10 +41,15 @@ export const AUSTIN_ENERGY_RATES = {
 
 export const AUSTIN_ENERGY_SOLAR_REBATE = 4000; // residential flat rebate (systems > 3 kW)
 
+// Capacity-Based Incentive (CBI) eligibility cutoff for for-profit commercial: per Austin
+// Energy's CBI guidelines, only systems under this size can choose CBI; at or above it, the
+// system is PBI-only (see PBI section below) and gets $0 CBI, not a capped amount.
+export const PBI_MIN_KW = 100;
+
 export function austinEnergyRebate(systemKw: number, propertyType: string): number {
   switch (propertyType) {
     case "commercial":
-      return Math.min(systemKw, 100) * 1000 * 0.70; // $0.70/W, capped at 100 kW
+      return systemKw < PBI_MIN_KW ? systemKw * 1000 * 0.70 : 0; // $0.70/W, only under 100 kW
     case "non-profit":
       return Math.min(systemKw, 200) * 1000 * 1.00; // $1.00/W, capped at 200 kW
     case "multi-family":
@@ -326,20 +331,101 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
   };
 }
 
+// ── Performance-Based Incentive (PBI) ────────────────────────────────────────
+// On-bill credit for the first 5 years, paid in addition to Value of Solar (not a
+// replacement, and not an upfront rebate like CBI). Rate tier is fixed by system size.
+
+export interface PbiYearRow {
+  year: number;
+  credit: number;
+}
+
+export interface PbiModel {
+  rate: number;
+  annualCredit: number;
+  totalFiveYearCredit: number;
+  yearlyRows: PbiYearRow[];
+}
+
+export function buildPbiModel(systemKw: number, productionPerKw: number): PbiModel {
+  const rate = commercialPbiRate(systemKw);
+  const annualKwh = systemKw * productionPerKw;
+  const annualCredit = annualKwh * rate;
+
+  const yearlyRows: PbiYearRow[] = [];
+  let totalFiveYearCredit = 0;
+  for (let y = 0; y < FINANCIAL_HORIZON_YEARS; y++) {
+    const year = y + 1;
+    const credit = year <= COMMERCIAL_PBI_YEARS ? annualKwh * Math.pow(0.995, y) * rate : 0;
+    if (year <= COMMERCIAL_PBI_YEARS) totalFiveYearCredit += credit;
+    yearlyRows.push({ year, credit: Math.round(credit) });
+  }
+
+  return { rate, annualCredit, totalFiveYearCredit: Math.round(totalFiveYearCredit), yearlyRows };
+}
+
+/**
+ * Layers PBI's yearly credits onto an existing VoS cumulative stream and recomputes payback.
+ * Overlays on `cumulativeByYear` (which already correctly accounts for loan payments, if any)
+ * rather than re-deriving cumulative cash flow from scratch, since ThirtyYearResult doesn't
+ * expose per-year loan payment data outside of buildThirtyYearModel's own internal loop.
+ */
+export function mergePbiIntoThirtyYear(thirtyYear: ThirtyYearResult, pbi: PbiModel): ThirtyYearResult {
+  let paybackYear: number | null = null;
+  let runningPbi = 0;
+  const cumulativeByYear = thirtyYear.cumulativeByYear.map((row, i) => {
+    runningPbi += pbi.yearlyRows[i]?.credit ?? 0;
+    const cumulative = row.cumulative + runningPbi;
+    if (paybackYear === null && cumulative >= 0) paybackYear = row.year;
+    return { year: row.year, cumulative };
+  });
+
+  return {
+    ...thirtyYear,
+    totalSavings: thirtyYear.totalSavings + pbi.totalFiveYearCredit,
+    paybackYear,
+    cumulativeByYear,
+  };
+}
+
 // ── Solar Standard Offer (SSO) ───────────────────────────────────────────────
 
-export const SSO_RATE_UNDER_1MW = 0.1124;  // $/kWh, systems < 1 MW-ac
+export const SSO_RATE_UNDER_1MW = 0.11;    // $/kWh, systems < 1 MW-ac
 export const SSO_RATE_OVER_1MW  = 0.0841;  // $/kWh, systems >= 1 MW-ac
-export const SSO_MIN_KW         = 50;       // program minimum
-export const SSO_SHOW_THRESHOLD_KW = 75;   // show option when roof can fit this much
+export const SSO_MIN_KW         = 50;       // program minimum -- also the threshold for showing the SSO/VoS toggle at all
 
-export function ssoRate(systemKw: number): number {
-  return systemKw >= 1000 ? SSO_RATE_OVER_1MW : SSO_RATE_UNDER_1MW;
+// Rate escalation, O&M, and inverter replacement, backed out of a TPO pro forma for a
+// sub-1MW commercial system. The pro forma prices third-party ownership (lease payment
+// out, tax benefits kept by the TPO); we instead assume the property owner installs and
+// owns the system outright, so no lease payment and no ITC/depreciation modeled here —
+// the federal ITC's commissioning-deadline status is not something to hardcode as a
+// live constant.
+//
+// The rate-step schedule below is the pro forma author's own projection, not Austin
+// Energy policy — confirmed against AE's actual Solar Standard Offer Rider tariff
+// (effective 11/1/2025). The real mechanism: the rate holds for 3 years, then resets
+// based on the trailing 5-year average of ERCOT-market-derived avoided energy,
+// transmission, and ancillary-services costs — it can rise or fall, and there's no
+// guaranteed floor beyond the currently published rate. Kept as a fixed step-up here
+// as a simplifying stand-in so the SSO model isn't flat forever, not because we
+// believe the rate is contractually guaranteed to rise on this schedule.
+export const SSO_RATE_STEP = 0.02;               // $/kWh added at each escalation year
+export const SSO_RATE_STEP_YEARS = [6, 11, 16];  // 1-indexed year each step starts, then holds
+
+export const SSO_OM_PER_KW_YEAR = 10;                          // $/kW/year: insurance, monitoring, maintenance
+export const SSO_OM_ESCALATION = 0.02;                         // per year
+export const SSO_INVERTER_REPLACEMENT_PER_KW = 88_000 / 1300;  // $/kW, one-time
+export const SSO_INVERTER_REPLACEMENT_YEAR = 14;               // 1-indexed year of the swap
+
+export function ssoRate(systemKw: number, year = 1): number {
+  const base = systemKw >= 1000 ? SSO_RATE_OVER_1MW : SSO_RATE_UNDER_1MW;
+  const steps = SSO_RATE_STEP_YEARS.filter(stepYear => year >= stepYear).length;
+  return base + steps * SSO_RATE_STEP;
 }
 
 export function buildSsoModel(systemKw: number, productionPerKw: number, installCost: number) {
-  const rate = ssoRate(systemKw);
   const annualKwh = systemKw * productionPerKw;
+  const rate = ssoRate(systemKw, 1);
   const annualRevenue = annualKwh * rate;
 
   let cumulative = -installCost;
@@ -347,10 +433,16 @@ export function buildSsoModel(systemKw: number, productionPerKw: number, install
   const cumulativeByYear: { year: number; cumulative: number }[] = [];
 
   for (let y = 0; y < FINANCIAL_HORIZON_YEARS; y++) {
+    const year = y + 1;
     const degradedKwh = annualKwh * Math.pow(0.995, y);
-    cumulative += degradedKwh * rate;
-    if (paybackYear === null && cumulative >= 0) paybackYear = y + 1;
-    cumulativeByYear.push({ year: y + 1, cumulative: Math.round(cumulative) });
+    const revenue = degradedKwh * ssoRate(systemKw, year);
+    const om = systemKw * SSO_OM_PER_KW_YEAR * Math.pow(1 + SSO_OM_ESCALATION, y);
+    const inverterCost = year === SSO_INVERTER_REPLACEMENT_YEAR
+      ? systemKw * SSO_INVERTER_REPLACEMENT_PER_KW
+      : 0;
+    cumulative += revenue - om - inverterCost;
+    if (paybackYear === null && cumulative >= 0) paybackYear = year;
+    cumulativeByYear.push({ year, cumulative: Math.round(cumulative) });
   }
 
   const monthlyRevenue = MONTHS.map((month, mi) => ({

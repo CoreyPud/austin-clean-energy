@@ -17,6 +17,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
+import { applySolarFilters, type SolarPanel } from "../_shared/solar-filters.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,22 +91,48 @@ serve(async (req) => {
 
     const GOOGLE_KEY = Deno.env.get("GOOGLE_SOLAR_API_KEY");
 
-    // 1. Geocode
-    const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_KEY}`;
-    const geoResp = await fetch(geoUrl);
-    const geoData = await geoResp.json();
-    if (geoData.status !== "OK" || !geoData.results?.[0]) {
+    // 1. Resolve the address via Places "Find Place From Text" -- backed by Google's actual
+    // place/building database (the same one Places Autocomplete searches), not just address-
+    // string parsing. The plain Geocoding API this replaced was observed landing 200m+ off for
+    // real Austin addresses (e.g. "600 Congress Ave" resolving to a different building blocks
+    // away).
+    const findPlaceUrl =
+      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
+      `?input=${encodeURIComponent(address)}&inputtype=textquery&fields=formatted_address,geometry&key=${GOOGLE_KEY}`;
+    const findPlaceResp = await fetch(findPlaceUrl);
+    const findPlaceData = await findPlaceResp.json();
+    const candidate = findPlaceData.status === "OK" ? findPlaceData.candidates?.[0] : null;
+    if (!candidate?.geometry?.location) {
       return new Response(
         JSON.stringify({ error: "Address not found. Please enter a valid Austin, TX address." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const loc = geoData.results[0].geometry.location;
-    const standardizedAddress = geoData.results[0].formatted_address;
-    const lat = loc.lat;
-    const lng = loc.lng;
+    const lat = candidate.geometry.location.lat;
+    const lng = candidate.geometry.location.lng;
+    const standardizedAddress = candidate.formatted_address ?? address;
     const zipMatch = standardizedAddress.match(/\b(\d{5})\b/);
     const zipCode = zipMatch ? zipMatch[1] : null;
+
+    // Reject only once we have a real geocoded location to check, rather than pattern-matching
+    // the raw user input (which rejected plenty of valid Austin addresses that just didn't
+    // happen to include the word "Austin" or a 787xx zip in what the user typed). Deliberately
+    // generous -- padded well past city limits to cover greater Travis County and immediate
+    // neighbors (Round Rock, Pflugerville, Cedar Park, Buda, Kyle, Manor, Del Valle, Lakeway).
+    // A false positive here just means a non-Austin address sees an assessment that may not be
+    // fully accurate for their utility; a false negative blocks a real user outright, which is worse.
+    const AUSTIN_BOUNDS = { swLat: 29.90, swLng: -98.15, neLat: 30.75, neLng: -97.35 };
+    const inAustinArea =
+      lat >= AUSTIN_BOUNDS.swLat && lat <= AUSTIN_BOUNDS.neLat &&
+      lng >= AUSTIN_BOUNDS.swLng && lng <= AUSTIN_BOUNDS.neLng;
+    if (!inAustinArea) {
+      return new Response(
+        JSON.stringify({
+          error: `This tool is for Austin, TX properties. "${standardizedAddress}" is too far outside the Austin area.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // Load admin-editable knowledge files (council-members may have been edited)
     const supabase = createClient(
@@ -191,10 +218,32 @@ serve(async (req) => {
     const locations = [targetMarker, ...dbMarkers];
 
     // 3. Solar insights (deterministic numbers)
+    // Size off the *buildable* panel count — same setback/TSRF/walkway derate the
+    // property viewer applies — not Google's raw theoretical max, so the calculator's
+    // kW, cost, rebate, production, and payback figures reflect what can actually be
+    // built. Falls back to the raw count when we don't have individual panel positions
+    // to derate (e.g. Google returned only aggregate roof stats).
     let solarInsights: any = null;
     if (solarApiResp?.solarPotential) {
       const sp = solarApiResp.solarPotential;
-      const maxPanels = sp.maxArrayPanelsCount;
+
+      let maxPanels = sp.maxArrayPanelsCount;
+      if (sp.solarPanels?.length) {
+        const azimuths: Record<number, number> = {};
+        (sp.roofSegmentStats ?? []).forEach((seg: any, i: number) => {
+          if (seg.azimuthDegrees != null) azimuths[i] = seg.azimuthDegrees;
+        });
+        const panels: SolarPanel[] = sp.solarPanels.map((p: any) => ({
+          lat: p.center.latitude,
+          lon: p.center.longitude,
+          orientation: p.orientation === "LANDSCAPE" ? "LANDSCAPE" : "PORTRAIT",
+          yearlyEnergyDcKwh: p.yearlyEnergyDcKwh,
+          segmentIndex: p.segmentIndex,
+        }));
+        const buildable = applySolarFilters(panels, { propertyType, azimuths });
+        maxPanels = buildable.panels.length;
+      }
+
       const panelCapacityWatts = sp.panelCapacityWatts || 400;
       const sunshineHours = sp.maxSunshineHoursPerYear || 2000;
       const annualProductionKwh = maxPanels

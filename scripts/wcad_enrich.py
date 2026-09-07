@@ -4,7 +4,8 @@
 # Output: ~/Downloads/wcad_enriched.csv
 #         columns: pID, situs_address, situs_zip, market_value, land_type_desc,
 #                  py_owner_name, TotgrossArea, max_stories, year_built,
-#                  estimated_roof_sqft, property_type, in_ae, has_solar
+#                  estimated_roof_sqft, property_type, has_solar
+#         (no in_ae -- see the comment at df["in_ae"]'s old assignment below)
 
 import pandas as pd
 import requests
@@ -157,7 +158,13 @@ def main():
     df["year_built"] = pd.to_numeric(df["year_built"], errors="coerce").astype("Int64")
     df["market_value"] = pd.to_numeric(df["market_value"], errors="coerce")
 
-    df["in_ae"] = True  # already filtered to AE ZIPs
+    # NOT uploaded (see col_order below) -- the real in_ae column in Supabase is derived from
+    # the actual AE service-area polygon via a DB trigger on centroid_lat/centroid_lon
+    # (geo_derivation_setup.sql). A blanket True here was already known-imprecise (WCAD rows are
+    # pulled by AE-adjacent ZIP, not the real boundary -- some are genuinely outside it), and
+    # this script doesn't populate centroids for WCAD rows at all, so the trigger can't correct
+    # it after upload either; leaving in_ae unset (NULL) for these rows until centroids exist is
+    # the honest state, not a wrong guess.
 
     # Mark solar: join from wcad_parcel_matches if available, else no solar data
     df["has_solar"] = False
@@ -181,7 +188,7 @@ def main():
     col_order = [
         "pID", "situs_address", "situs_zip", "market_value", "land_type_desc",
         "py_owner_name", "TotgrossArea", "max_stories", "year_built",
-        "estimated_roof_sqft", "property_type", "in_ae", "has_solar",
+        "estimated_roof_sqft", "property_type", "has_solar",
     ]
     df = df[col_order]
     df.sort_values("estimated_roof_sqft", ascending=False, inplace=True)
