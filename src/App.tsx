@@ -43,6 +43,8 @@ import ImportCapacity from "./pages/ImportCapacity";
 import CouncilOverview from "./pages/CouncilOverview";
 import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
+import CouncilDecisions from "./pages/CouncilDecisions";
+import CouncilVote from "./pages/CouncilVote";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +82,8 @@ const App = () => (
             <Route path="/council" element={<CouncilOverview />} />
             <Route path="/council-members" element={<CouncilMembers />} />
             <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
+            <Route path="/council-decisions" element={<CouncilDecisions />} />
+            <Route path="/council-vote" element={<CouncilVote />} />
             <Route path="/council-climate-record" element={<Navigate to="/council" replace />} />
             <Route path="/council-lobbying" element={<Navigate to="/council" replace />} />
 
@@ -107,6 +111,7 @@ const App = () => (
           <Route path="/admin/data-comparison" element={<DataComparison />} />
           <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
           <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
+          <Route path="/admin/agenda-items" element={<CouncilVote admin />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
