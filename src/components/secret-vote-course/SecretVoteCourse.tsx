@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useCourseAuth } from "@/hooks/use-course-auth";
 import "./secret-vote-course.css";
 import {
   MODULES,
