@@ -652,6 +652,12 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
                   the next picks up, so start at Module 1 or jump to whatever you need. A 5-question check-in follows
                   every second module. Progress is remembered in this browser.
                 </p>
+                {!session && (
+                  <p className="sv-landing-signin">
+                    Want your check-in scores saved? <Link to="/course/login">Create a free account</Link> — or keep
+                    going without one.
+                  </p>
+                )}
                 <ModuleMap modules={MODULES} sequence={SEQUENCE} cur={cur} onSelectModule={goToSlide} />
               </div>
             )}
