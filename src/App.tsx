@@ -53,6 +53,7 @@ import PricingPressurePage from "./pages/PricingPressure";
 import SecretVoteCoursePage from "./pages/SecretVoteCourse";
 import CourseLogin from "./pages/CourseLogin";
 import AdminCourseResults from "./pages/AdminCourseResults";
+import LoadEstimator from "./pages/LoadEstimator";
 
 const queryClient = new QueryClient();
 
@@ -109,6 +110,7 @@ const AppRoutes = () => {
           <Route path="/pricing-pressure" element={<PricingPressurePage />} />
           <Route path="/course" element={<SecretVoteCoursePage />} />
           <Route path="/course/login" element={<CourseLogin />} />
+          <Route path="/load-estimator" element={<LoadEstimator />} />
         </Route>
 
         {/* Pages without footer */}
