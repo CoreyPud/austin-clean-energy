@@ -7,33 +7,33 @@
 */
 
 .load-estimator {
-  --le-paper: #eef1f4;
-  --le-paper-raised: #e3e8ed;
-  --le-ink: #1b2430;
-  --le-ink-muted: #5a6472;
-  --le-ink-faint: #838d97;
-  --le-line: #d2d9e0;
-  --le-line-strong: #b4bec8;
-  --le-accent: #2f5aa8;
-  --le-accent-ink: #1e3f7a;
-  --le-accent-bg: rgba(47, 90, 168, 0.08);
-  --le-baseline: #838d97;
-  --le-baseline-bg: rgba(131, 141, 151, 0.14);
-  --le-sfh: #3f8f5f;
-  --le-sfh-bg: rgba(63, 143, 95, 0.1);
-  --le-mf: #1f8a8a;
-  --le-mf-bg: rgba(31, 138, 138, 0.1);
-  --le-dc: #6b4fa0;
-  --le-dc-bg: rgba(107, 79, 160, 0.1);
-  --le-mfg: #b5651d;
-  --le-mfg-bg: rgba(181, 101, 29, 0.1);
-  --le-other: #6b7280;
-  --le-other-bg: rgba(107, 114, 128, 0.1);
-  --le-ev: #1478a3;
-  --le-ev-bg: rgba(20, 120, 163, 0.1);
-  --le-dogshead: #a67c1e;
-  --le-dogshead-bg: rgba(166, 124, 30, 0.1);
-  --le-shadow: 0 1px 2px rgba(27, 36, 48, 0.06), 0 6px 20px rgba(27, 36, 48, 0.05);
+  --le-paper: hsl(var(--background));
+  --le-paper-raised: hsl(var(--card));
+  --le-ink: hsl(var(--foreground));
+  --le-ink-muted: hsl(var(--muted-foreground));
+  --le-ink-faint: hsl(var(--muted-foreground));
+  --le-line: hsl(var(--border));
+  --le-line-strong: hsl(var(--input));
+  --le-accent: hsl(var(--primary));
+  --le-accent-ink: hsl(var(--primary));
+  --le-accent-bg: hsl(var(--primary) / 0.1);
+  --le-baseline: hsl(var(--muted-foreground));
+  --le-baseline-bg: hsl(var(--muted));
+  --le-sfh: hsl(var(--primary));
+  --le-sfh-bg: hsl(var(--primary) / 0.1);
+  --le-mf: hsl(var(--secondary));
+  --le-mf-bg: hsl(var(--secondary) / 0.1);
+  --le-dc: hsl(272 42% 44%);
+  --le-dc-bg: hsl(272 42% 44% / 0.1);
+  --le-mfg: hsl(20 67% 44%);
+  --le-mfg-bg: hsl(20 67% 44% / 0.1);
+  --le-other: hsl(var(--muted-foreground));
+  --le-other-bg: hsl(var(--muted));
+  --le-ev: hsl(var(--secondary));
+  --le-ev-bg: hsl(var(--secondary) / 0.1);
+  --le-dogshead: hsl(var(--accent));
+  --le-dogshead-bg: hsl(var(--accent) / 0.12);
+  --le-shadow: var(--shadow-soft);
 
   background: var(--le-paper);
   color: var(--le-ink);
@@ -45,69 +45,11 @@
 /* Dark mode: explicit .dark ancestor (Tailwind/shadcn convention) wins either direction */
 .load-estimator.dark,
 .dark .load-estimator {
-  --le-paper: #10151c;
-  --le-paper-raised: #182029;
-  --le-ink: #e8ecf2;
-  --le-ink-muted: #93a0b0;
-  --le-ink-faint: #66707c;
-  --le-line: #29323d;
-  --le-line-strong: #3a4552;
-  --le-accent: #7fa3e8;
-  --le-accent-ink: #aec6f2;
-  --le-accent-bg: rgba(127, 163, 232, 0.14);
-  --le-baseline: #838d97;
-  --le-baseline-bg: rgba(131, 141, 151, 0.18);
-  --le-sfh: #63b283;
-  --le-sfh-bg: rgba(99, 178, 131, 0.16);
-  --le-mf: #4fb6b6;
-  --le-mf-bg: rgba(79, 182, 182, 0.16);
-  --le-dc: #9c85cf;
-  --le-dc-bg: rgba(156, 133, 207, 0.18);
-  --le-mfg: #d99257;
-  --le-mfg-bg: rgba(217, 146, 87, 0.16);
-  --le-other: #97a1ac;
-  --le-other-bg: rgba(151, 161, 172, 0.16);
-  --le-ev: #5cb8dd;
-  --le-ev-bg: rgba(92, 184, 221, 0.16);
-  --le-dogshead: #d9ac4f;
-  --le-dogshead-bg: rgba(217, 172, 79, 0.16);
-  --le-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --le-shadow: var(--shadow-soft);
 }
 
 /* Fallback for host apps with no .dark class: honor OS-level dark mode,
    but only when the component hasn't been explicitly forced light. */
-@media (prefers-color-scheme: dark) {
-  .load-estimator:not(.light):not(.dark) {
-    --le-paper: #10151c;
-    --le-paper-raised: #182029;
-    --le-ink: #e8ecf2;
-    --le-ink-muted: #93a0b0;
-    --le-ink-faint: #66707c;
-    --le-line: #29323d;
-    --le-line-strong: #3a4552;
-    --le-accent: #7fa3e8;
-    --le-accent-ink: #aec6f2;
-    --le-accent-bg: rgba(127, 163, 232, 0.14);
-    --le-baseline: #838d97;
-    --le-baseline-bg: rgba(131, 141, 151, 0.18);
-    --le-sfh: #63b283;
-    --le-sfh-bg: rgba(99, 178, 131, 0.16);
-    --le-mf: #4fb6b6;
-    --le-mf-bg: rgba(79, 182, 182, 0.16);
-    --le-dc: #9c85cf;
-    --le-dc-bg: rgba(156, 133, 207, 0.18);
-    --le-mfg: #d99257;
-    --le-mfg-bg: rgba(217, 146, 87, 0.16);
-    --le-other: #97a1ac;
-    --le-other-bg: rgba(151, 161, 172, 0.16);
-    --le-ev: #5cb8dd;
-    --le-ev-bg: rgba(92, 184, 221, 0.16);
-    --le-dogshead: #d9ac4f;
-    --le-dogshead-bg: rgba(217, 172, 79, 0.16);
-    --le-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
-  }
-}
-
 .load-estimator * { box-sizing: border-box; }
 
 .load-estimator .le-page { max-width: 1000px; margin: 0 auto; }
@@ -132,7 +74,7 @@
   font-size: 42px;
   line-height: 1.12;
   margin: 0 0 12px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .load-estimator .le-subtitle { font-size: 15.5px; color: var(--le-ink-muted); max-width: 660px; margin: 0 0 34px; }
@@ -181,7 +123,7 @@
 .load-estimator .le-stat-tile {
   background: var(--le-paper-raised);
   border: 1px solid var(--le-line);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 16px 18px;
 }
 .load-estimator .le-stat-tile .le-label {
@@ -223,7 +165,7 @@
 .load-estimator .le-card {
   background: var(--le-paper-raised);
   border: 1px solid var(--le-line);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 20px 22px 22px;
   position: relative;
   overflow: hidden;
@@ -273,7 +215,7 @@
 .load-estimator .le-card-dc-tiers { border-top: 1px dashed var(--le-line); margin-top: 12px; padding-top: 12px; }
 
 /* ---------- composition bar ---------- */
-.load-estimator .le-comp-wrap { background: var(--le-paper-raised); border: 1px solid var(--le-line); border-radius: 12px; padding: 24px 26px 18px; }
+.load-estimator .le-comp-wrap { background: var(--le-paper-raised); border: 1px solid var(--le-line); border-radius: 8px; padding: 24px 26px 18px; }
 .load-estimator .le-comp-bar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; border: 1px solid var(--le-line-strong); }
 .load-estimator .le-comp-seg { height: 100%; transition: width 0.15s ease; }
 .load-estimator .le-comp-axis { display: flex; justify-content: space-between; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--le-ink-faint); margin-top: 6px; }
@@ -323,4 +265,8 @@
   .load-estimator .le-card-grid { grid-template-columns: 1fr; }
   .load-estimator .le-method-grid { grid-template-columns: 1fr; }
   .load-estimator .le-title { font-size: 32px; }
+  .load-estimator { padding: 32px 16px 64px; }
+  .load-estimator .le-field-row { align-items: flex-start; flex-wrap: wrap; }
+  .load-estimator .le-field-row label { flex-basis: calc(100% - 100px); }
+  .load-estimator .le-field-row input[type="range"] { flex-basis: 100%; order: 3; }
 }

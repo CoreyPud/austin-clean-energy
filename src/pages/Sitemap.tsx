@@ -64,6 +64,12 @@ const publicPages = [
     icon: TrendingUp,
   },
   {
+    path: "/load-estimator",
+    title: "Austin Load Growth Estimator",
+    description: "Build a scenario for how housing, data centers, industry, EV fleets, and planned development affect peak demand.",
+    icon: Gauge,
+  },
+  {
     path: "/import-capacity",
     title: "Austin Energy Import Capacity",
     description: "Model Austin's Total Transfer Capability (TTC) and see when ERCOT price separation triggers.",
