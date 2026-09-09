@@ -62,7 +62,7 @@ function DiaCompareColumn({ x, col }: { x: number; col: CompareColumn }) {
   return (
     <g>
       <rect x={x} y={10} width={colw} height={190} rx={10} fill="var(--sv-surface-2)" stroke="var(--sv-line)" />
-      <text x={x + 18} y={38} fontFamily="Fraunces" fontWeight={600} fontSize={15} fill={col.colorVar}>
+      <text x={x + 18} y={38} fontFamily="Newsreader" fontWeight={600} fontSize={15} fill={col.colorVar}>
         {col.title}
       </text>
       {col.items.map((it, i) => (
