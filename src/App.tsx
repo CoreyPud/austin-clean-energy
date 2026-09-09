@@ -51,6 +51,8 @@ import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
 import PricingPressurePage from "./pages/PricingPressure";
 import SecretVoteCoursePage from "./pages/SecretVoteCourse";
+import CourseLogin from "./pages/CourseLogin";
+import AdminCourseResults from "./pages/AdminCourseResults";
 
 const queryClient = new QueryClient();
 
@@ -106,6 +108,7 @@ const AppRoutes = () => {
           <Route path="/energy-education" element={<EnergyEducation />} />
           <Route path="/pricing-pressure" element={<PricingPressurePage />} />
           <Route path="/course" element={<SecretVoteCoursePage />} />
+          <Route path="/course/login" element={<CourseLogin />} />
         </Route>
 
         {/* Pages without footer */}
@@ -122,6 +125,7 @@ const AppRoutes = () => {
         <Route path="/admin/data-comparison" element={<DataComparison />} />
         <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
         <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
+        <Route path="/admin/course-results" element={<AdminCourseResults />} />
 
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />

@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useCourseAuth } from "@/hooks/use-course-auth";
 import "./secret-vote-course.css";
 import {
   MODULES,
@@ -525,6 +528,7 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
   const [quizState, setQuizState] = useState<Record<number, QuizProgress>>({});
   const [lexSearch, setLexSearch] = useState("");
   const [lexCat, setLexCat] = useState("All");
+  const { session, displayName, isAdmin, signOut } = useCourseAuth();
 
   useEffect(() => {
     try {
@@ -575,11 +579,28 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
     });
   }
 
-  function handleQuizContinue(seqIndex: number) {
+  function handleQuizContinue(seqIndex: number, item: Extract<SeqItem, { type: "quiz" }>) {
     setQuizState((prev) => {
       const p = prev[seqIndex] ?? EMPTY_QUIZ_PROGRESS;
-      return { ...prev, [seqIndex]: { ...p, qi: p.qi + 1, answered: false, selectedIndex: null } };
+      const next = { ...p, qi: p.qi + 1, answered: false, selectedIndex: null };
+      if (next.qi >= item.questions.length) saveQuizResult(item.afterModule, next.score, item.questions.length);
+      return { ...prev, [seqIndex]: next };
     });
+  }
+
+  async function saveQuizResult(quizNumber: number, score: number, total: number) {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    try {
+      await supabase
+        .from("course_quiz_results")
+        .upsert(
+          { user_id: userId, quiz_number: quizNumber, score, total, updated_at: new Date().toISOString() },
+          { onConflict: "user_id,quiz_number" },
+        );
+    } catch {
+      // saving scores is best-effort; the course keeps working either way
+    }
   }
 
   const currentItem = SEQUENCE[cur];
@@ -601,6 +622,25 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
               Lexicon
             </button>
           </div>
+          <div className="sv-account">
+            {session ? (
+              <>
+                <span className="sv-account-name">{displayName}</span>
+                {isAdmin && (
+                  <Link className="sv-account-btn" to="/admin/course-results">
+                    Results
+                  </Link>
+                )}
+                <button type="button" className="sv-account-btn" onClick={signOut}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link className="sv-account-btn sv-account-primary" to="/course/login">
+                Sign in / Sign up
+              </Link>
+            )}
+          </div>
         </div>
 
         {mode === "course" && (
@@ -612,6 +652,12 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
                   the next picks up, so start at Module 1 or jump to whatever you need. A 5-question check-in follows
                   every second module. Progress is remembered in this browser.
                 </p>
+                {!session && (
+                  <p className="sv-landing-signin">
+                    Want your check-in scores saved? <Link to="/course/login">Create a free account</Link> — or keep
+                    going without one.
+                  </p>
+                )}
                 <ModuleMap modules={MODULES} sequence={SEQUENCE} cur={cur} onSelectModule={goToSlide} />
               </div>
             )}
@@ -628,7 +674,7 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
                     item={currentItem}
                     progress={quizState[cur] ?? EMPTY_QUIZ_PROGRESS}
                     onChoice={(ci) => handleChoice(cur, currentItem, ci)}
-                    onContinue={() => handleQuizContinue(cur)}
+                    onContinue={() => handleQuizContinue(cur, currentItem)}
                   />
                 )}
                 <div className="sv-nav-row-wrap">
