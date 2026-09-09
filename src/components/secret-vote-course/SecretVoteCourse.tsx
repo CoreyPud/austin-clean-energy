@@ -528,6 +528,7 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
   const [quizState, setQuizState] = useState<Record<number, QuizProgress>>({});
   const [lexSearch, setLexSearch] = useState("");
   const [lexCat, setLexCat] = useState("All");
+  const { session, displayName, isAdmin, signOut } = useCourseAuth();
 
   useEffect(() => {
     try {
