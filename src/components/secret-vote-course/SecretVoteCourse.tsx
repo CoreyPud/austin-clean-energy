@@ -649,7 +649,7 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
                     item={currentItem}
                     progress={quizState[cur] ?? EMPTY_QUIZ_PROGRESS}
                     onChoice={(ci) => handleChoice(cur, currentItem, ci)}
-                    onContinue={() => handleQuizContinue(cur)}
+                    onContinue={() => handleQuizContinue(cur, currentItem)}
                   />
                 )}
                 <div className="sv-nav-row-wrap">
