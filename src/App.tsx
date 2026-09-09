@@ -50,6 +50,7 @@ import CouncilOverview from "./pages/CouncilOverview";
 import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
 import PricingPressurePage from "./pages/PricingPressure";
+import SecretVoteCoursePage from "./pages/SecretVoteCourse";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const AppRoutes = () => {
           <Route path="/energy-timeline" element={<EnergyTimeline />} />
           <Route path="/energy-education" element={<EnergyEducation />} />
           <Route path="/pricing-pressure" element={<PricingPressurePage />} />
+          <Route path="/course" element={<SecretVoteCoursePage />} />
         </Route>
 
         {/* Pages without footer */}
