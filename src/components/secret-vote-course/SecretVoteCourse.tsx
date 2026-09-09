@@ -622,6 +622,25 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
               Lexicon
             </button>
           </div>
+          <div className="sv-account">
+            {session ? (
+              <>
+                <span className="sv-account-name">{displayName}</span>
+                {isAdmin && (
+                  <Link className="sv-account-btn" to="/admin/course-results">
+                    Results
+                  </Link>
+                )}
+                <button type="button" className="sv-account-btn" onClick={signOut}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link className="sv-account-btn sv-account-primary" to="/course/login">
+                Sign in / Sign up
+              </Link>
+            )}
+          </div>
         </div>
 
         {mode === "course" && (
