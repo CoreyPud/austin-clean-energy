@@ -49,6 +49,7 @@ import EnergyEducation from "./pages/EnergyEducation";
 import CouncilOverview from "./pages/CouncilOverview";
 import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
+import PricingPressurePage from "./pages/PricingPressure";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const AppRoutes = () => {
           <Route path="/people-with-power" element={<PeopleWithPower />} />
           <Route path="/energy-timeline" element={<EnergyTimeline />} />
           <Route path="/energy-education" element={<EnergyEducation />} />
+          <Route path="/pricing-pressure" element={<PricingPressurePage />} />
         </Route>
 
         {/* Pages without footer */}
