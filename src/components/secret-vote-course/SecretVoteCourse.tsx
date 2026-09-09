@@ -579,11 +579,28 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
     });
   }
 
-  function handleQuizContinue(seqIndex: number) {
+  function handleQuizContinue(seqIndex: number, item: Extract<SeqItem, { type: "quiz" }>) {
     setQuizState((prev) => {
       const p = prev[seqIndex] ?? EMPTY_QUIZ_PROGRESS;
-      return { ...prev, [seqIndex]: { ...p, qi: p.qi + 1, answered: false, selectedIndex: null } };
+      const next = { ...p, qi: p.qi + 1, answered: false, selectedIndex: null };
+      if (next.qi >= item.questions.length) saveQuizResult(item.afterModule, next.score, item.questions.length);
+      return { ...prev, [seqIndex]: next };
     });
+  }
+
+  async function saveQuizResult(quizNumber: number, score: number, total: number) {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    try {
+      await supabase
+        .from("course_quiz_results")
+        .upsert(
+          { user_id: userId, quiz_number: quizNumber, score, total, updated_at: new Date().toISOString() },
+          { onConflict: "user_id,quiz_number" },
+        );
+    } catch {
+      // saving scores is best-effort; the course keeps working either way
+    }
   }
 
   const currentItem = SEQUENCE[cur];
