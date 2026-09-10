@@ -1,0 +1,206 @@
+/* Load Zone Pricing Pressure — scoped component styles.
+   Everything lives under .pricing-pressure so it can drop into a host app
+   without leaking into (or being leaked into by) global styles.
+   Fonts (Newsreader / IBM Plex Sans / IBM Plex Mono) are expected to be
+   loaded by the host app, e.g. via a <link> to Google Fonts in index.html:
+   https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap
+*/
+
+.pricing-pressure {
+  --pp-paper: #f0f1ee;
+  --pp-paper-raised: #e6e7e2;
+  --pp-ink: #201d2a;
+  --pp-ink-muted: #5c5a68;
+  --pp-ink-faint: #8a8790;
+  --pp-line: #d9d6cf;
+  --pp-line-strong: #bcb8b0;
+  --pp-accent: #3d5686;
+  --pp-accent-ink: #253a63;
+  --pp-accent-bg: rgba(61, 86, 134, 0.09);
+  --pp-low: #d9a441;
+  --pp-low-bg: rgba(217, 164, 65, 0.12);
+  --pp-mid: #c06a26;
+  --pp-mid-bg: rgba(192, 106, 38, 0.12);
+  --pp-high: #a3311f;
+  --pp-high-bg: rgba(163, 49, 31, 0.12);
+  --pp-shadow: 0 1px 2px rgba(32, 29, 42, 0.06), 0 6px 20px rgba(32, 29, 42, 0.05);
+
+  background: var(--pp-paper);
+  color: var(--pp-ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  line-height: 1.5;
+  padding: 44px 20px 80px;
+}
+
+/* Dark mode: explicit .dark ancestor (Tailwind/shadcn convention) wins either direction */
+.pricing-pressure.dark,
+.dark .pricing-pressure {
+  --pp-paper: #16141d;
+  --pp-paper-raised: #1e1c27;
+  --pp-ink: #e9e7ef;
+  --pp-ink-muted: #a29fac;
+  --pp-ink-faint: #716e7c;
+  --pp-line: #2d2b37;
+  --pp-line-strong: #3e3b49;
+  --pp-accent: #7b96ce;
+  --pp-accent-ink: #aabdea;
+  --pp-accent-bg: rgba(123, 150, 206, 0.14);
+  --pp-low: #e6bb63;
+  --pp-low-bg: rgba(230, 187, 99, 0.16);
+  --pp-mid: #dd8b4d;
+  --pp-mid-bg: rgba(221, 139, 77, 0.16);
+  --pp-high: #d3654e;
+  --pp-high-bg: rgba(211, 101, 78, 0.16);
+  --pp-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Fallback for host apps with no .dark class: honor OS-level dark mode,
+   but only when the component hasn't been explicitly forced light. */
+@media (prefers-color-scheme: dark) {
+  .pricing-pressure:not(.light):not(.dark) {
+    --pp-paper: #16141d;
+    --pp-paper-raised: #1e1c27;
+    --pp-ink: #e9e7ef;
+    --pp-ink-muted: #a29fac;
+    --pp-ink-faint: #716e7c;
+    --pp-line: #2d2b37;
+    --pp-line-strong: #3e3b49;
+    --pp-accent: #7b96ce;
+    --pp-accent-ink: #aabdea;
+    --pp-accent-bg: rgba(123, 150, 206, 0.14);
+    --pp-low: #e6bb63;
+    --pp-low-bg: rgba(230, 187, 99, 0.16);
+    --pp-mid: #dd8b4d;
+    --pp-mid-bg: rgba(221, 139, 77, 0.16);
+    --pp-high: #d3654e;
+    --pp-high-bg: rgba(211, 101, 78, 0.16);
+    --pp-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.pricing-pressure * { box-sizing: border-box; }
+
+.pricing-pressure .pp-page { max-width: 1000px; margin: 0 auto; }
+
+.pricing-pressure .pp-kicker {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pp-accent-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pricing-pressure .pp-kicker::before { content: ""; width: 22px; height: 1px; background: var(--pp-accent); }
+
+.pricing-pressure .pp-title {
+  font-family: "Newsreader", serif;
+  font-weight: 500;
+  font-size: 41px;
+  line-height: 1.14;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+.pricing-pressure .pp-subtitle { font-size: 15.5px; color: var(--pp-ink-muted); max-width: 680px; margin: 0 0 8px; }
+.pricing-pressure .pp-subtitle.pp-warn { color: var(--pp-mid); font-weight: 500; font-size: 14px; }
+.pricing-pressure .pp-masthead { margin-bottom: 8px; padding-bottom: 26px; border-bottom: 1px solid var(--pp-line); }
+
+.pricing-pressure .pp-section { margin-top: 44px; }
+.pricing-pressure .pp-section-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--pp-ink-faint);
+  margin: 0 0 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.pricing-pressure .pp-section-title .pp-num { color: var(--pp-accent-ink); }
+.pricing-pressure .pp-section-sub { font-family: "Newsreader", serif; font-weight: 500; font-size: 23px; margin: 2px 0 18px; }
+.pricing-pressure .pp-section-lede { color: var(--pp-ink-muted); font-size: 14.5px; max-width: 700px; margin: 0 0 22px; }
+
+.pricing-pressure .pp-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.pricing-pressure .pp-stat-tile { background: var(--pp-paper-raised); border: 1px solid var(--pp-line); border-radius: 10px; padding: 16px 18px; }
+.pricing-pressure .pp-stat-tile .pp-label { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pp-ink-faint); margin-bottom: 8px; }
+.pricing-pressure .pp-stat-tile .pp-value { font-family: "Newsreader", serif; font-size: 26px; font-weight: 500; line-height: 1.1; }
+.pricing-pressure .pp-stat-tile .pp-sub { font-size: 12px; color: var(--pp-ink-muted); margin-top: 5px; }
+.pricing-pressure .pp-stat-tile.pp-accent .pp-value { color: var(--pp-accent-ink); }
+
+.pricing-pressure .pp-chart-wrap { background: var(--pp-paper-raised); border: 1px solid var(--pp-line); border-radius: 12px; padding: 22px 26px 14px; margin-top: 18px; }
+.pricing-pressure .pp-chart-svg { width: 100%; height: auto; display: block; }
+.pricing-pressure .pp-bar-label { font-family: "IBM Plex Mono", monospace; font-size: 10px; fill: var(--pp-ink-faint); }
+.pricing-pressure .pp-val-label { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; }
+.pricing-pressure .pp-annot { font-family: "IBM Plex Sans", sans-serif; font-size: 11px; fill: var(--pp-ink-muted); }
+.pricing-pressure .pp-gridline { stroke: var(--pp-line); stroke-width: 1; }
+.pricing-pressure .pp-tooltip {
+  position: absolute; pointer-events: none; background: var(--pp-ink); color: var(--pp-paper);
+  font-family: "IBM Plex Mono", monospace; font-size: 11.5px; padding: 6px 10px; border-radius: 6px;
+  transform: translate(-50%, -115%); white-space: nowrap; opacity: 0; transition: opacity 0.1s;
+  box-shadow: var(--pp-shadow); z-index: 5;
+}
+
+.pricing-pressure .pp-driver-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pricing-pressure .pp-driver-card { background: var(--pp-paper-raised); border: 1px solid var(--pp-line); border-left: 3px solid var(--pp-accent); border-radius: 8px; padding: 18px 22px; }
+.pricing-pressure .pp-driver-card .pp-tag { font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pp-accent-ink); margin-bottom: 8px; }
+.pricing-pressure .pp-driver-card h4 { font-family: "Newsreader", serif; font-size: 17px; font-weight: 500; margin: 0 0 8px; }
+.pricing-pressure .pp-driver-card p { font-size: 13.5px; color: var(--pp-ink-muted); margin: 0; }
+.pricing-pressure .pp-driver-card .pp-fig { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--pp-ink); }
+
+.pricing-pressure .pp-control-panel { background: var(--pp-paper-raised); border: 1px solid var(--pp-line); border-radius: 12px; padding: 24px 26px; }
+.pricing-pressure .pp-preset-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.pricing-pressure .pp-preset-btn {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--pp-line-strong);
+  background: var(--pp-paper);
+  color: var(--pp-ink-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.pricing-pressure .pp-preset-btn:hover { border-color: var(--pp-ink-faint); }
+.pricing-pressure .pp-preset-btn.pp-active[data-p="low"] { background: var(--pp-low-bg); border-color: var(--pp-low); color: var(--pp-low); }
+.pricing-pressure .pp-preset-btn.pp-active[data-p="mid"] { background: var(--pp-mid-bg); border-color: var(--pp-mid); color: var(--pp-mid); }
+.pricing-pressure .pp-preset-btn.pp-active[data-p="high"] { background: var(--pp-high-bg); border-color: var(--pp-high); color: var(--pp-high); }
+
+.pricing-pressure .pp-slider-block { margin-bottom: 18px; }
+.pricing-pressure .pp-slider-block:last-child { margin-bottom: 0; }
+.pricing-pressure .pp-slider-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.pricing-pressure .pp-slider-head label { font-size: 13.5px; color: var(--pp-ink); font-weight: 500; }
+.pricing-pressure .pp-slider-head .pp-sv { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; color: var(--pp-accent-ink); }
+.pricing-pressure .pp-slider-block input[type="range"] { width: 100%; accent-color: var(--pp-accent); }
+.pricing-pressure .pp-slider-note { font-size: 12px; color: var(--pp-ink-faint); margin-top: 4px; }
+
+.pricing-pressure .pp-callout {
+  background: var(--pp-paper-raised); border: 1px solid var(--pp-line); border-left: 3px solid var(--pp-mid);
+  border-radius: 8px; padding: 16px 20px; font-size: 13px; color: var(--pp-ink-muted); margin-top: 18px;
+}
+.pricing-pressure .pp-callout b { color: var(--pp-ink); }
+
+.pricing-pressure .pp-method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+.pricing-pressure .pp-method-col h4 { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pp-ink-faint); margin: 0 0 10px; }
+.pricing-pressure .pp-method-col ul { margin: 0; padding-left: 18px; }
+.pricing-pressure .pp-method-col li { font-size: 13.5px; color: var(--pp-ink-muted); margin-bottom: 8px; }
+.pricing-pressure .pp-method-col code { font-family: "IBM Plex Mono", monospace; font-size: 12px; background: var(--pp-paper); border: 1px solid var(--pp-line); border-radius: 4px; padding: 1px 5px; color: var(--pp-ink); }
+
+.pricing-pressure .pp-footer {
+  margin-top: 54px; padding-top: 22px; border-top: 1px solid var(--pp-line);
+  font-size: 12px; color: var(--pp-ink-faint); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.pricing-pressure .pp-footer a { color: var(--pp-ink-muted); }
+
+@media (max-width: 720px) {
+  .pricing-pressure .pp-stat-row { grid-template-columns: repeat(2, 1fr); }
+  .pricing-pressure .pp-driver-grid { grid-template-columns: 1fr; }
+  .pricing-pressure .pp-method-grid { grid-template-columns: 1fr; }
+  .pricing-pressure .pp-title { font-size: 31px; }
+}
