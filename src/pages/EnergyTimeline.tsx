@@ -32,7 +32,7 @@ const EnergyTimeline = () => {
   useSeo({
     title: "Energy Timeline: The Road to Austin's Gas Vote",
     description:
-      "Eight years of Austin Energy decisions — from retiring Decker's steam units to the May 2026 closed-session approval of a 400 MW gas peaker package.",
+      "Four decades of Austin Energy decisions — from the first efficiency rebates and the fight over Fayette coal to the May 2026 closed-session approval of a 400 MW gas peaker package.",
   });
 
   const groups = groupedByYear();
@@ -41,7 +41,7 @@ const EnergyTimeline = () => {
     <div className="min-h-screen bg-background">
       <PageHeader
         title="Energy Timeline"
-        subtitle="From Austin's first move away from its old gas plants to the closed-session approval of a new one — eight years of decisions that set up May 21, 2026."
+        subtitle="From Austin Energy's earliest efficiency programs and the Beyond Coal campaign's fight to close the Fayette coal plant, to the closed-session approval of a new gas plant — four decades of decisions that set up May 21, 2026."
         contentClassName="max-w-4xl mx-auto px-4"
       />
 
@@ -103,7 +103,20 @@ const EnergyTimeline = () => {
                         {event.title}
                       </h3>
                       <p className="mb-2 text-sm text-muted-foreground">{event.body}</p>
-                      <p className="text-[11px] font-mono text-muted-foreground/80">{event.source}</p>
+                      <p className="text-[11px] font-mono text-muted-foreground/80">
+                        {event.sourceUrl ? (
+                          <a
+                            href={event.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline underline-offset-2 hover:text-foreground"
+                          >
+                            {event.source}
+                          </a>
+                        ) : (
+                          event.source
+                        )}
+                      </p>
                     </CardContent>
                   </Card>
                 </article>
