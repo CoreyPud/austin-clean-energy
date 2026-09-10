@@ -103,7 +103,20 @@ const EnergyTimeline = () => {
                         {event.title}
                       </h3>
                       <p className="mb-2 text-sm text-muted-foreground">{event.body}</p>
-                      <p className="text-[11px] font-mono text-muted-foreground/80">{event.source}</p>
+                      <p className="text-[11px] font-mono text-muted-foreground/80">
+                        {event.sourceUrl ? (
+                          <a
+                            href={event.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline underline-offset-2 hover:text-foreground"
+                          >
+                            {event.source}
+                          </a>
+                        ) : (
+                          event.source
+                        )}
+                      </p>
                     </CardContent>
                   </Card>
                 </article>
