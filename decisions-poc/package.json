@@ -1,0 +1,20 @@
+{
+  "name": "decisions-poc",
+  "private": true,
+  "type": "module",
+  "description": "POC: normalize Austin climate/energy decisions from public documents into a local dataset. Code-first extraction, LLM for classification/summary, self-auditing against source text.",
+  "scripts": {
+    "run": "tsx src/run.ts",
+    "council": "tsx src/council-run.ts",
+    "sync-agenda-history": "tsx src/agenda-vote-history-sync.ts",
+    "sync-agenda-upcoming": "tsx src/agenda-vote-upcoming-sync.ts",
+    "eval": "tsx eval.ts"
+  },
+  "dependencies": {
+    "unpdf": "^0.12.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

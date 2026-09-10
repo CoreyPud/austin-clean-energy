@@ -1,8 +1,10 @@
 import { NavLink } from "react-router-dom";
 
 const TABS = [
-  { to: "/council",         label: "Overview" },
-  { to: "/council-members", label: "Report card" },
+  { to: "/council",           label: "Overview" },
+  { to: "/council-members",   label: "Report card" },
+  { to: "/council-decisions", label: "Decisions" },
+  { to: "/council-vote",      label: "Vote" },
 ];
 
 // Shared sub-nav across the council accountability pages.

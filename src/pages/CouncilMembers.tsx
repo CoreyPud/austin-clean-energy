@@ -65,6 +65,7 @@ export default function CouncilMembers() {
                     {m.district === 0 ? "Mayor" : `District ${m.district}`}
                   </span>
                 </div>
+                <p className="text-xs text-muted-foreground -mt-1">In office since {m.since}</p>
                 {loading || !s ? (
                   <p className="text-xs text-muted-foreground">Loading…</p>
                 ) : (

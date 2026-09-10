@@ -1,0 +1,30 @@
+{
+  "edimsId": "477532",
+  "docType": "commission_minutes",
+  "body": "Electric Utility Commission",
+  "meetingDate": "2026-05-11",
+  "note": "Hand-labeled ground truth, verified against the source minutes text.",
+  "expect": [
+    {
+      "match": "peaker",
+      "is_climate": true,
+      "dollar_amount": null,
+      "vote_tally": "8-3",
+      "dissenters": ["Braden", "Reed", "White"]
+    },
+    {
+      "match": "oci",
+      "is_climate": true,
+      "dollar_amount": 165000000,
+      "vote_tally": "11-0",
+      "dissenters": []
+    },
+    {
+      "match": "invenergy",
+      "is_climate": true,
+      "dollar_amount": 340000000,
+      "vote_tally": "11-0",
+      "dissenters": []
+    }
+  ]
+}

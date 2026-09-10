@@ -110,7 +110,10 @@ export default function CouncilMemberDetail() {
         <div>
           <Link to="/council-members" className="text-xs text-muted-foreground hover:text-foreground">← All council members</Link>
           <h1 className="text-3xl font-bold tracking-tight mt-2">{member.name}</h1>
-          <p className="text-muted-foreground">{member.district === 0 ? "Mayor of Austin" : `Council Member, District ${member.district}`}</p>
+          <p className="text-muted-foreground">
+            {member.district === 0 ? "Mayor of Austin" : `Council Member, District ${member.district}`}
+            {" · in office since "}{member.since}
+          </p>
         </div>
 
         {/* Funding */}

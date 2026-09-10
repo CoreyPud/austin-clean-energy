@@ -1,0 +1,236 @@
+{
+  "generated_at": "2026-08-09",
+  "note": "Organizations registered to lobby the City of Austin, ranked by how much their employees donated (bundled individual contributions) to current council members. Corporations cannot donate directly in Texas; these totals are individual gifts aggregated by employer.",
+  "companies": [
+    {
+      "name": "Armbrust & Brown",
+      "business": "Law Firm",
+      "lobbies": true,
+      "donated": 108413,
+      "donors": 95,
+      "members_funded": 9,
+      "members": [
+        "Fuentes",
+        "Alter",
+        "Velásquez",
+        "Watson",
+        "Qadri",
+        "Vela",
+        "Ellis",
+        "Siegel",
+        "Duchen"
+      ]
+    },
+    {
+      "name": "Endeavor Real Estate Group",
+      "business": "Real Estate",
+      "lobbies": true,
+      "donated": 88394,
+      "donors": 73,
+      "members_funded": 8,
+      "members": [
+        "Qadri",
+        "Ellis",
+        "Velásquez",
+        "Alter",
+        "Vela",
+        "Duchen",
+        "Fuentes",
+        "Watson"
+      ]
+    },
+    {
+      "name": "C3 PRESENTS",
+      "business": "REAL ESTATE INVESTEMENT/DEVELOPMENT",
+      "lobbies": true,
+      "donated": 14950,
+      "donors": 9,
+      "members_funded": 7,
+      "members": [
+        "Siegel",
+        "Alter",
+        "Ellis",
+        "Watson",
+        "Qadri",
+        "Fuentes",
+        "Vela"
+      ]
+    },
+    {
+      "name": "Presidium Group",
+      "business": "Real Estate Development",
+      "lobbies": true,
+      "donated": 13750,
+      "donors": 9,
+      "members_funded": 7,
+      "members": [
+        "Watson",
+        "Velásquez",
+        "Fuentes",
+        "Vela",
+        "Alter",
+        "Qadri",
+        "Laine"
+      ]
+    },
+    {
+      "name": "Texas Disposal Systems",
+      "business": "Property Owner",
+      "lobbies": true,
+      "donated": 12600,
+      "donors": 3,
+      "members_funded": 8,
+      "members": [
+        "Watson",
+        "Laine",
+        "Vela",
+        "Duchen",
+        "Siegel",
+        "Fuentes",
+        "Alter",
+        "Qadri"
+      ]
+    },
+    {
+      "name": "Aquila Commercial",
+      "business": "Real Estate",
+      "lobbies": true,
+      "donated": 11453,
+      "donors": 15,
+      "members_funded": 2,
+      "members": [
+        "Watson",
+        "Ellis"
+      ]
+    },
+    {
+      "name": "Riverside Resources",
+      "business": "Real Estate Development",
+      "lobbies": true,
+      "donated": 9141,
+      "donors": 13,
+      "members_funded": 6,
+      "members": [
+        "Vela",
+        "Qadri",
+        "Fuentes",
+        "Alter",
+        "Ellis",
+        "Watson"
+      ]
+    },
+    {
+      "name": "Apple",
+      "business": "Technology",
+      "lobbies": true,
+      "donated": 9133,
+      "donors": 25,
+      "members_funded": 9,
+      "members": [
+        "Qadri",
+        "Watson",
+        "Alter",
+        "Velásquez",
+        "Duchen",
+        "Vela",
+        "Ellis",
+        "Laine",
+        "Siegel"
+      ]
+    },
+    {
+      "name": "STRATUS PROPERTIES",
+      "business": "LIVE MUSIC, HOTEL, REAL ESTATE DEVELOPMENT",
+      "lobbies": true,
+      "donated": 9050,
+      "donors": 12,
+      "members_funded": 7,
+      "members": [
+        "Watson",
+        "Duchen",
+        "Vela",
+        "Alter",
+        "Ellis",
+        "Qadri",
+        "Fuentes"
+      ]
+    },
+    {
+      "name": "Journeyman Group",
+      "business": "land development",
+      "lobbies": true,
+      "donated": 9000,
+      "donors": 9,
+      "members_funded": 4,
+      "members": [
+        "Vela",
+        "Qadri",
+        "Fuentes",
+        "Watson"
+      ]
+    },
+    {
+      "name": "HNTB Corporation",
+      "business": "Architecture, engineering and planning services",
+      "lobbies": true,
+      "donated": 7759,
+      "donors": 8,
+      "members_funded": 5,
+      "members": [
+        "Fuentes",
+        "Watson",
+        "Vela",
+        "Alter",
+        "Siegel"
+      ]
+    },
+    {
+      "name": "BARSHOP & OLES COMPANY",
+      "business": "REAL ESTATE INVESTMENT/ DEVELOPMENT",
+      "lobbies": true,
+      "donated": 6625,
+      "donors": 10,
+      "members_funded": 5,
+      "members": [
+        "Watson",
+        "Vela",
+        "Fuentes",
+        "Duchen",
+        "Alter"
+      ]
+    },
+    {
+      "name": "Austin Habitat for Humanity",
+      "business": "Nonprofit Housing Organization",
+      "lobbies": true,
+      "donated": 6556,
+      "donors": 1,
+      "members_funded": 8,
+      "members": [
+        "Vela",
+        "Qadri",
+        "Fuentes",
+        "Alter",
+        "Watson",
+        "Siegel",
+        "Laine",
+        "Ellis"
+      ]
+    },
+    {
+      "name": "HDR",
+      "business": "Engineering",
+      "lobbies": true,
+      "donated": 5489,
+      "donors": 10,
+      "members_funded": 5,
+      "members": [
+        "Ellis",
+        "Alter",
+        "Watson",
+        "Siegel",
+        "Qadri"
+      ]
+    }
+  ]
+}
