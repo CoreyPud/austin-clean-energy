@@ -41,7 +41,7 @@ const EnergyTimeline = () => {
     <div className="min-h-screen bg-background">
       <PageHeader
         title="Energy Timeline"
-        subtitle="From Austin's first move away from its old gas plants to the closed-session approval of a new one — eight years of decisions that set up May 21, 2026."
+        subtitle="From Austin Energy's earliest efficiency programs and the Beyond Coal campaign's fight to close the Fayette coal plant, to the closed-session approval of a new gas plant — four decades of decisions that set up May 21, 2026."
         contentClassName="max-w-4xl mx-auto px-4"
       />
 
