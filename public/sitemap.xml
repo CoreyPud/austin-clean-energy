@@ -56,6 +56,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://austin-clean-energy.lovable.app/case-for-austin-energy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://austin-clean-energy.lovable.app/power-money</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
