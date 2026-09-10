@@ -1,0 +1,441 @@
+/* The Case for Austin Energy — scoped component styles.
+   Everything lives under .case-for-austin-energy so it can drop into a host
+   app without leaking into (or being leaked into by) global styles.
+   Fonts (Newsreader / IBM Plex Sans / IBM Plex Mono) are expected to be
+   loaded by the host app, e.g. via a <link> to Google Fonts in index.html:
+   https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap
+*/
+
+.case-for-austin-energy {
+  /* light tokens (default) */
+  --cae-paper: #f0f2ee;
+  --cae-paper-raised: #e7e9e3;
+  --cae-ink: #1b2430;
+  --cae-ink-muted: #5b6470;
+  --cae-ink-faint: #838d97;
+  --cae-line: #d7dad3;
+  --cae-line-strong: #b9beb4;
+  --cae-muni: #0e7a5a;
+  --cae-muni-bg: rgba(14, 122, 90, 0.11);
+  --cae-muni-ink: #0a5643;
+  --cae-dereg: #b5542a;
+  --cae-dereg-bg: rgba(181, 84, 42, 0.11);
+  --cae-dereg-ink: #8a3f1c;
+  --cae-nuclear: #145c46;
+  --cae-shadow: 0 1px 2px rgba(27, 36, 48, 0.06), 0 6px 20px rgba(27, 36, 48, 0.06);
+
+  background: var(--cae-paper);
+  color: var(--cae-ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  display: block;
+}
+
+.case-for-austin-energy.dark,
+.dark .case-for-austin-energy {
+  --cae-paper: #161b17;
+  --cae-paper-raised: #1f251f;
+  --cae-ink: #eef1ec;
+  --cae-ink-muted: #a7b0a4;
+  --cae-ink-faint: #7c8579;
+  --cae-line: #2c332c;
+  --cae-line-strong: #3a4239;
+  --cae-muni: #1f9670;
+  --cae-muni-bg: rgba(31, 150, 112, 0.16);
+  --cae-muni-ink: #7fd9b8;
+  --cae-dereg: #c76a3a;
+  --cae-dereg-bg: rgba(199, 106, 58, 0.16);
+  --cae-dereg-ink: #e6a074;
+  --cae-nuclear: #1c7a5e;
+  --cae-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  .case-for-austin-energy:not(.light):not(.dark) {
+    --cae-paper: #161b17;
+    --cae-paper-raised: #1f251f;
+    --cae-ink: #eef1ec;
+    --cae-ink-muted: #a7b0a4;
+    --cae-ink-faint: #7c8579;
+    --cae-line: #2c332c;
+    --cae-line-strong: #3a4239;
+    --cae-muni: #1f9670;
+    --cae-muni-bg: rgba(31, 150, 112, 0.16);
+    --cae-muni-ink: #7fd9b8;
+    --cae-dereg: #c76a3a;
+    --cae-dereg-bg: rgba(199, 106, 58, 0.16);
+    --cae-dereg-ink: #e6a074;
+    --cae-nuclear: #1c7a5e;
+    --cae-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.case-for-austin-energy * {
+  box-sizing: border-box;
+}
+
+.case-for-austin-energy .cae-page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 56px 24px 80px;
+}
+
+.case-for-austin-energy h1,
+.case-for-austin-energy h2,
+.case-for-austin-energy h3 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.case-for-austin-energy .cae-kicker {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--cae-ink-faint);
+  margin-bottom: 14px;
+}
+
+.case-for-austin-energy h1 {
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+
+.case-for-austin-energy .cae-dek {
+  font-size: 1.08rem;
+  line-height: 1.62;
+  color: var(--cae-ink-muted);
+  max-width: 66ch;
+  margin-top: 18px;
+}
+
+.case-for-austin-energy .cae-dek b {
+  color: var(--cae-ink);
+  font-weight: 600;
+}
+
+.case-for-austin-energy .cae-status {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--cae-paper-raised);
+  border: 1px solid var(--cae-line);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin: 32px 0 8px;
+}
+
+.case-for-austin-energy .cae-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cae-dereg);
+  margin-top: 6px;
+  flex: none;
+  box-shadow: 0 0 0 3px var(--cae-dereg-bg);
+}
+
+.case-for-austin-energy .cae-status p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--cae-ink-muted);
+}
+
+.case-for-austin-energy .cae-status strong {
+  color: var(--cae-ink);
+}
+
+.case-for-austin-energy section {
+  margin-top: 64px;
+}
+
+.case-for-austin-energy .cae-shead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.case-for-austin-energy .cae-snum {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--cae-ink-faint);
+  border: 1px solid var(--cae-line-strong);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+
+.case-for-austin-energy .cae-shead h2 {
+  font-size: 1.5rem;
+}
+
+.case-for-austin-energy .cae-intro {
+  color: var(--cae-ink-muted);
+  line-height: 1.65;
+  max-width: 70ch;
+  margin: 0 0 22px;
+}
+
+.case-for-austin-energy .cae-intro b {
+  color: var(--cae-ink);
+}
+
+.case-for-austin-energy .cae-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--cae-ink-muted);
+  margin-bottom: 14px;
+}
+
+.case-for-austin-energy .cae-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.case-for-austin-energy .cae-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.case-for-austin-energy .cae-swatch.cae-muni {
+  background: var(--cae-muni);
+}
+
+.case-for-austin-energy .cae-swatch.cae-dereg {
+  background: var(--cae-dereg);
+}
+
+.case-for-austin-energy .cae-chartbox {
+  background: var(--cae-paper-raised);
+  border: 1px solid var(--cae-line);
+  border-radius: 12px;
+  padding: 18px 20px 12px;
+  box-shadow: var(--cae-shadow);
+}
+
+.case-for-austin-energy .cae-bar-row {
+  display: grid;
+  grid-template-columns: 168px 1fr 92px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--cae-line);
+}
+
+.case-for-austin-energy .cae-bar-row:last-child {
+  border-bottom: none;
+}
+
+.case-for-austin-energy .cae-bar-label {
+  font-size: 0.86rem;
+  color: var(--cae-ink);
+  line-height: 1.3;
+}
+
+.case-for-austin-energy .cae-bar-label small {
+  display: block;
+  color: var(--cae-ink-faint);
+  font-size: 0.74rem;
+  margin-top: 1px;
+}
+
+.case-for-austin-energy .cae-bar-track {
+  position: relative;
+  height: 20px;
+  background: var(--cae-paper);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.case-for-austin-energy .cae-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.case-for-austin-energy .cae-bar-fill.cae-muni {
+  background: var(--cae-muni);
+}
+
+.case-for-austin-energy .cae-bar-fill.cae-dereg {
+  background: var(--cae-dereg);
+}
+
+.case-for-austin-energy .cae-bar-val {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.86rem;
+  text-align: right;
+  color: var(--cae-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.case-for-austin-energy .cae-fine {
+  font-size: 0.78rem;
+  color: var(--cae-ink-faint);
+  margin-top: 12px;
+  line-height: 1.55;
+}
+
+.case-for-austin-energy .cae-stack {
+  display: flex;
+  height: 34px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--cae-line-strong);
+}
+
+.case-for-austin-energy .cae-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.case-for-austin-energy .cae-seg.cae-muni {
+  background: var(--cae-muni);
+}
+
+.case-for-austin-energy .cae-seg.cae-dereg {
+  background: var(--cae-dereg);
+}
+
+.case-for-austin-energy .cae-seg.cae-nuclear {
+  background: var(--cae-nuclear);
+}
+
+.case-for-austin-energy .cae-mixrow {
+  margin-bottom: 20px;
+}
+
+.case-for-austin-energy .cae-mlabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.84rem;
+  margin-bottom: 7px;
+}
+
+.case-for-austin-energy .cae-mlabel b {
+  color: var(--cae-ink);
+}
+
+.case-for-austin-energy .cae-mlabel span {
+  color: var(--cae-ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+}
+
+.case-for-austin-energy .cae-quotegrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.case-for-austin-energy .cae-qcard {
+  background: var(--cae-paper-raised);
+  border: 1px solid var(--cae-line);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.case-for-austin-energy .cae-qcard p {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.case-for-austin-energy .cae-qcard cite {
+  font-style: normal;
+  font-size: 0.78rem;
+  color: var(--cae-ink-faint);
+}
+
+.case-for-austin-energy .cae-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.case-for-austin-energy .cae-tile {
+  background: var(--cae-paper-raised);
+  border: 1px solid var(--cae-line);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.case-for-austin-energy .cae-tl {
+  font-size: 0.76rem;
+  color: var(--cae-ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.case-for-austin-energy .cae-tv {
+  font-family: "Newsreader", serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.case-for-austin-energy .cae-ts {
+  font-size: 0.8rem;
+  color: var(--cae-ink-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.case-for-austin-energy .cae-sources {
+  margin-top: 72px;
+  border-top: 1px solid var(--cae-line);
+  padding-top: 24px;
+}
+
+.case-for-austin-energy .cae-sources h3 {
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.case-for-austin-energy .cae-sources ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.84rem;
+  color: var(--cae-ink-muted);
+  line-height: 1.9;
+}
+
+.case-for-austin-energy .cae-sources a {
+  color: var(--cae-muni-ink);
+}
+
+.case-for-austin-energy .cae-tag {
+  display: inline-block;
+  margin-top: 20px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  color: var(--cae-ink-faint);
+}
+
+@media (max-width: 640px) {
+  .case-for-austin-energy .cae-quotegrid {
+    grid-template-columns: 1fr;
+  }
+  .case-for-austin-energy .cae-bar-row {
+    grid-template-columns: 110px 1fr 72px;
+  }
+  .case-for-austin-energy .cae-tiles {
+    grid-template-columns: 1fr;
+  }
+}
