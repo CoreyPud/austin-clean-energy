@@ -32,7 +32,7 @@ const EnergyTimeline = () => {
   useSeo({
     title: "Energy Timeline: The Road to Austin's Gas Vote",
     description:
-      "Eight years of Austin Energy decisions — from retiring Decker's steam units to the May 2026 closed-session approval of a 400 MW gas peaker package.",
+      "Four decades of Austin Energy decisions — from the first efficiency rebates and the fight over Fayette coal to the May 2026 closed-session approval of a 400 MW gas peaker package.",
   });
 
   const groups = groupedByYear();
