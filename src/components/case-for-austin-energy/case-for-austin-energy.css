@@ -7,22 +7,22 @@
 */
 
 .case-for-austin-energy {
-  /* light tokens (default) */
-  --cae-paper: #f0f2ee;
-  --cae-paper-raised: #e7e9e3;
-  --cae-ink: #1b2430;
-  --cae-ink-muted: #5b6470;
-  --cae-ink-faint: #838d97;
-  --cae-line: #d7dad3;
-  --cae-line-strong: #b9beb4;
-  --cae-muni: #0e7a5a;
-  --cae-muni-bg: rgba(14, 122, 90, 0.11);
-  --cae-muni-ink: #0a5643;
-  --cae-dereg: #b5542a;
-  --cae-dereg-bg: rgba(181, 84, 42, 0.11);
-  --cae-dereg-ink: #8a3f1c;
-  --cae-nuclear: #145c46;
-  --cae-shadow: 0 1px 2px rgba(27, 36, 48, 0.06), 0 6px 20px rgba(27, 36, 48, 0.06);
+  /* Site design tokens */
+  --cae-paper: hsl(var(--background));
+  --cae-paper-raised: hsl(var(--card));
+  --cae-ink: hsl(var(--foreground));
+  --cae-ink-muted: hsl(var(--muted-foreground));
+  --cae-ink-faint: hsl(var(--muted-foreground));
+  --cae-line: hsl(var(--border));
+  --cae-line-strong: hsl(var(--input));
+  --cae-muni: hsl(var(--primary));
+  --cae-muni-bg: hsl(var(--primary) / 0.11);
+  --cae-muni-ink: hsl(var(--primary));
+  --cae-dereg: hsl(20 67% 44%);
+  --cae-dereg-bg: hsl(20 67% 44% / 0.11);
+  --cae-dereg-ink: hsl(20 67% 36%);
+  --cae-nuclear: hsl(var(--secondary));
+  --cae-shadow: var(--shadow-soft);
 
   background: var(--cae-paper);
   color: var(--cae-ink);
@@ -32,41 +32,10 @@
 
 .case-for-austin-energy.dark,
 .dark .case-for-austin-energy {
-  --cae-paper: #161b17;
-  --cae-paper-raised: #1f251f;
-  --cae-ink: #eef1ec;
-  --cae-ink-muted: #a7b0a4;
-  --cae-ink-faint: #7c8579;
-  --cae-line: #2c332c;
-  --cae-line-strong: #3a4239;
-  --cae-muni: #1f9670;
-  --cae-muni-bg: rgba(31, 150, 112, 0.16);
-  --cae-muni-ink: #7fd9b8;
-  --cae-dereg: #c76a3a;
-  --cae-dereg-bg: rgba(199, 106, 58, 0.16);
-  --cae-dereg-ink: #e6a074;
-  --cae-nuclear: #1c7a5e;
-  --cae-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-@media (prefers-color-scheme: dark) {
-  .case-for-austin-energy:not(.light):not(.dark) {
-    --cae-paper: #161b17;
-    --cae-paper-raised: #1f251f;
-    --cae-ink: #eef1ec;
-    --cae-ink-muted: #a7b0a4;
-    --cae-ink-faint: #7c8579;
-    --cae-line: #2c332c;
-    --cae-line-strong: #3a4239;
-    --cae-muni: #1f9670;
-    --cae-muni-bg: rgba(31, 150, 112, 0.16);
-    --cae-muni-ink: #7fd9b8;
-    --cae-dereg: #c76a3a;
-    --cae-dereg-bg: rgba(199, 106, 58, 0.16);
-    --cae-dereg-ink: #e6a074;
-    --cae-nuclear: #1c7a5e;
-    --cae-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
-  }
+  --cae-dereg: hsl(20 70% 58%);
+  --cae-dereg-bg: hsl(20 70% 58% / 0.16);
+  --cae-dereg-ink: hsl(20 75% 70%);
+  --cae-shadow: var(--shadow-soft);
 }
 
 .case-for-austin-energy * {
