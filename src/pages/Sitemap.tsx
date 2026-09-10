@@ -70,6 +70,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/case-for-austin-energy",
+    title: "The Case for Austin Energy",
+    description: "How Austin's municipal utility compares to deregulated Texas markets on price, reliability, mix, and city revenue.",
+    icon: Gauge,
+  },
+  {
     path: "/import-capacity",
     title: "Austin Energy Import Capacity",
     description: "Model Austin's Total Transfer Capability (TTC) and see when ERCOT price separation triggers.",
