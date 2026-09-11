@@ -179,10 +179,11 @@ const PowerMoney = () => {
 
   useEffect(() => {
     if (!data || window.location.hash !== "#peaker-vs-battery") return;
-    const scrollTimer = window.setTimeout(() => {
+    const scrollToComparison = () => {
       document.getElementById("peaker-vs-battery")?.scrollIntoView({ block: "start" });
-    }, 500);
-    return () => window.clearTimeout(scrollTimer);
+    };
+    const scrollTimers = [250, 750, 1500].map((delay) => window.setTimeout(scrollToComparison, delay));
+    return () => scrollTimers.forEach((timer) => window.clearTimeout(timer));
   }, [data]);
 
   // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
