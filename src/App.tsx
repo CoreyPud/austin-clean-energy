@@ -54,6 +54,7 @@ import SecretVoteCoursePage from "./pages/SecretVoteCourse";
 import CourseLogin from "./pages/CourseLogin";
 import AdminCourseResults from "./pages/AdminCourseResults";
 import LoadEstimator from "./pages/LoadEstimator";
+import PeakerVsBatteryPage from "./pages/PeakerVsBattery";
 import CaseForAustinEnergy from "./pages/CaseForAustinEnergy";
 
 const queryClient = new QueryClient();
@@ -112,6 +113,7 @@ const AppRoutes = () => {
           <Route path="/course" element={<SecretVoteCoursePage />} />
           <Route path="/course/login" element={<CourseLogin />} />
           <Route path="/load-estimator" element={<LoadEstimator />} />
+          <Route path="/peaker-vs-battery" element={<PeakerVsBatteryPage />} />
           <Route path="/case-for-austin-energy" element={<CaseForAustinEnergy />} />
         </Route>
 

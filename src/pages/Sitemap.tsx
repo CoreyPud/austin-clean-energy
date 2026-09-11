@@ -70,6 +70,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/peaker-vs-battery",
+    title: "Peaker vs. Battery",
+    description: "Real Austin price data comparing a gas peaker with a battery on hours run, revenue, and cost.",
+    icon: Gauge,
+  },
+  {
     path: "/case-for-austin-energy",
     title: "The Case for Austin Energy",
     description: "How Austin's municipal utility compares to deregulated Texas markets on price, reliability, mix, and city revenue.",
