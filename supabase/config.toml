@@ -39,6 +39,10 @@ project_id = "tnalryxoxswjofmtdtaf"
     verify_jwt = false
   [functions.manage-corrections]
     verify_jwt = false
+  [functions.manage-solar-help-requests]
+    verify_jwt = false
+  [functions.submit-solar-help-request]
+    verify_jwt = false
   [functions.parse-bill]
     verify_jwt = false
   [functions.permit-timeline-stats]
