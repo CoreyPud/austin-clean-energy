@@ -1,4 +1,5 @@
 import CaseForAustinEnergyView from "@/components/case-for-austin-energy/CaseForAustinEnergy";
+import BackToHome from "@/components/BackToHome";
 import { useSeo } from "@/hooks/use-seo";
 
 export default function CaseForAustinEnergyPage() {
@@ -8,5 +9,10 @@ export default function CaseForAustinEnergyPage() {
       "How Austin's municipal utility compares to deregulated Texas markets on price, reliability, energy mix, and city revenue.",
   });
 
-  return <CaseForAustinEnergyView />;
+  return (
+    <>
+      <BackToHome />
+      <CaseForAustinEnergyView />
+    </>
+  );
 }

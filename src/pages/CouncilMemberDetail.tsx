@@ -108,7 +108,10 @@ export default function CouncilMemberDetail() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
         <div>
-          <Link to="/council-members" className="text-xs text-muted-foreground hover:text-foreground">← All council members</Link>
+          <div className="flex items-center gap-3">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Back to Home</Link>
+            <Link to="/council-members" className="text-xs text-muted-foreground hover:text-foreground">All council members</Link>
+          </div>
           <h1 className="text-3xl font-bold tracking-tight mt-2">{member.name}</h1>
           <p className="text-muted-foreground">{member.district === 0 ? "Mayor of Austin" : `Council Member, District ${member.district}`}</p>
         </div>
