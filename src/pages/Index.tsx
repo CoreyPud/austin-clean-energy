@@ -1,6 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin, Zap, Car, Wrench, Leaf, History } from "lucide-react";
+import {
+  ArrowRight,
+  MapPin,
+  Zap,
+  Car,
+  Wrench,
+  Leaf,
+  History,
+  Landmark,
+  TrendingUp,
+  Gauge,
+  BatteryCharging,
+} from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
 import { useEffect, useMemo, useState } from "react";
 import CampaignPopup from "@/components/CampaignPopup";
@@ -432,6 +444,74 @@ const Index = () => {
                     </div>
                     <span className="text-xs text-muted-foreground text-center px-6">
                       From first wind contracts to battery tolling agreements
+                    </span>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/case-for-austin-energy"
+                title="The Case for Austin Energy"
+                description="Compare Austin's city-owned utility with deregulated Texas markets on prices, reliability, energy mix, and city revenue."
+                cta="Read the Case"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Landmark className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      Public power compared with Texas retail choice
+                    </span>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/pricing-pressure"
+                title="Pricing Pressure"
+                description="See how Austin Energy's adverse basis costs have changed since 2018 and where current trends could lead next."
+                cta="Explore the Data"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+                    <div className="h-16 w-16 rounded-full bg-accent/15 flex items-center justify-center">
+                      <TrendingUp className="h-7 w-7 text-accent-foreground" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      Austin load-zone costs and forward projection
+                    </span>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/load-estimator"
+                title="Austin Load Growth Estimator"
+                description="Build a scenario for how housing, data centers, industry, EV fleets, and planned development affect peak demand."
+                cta="Build a Scenario"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+                    <div className="h-16 w-16 rounded-full bg-secondary/15 flex items-center justify-center">
+                      <Gauge className="h-7 w-7 text-secondary" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      Test the forces changing Austin's peak demand
+                    </span>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/power-money#peaker-vs-battery"
+                title="Peaker vs. Battery"
+                description="Compare the estimated capacity cost of customer batteries with a gas peaker, using Austin program and permit data."
+                cta="Compare Costs"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <BatteryCharging className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      Distributed storage compared with gas capacity
                     </span>
                   </div>
                 }

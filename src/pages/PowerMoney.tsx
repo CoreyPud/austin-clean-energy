@@ -177,6 +177,15 @@ const PowerMoney = () => {
       .catch((e) => setError(e?.message ?? "Failed to load data"));
   }, []);
 
+  useEffect(() => {
+    if (!data || window.location.hash !== "#peaker-vs-battery") return;
+    const scrollToComparison = () => {
+      document.getElementById("peaker-vs-battery")?.scrollIntoView({ block: "start" });
+    };
+    const scrollTimers = [250, 750, 1500].map((delay) => window.setTimeout(scrollToComparison, delay));
+    return () => scrollTimers.forEach((timer) => window.clearTimeout(timer));
+  }, [data]);
+
   // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
   // the Value of Solar credit and rebates instead of fuel and plant costs.
   const compareRows = useMemo<ComparisonRow[]>(() => {
@@ -1271,7 +1280,7 @@ const PowerMoney = () => {
             {/* Local solar and batteries */}
 
 
-            <Card>
+            <Card id="peaker-vs-battery" className="scroll-mt-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sun className="h-5 w-5" /> Local solar and batteries
