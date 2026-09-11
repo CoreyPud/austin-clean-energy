@@ -501,7 +501,7 @@ const Index = () => {
               />
 
               <FeatureCard
-                to="/power-money#peaker-vs-battery"
+                to="/peaker-vs-battery"
                 title="Peaker vs. Battery"
                 description="Compare the estimated capacity cost of customer batteries with a gas peaker, using Austin program and permit data."
                 cta="Compare Costs"
