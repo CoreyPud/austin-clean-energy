@@ -2,88 +2,46 @@
    Everything lives under .peaker-vs-battery so it can't leak into (or be
    leaked into by) the rest of the app's global CSS/theme tokens. */
 
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+/* Fonts (Newsreader / IBM Plex Sans / IBM Plex Mono) are loaded by the host
+   app via index.html. */
 
 .peaker-vs-battery {
-  /* light tokens (default) */
-  --pvb-paper: #fbfaf7;
-  --pvb-paper-raised: #ffffff;
-  --pvb-ink: #1c1d1b;
-  --pvb-ink-muted: #5a5d57;
-  --pvb-ink-faint: #8b8e86;
-  --pvb-line: #e4e1d8;
-  --pvb-line-strong: #cfccc0;
-  --pvb-battery: #0e7a5a;
-  --pvb-battery-bg: #e3f2ea;
-  --pvb-battery-ink: #0a5c44;
-  --pvb-peaker: #b5542a;
-  --pvb-peaker-bg: #f7e9de;
-  --pvb-peaker-ink: #8f4020;
-  --pvb-heat-lo: #fdf4e3;
-  --pvb-heat-hi: #a8460f;
-  --pvb-heat2-lo: #e8f4ee;
-  --pvb-heat2-hi: #0e7a5a;
-  --pvb-shadow: 0 1px 2px rgba(30, 25, 15, 0.06), 0 8px 24px -12px rgba(30, 25, 15, 0.18);
+  /* Site design tokens */
+  --pvb-paper: hsl(var(--background));
+  --pvb-paper-raised: hsl(var(--card));
+  --pvb-ink: hsl(var(--foreground));
+  --pvb-ink-muted: hsl(var(--muted-foreground));
+  --pvb-ink-faint: hsl(var(--muted-foreground));
+  --pvb-line: hsl(var(--border));
+  --pvb-line-strong: hsl(var(--input));
+  --pvb-battery: hsl(var(--primary));
+  --pvb-battery-bg: hsl(var(--primary) / 0.11);
+  --pvb-battery-ink: hsl(var(--primary));
+  --pvb-peaker: hsl(20 67% 44%);
+  --pvb-peaker-bg: hsl(20 67% 44% / 0.11);
+  --pvb-peaker-ink: hsl(20 67% 36%);
+  --pvb-heat-lo: hsl(20 67% 44% / 0.07);
+  --pvb-heat-hi: hsl(20 72% 36%);
+  --pvb-heat2-lo: hsl(var(--primary) / 0.07);
+  --pvb-heat2-hi: hsl(var(--primary));
+  --pvb-shadow: var(--shadow-soft);
 
-  color-scheme: light;
   background: var(--pvb-paper);
   color: var(--pvb-ink);
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   line-height: 1.5;
+  display: block;
 }
 
-/* Dark mode: covers both an OS-level preference and the common
-   Tailwind/shadcn ".dark" class-on-ancestor convention that Lovable
-   projects typically use. If your app toggles dark mode a different
-   way, mirror the block below onto that selector. */
 .peaker-vs-battery.dark,
 .dark .peaker-vs-battery {
-  --pvb-paper: #18191a;
-  --pvb-paper-raised: #212223;
-  --pvb-ink: #eeece6;
-  --pvb-ink-muted: #a6a89f;
-  --pvb-ink-faint: #797c74;
-  --pvb-line: #33342f;
-  --pvb-line-strong: #44453e;
-  --pvb-battery: #2bb98b;
-  --pvb-battery-bg: #173028;
-  --pvb-battery-ink: #6fd8b1;
-  --pvb-peaker: #d98356;
-  --pvb-peaker-bg: #332019;
-  --pvb-peaker-ink: #eeab84;
-  --pvb-heat-lo: #241d14;
-  --pvb-heat-hi: #e2762b;
-  --pvb-heat2-lo: #16241f;
-  --pvb-heat2-hi: #2bb98b;
-  --pvb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px -12px rgba(0, 0, 0, 0.6);
-  color-scheme: dark;
-  background: var(--pvb-paper);
-  color: var(--pvb-ink);
-}
-@media (prefers-color-scheme: dark) {
-  .peaker-vs-battery:not(.light):not(.dark) {
-    --pvb-paper: #18191a;
-    --pvb-paper-raised: #212223;
-    --pvb-ink: #eeece6;
-    --pvb-ink-muted: #a6a89f;
-    --pvb-ink-faint: #797c74;
-    --pvb-line: #33342f;
-    --pvb-line-strong: #44453e;
-    --pvb-battery: #2bb98b;
-    --pvb-battery-bg: #173028;
-    --pvb-battery-ink: #6fd8b1;
-    --pvb-peaker: #d98356;
-    --pvb-peaker-bg: #332019;
-    --pvb-peaker-ink: #eeab84;
-    --pvb-heat-lo: #241d14;
-    --pvb-heat-hi: #e2762b;
-    --pvb-heat2-lo: #16241f;
-    --pvb-heat2-hi: #2bb98b;
-    --pvb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px -12px rgba(0, 0, 0, 0.6);
-    color-scheme: dark;
-    background: var(--pvb-paper);
-    color: var(--pvb-ink);
-  }
+  --pvb-peaker: hsl(20 70% 58%);
+  --pvb-peaker-bg: hsl(20 70% 58% / 0.16);
+  --pvb-peaker-ink: hsl(20 75% 70%);
+  --pvb-heat-lo: hsl(20 70% 58% / 0.08);
+  --pvb-heat-hi: hsl(20 75% 55%);
+  --pvb-heat2-lo: hsl(var(--primary) / 0.08);
+  --pvb-shadow: var(--shadow-soft);
 }
 
 .peaker-vs-battery * { box-sizing: border-box; }
