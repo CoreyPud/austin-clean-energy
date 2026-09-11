@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type CourseAuthState = {
   loading: boolean;
+  adminLoading: boolean;
   session: Session | null;
   user: User | null;
   displayName: string | null;
@@ -15,6 +16,7 @@ export function useCourseAuth(): CourseAuthState & { signOut: () => Promise<void
   const [session, setSession] = useState<Session | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [resolvedAdminUserId, setResolvedAdminUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
@@ -34,6 +36,7 @@ export function useCourseAuth(): CourseAuthState & { signOut: () => Promise<void
     if (!userId) {
       setDisplayName(null);
       setIsAdmin(false);
+      setResolvedAdminUserId(null);
       return;
     }
     let cancelled = false;
@@ -49,6 +52,7 @@ export function useCourseAuth(): CourseAuthState & { signOut: () => Promise<void
       if (cancelled) return;
       setDisplayName(profile?.display_name ?? metaName ?? session?.user?.email ?? null);
       setIsAdmin(!!roles?.some((r) => r.role === "admin"));
+      setResolvedAdminUserId(userId);
     })();
     return () => {
       cancelled = true;
@@ -60,5 +64,7 @@ export function useCourseAuth(): CourseAuthState & { signOut: () => Promise<void
     await supabase.auth.signOut();
   }
 
-  return { loading, session, user: session?.user ?? null, displayName, isAdmin, signOut };
+  const adminLoading = Boolean(userId) && resolvedAdminUserId !== userId;
+
+  return { loading, adminLoading, session, user: session?.user ?? null, displayName, isAdmin, signOut };
 }

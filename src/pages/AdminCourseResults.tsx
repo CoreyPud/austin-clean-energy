@@ -12,7 +12,7 @@ type ProfileRow = { id: string; display_name: string | null; email: string | nul
 export default function AdminCourseResults() {
   useSeo({ title: "Course Results | Admin", description: "Course check-in scores by participant." });
 
-  const { loading, session, isAdmin, signOut } = useCourseAuth();
+  const { loading, adminLoading, session, isAdmin, signOut } = useCourseAuth();
   const [results, setResults] = useState<ResultRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [fetching, setFetching] = useState(false);
@@ -62,7 +62,9 @@ export default function AdminCourseResults() {
     URL.revokeObjectURL(url);
   }
 
-  if (loading) return <div className="container mx-auto px-4 py-12 text-muted-foreground">Loading…</div>;
+  if (loading || adminLoading) {
+    return <div className="container mx-auto px-4 py-12 text-muted-foreground">Loading…</div>;
+  }
 
   if (!session) {
     return (
