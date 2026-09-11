@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import {
-  BarChart, Bar, Cell,
+  BarChart, Bar, Cell, ReferenceLine,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { Slider } from "@/components/ui/slider";
@@ -20,8 +20,13 @@ import {
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_MIN_KW,
   AUSTIN_ENERGY_RATES,
+  FINANCIAL_HORIZON_YEARS,
+  UTILITY_RATE_ESCALATION,
+  PANEL_DEGRADATION_RATE,
+  INVERTER_REPLACEMENT_YEAR,
   ssoRate,
 } from "@/lib/solar-model";
+
 import { buildProgramFinancials, isSsoEligible, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
@@ -33,10 +38,11 @@ const StickyKpi = ({
 }: { label: string; value: string; href?: string; highlight?: boolean }) => {
   const cls = `px-2 py-1 rounded border bg-background/50 ${highlight ? "border-primary/40" : ""} ${href ? "hover:border-primary/50 transition-colors cursor-pointer" : ""}`;
   const inner = (
-    <div className="flex md:flex-col items-center md:items-start justify-between md:justify-start gap-2 md:gap-0">
+    <div className="flex flex-col items-start gap-0.5">
       <div className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">{label}</div>
-      <div className={`text-xl font-bold tabular-nums ${highlight ? "text-primary" : ""}`}>{value}</div>
+      <div className={`text-xl font-bold tabular-nums leading-tight ${highlight ? "text-primary" : ""}`}>{value}</div>
     </div>
+
   );
   // Scroll to the target manually instead of a real hash navigation. A plain <a href="#...">
   // click does a native same-document navigation, which drops the current history entry's
@@ -171,6 +177,10 @@ export default function SolarProgramView({
     year: `Yr ${d.year}`,
     [cumulativeKey]: d.cumulative,
   }));
+  // Net position at the end of the full modeled term (not just year 25) -- the headline figure
+  // above the payback chart.
+  const netFullTerm = cumulativeSource[cumulativeSource.length - 1]?.cumulative ?? net25;
+
 
   const ssoRateSteps = [1, ...SSO_RATE_STEP_YEARS].map((year, i) => ({
     year,
@@ -265,27 +275,32 @@ export default function SolarProgramView({
             onValueCommit={([v]) => onCostPerWChange(v)}
           />
         )}
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Gross install cost</dt>
-            <dd>{fmt$(rec.grossCost)}</dd>
+        {/* Each figure sits directly above the words that explain it, so a number and its
+            label always read as one unit instead of facing each other across the panel. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="rounded-md border border-border bg-background/60 px-3 py-2">
+            <div className="text-lg font-bold tabular-nums leading-tight">{fmt$(rec.grossCost)}</div>
+            <div className="text-xs text-muted-foreground leading-snug">Gross install cost</div>
           </div>
           {!isSSO && rec.aeRebate > 0 && (
-            <div className="flex justify-between text-green-600 dark:text-green-400">
-              <dt>Austin Energy rebate</dt>
-              <dd>−{fmt$(rec.aeRebate)}</dd>
+            <div className="rounded-md border border-green-600/30 bg-green-600/5 px-3 py-2">
+              <div className="text-lg font-bold tabular-nums leading-tight text-green-700 dark:text-green-400">
+                −{fmt$(rec.aeRebate)}
+              </div>
+              <div className="text-xs text-green-700/80 dark:text-green-400/80 leading-snug">Austin Energy rebate</div>
             </div>
           )}
-          {isSSO && (
-            <p className="text-xs text-muted-foreground">
-              Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.
-            </p>
-          )}
-          <div className="flex justify-between font-medium border-t border-border pt-2">
-            <dt>Net cost</dt>
-            <dd>{fmt$(installCost)}</dd>
+          <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
+            <div className="text-lg font-bold tabular-nums leading-tight text-primary">{fmt$(installCost)}</div>
+            <div className="text-xs text-muted-foreground leading-snug">Net cost after rebate</div>
           </div>
-        </dl>
+        </div>
+        {isSSO && (
+          <p className="text-xs text-muted-foreground">
+            Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.
+          </p>
+        )}
+
       </div>
 
       {financingSlot}
@@ -335,37 +350,80 @@ export default function SolarProgramView({
           </ResponsiveContainer>
         </div>
 
-        <div id="section-payback" className="space-y-2 scroll-mt-52">
-          <div className="flex items-baseline gap-2">
-            <span className={`text-3xl font-bold tabular-nums ${net25 >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-              {fmt$(net25)}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {isSSO ? "25-year net revenue" : "25-year net savings"}
-            </span>
+        <div id="section-payback" className="space-y-3 scroll-mt-52">
+          {/* Headline pair: full-term net total and the payback year, each number grouped with
+              its own label. Framed as payback, not loss -- pre-breakeven years are neutral. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={`rounded-md border px-3 py-2 ${netFullTerm >= 0 ? "border-emerald-600/30 bg-emerald-600/5" : "border-red-600/30 bg-red-600/5"}`}>
+              <div className={`text-3xl font-bold tabular-nums leading-tight ${netFullTerm >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-600"}`}>
+                {fmt$(netFullTerm)}
+              </div>
+              <div className="text-xs text-muted-foreground leading-snug">
+                Total net {isSSO ? "revenue" : "savings"} over {FINANCIAL_HORIZON_YEARS} years, after the system pays for itself
+              </div>
+            </div>
+            <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
+              <div className="text-3xl font-bold tabular-nums leading-tight text-primary">
+                {paybackYear ? `Year ${paybackYear}` : "Never"}
+              </div>
+              <div className="text-xs text-muted-foreground leading-snug">
+                {paybackYear
+                  ? "Breakeven — everything after this is money ahead"
+                  : `Does not break even within ${FINANCIAL_HORIZON_YEARS} years at these assumptions`}
+              </div>
+            </div>
           </div>
           <p className="text-sm font-medium">
-            {isSSO ? "Cumulative net revenue over 30 years" : "Cumulative net savings over 30 years"}
+            {isSSO ? `Cumulative net revenue over ${FINANCIAL_HORIZON_YEARS} years` : `Cumulative net savings over ${FINANCIAL_HORIZON_YEARS} years`}
           </p>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={cumulativeData}>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={cumulativeData} margin={{ top: 4, right: 4, left: 0, bottom: 16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="year" tick={{ fontSize: 10 }} interval={4} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} width={48} />
               <Tooltip formatter={(v: number) => fmt$(v)} />
+              <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
+              {paybackYear && (
+                <ReferenceLine
+                  x={`Yr ${paybackYear}`}
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                  label={{
+                    value: `Breakeven · Yr ${paybackYear}`,
+                    position: "insideTopLeft",
+                    fill: "hsl(var(--primary))",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                />
+              )}
               <Bar dataKey={cumulativeKey} radius={[3, 3, 0, 0]}>
                 {cumulativeData.map((entry, i) => (
-                  <Cell key={i} fill={Number(entry[cumulativeKey]) >= 0 ? "#047857" : "#b91c1c"} />
+                  <Cell
+                    key={i}
+                    fill={
+                      // Red only when the system never reaches breakeven in the modeled term.
+                      paybackYear == null
+                        ? "#b91c1c"
+                        : Number(entry[cumulativeKey]) >= 0
+                        ? "#047857"
+                        : "hsl(var(--muted-foreground) / 0.35)"
+                    }
+                  />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          {paybackYear && (
-            <p className="text-xs text-center text-muted-foreground">
-              System pays for itself in year {paybackYear}
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Neutral bars are the years still paying back the up-front cost; green bars are years
+            you're ahead. Modeled on Austin Energy's current tiered rates and Value of Solar
+            credit, {(UTILITY_RATE_ESCALATION * 100).toFixed(1)}% a year electricity price
+            escalation, {(PANEL_DEGRADATION_RATE * 100).toFixed(1)}% a year panel output loss,
+            and one inverter replacement in year {INVERTER_REPLACEMENT_YEAR}.
+          </p>
         </div>
+
       </div>
 
       {/* Performance-Based Incentive -- for-profit commercial >= PBI_MIN_KW on VoS billing.
