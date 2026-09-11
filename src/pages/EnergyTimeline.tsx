@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import TimelineRail from "@/components/energy-timeline/TimelineRail";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSeo } from "@/hooks/use-seo";
@@ -124,6 +125,8 @@ const EnergyTimeline = () => {
             </section>
           ))}
         </div>
+
+        <TimelineRail />
 
         <footer className="mt-8 border-t pt-6">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
