@@ -1,0 +1,247 @@
+/* Peaker vs. Battery — scoped styles.
+   Everything lives under .peaker-vs-battery so it can't leak into (or be
+   leaked into by) the rest of the app's global CSS/theme tokens. */
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+.peaker-vs-battery {
+  /* light tokens (default) */
+  --pvb-paper: #fbfaf7;
+  --pvb-paper-raised: #ffffff;
+  --pvb-ink: #1c1d1b;
+  --pvb-ink-muted: #5a5d57;
+  --pvb-ink-faint: #8b8e86;
+  --pvb-line: #e4e1d8;
+  --pvb-line-strong: #cfccc0;
+  --pvb-battery: #0e7a5a;
+  --pvb-battery-bg: #e3f2ea;
+  --pvb-battery-ink: #0a5c44;
+  --pvb-peaker: #b5542a;
+  --pvb-peaker-bg: #f7e9de;
+  --pvb-peaker-ink: #8f4020;
+  --pvb-heat-lo: #fdf4e3;
+  --pvb-heat-hi: #a8460f;
+  --pvb-heat2-lo: #e8f4ee;
+  --pvb-heat2-hi: #0e7a5a;
+  --pvb-shadow: 0 1px 2px rgba(30, 25, 15, 0.06), 0 8px 24px -12px rgba(30, 25, 15, 0.18);
+
+  color-scheme: light;
+  background: var(--pvb-paper);
+  color: var(--pvb-ink);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+/* Dark mode: covers both an OS-level preference and the common
+   Tailwind/shadcn ".dark" class-on-ancestor convention that Lovable
+   projects typically use. If your app toggles dark mode a different
+   way, mirror the block below onto that selector. */
+.peaker-vs-battery.dark,
+.dark .peaker-vs-battery {
+  --pvb-paper: #18191a;
+  --pvb-paper-raised: #212223;
+  --pvb-ink: #eeece6;
+  --pvb-ink-muted: #a6a89f;
+  --pvb-ink-faint: #797c74;
+  --pvb-line: #33342f;
+  --pvb-line-strong: #44453e;
+  --pvb-battery: #2bb98b;
+  --pvb-battery-bg: #173028;
+  --pvb-battery-ink: #6fd8b1;
+  --pvb-peaker: #d98356;
+  --pvb-peaker-bg: #332019;
+  --pvb-peaker-ink: #eeab84;
+  --pvb-heat-lo: #241d14;
+  --pvb-heat-hi: #e2762b;
+  --pvb-heat2-lo: #16241f;
+  --pvb-heat2-hi: #2bb98b;
+  --pvb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px -12px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+  background: var(--pvb-paper);
+  color: var(--pvb-ink);
+}
+@media (prefers-color-scheme: dark) {
+  .peaker-vs-battery:not(.light):not(.dark) {
+    --pvb-paper: #18191a;
+    --pvb-paper-raised: #212223;
+    --pvb-ink: #eeece6;
+    --pvb-ink-muted: #a6a89f;
+    --pvb-ink-faint: #797c74;
+    --pvb-line: #33342f;
+    --pvb-line-strong: #44453e;
+    --pvb-battery: #2bb98b;
+    --pvb-battery-bg: #173028;
+    --pvb-battery-ink: #6fd8b1;
+    --pvb-peaker: #d98356;
+    --pvb-peaker-bg: #332019;
+    --pvb-peaker-ink: #eeab84;
+    --pvb-heat-lo: #241d14;
+    --pvb-heat-hi: #e2762b;
+    --pvb-heat2-lo: #16241f;
+    --pvb-heat2-hi: #2bb98b;
+    --pvb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px -12px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+    background: var(--pvb-paper);
+    color: var(--pvb-ink);
+  }
+}
+
+.peaker-vs-battery * { box-sizing: border-box; }
+
+.peaker-vs-battery { padding: 40px 20px 64px; }
+.peaker-vs-battery .pvb-page { max-width: 1100px; margin: 0 auto; }
+
+.peaker-vs-battery .pvb-kicker { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--pvb-peaker); font-weight: 600; margin-bottom: 10px; }
+.peaker-vs-battery h1 { font-family: 'Newsreader', Georgia, serif; font-weight: 700; font-size: clamp(32px, 5vw, 46px); line-height: 1.06; margin: 0 0 14px; letter-spacing: -.01em; text-wrap: balance; }
+.peaker-vs-battery .pvb-dek { font-size: 16.5px; line-height: 1.6; color: var(--pvb-ink-muted); max-width: 740px; margin: 0 0 26px; }
+.peaker-vs-battery .pvb-dek b { color: var(--pvb-ink); font-weight: 600; }
+
+.peaker-vs-battery .pvb-yeartabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; align-items: center; }
+.peaker-vs-battery .pvb-yeartabs button { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; font-weight: 600; padding: 9px 20px; border-radius: 8px; border: 1px solid var(--pvb-line-strong); background: var(--pvb-paper-raised); color: var(--pvb-ink-muted); cursor: pointer; transition: .15s; }
+.peaker-vs-battery .pvb-yeartabs button.pvb-active { background: var(--pvb-ink); color: var(--pvb-paper); border-color: var(--pvb-ink); }
+.peaker-vs-battery .pvb-yeartabs button:not(.pvb-active):hover { border-color: var(--pvb-peaker); color: var(--pvb-ink); }
+.peaker-vs-battery .pvb-yearnote { font-size: 13px; color: var(--pvb-ink-faint); margin-left: 4px; }
+
+.peaker-vs-battery .pvb-hero { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--pvb-line); border: 1px solid var(--pvb-line); border-radius: 14px; overflow: hidden; margin-bottom: 36px; box-shadow: var(--pvb-shadow); }
+@media (max-width: 920px) { .peaker-vs-battery .pvb-hero { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .peaker-vs-battery .pvb-hero { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 380px) { .peaker-vs-battery .pvb-hero { grid-template-columns: 1fr; } }
+.peaker-vs-battery .pvb-htile { background: var(--pvb-paper-raised); padding: 18px 20px; }
+.peaker-vs-battery .pvb-htile .pvb-hl { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--pvb-ink-faint); font-weight: 600; margin-bottom: 8px; }
+.peaker-vs-battery .pvb-htile .pvb-hv { font-family: 'IBM Plex Mono', monospace; font-size: 25px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.peaker-vs-battery .pvb-htile .pvb-hs { font-size: 12.5px; color: var(--pvb-ink-muted); margin-top: 5px; line-height: 1.4; }
+.peaker-vs-battery .pvb-htile.pvb-battery .pvb-hv { color: var(--pvb-battery-ink); }
+.peaker-vs-battery .pvb-htile.pvb-peaker .pvb-hv { color: var(--pvb-peaker-ink); }
+
+.peaker-vs-battery .pvb-panel { background: var(--pvb-paper-raised); border: 1px solid var(--pvb-line); border-radius: 14px; padding: 26px 26px 22px; margin-bottom: 24px; box-shadow: var(--pvb-shadow); }
+.peaker-vs-battery .pvb-panel h2 { font-family: 'Newsreader', serif; font-size: 21px; font-weight: 600; margin: 0 0 4px; }
+.peaker-vs-battery .pvb-sub { font-size: 13.5px; color: var(--pvb-ink-muted); margin: 0 0 18px; max-width: 680px; line-height: 1.55; }
+.peaker-vs-battery .pvb-legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--pvb-ink-muted); margin-bottom: 14px; }
+.peaker-vs-battery .pvb-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.peaker-vs-battery .pvb-sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.peaker-vs-battery .pvb-marker-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--pvb-ink); border: 2px solid var(--pvb-paper-raised); box-shadow: 0 0 0 1px rgba(0, 0, 0, .3); }
+.peaker-vs-battery .pvb-muted { color: var(--pvb-ink-muted); }
+.peaker-vs-battery .pvb-twin { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 820px) { .peaker-vs-battery .pvb-twin { grid-template-columns: 1fr; } }
+.peaker-vs-battery .pvb-twinhead { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-bottom: 8px; }
+.peaker-vs-battery .pvb-twinhead.pvb-battery { color: var(--pvb-battery-ink); }
+.peaker-vs-battery .pvb-twinhead.pvb-peaker { color: var(--pvb-peaker-ink); }
+
+/* heatmap */
+.peaker-vs-battery .pvb-heatwrap { overflow-x: auto; }
+.peaker-vs-battery .pvb-heat { border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 10px; margin: 0 auto; }
+.peaker-vs-battery .pvb-heat th { font-weight: 500; color: var(--pvb-ink-faint); padding: 2px 3px; text-align: center; }
+.peaker-vs-battery .pvb-heat th.pvb-mrow { text-align: right; padding-right: 8px; font-weight: 600; color: var(--pvb-ink-muted); }
+.peaker-vs-battery .pvb-heat td { width: 23px; height: 18px; text-align: center; position: relative; border: 1px solid var(--pvb-paper-raised); }
+.peaker-vs-battery .pvb-heat td .pvb-flag { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; border-radius: 50%; background: var(--pvb-ink); border: 2px solid var(--pvb-paper); box-shadow: 0 0 0 1px rgba(0, 0, 0, .3); }
+.peaker-vs-battery .pvb-heat th.pvb-totalhdr { border-left: 2px solid var(--pvb-line-strong); font-size: 8.5px; line-height: 1.15; padding-left: 7px; text-align: left; white-space: nowrap; }
+.peaker-vs-battery .pvb-heat td.pvb-totcell { border-left: 2px solid var(--pvb-line-strong); background: var(--pvb-paper-raised); font-weight: 600; font-size: 10px; color: var(--pvb-ink-muted); text-align: right; padding-right: 6px; width: 34px; }
+.peaker-vs-battery .pvb-axisnote { font-size: 12px; color: var(--pvb-ink-faint); margin: -8px 0 16px; }
+.peaker-vs-battery .pvb-heatfoot { font-size: 12px; color: var(--pvb-ink-faint); margin-top: 10px; }
+.peaker-vs-battery .pvb-heatnote { font-size: 12.5px; color: var(--pvb-ink-muted); line-height: 1.6; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--pvb-line); }
+.peaker-vs-battery .pvb-heatnote b { color: var(--pvb-ink); font-weight: 600; }
+.peaker-vs-battery .pvb-hourswrap { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--pvb-line); }
+
+/* battery daily-rhythm bars */
+.peaker-vs-battery .pvb-barchart { display: flex; align-items: flex-end; gap: 3px; height: 170px; padding: 0 4px; }
+.peaker-vs-battery .pvb-barchart .pvb-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; position: relative; }
+.peaker-vs-battery .pvb-barchart .pvb-stack { width: 100%; max-width: 16px; display: flex; flex-direction: column-reverse; height: 100%; justify-content: flex-start; gap: 1px; }
+.peaker-vs-battery .pvb-barchart .pvb-seg { width: 100%; border-radius: 2px; cursor: default; }
+.peaker-vs-battery .pvb-barchart .pvb-seg.pvb-dis { background: var(--pvb-peaker); }
+.peaker-vs-battery .pvb-barchart .pvb-seg.pvb-chg { background: var(--pvb-battery); }
+.peaker-vs-battery .pvb-barchart .pvb-hlabel { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--pvb-ink-faint); margin-top: 6px; }
+
+/* monthly bar charts (econ + hours) */
+.peaker-vs-battery .pvb-monthchart { display: flex; align-items: flex-end; gap: 8px; height: 190px; padding: 0 4px 0; }
+.peaker-vs-battery .pvb-monthchart .pvb-mcol { flex: 1; display: flex; gap: 2px; align-items: flex-end; height: 100%; justify-content: center; }
+.peaker-vs-battery .pvb-monthchart .pvb-mbar { width: 40%; border-radius: 3px 3px 0 0; position: relative; cursor: default; }
+.peaker-vs-battery .pvb-monthchart .pvb-mbar.pvb-battery { background: var(--pvb-battery); }
+.peaker-vs-battery .pvb-monthchart .pvb-mbar.pvb-peaker { background: var(--pvb-peaker); }
+.peaker-vs-battery .pvb-monthlabels { display: flex; gap: 8px; margin-top: 6px; }
+.peaker-vs-battery .pvb-monthlabels span { flex: 1; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--pvb-ink-faint); }
+
+/* duration chart */
+.peaker-vs-battery .pvb-durchart { position: relative; padding: 0 4px; margin-top: 6px; }
+.peaker-vs-battery .pvb-durbars { display: flex; align-items: flex-end; gap: 18px; height: 100%; }
+.peaker-vs-battery .pvb-durcol { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; }
+.peaker-vs-battery .pvb-durbar { width: 56%; max-width: 58px; border-radius: 4px 4px 0 0; background: var(--pvb-battery); position: relative; cursor: default; }
+.peaker-vs-battery .pvb-durrefline { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--pvb-peaker-ink); z-index: 2; }
+.peaker-vs-battery .pvb-durreflabel { position: absolute; right: 4px; top: -18px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--pvb-peaker-ink); font-weight: 600; background: var(--pvb-paper-raised); padding: 0 4px; }
+.peaker-vs-battery .pvb-durlabels { display: flex; gap: 18px; margin-top: 8px; }
+.peaker-vs-battery .pvb-durlab { flex: 1; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--pvb-ink-muted); }
+.peaker-vs-battery .pvb-durlab b { display: block; color: var(--pvb-ink); font-size: 12.5px; }
+.peaker-vs-battery .pvb-durlab small { color: var(--pvb-ink-faint); font-size: 9.5px; }
+.peaker-vs-battery .pvb-durnote { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--pvb-line); font-size: 12.5px; color: var(--pvb-ink-muted); line-height: 1.65; }
+.peaker-vs-battery .pvb-durnote b { color: var(--pvb-ink); font-weight: 600; }
+
+/* savings equation */
+.peaker-vs-battery .pvb-eqchart { position: relative; height: 190px; padding: 0 10px 40px 46px; margin: 4px 0 8px; }
+.peaker-vs-battery .pvb-eqgridline { position: absolute; left: 46px; right: 10px; border-top: 1px dashed var(--pvb-line); }
+.peaker-vs-battery .pvb-eqgridlabel { position: absolute; left: 0; width: 38px; text-align: right; transform: translateY(-7px); font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--pvb-ink-faint); }
+.peaker-vs-battery .pvb-eqcols { position: absolute; left: 46px; right: 10px; top: 0; height: 190px; display: flex; gap: 64px; align-items: flex-end; justify-content: center; }
+.peaker-vs-battery .pvb-eqcol { position: relative; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+.peaker-vs-battery .pvb-eqbar { width: 66px; display: flex; flex-direction: column-reverse; border-radius: 4px 4px 2px 2px; overflow: hidden; }
+.peaker-vs-battery .pvb-eqseg { width: 100%; }
+.peaker-vs-battery .pvb-eqseg-cost { background: var(--pvb-ink-faint); opacity: .5; }
+.peaker-vs-battery .pvb-eqseg-margin.pvb-peaker { background: var(--pvb-peaker); }
+.peaker-vs-battery .pvb-eqseg-margin.pvb-battery { background: var(--pvb-battery); }
+.peaker-vs-battery .pvb-eqbarlabel { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600; color: var(--pvb-ink); white-space: nowrap; }
+.peaker-vs-battery .pvb-eqbartop { position: absolute; left: 50%; transform: translateX(-50%); font-size: 10.5px; color: var(--pvb-ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; text-align: center; }
+.peaker-vs-battery .pvb-eqlegend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--pvb-ink-muted); margin-top: 44px; }
+.peaker-vs-battery .pvb-eqlegend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.peaker-vs-battery .pvb-eqstrips { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--pvb-line); }
+.peaker-vs-battery .pvb-eq { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 18px; }
+.peaker-vs-battery .pvb-eq:last-child { margin-bottom: 0; }
+.peaker-vs-battery .pvb-eqhead { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; width: 62px; flex: 0 0 auto; }
+.peaker-vs-battery .pvb-eqhead.pvb-peaker { color: var(--pvb-peaker-ink); }
+.peaker-vs-battery .pvb-eqhead.pvb-battery { color: var(--pvb-battery-ink); }
+.peaker-vs-battery .pvb-eqterm { background: var(--pvb-paper); border: 1px solid var(--pvb-line-strong); border-radius: 10px; padding: 8px 12px; min-width: 104px; text-align: center; }
+.peaker-vs-battery .pvb-eqterm .pvb-eqlabel { font-size: 8.8px; text-transform: uppercase; letter-spacing: .03em; color: var(--pvb-ink-faint); margin-bottom: 4px; line-height: 1.25; }
+.peaker-vs-battery .pvb-eqterm .pvb-eqval { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--pvb-ink); font-variant-numeric: tabular-nums; }
+.peaker-vs-battery .pvb-eqterm.pvb-eqfinal.pvb-peaker { background: var(--pvb-peaker-bg); border-color: var(--pvb-peaker); }
+.peaker-vs-battery .pvb-eqterm.pvb-eqfinal.pvb-peaker .pvb-eqval { color: var(--pvb-peaker-ink); }
+.peaker-vs-battery .pvb-eqterm.pvb-eqfinal.pvb-battery { background: var(--pvb-battery-bg); border-color: var(--pvb-battery); }
+.peaker-vs-battery .pvb-eqterm.pvb-eqfinal.pvb-battery .pvb-eqval { color: var(--pvb-battery-ink); }
+.peaker-vs-battery .pvb-eqterm.pvb-eqtotal .pvb-eqval { font-size: 16.5px; }
+.peaker-vs-battery .pvb-eqop { font-family: 'IBM Plex Mono', monospace; font-size: 17px; color: var(--pvb-ink-faint); font-weight: 600; flex: 0 0 auto; }
+
+.peaker-vs-battery .pvb-notrevenue { margin-top: 22px; padding: 16px 18px; border: 1px solid var(--pvb-line-strong); border-radius: 10px; background: color-mix(in srgb, var(--pvb-ink) 4%, var(--pvb-paper-raised)); }
+.peaker-vs-battery .pvb-notrevenue-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--pvb-ink); margin-bottom: 8px; }
+.peaker-vs-battery .pvb-notrevenue p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--pvb-ink-muted); }
+.peaker-vs-battery .pvb-notrevenue b { color: var(--pvb-ink); font-weight: 600; }
+
+/* payback table */
+.peaker-vs-battery .pvb-paytablewrap { overflow-x: auto; }
+.peaker-vs-battery .pvb-paytable { width: 100%; min-width: 480px; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; }
+.peaker-vs-battery .pvb-paytable th { text-align: right; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; font-size: 10px; color: var(--pvb-ink-faint); padding: 0 10px 8px; border-bottom: 1px solid var(--pvb-line-strong); }
+.peaker-vs-battery .pvb-paytable th:first-child { text-align: left; }
+.peaker-vs-battery .pvb-paytable td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--pvb-line); font-variant-numeric: tabular-nums; }
+.peaker-vs-battery .pvb-paytable td:first-child { text-align: left; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; color: var(--pvb-ink); }
+.peaker-vs-battery .pvb-paytable tr.pvb-py-peaker td:first-child { color: var(--pvb-peaker-ink); }
+.peaker-vs-battery .pvb-paytable tr.pvb-py-battery td:first-child { color: var(--pvb-battery-ink); }
+.peaker-vs-battery .pvb-paytable tr.pvb-py-best { background: color-mix(in srgb, var(--pvb-ink) 6%, var(--pvb-paper-raised)); }
+.peaker-vs-battery .pvb-paytable tr.pvb-py-best td { font-weight: 600; color: var(--pvb-ink); }
+.peaker-vs-battery .pvb-paytable .pvb-py-badge { display: inline-block; margin-left: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--pvb-ink); background: color-mix(in srgb, var(--pvb-ink) 12%, var(--pvb-paper-raised)); border-radius: 4px; padding: 2px 6px; vertical-align: middle; }
+.peaker-vs-battery .pvb-paynote { font-size: 12px; color: var(--pvb-ink-faint); margin-top: 12px; line-height: 1.6; }
+
+/* shared fixed tooltip */
+.peaker-vs-battery .pvb-tooltip { position: fixed; pointer-events: none; background: var(--pvb-ink); color: var(--pvb-paper); font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 6px 9px; border-radius: 6px; line-height: 1.5; opacity: 0; transition: opacity .1s; z-index: 50; white-space: nowrap; }
+.peaker-vs-battery .pvb-tooltip.pvb-show { opacity: 1; }
+
+.peaker-vs-battery .pvb-caveats { font-size: 13.5px; line-height: 1.65; color: var(--pvb-ink-muted); }
+.peaker-vs-battery .pvb-caveats p { margin: 0 0 12px; }
+.peaker-vs-battery .pvb-caveats b { color: var(--pvb-ink); font-weight: 600; }
+.peaker-vs-battery .pvb-src { margin-top: 6px; font-size: 11.5px; color: var(--pvb-ink-faint); line-height: 1.6; }
+
+@media (max-width: 640px) {
+  .peaker-vs-battery .pvb-barchart { height: 140px; }
+  .peaker-vs-battery .pvb-heat td { width: 17px; }
+  .peaker-vs-battery .pvb-monthchart { height: 150px; }
+  .peaker-vs-battery .pvb-durbars { gap: 8px; }
+  .peaker-vs-battery .pvb-durlabels { gap: 8px; }
+  .peaker-vs-battery .pvb-eqcols { gap: 26px; }
+  .peaker-vs-battery .pvb-eqbar { width: 44px; }
+  .peaker-vs-battery .pvb-eqhead { width: 100%; }
+  .peaker-vs-battery .pvb-eqbartop { font-size: 9px; white-space: normal; max-width: 84px; line-height: 1.25; }
+}
