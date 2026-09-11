@@ -385,7 +385,7 @@ const PowerMoney = () => {
             </div>
 
             {/* Dollars by fuel by year */}
-            <Card id="peaker-vs-battery" className="scroll-mt-8">
+            <Card>
               <CardHeader>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -1271,7 +1271,7 @@ const PowerMoney = () => {
             {/* Local solar and batteries */}
 
 
-            <Card>
+            <Card id="peaker-vs-battery" className="scroll-mt-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sun className="h-5 w-5" /> Local solar and batteries
