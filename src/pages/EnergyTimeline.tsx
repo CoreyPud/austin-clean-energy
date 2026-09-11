@@ -125,6 +125,8 @@ const EnergyTimeline = () => {
           ))}
         </div>
 
+        <TimelineRail />
+
         <footer className="mt-8 border-t pt-6">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Sources
