@@ -1,4 +1,5 @@
 import PeakerVsBatteryView from "@/components/peaker-vs-battery/PeakerVsBattery";
+import BackToHome from "@/components/BackToHome";
 import { useSeo } from "@/hooks/use-seo";
 
 export default function PeakerVsBatteryPage() {
@@ -8,5 +9,10 @@ export default function PeakerVsBatteryPage() {
       "Real Austin LZ_AEN price data comparing a 400 MW gas peaker with a 485 MW battery on hours run, revenue, and cost.",
   });
 
-  return <PeakerVsBatteryView />;
+  return (
+    <>
+      <BackToHome />
+      <PeakerVsBatteryView />
+    </>
+  );
 }

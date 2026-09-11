@@ -1,4 +1,5 @@
 import PricingPressureView from "@/components/pricing-pressure/PricingPressure";
+import BackToHome from "@/components/BackToHome";
 import { useSeo } from "@/hooks/use-seo";
 
 export default function PricingPressurePage() {
@@ -8,5 +9,10 @@ export default function PricingPressurePage() {
       "Austin Energy's fleet-wide adverse basis cost per MWh, 2018-2026, with a projection of where it heads next.",
   });
 
-  return <PricingPressureView />;
+  return (
+    <>
+      <BackToHome />
+      <PricingPressureView />
+    </>
+  );
 }
