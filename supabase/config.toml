@@ -1,88 +1,63 @@
 project_id = "tnalryxoxswjofmtdtaf"
 
-[functions.sync-council-data]
-verify_jwt = false
-
-[functions.classify-new-votes]
-verify_jwt = false
-
-[functions.council-data-import]
-verify_jwt = false
-
-[functions.aggregate-finance-sectors]
-verify_jwt = false
-
-[functions.lobbying-summary]
-verify_jwt = false
-
-[functions.area-analysis]
-verify_jwt = false
-
-[functions.property-assessment]
-verify_jwt = false
-
-[functions.unified-assessment]
-verify_jwt = false
-
-[functions.generate-recommendations]
-verify_jwt = false
-
-[functions.fetch-stats]
-verify_jwt = false
-
-[functions.installation-detail]
-verify_jwt = false
-
-[functions.import-solar-data]
-verify_jwt = false
-
-[functions.sync-solar-data]
-verify_jwt = false
-
-[functions.check-api-fields]
-verify_jwt = false
-
-[functions.yearly-stats]
-verify_jwt = false
-
-[functions.fiscal-year-stats]
-verify_jwt = false
-
-[functions.permit-timeline-stats]
-verify_jwt = false
-
-[functions.get-mapbox-token]
-verify_jwt = false
-
-[functions.admin-auth]
-verify_jwt = false
-
-[functions.manage-corrections]
-verify_jwt = false
-
-[functions.get-maps-config]
-verify_jwt = false
-
-[functions.solar-insights]
-verify_jwt = false
-
-[functions.parse-bill]
-verify_jwt = false
-
-[functions.installations-geojson]
-verify_jwt = false
-
-[functions.properties-bulk]
-verify_jwt = false
-
-[functions.import-agenda-items]
-verify_jwt = false
-
-[functions.vote-agenda-item]
-verify_jwt = false
-
-[functions.manage-agenda-items]
-verify_jwt = false
-
-[functions.sync-agenda-items]
-verify_jwt = false
+[functions]
+  [functions.admin-auth]
+    verify_jwt = false
+  [functions.aggregate-finance-sectors]
+    verify_jwt = false
+  [functions.area-analysis]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.check-api-fields]
+    verify_jwt = false
+  [functions.classify-new-votes]
+    verify_jwt = false
+  [functions.council-data-import]
+    verify_jwt = false
+  [functions.fetch-stats]
+    verify_jwt = false
+  [functions.fiscal-year-stats]
+    verify_jwt = false
+  [functions.generate-recommendations]
+    verify_jwt = false
+  [functions.get-mapbox-token]
+    verify_jwt = false
+  [functions.get-maps-config]
+    verify_jwt = false
+  [functions.import-agenda-items]
+    verify_jwt = false
+  [functions.import-solar-data]
+    verify_jwt = false
+  [functions.installation-detail]
+    verify_jwt = false
+  [functions.installations-geojson]
+    verify_jwt = false
+  [functions.lobbying-summary]
+    verify_jwt = false
+  [functions.manage-agenda-items]
+    verify_jwt = false
+  [functions.manage-corrections]
+    verify_jwt = false
+  [functions.parse-bill]
+    verify_jwt = false
+  [functions.permit-timeline-stats]
+    verify_jwt = false
+  [functions.properties-bulk]
+    verify_jwt = false
+  [functions.property-assessment]
+    verify_jwt = false
+  [functions.solar-insights]
+    verify_jwt = false
+  [functions.sync-agenda-items]
+    verify_jwt = false
+  [functions.sync-council-data]
+    verify_jwt = false
+  [functions.sync-solar-data]
+    verify_jwt = false
+  [functions.unified-assessment]
+    verify_jwt = false
+  [functions.vote-agenda-item]
+    verify_jwt = false
+  [functions.yearly-stats]
+    verify_jwt = false
