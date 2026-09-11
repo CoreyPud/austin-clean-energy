@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import BackToHome from "@/components/BackToHome";
 
 export default function CourseLogin() {
   useSeo({
@@ -62,7 +63,9 @@ export default function CourseLogin() {
   }
 
   return (
-    <div className="container mx-auto max-w-md px-4 py-12">
+    <>
+    <BackToHome />
+    <div className="container mx-auto max-w-md px-4 py-8">
       <Card>
         <CardHeader>
           <CardTitle className="font-serif text-2xl">
