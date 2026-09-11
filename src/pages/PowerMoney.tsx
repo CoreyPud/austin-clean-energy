@@ -177,6 +177,13 @@ const PowerMoney = () => {
       .catch((e) => setError(e?.message ?? "Failed to load data"));
   }, []);
 
+  useEffect(() => {
+    if (!data || window.location.hash !== "#peaker-vs-battery") return;
+    window.requestAnimationFrame(() => {
+      document.getElementById("peaker-vs-battery")?.scrollIntoView({ block: "start" });
+    });
+  }, [data]);
+
   // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
   // the Value of Solar credit and rebates instead of fuel and plant costs.
   const compareRows = useMemo<ComparisonRow[]>(() => {
