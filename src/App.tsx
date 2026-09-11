@@ -27,6 +27,8 @@ import GuideDetail from "./pages/GuideDetail";
 import Contact from "./pages/Contact";
 import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
+import AdminSolarHelpRequests from "./pages/AdminSolarHelpRequests";
+
 import AdminSchemaDocs from "./pages/AdminSchemaDocs";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
@@ -130,6 +132,8 @@ const AppRoutes = () => {
         <Route path="/admin/pir-import" element={<PIRImport />} />
         <Route path="/admin/data-comparison" element={<DataComparison />} />
         <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
+        <Route path="/admin/solar-help-requests" element={<AdminSolarHelpRequests />} />
+
         <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
         <Route path="/admin/course-results" element={<AdminCourseResults />} />
 

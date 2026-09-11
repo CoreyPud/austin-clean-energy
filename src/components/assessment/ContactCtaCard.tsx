@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
 
 const FORM_ACTION =
   "https://docs.google.com/forms/u/0/d/e/1FAIpQLSfDDzb_DouZV7dw-ZokNcF7Hf3Bhbsz-y-qhTwlEKSfr6uYVQ/formResponse";
@@ -27,17 +29,32 @@ const ContactCtaCard = ({
     e.preventDefault();
     if (!email.trim() || !name.trim() || !message.trim()) return;
     setSubmitting(true);
+    // Google Form stays in place as-is; the database write below is additional tracking, and
+    // also triggers the admin notification email server-side.
     const body = new URLSearchParams({
       "entry.1386205263": email.trim(),
       "entry.261471367": name.trim(),
       "entry.1001404696": message.trim(),
     });
-    try {
-      await fetch(FORM_ACTION, { method: "POST", mode: "no-cors", body });
-    } catch {}
+    const results = await Promise.allSettled([
+      fetch(FORM_ACTION, { method: "POST", mode: "no-cors", body }),
+      supabase.functions.invoke("submit-solar-help-request", {
+        body: {
+          name: name.trim(),
+          email: email.trim(),
+          message: message.trim(),
+          source_page: window.location.pathname,
+        },
+      }),
+    ]);
+    const stored = results[1];
+    if (stored.status === "rejected" || (stored.value as { error?: unknown })?.error) {
+      console.error("Failed to record solar help request", stored);
+    }
     setSubmitted(true);
     setSubmitting(false);
   };
+
 
   return (
     <Card className="border-2 border-secondary/30 shadow-md bg-gradient-to-br from-secondary/5 via-background to-background">
