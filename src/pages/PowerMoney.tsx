@@ -179,9 +179,10 @@ const PowerMoney = () => {
 
   useEffect(() => {
     if (!data || window.location.hash !== "#peaker-vs-battery") return;
-    window.requestAnimationFrame(() => {
+    const scrollTimer = window.setTimeout(() => {
       document.getElementById("peaker-vs-battery")?.scrollIntoView({ block: "start" });
-    });
+    }, 500);
+    return () => window.clearTimeout(scrollTimer);
   }, [data]);
 
   // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
