@@ -37,6 +37,7 @@ export default function CouncilMembers() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
+        <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Back to Home</Link>
         <CouncilNav />
         <header className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
