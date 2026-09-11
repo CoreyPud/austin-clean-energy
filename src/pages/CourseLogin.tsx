@@ -130,5 +130,6 @@ export default function CourseLogin() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }
