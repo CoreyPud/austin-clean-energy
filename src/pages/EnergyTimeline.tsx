@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import TimelineRail from "@/components/energy-timeline/TimelineRail";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSeo } from "@/hooks/use-seo";
