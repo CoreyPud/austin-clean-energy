@@ -388,8 +388,9 @@ function DurationChart({ year, showTip, hideTip }: { year: YearKey; showTip: Sho
           </div>
         ))}
       </div>
-      <div className="pvb-durnote">
-        <b>Capex vs. opex, spelled out:</b> none of the dollar figures above subtract the $1B it took to build any of
+      <details className="pvb-disclosure pvb-durnote">
+        <summary>Capital cost versus operating margin</summary>
+        <p><b>Capex vs. opex, spelled out:</b> none of the dollar figures above subtract the $1B it took to build any of
         these &mdash; every bar (and the dashed line) is pure operating margin, revenue minus running cost, in one
         real year. Rough, undiscounted payback &mdash; $1B &divide; that year's margin, ignoring financing, taxes,
         capacity payments and everything else &mdash; runs <b>~{Math.round(1000 / curve[0].total_m)} years</b> for
@@ -397,8 +398,8 @@ function DurationChart({ year, showTip, hideTip }: { year: YearKey; showTip: Sho
         <b>~{peakerPayback} years</b> for the 400&nbsp;MW peaker in {year}. That's the honest point of this chart: at
         real {year} prices, arbitrage-only or margin-only economics don't come close to repaying a $1B build on
         their own &mdash; either technology needs more than what's plotted here (capacity payments, ancillary
-        services, decades of runtime) to actually pencil out.
-      </div>
+        services, decades of runtime) to actually pencil out.</p>
+      </details>
     </>
   );
 }
@@ -562,8 +563,8 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
         </div>
       </div>
 
-      <div className="pvb-notrevenue">
-        <div className="pvb-notrevenue-label">Savings, not revenue</div>
+      <details className="pvb-disclosure pvb-notrevenue">
+        <summary>Savings, not revenue</summary>
         <p>
           Nobody buys this margin. Austin Energy serves its own customers, so when the peaker clears its cost or the
           battery discharges, AE simply doesn't have to go <b>buy</b> that megawatt-hour from ERCOT at the real-time
@@ -572,7 +573,7 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
           market. (AE could instead choose to sell surplus output for real merchant revenue &mdash; that's a
           different, separate business decision than the one modeled here.)
         </p>
-      </div>
+      </details>
     </>
   );
 }
@@ -637,13 +638,13 @@ function PaybackTable({ year }: { year: YearKey }) {
           </tbody>
         </table>
       </div>
-      <p className="pvb-paynote">
+      <details className="pvb-disclosure pvb-paynote"><summary>What this simple payback leaves out</summary><p>
         Every option here takes {Math.round(fastest)}–{Math.round(slowest)} years to earn back its $1B from energy
         savings alone in {year} — longer than a battery's typical 15&ndash;20 year service life, and on the same
         order as (or longer than) a gas plant's 30&ndash;40 year life. None of these "pay for themselves" as a pure
         buy-vs.-avoid-buying play; the real case for either one depends on revenue this table doesn't count &mdash;
         capacity payments, ancillary services, or reliability value.
-      </p>
+      </p></details>
     </>
   );
 }
@@ -960,10 +961,16 @@ export default function PeakerVsBattery() {
           <MonthlyEconChart year={year} showTip={showTip} hideTip={hideTip} />
         </section>
 
-        <section className="pvb-panel">
+        <section className="pvb-panel pvb-supporting">
           <h2>Method &amp; honest caveats</h2>
-          <Caveats />
-          <SourcesFooter />
+          <details className="pvb-disclosure">
+            <summary>Open methodology and caveats</summary>
+            <Caveats />
+          </details>
+          <details className="pvb-disclosure">
+            <summary>Sources</summary>
+            <SourcesFooter />
+          </details>
         </section>
       </div>
 

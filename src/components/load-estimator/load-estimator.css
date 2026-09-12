@@ -260,6 +260,26 @@
 }
 .load-estimator .le-footer a { color: var(--le-ink-muted); }
 
+/* Open report layout */
+.load-estimator .le-section { margin-top: 52px; padding-top: 30px; border-top: 1px solid var(--le-line); }
+.load-estimator .le-stat-row { gap: 0; border-block: 1px solid var(--le-line); }
+.load-estimator .le-stat-tile { background: transparent; border: 0; border-right: 1px solid var(--le-line); border-radius: 0; padding: 18px; }
+.load-estimator .le-stat-tile:last-child { border-right: 0; }
+.load-estimator .le-card-grid { gap: 0 28px; }
+.load-estimator .le-card { background: transparent; border: 0; border-radius: 0; border-top: 1px solid var(--le-line); padding: 20px 0 24px 16px; overflow: visible; }
+.load-estimator .le-card::before { width: 3px; top: 20px; bottom: 24px; }
+.load-estimator .le-comp-wrap { background: transparent; border: 0; border-radius: 0; padding: 24px 0 18px; }
+.load-estimator .le-disclosure { margin-top: 18px; border-top: 1px solid var(--le-line); border-bottom: 1px solid var(--le-line); color: var(--le-ink-muted); }
+.load-estimator .le-disclosure summary { cursor: pointer; list-style: none; padding: 14px 32px 14px 0; color: var(--le-ink); font: 600 12px "IBM Plex Mono", monospace; text-transform: uppercase; position: relative; }
+.load-estimator .le-disclosure summary::-webkit-details-marker { display: none; }
+.load-estimator .le-disclosure summary::after { content: "+"; position: absolute; right: 4px; font-size: 18px; line-height: 1; }
+.load-estimator .le-disclosure[open] summary::after { content: "−"; }
+.load-estimator .le-disclosure summary:focus-visible { outline: 2px solid var(--le-accent); outline-offset: 4px; }
+.load-estimator .le-disclosure > p, .load-estimator .le-disclosure > div { margin: 0; padding: 0 0 18px; }
+.load-estimator .le-caveat-note { max-width: none; padding: 0; background: transparent; border-left: 0; border-radius: 0; }
+.load-estimator .le-footer { display: block; padding-top: 0; }
+.load-estimator .le-footer > div { display: grid; gap: 8px; }
+
 @media (max-width: 720px) {
   .load-estimator .le-stat-row { grid-template-columns: repeat(2, 1fr); }
   .load-estimator .le-card-grid { grid-template-columns: 1fr; }
@@ -269,4 +289,6 @@
   .load-estimator .le-field-row { align-items: flex-start; flex-wrap: wrap; }
   .load-estimator .le-field-row label { flex-basis: calc(100% - 100px); }
   .load-estimator .le-field-row input[type="range"] { flex-basis: 100%; order: 3; }
+  .load-estimator .le-stat-tile:nth-child(2) { border-right: 0; }
+  .load-estimator .le-stat-tile:nth-child(-n+2) { border-bottom: 1px solid var(--le-line); }
 }

@@ -192,6 +192,23 @@
 .peaker-vs-battery .pvb-caveats b { color: var(--pvb-ink); font-weight: 600; }
 .peaker-vs-battery .pvb-src { margin-top: 6px; font-size: 11.5px; color: var(--pvb-ink-faint); line-height: 1.6; }
 
+/* Open chapter layout */
+.peaker-vs-battery .pvb-hero { gap: 0; background: transparent; border-inline: 0; border-radius: 0; box-shadow: none; }
+.peaker-vs-battery .pvb-htile { background: transparent; border-right: 1px solid var(--pvb-line); }
+.peaker-vs-battery .pvb-htile:last-child { border-right: 0; }
+.peaker-vs-battery .pvb-panel { background: transparent; border: 0; border-top: 1px solid var(--pvb-line); border-radius: 0; padding: 30px 0 6px; margin: 0 0 42px; box-shadow: none; }
+.peaker-vs-battery .pvb-disclosure { margin-top: 18px; border-top: 1px solid var(--pvb-line); border-bottom: 1px solid var(--pvb-line); color: var(--pvb-ink-muted); }
+.peaker-vs-battery .pvb-disclosure summary { cursor: pointer; list-style: none; padding: 14px 32px 14px 0; color: var(--pvb-ink); font: 600 11.5px 'IBM Plex Mono', monospace; text-transform: uppercase; position: relative; }
+.peaker-vs-battery .pvb-disclosure summary::-webkit-details-marker { display: none; }
+.peaker-vs-battery .pvb-disclosure summary::after { content: "+"; position: absolute; right: 4px; font-size: 18px; line-height: 1; }
+.peaker-vs-battery .pvb-disclosure[open] summary::after { content: "−"; }
+.peaker-vs-battery .pvb-disclosure summary:focus-visible { outline: 2px solid var(--pvb-battery); outline-offset: 4px; }
+.peaker-vs-battery .pvb-disclosure > p, .peaker-vs-battery .pvb-disclosure > div, .peaker-vs-battery .pvb-disclosure > footer { margin: 0; padding: 0 0 18px; }
+.peaker-vs-battery .pvb-durnote, .peaker-vs-battery .pvb-notrevenue, .peaker-vs-battery .pvb-paynote { background: transparent; border-left: 0; border-radius: 0; padding: 0; }
+.peaker-vs-battery .pvb-notrevenue-label { display: none; }
+.peaker-vs-battery .pvb-supporting { margin-bottom: 0; }
+.peaker-vs-battery .pvb-src { border: 0; }
+
 @media (max-width: 640px) {
   .peaker-vs-battery .pvb-barchart { height: 140px; }
   .peaker-vs-battery .pvb-heat td { width: 17px; }

@@ -214,15 +214,17 @@ export default function LoadEstimator({ className = "" }: { className?: string }
               <div className="le-sub">16.68% of FY2024 sales</div>
             </div>
           </div>
-          <p className="le-caveat-note">
-            A caveat worth flagging: the underlying tool's 22,177 figure counts building permits that were{" "}
-            <b>issued</b> (approved for construction), not permits still awaiting approval — but issuance isn't
-            completion. The site doesn't publish a date cutoff for its permit dataset, and a permit issued in,
-            say, 2021 has likely already finished construction and is occupied today. That means some slice of
-            this 533.1 MW is probably already reflected in Austin Energy's current 3,067 MW peak, not still "on
-            the way." Treat the committed-pipeline figure as an upper bound on what's genuinely still coming,
-            not a precise one.
-          </p>
+          <details className="le-disclosure le-caveat-note">
+            <summary>Important caveat about the permit pipeline</summary>
+            <p>
+              The underlying tool's 22,177 figure counts building permits that were <b>issued</b> (approved for
+              construction), not permits still awaiting approval — but issuance isn't completion. The site doesn't
+              publish a date cutoff for its permit dataset, and a permit issued in, say, 2021 has likely already
+              finished construction and is occupied today. That means some slice of this 533.1 MW is probably already
+              reflected in Austin Energy's current 3,067 MW peak, not still "on the way." Treat the committed-pipeline
+              figure as an upper bound on what's genuinely still coming, not a precise one.
+            </p>
+          </details>
         </section>
 
         {/* 02 — builder */}
@@ -383,8 +385,10 @@ export default function LoadEstimator({ className = "" }: { className?: string }
         {/* 04 — methodology */}
         <section className="le-section">
           <h2 className="le-section-title"><span className="le-num">04</span> Methodology &amp; caveats</h2>
-          <div className="le-method-grid">
-            <div className="le-method-col">
+          <details className="le-disclosure">
+            <summary>Open methodology and caveats</summary>
+            <div className="le-method-grid">
+              <div className="le-method-col">
               <h4>How the math works</h4>
               <ul>
                 <li>Homes and units: <code>peak_mw = (kwh_per_yr ÷ 8760 ÷ load_factor) ÷ 1000</code>, per unit × count — identical formula to the underlying permit tool.</li>
@@ -392,8 +396,8 @@ export default function LoadEstimator({ className = "" }: { className?: string }
                 <li>Dog's Head uses the same home/unit formula as single-family and multifamily above, plus an assumed 12 kWh/sqft/yr blended EUI for its 9M sqft of commercial space — all scaled by the "% built &amp; energized" slider.</li>
                 <li>Projected total peak = today's record peak (3,067 MW) + the committed permit pipeline (533.1 MW, fixed) + your scenario (adjustable).</li>
               </ul>
-            </div>
-            <div className="le-method-col">
+              </div>
+              <div className="le-method-col">
               <h4>What to distrust</h4>
               <ul>
                 <li>This is a scenario calculator, not a forecast or a load-flow study — it has no view of feeder capacity, substation headroom, or timing, only aggregate peak MW.</li>
@@ -403,23 +407,27 @@ export default function LoadEstimator({ className = "" }: { className?: string }
                 <li>A load factor near 1.0 for data centers assumes near-continuous draw at rated capacity; a real facility ramps in over months to years, not instantly.</li>
                 <li>Dog's Head is a 28-year build-out (2030–2057) with no public phasing schedule yet — the "% built" slider has no timeline attached to it, so it can't tell you which year a given percentage would land in.</li>
               </ul>
+              </div>
             </div>
-          </div>
+          </details>
         </section>
 
-        <footer className="le-footer">
-          <span>
-            Part of the Secret Vote toolkit · extends the{" "}
-            <a href="https://austincleanenergy.net/building-energy-usage" target="_blank" rel="noopener">
-              Austin Clean Energy building-permit tool
-            </a>
-          </span>
-          <span>
-            Sources: Austin Clean Energy (ECAD + permit data) · EIA RECS · City of Austin memorandum, Aug. 25 2026 ·
-            Austin Energy FY2024 sales &amp; Aug. 2023 peak · Dog's Head reporting (KUT News, Austin Current, 2026) ·
-            EV depot-charging benchmarks (NREL, Joint Office of Energy and Transportation)
-          </span>
-        </footer>
+        <details className="le-disclosure le-footer">
+          <summary>Sources and project context</summary>
+          <div>
+            <span>
+              Part of the Secret Vote toolkit · extends the{" "}
+              <a href="https://austincleanenergy.net/building-energy-usage" target="_blank" rel="noopener">
+                Austin Clean Energy building-permit tool
+              </a>
+            </span>
+            <span>
+              Sources: Austin Clean Energy (ECAD + permit data) · EIA RECS · City of Austin memorandum, Aug. 25 2026 ·
+              Austin Energy FY2024 sales &amp; Aug. 2023 peak · Dog's Head reporting (KUT News, Austin Current, 2026) ·
+              EV depot-charging benchmarks (NREL, Joint Office of Energy and Transportation)
+            </span>
+          </div>
+        </details>
       </div>
     </div>
   );
