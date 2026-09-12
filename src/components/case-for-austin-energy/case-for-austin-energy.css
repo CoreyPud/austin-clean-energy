@@ -397,6 +397,28 @@
   color: var(--cae-ink-faint);
 }
 
+/* Open chapter layout */
+.case-for-austin-energy section { margin-top: 56px; padding-top: 30px; border-top: 1px solid var(--cae-line); }
+.case-for-austin-energy .cae-snum { border: 0; border-radius: 0; padding: 0; color: var(--cae-muni-ink); }
+.case-for-austin-energy .cae-chartbox { background: transparent; border: 0; border-radius: 0; padding: 10px 0 0; box-shadow: none; }
+.case-for-austin-energy .cae-tiles { gap: 0; border-block: 1px solid var(--cae-line); }
+.case-for-austin-energy .cae-tile { background: transparent; border: 0; border-right: 1px solid var(--cae-line); border-radius: 0; padding: 18px; }
+.case-for-austin-energy .cae-tile:last-child { border-right: 0; }
+.case-for-austin-energy .cae-quotegrid { gap: 28px; }
+.case-for-austin-energy .cae-qcard { background: transparent; border: 0; border-left: 2px solid var(--cae-muni); border-radius: 0; padding: 4px 0 4px 18px; }
+.case-for-austin-energy .cae-disclosure { margin-top: 18px; border-top: 1px solid var(--cae-line); border-bottom: 1px solid var(--cae-line); color: var(--cae-ink-muted); }
+.case-for-austin-energy .cae-disclosure summary { cursor: pointer; list-style: none; padding: 14px 32px 14px 0; color: var(--cae-ink); font: 600 0.76rem "IBM Plex Mono", monospace; text-transform: uppercase; position: relative; }
+.case-for-austin-energy .cae-disclosure summary::-webkit-details-marker { display: none; }
+.case-for-austin-energy .cae-disclosure summary::after { content: "+"; position: absolute; right: 4px; font-size: 18px; line-height: 1; }
+.case-for-austin-energy .cae-disclosure[open] summary::after { content: "−"; }
+.case-for-austin-energy .cae-disclosure summary:focus-visible { outline: 2px solid var(--cae-muni); outline-offset: 4px; }
+.case-for-austin-energy .cae-disclosure > p, .case-for-austin-energy .cae-disclosure > ul { margin: 0; padding-bottom: 18px; }
+.case-for-austin-energy .cae-status { display: block; background: transparent; border-left: 0; border-radius: 0; padding: 0; }
+.case-for-austin-energy .cae-status summary { display: flex; align-items: center; gap: 10px; color: var(--cae-dereg-ink); }
+.case-for-austin-energy .cae-status .cae-dot { margin-top: 0; }
+.case-for-austin-energy .cae-fine { font-size: 0.78rem; }
+.case-for-austin-energy .cae-sources { padding-top: 0; }
+
 @media (max-width: 640px) {
   .case-for-austin-energy .cae-quotegrid {
     grid-template-columns: 1fr;
@@ -407,4 +429,6 @@
   .case-for-austin-energy .cae-tiles {
     grid-template-columns: 1fr;
   }
+  .case-for-austin-energy .cae-tile { border-right: 0; border-bottom: 1px solid var(--cae-line); }
+  .case-for-austin-energy .cae-tile:last-child { border-bottom: 0; }
 }
