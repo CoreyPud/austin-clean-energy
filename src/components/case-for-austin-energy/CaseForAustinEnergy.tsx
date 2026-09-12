@@ -91,15 +91,15 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           &mdash; and what Austin stands to lose.
         </p>
 
-        <div className="cae-status">
-          <span className="cae-dot" />
+        <details className="cae-disclosure cae-status">
+          <summary><span className="cae-dot" /><strong>Not law yet</strong></summary>
           <p>
-            <strong>NOT LAW YET</strong> &mdash; Abbott announced this as a legislative push in August 2026; it
+            Abbott announced this as a legislative push in August 2026; it
             would require the Texas Legislature to act. Austin Energy and CPS Energy (San Antonio) remain
             municipally owned monopolies today. This page compares how that model is actually performing
             against the deregulated market Abbott wants to move Austin into.
           </p>
-        </div>
+        </details>
 
         <section>
           <div className="cae-shead">
@@ -137,7 +137,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             ]}
           />
           <BarChart rows={PRICE_ROWS} />
-          <p className="cae-fine">
+          <details className="cae-disclosure cae-fine"><summary>About advertised rates and national comparisons</summary><p>
             Deregulated markets do advertise cheaper <em>teaser</em> plans &mdash; as low as 6.7&ndash;7.2&cent;/kWh
             in Dallas and Houston &mdash; but Public Citizen&rsquo;s Kaiba White has pointed out those
             introductory rates tend to climb once the promotional period ends, so keeping ahead of a muni rate
@@ -146,7 +146,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             lowest advertised rate. Nationally, the American Public Power Association finds municipal-utility
             customers pay about <b>14% less</b> than customers of other utility types &mdash; $100&ndash;$320
             less per year on average.
-          </p>
+          </p></details>
         </section>
 
         <section>
@@ -169,14 +169,14 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             ]}
           />
           <BarChart rows={RELIABILITY_ROWS} />
-          <p className="cae-fine" style={{ marginTop: 12 }}>
+          <details className="cae-disclosure cae-fine"><summary>Reliability context and source notes</summary><p>
             Public power utilities were also the <b>only</b> ownership type to consistently average fewer than
             one outage per customer per year (0.845), and during major events like storms, public power
             customers were back on in roughly 2.5 hours &mdash; about 3 hours faster than investor-owned
             utility customers. Source: EIA data via the American Public Power Association, published March
             2025. This is a national comparison across ownership types, not an Austin-specific measurement
             &mdash; but it&rsquo;s the same structural distinction Abbott&rsquo;s plan would move Austin across.
-          </p>
+          </p></details>
         </section>
 
         <section>
@@ -192,7 +192,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             supplying 36%.
           </p>
           <MixStack />
-          <p className="cae-fine">
+          <details className="cae-disclosure cae-fine"><summary>How these generation mixes compare</summary><p>
             These two figures aren&rsquo;t measured quite the same way &mdash; Austin&rsquo;s is one
             utility&rsquo;s own reported generation mix for a single quarter, ERCOT&rsquo;s is the whole
             grid&rsquo;s fuel mix averaged over three quarters, and the statewide &ldquo;other&rdquo; category
@@ -202,7 +202,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             argued the new gas peakers themselves would free up money currently spent on grid congestion to
             invest in more renewables, since peakers &ldquo;don&rsquo;t displace renewables,&rdquo; per staff
             comments at that same May 2026 meeting.
-          </p>
+          </p></details>
         </section>
 
         <section>
@@ -224,7 +224,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
               </div>
             ))}
           </div>
-          <p className="cae-fine" style={{ marginTop: 16 }}>
+          <details className="cae-disclosure cae-fine"><summary>Budget and transition context</summary><p>
             San Antonio&rsquo;s CPS Energy, facing the same proposal, budgeted <b>$559.7 million</b> in
             transfers to that city for fiscal year 2027. Mayor Kirk Watson has described the transition as a
             technically difficult process that would take years and end up costing customers well over a
@@ -232,7 +232,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             winners of deregulation would be large industrial customers, not residents. And Austin&rsquo;s 2035
             climate plan is built around Austin Energy&rsquo;s own resource planning &mdash; breaking up the
             utility puts that plan&rsquo;s authority in question too.
-          </p>
+          </p></details>
         </section>
 
         <section>
@@ -250,8 +250,8 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </div>
         </section>
 
-        <footer className="cae-sources">
-          <h3>Sources</h3>
+        <details className="cae-disclosure cae-sources">
+          <summary>Sources and last review</summary>
           <ul>
             {SOURCES.map((s) => (
               <li key={s.title}>
@@ -269,7 +269,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             Secret Vote documentary project &middot; explainer, not a Secret Vote scene &middot; last checked
             September 2026
           </p>
-        </footer>
+        </details>
       </div>
     </div>
   );

@@ -525,20 +525,25 @@ export default function PricingPressure({ className = "" }: { className?: string
             </div>
           </div>
 
-          <div className="pp-callout">
-            <b>Read this as a range, not a prediction.</b> Move the sliders to zero growth and the chart just
-            holds flat at $7.17 — that's a legitimate scenario too. The point isn't the specific dollar figure;
-            it's that ERCOT's own numbers describe a load surge arriving years before its own relief project
-            does, and Austin Energy's basis-cost history shows that kind of gap has produced multi-year price
-            pressure before.
-          </div>
+          <details className="pp-disclosure pp-callout">
+            <summary>How to interpret this scenario</summary>
+            <p>
+              <b>Read this as a range, not a prediction.</b> Move the sliders to zero growth and the chart just
+              holds flat at $7.17 — that's a legitimate scenario too. The point isn't the specific dollar figure;
+              it's that ERCOT's own numbers describe a load surge arriving years before its own relief project
+              does, and Austin Energy's basis-cost history shows that kind of gap has produced multi-year price
+              pressure before.
+            </p>
+          </details>
         </section>
 
         {/* 04 — methodology */}
         <section className="pp-section">
           <h2 className="pp-section-title"><span className="pp-num">04</span> What this tool can't see</h2>
-          <div className="pp-method-grid">
-            <div className="pp-method-col">
+          <details className="pp-disclosure">
+            <summary>Open methodology and limitations</summary>
+            <div className="pp-method-grid">
+              <div className="pp-method-col">
               <h4>How the math works</h4>
               <ul>
                 <li>Baseline is 2025's actual adverse-basis cost, <code>$7.17/MWh</code>.</li>
@@ -546,8 +551,8 @@ export default function PricingPressure({ className = "" }: { className?: string
                 <li>The shaded band is a flat ±20% around that central path — a visual reminder of uncertainty, not a modeled confidence interval.</li>
                 <li>Cumulative cost multiplies the gap between projected and flat-baseline cost by an assumed ~12 million MWh/yr of fleet generation, the 2024–25 average.</li>
               </ul>
-            </div>
-            <div className="pp-method-col">
+              </div>
+              <div className="pp-method-col">
               <h4>What it is <em>not</em></h4>
               <ul>
                 <li>Not a power-flow or locational-marginal-price simulation — it has no model of the grid's actual topology, congestion patterns, or ERCOT's dispatch stack.</li>
@@ -556,17 +561,21 @@ export default function PricingPressure({ className = "" }: { className?: string
                 <li>It treats one Central Texas project (Euclid–Hillje) as a stand-in for "relief," when the real picture includes dozens of concurrent ERCOT transmission and market-design changes, any of which could move faster or slower.</li>
                 <li>The growth-rate presets are calibrated loosely against 2021–23 history and the scale of ERCOT's 2031 forecast revision — they are not statistically fit or independently modeled.</li>
               </ul>
+              </div>
             </div>
-          </div>
+          </details>
         </section>
 
-        <footer className="pp-footer">
-          <span>Part of the Secret Vote toolkit · historical basis-cost data via Chris Gillett's ERCOT settlement-data tool</span>
-          <span>
-            Sources: ERCOT 2025 Report on Existing and Potential Electric System Constraints and Needs · ERCOT
-            board STEP approval, Dec. 2025 · 26RPG001 Euclid 765-kV filing · Gov. Abbott data-center audit, Aug. 2026
-          </span>
-        </footer>
+        <details className="pp-disclosure pp-footer">
+          <summary>Sources and project context</summary>
+          <div>
+            <span>Part of the Secret Vote toolkit · historical basis-cost data via Chris Gillett's ERCOT settlement-data tool</span>
+            <span>
+              Sources: ERCOT 2025 Report on Existing and Potential Electric System Constraints and Needs · ERCOT
+              board STEP approval, Dec. 2025 · 26RPG001 Euclid 765-kV filing · Gov. Abbott data-center audit, Aug. 2026
+            </span>
+          </div>
+        </details>
       </div>
     </div>
   );
