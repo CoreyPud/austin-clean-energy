@@ -1,5 +1,4 @@
 import "./case-for-austin-energy.css";
-import "@/styles/research-page.css";
 import {
   PRICE_ROWS,
   RELIABILITY_ROWS,

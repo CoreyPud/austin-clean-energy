@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import "./load-estimator.css";
-import "@/styles/research-page.css";
 import {
   SFH_KWH,
   SFH_LF,
@@ -234,7 +233,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
             Each category converts to peak MW the same way the base tool does. annual energy use ÷ 8,760 hours
             ÷ a load factor (or, where noted, entered directly as peak MW). Every default is editable. Figures
             marked <span className="le-badge le-sourced">sourced</span> come from a cited benchmark; figures
-            marked <span className="le-badge le-assumption">assumption</span> are this tool's own placeholder —
+            marked <span className="le-badge le-assumption">assumption</span> are starting points.
             adjust them if you have a better basis.
           </p>
 
@@ -346,7 +345,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
             <div className="le-stat-tile">
               <div className="le-label">Largest scenario category</div>
               <div className="le-value" style={{ fontSize: 19, color: calc.largestCat ? calc.largestCat.colorVar : undefined }}>
-                {calc.largestCat ? calc.largestCat.label : "—"}
+                {calc.largestCat ? calc.largestCat.label : "None"}
               </div>
               <div className="le-sub">{calc.largestCat ? `${fmtMW(calc.largestVal)} of the scenario total` : "no scenario load entered yet"}</div>
             </div>

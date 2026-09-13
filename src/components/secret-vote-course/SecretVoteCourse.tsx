@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCourseAuth } from "@/hooks/use-course-auth";
 import "./secret-vote-course.css";
-import "@/styles/research-page.css";
 import {
   MODULES,
   QUIZZES,

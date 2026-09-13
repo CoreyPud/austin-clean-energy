@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import "./pricing-pressure.css";
-import "@/styles/research-page.css";
 import {
   HIST,
   BASELINE_YEAR,

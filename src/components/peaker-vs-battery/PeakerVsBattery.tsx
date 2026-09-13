@@ -1,6 +1,5 @@
 import { useState } from "react";
 import "./peaker-vs-battery.css";
-import "@/styles/research-page.css";
 import {
   MONTHS,
   DAYS_IN_MONTH,
