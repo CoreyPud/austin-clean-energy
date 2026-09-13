@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import "./pricing-pressure.css";
+import "@/styles/research-page.css";
 import {
   HIST,
   BASELINE_YEAR,
@@ -336,24 +337,22 @@ export default function PricingPressure({ className = "" }: { className?: string
   }
 
   return (
-    <div className={`pricing-pressure ${className}`}>
-      <div className="pp-page">
-        <div className="pp-masthead">
-          <div className="pp-kicker">Austin at a Glance · Assumption-Heavy Scenario Tool</div>
-          <h1 className="pp-title">Load Zone Pricing Pressure</h1>
-          <p className="pp-subtitle">
-            Austin Energy's generation fleet already pays a real, measurable "adverse basis" cost — the gap
-            between what its own resources settle for and the ERCOT hub price. This tool shows that history,
-            then lets you sketch out — openly, with a couple of adjustable knobs — whether ERCOT's
-            data-center-driven load surge could push that gap wider before new transmission catches up.
+    <div className={`pricing-pressure ace-research-page ${className}`}>
+      <div className="pp-page ace-page-shell">
+        <div className="pp-masthead ace-page-header">
+          <div className="pp-kicker ace-eyebrow">Austin Clean Energy research</div>
+          <h1 className="pp-title ace-page-title">Load Zone Pricing Pressure</h1>
+          <p className="pp-subtitle ace-page-lede">
+            Austin Energy pays an adverse basis cost when its resources settle below the ERCOT hub price. Explore
+            the history and test how load growth could widen that gap before new transmission arrives.
           </p>
           <p className="pp-subtitle pp-warn">This is a scenario sketch, not a forecast. Section 04 spells out everything it can't see.</p>
         </div>
 
         {/* 01 — history */}
-        <section className="pp-section">
+        <section className="pp-section ace-section">
           <h2 className="pp-section-title"><span className="pp-num">01</span> The real, measured history</h2>
-          <h3 className="pp-section-sub">Austin Energy's fleet-wide adverse basis cost, 2018–2026</h3>
+          <h3 className="pp-section-sub ace-section-heading">Austin Energy's fleet-wide adverse basis cost, 2018–2026</h3>
           <p className="pp-section-lede">
             Computed from ERCOT day-ahead and real-time settlement data across roughly 30 Austin-Energy-related
             generation resources by researcher Chris Gillett — the same dataset already underpinning the Peaker
@@ -386,9 +385,9 @@ export default function PricingPressure({ className = "" }: { className?: string
         </section>
 
         {/* 02 — drivers */}
-        <section className="pp-section">
+        <section className="pp-section ace-section">
           <h2 className="pp-section-title"><span className="pp-num">02</span> What could push it higher</h2>
-          <h3 className="pp-section-sub">Two real, sourced numbers — no assumptions yet</h3>
+          <h3 className="pp-section-sub ace-section-heading">Two sourced numbers, before assumptions</h3>
           <p className="pp-section-lede">
             Before any scenario knob gets touched, here's what ERCOT itself has published about the gap between
             how fast load is arriving and how fast transmission relief is being built.
@@ -424,9 +423,9 @@ export default function PricingPressure({ className = "" }: { className?: string
         </section>
 
         {/* 03 — scenario */}
-        <section className="pp-section">
+        <section className="pp-section ace-section">
           <h2 className="pp-section-title"><span className="pp-num">03</span> Sketch a scenario</h2>
-          <h3 className="pp-section-sub">If load keeps outrunning relief, how far could basis cost drift?</h3>
+          <h3 className="pp-section-sub ace-section-heading">How far could basis cost drift?</h3>
           <p className="pp-section-lede">
             One knob for how fast pressure builds, one for when relief arrives. Both apply a simple compounding
             rate to the 2025 baseline — not a power-flow model, just a transparent "what if this pattern from
@@ -525,7 +524,7 @@ export default function PricingPressure({ className = "" }: { className?: string
             </div>
           </div>
 
-          <details className="pp-disclosure pp-callout">
+          <details className="pp-disclosure pp-callout ace-disclosure">
             <summary>How to interpret this scenario</summary>
             <p>
               <b>Read this as a range, not a prediction.</b> Move the sliders to zero growth and the chart just
@@ -538,9 +537,9 @@ export default function PricingPressure({ className = "" }: { className?: string
         </section>
 
         {/* 04 — methodology */}
-        <section className="pp-section">
+        <section className="pp-section ace-section">
           <h2 className="pp-section-title"><span className="pp-num">04</span> What this tool can't see</h2>
-          <details className="pp-disclosure">
+          <details className="pp-disclosure ace-disclosure">
             <summary>Open methodology and limitations</summary>
             <div className="pp-method-grid">
               <div className="pp-method-col">
@@ -566,10 +565,10 @@ export default function PricingPressure({ className = "" }: { className?: string
           </details>
         </section>
 
-        <details className="pp-disclosure pp-footer">
+        <details className="pp-disclosure pp-footer ace-disclosure">
           <summary>Sources and project context</summary>
           <div>
-            <span>Part of the Secret Vote toolkit · historical basis-cost data via Chris Gillett's ERCOT settlement-data tool</span>
+            <span>Historical basis-cost data from Chris Gillett's ERCOT settlement-data tool.</span>
             <span>
               Sources: ERCOT 2025 Report on Existing and Potential Electric System Constraints and Needs · ERCOT
               board STEP approval, Dec. 2025 · 26RPG001 Euclid 765-kV filing · Gov. Abbott data-center audit, Aug. 2026

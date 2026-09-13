@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./peaker-vs-battery.css";
+import "@/styles/research-page.css";
 import {
   MONTHS,
   DAYS_IN_MONTH,
@@ -848,19 +849,16 @@ export default function PeakerVsBattery() {
   const { tip, showTip, hideTip } = useTooltip();
 
   return (
-    <div className="peaker-vs-battery">
-      <div className="pvb-page">
-        <div className="pvb-kicker">Secret Vote &middot; Real dispatch data</div>
-        <h1>Peaker vs. Battery</h1>
-        <p className="pvb-dek">
-          Real 15-minute Austin load-zone prices for 2024 and 2025 &mdash; the two most recent full, non-extreme
-          years &mdash; run through the dispatch logic each technology actually uses: <b>a battery discharges its
-          priciest hours and charges its cheapest</b>, <b>a peaker only turns on once price clears its real,
-          month-by-month fuel cost</b>. At $1B, that's &asymp;485&nbsp;MW of 2-hour battery or &asymp;400&nbsp;MW of
-          peaker &mdash; a 2-hour battery, not 4, because a shorter battery turns out to earn more per dollar once
-          you let the existing gas and coal fleet keep covering the long events (see &ldquo;How much duration&rdquo;
-          below).
+    <div className="peaker-vs-battery ace-research-page">
+      <div className="pvb-page ace-page-shell">
+        <div className="ace-page-header">
+        <div className="pvb-kicker ace-eyebrow">Austin Clean Energy research</div>
+        <h1 className="ace-page-title">Peaker vs. Battery</h1>
+        <p className="pvb-dek ace-page-lede">
+          Compare a battery and gas peaker using real 15-minute Austin prices from 2024 and 2025. The model shows
+          when each would run, its operating savings, and simple payback at a $1 billion scale.
         </p>
+        </div>
 
         <div className="pvb-yeartabs">
           <button className={year === "2024" ? "pvb-active" : ""} onClick={() => setYear("2024")}>
@@ -874,8 +872,8 @@ export default function PeakerVsBattery() {
 
         <HeroTiles year={year} />
 
-        <section className="pvb-panel">
-          <h2>When would each one actually run?</h2>
+        <section className="pvb-panel ace-section">
+          <h2 className="ace-section-heading">When would each one run?</h2>
           <p className="pvb-sub">
             Average real price by month and hour of day. The peaker's cost line moves with the real Henry Hub gas
             price each month (&#8776;$20&ndash;49/MWh across these two years, not one fixed number &mdash; see
@@ -886,8 +884,8 @@ export default function PeakerVsBattery() {
           <HeatSection year={year} showTip={showTip} hideTip={hideTip} />
         </section>
 
-        <section className="pvb-panel">
-          <h2>How much battery duration do you actually need?</h2>
+        <section className="pvb-panel ace-section">
+          <h2 className="ace-section-heading">How much battery duration is needed?</h2>
           <p className="pvb-sub">
             Both axes come from the same $1B, but they're not the same <i>kind</i> of number. The bar's x-position
             (MW) is what that $1B <b>buys</b> &mdash; Lazard's real installed-cost data says longer duration costs
@@ -899,8 +897,8 @@ export default function PeakerVsBattery() {
           <DurationChart year={year} showTip={showTip} hideTip={hideTip} />
         </section>
 
-        <section className="pvb-panel">
-          <h2>How the savings actually work</h2>
+        <section className="pvb-panel ace-section">
+          <h2 className="ace-section-heading">How the savings work</h2>
           <p className="pvb-sub">
             One real number drives every dollar figure on this page: the gap between what Austin Energy would have
             paid ERCOT for a megawatt-hour and what it actually costs the asset to supply that megawatt-hour itself.
@@ -910,8 +908,8 @@ export default function PeakerVsBattery() {
           <SavingsEquation year={year} showTip={showTip} hideTip={hideTip} />
         </section>
 
-        <section className="pvb-panel">
-          <h2>Does this pay for itself?</h2>
+        <section className="pvb-panel ace-section">
+          <h2 className="ace-section-heading">Does it pay for itself?</h2>
           <p className="pvb-sub">
             Same $1B, same real prices for the selected year &mdash; annual savings against Austin Energy simply
             buying that power from ERCOT, and a rough, undiscounted years-to-break-even. This ignores financing,
@@ -921,8 +919,8 @@ export default function PeakerVsBattery() {
           <PaybackTable year={year} />
         </section>
 
-        <section className="pvb-panel">
-          <h2>The battery's daily rhythm</h2>
+        <section className="pvb-panel ace-section">
+          <h2 className="ace-section-heading">The battery's daily rhythm</h2>
           <p className="pvb-sub">
             How often each hour of the day falls among the battery's cheapest 2 hours (charge) or priciest 2 hours
             (discharge), across every real day in the year. A peaker has no equivalent &mdash; it either clears its
@@ -941,8 +939,8 @@ export default function PeakerVsBattery() {
           <BatteryRhythmChart year={year} showTip={showTip} hideTip={hideTip} />
         </section>
 
-        <section className="pvb-panel">
-          <h2>Monthly economics</h2>
+        <section className="pvb-panel ace-section">
+          <h2 className="ace-section-heading">Monthly economics</h2>
           <p className="pvb-sub">
             What each technology would have captured per month, at the $1B-equivalent scale (485&nbsp;MW/2-hr
             battery vs. 400&nbsp;MW peaker) &mdash; battery: perfect-foresight arbitrage spread; peaker: operating
@@ -961,13 +959,13 @@ export default function PeakerVsBattery() {
           <MonthlyEconChart year={year} showTip={showTip} hideTip={hideTip} />
         </section>
 
-        <section className="pvb-panel pvb-supporting">
-          <h2>Method &amp; honest caveats</h2>
-          <details className="pvb-disclosure">
+        <section className="pvb-panel pvb-supporting ace-section">
+          <h2 className="ace-section-heading">Method and caveats</h2>
+          <details className="pvb-disclosure ace-disclosure">
             <summary>Open methodology and caveats</summary>
             <Caveats />
           </details>
-          <details className="pvb-disclosure">
+          <details className="pvb-disclosure ace-disclosure">
             <summary>Sources</summary>
             <SourcesFooter />
           </details>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./load-estimator.css";
+import "@/styles/research-page.css";
 import {
   SFH_KWH,
   SFH_LF,
@@ -167,23 +168,21 @@ export default function LoadEstimator({ className = "" }: { className?: string }
   }, [sfh, mf, dc1, dc2, dc3, mfg, other, ev, dogsheadPct]);
 
   return (
-    <div className={`load-estimator ${className}`}>
-      <div className="le-page">
-        <div className="le-masthead">
-          <div className="le-kicker">Austin at a Glance · Forward-Looking Scenario Tool</div>
-          <h1 className="le-title">Load Growth Estimator</h1>
-          <p className="le-subtitle">
-            Austin Energy's own permit pipeline only counts what's already been filed. This tool lets you layer{" "}
-            <em>hypothetical</em> future growth on top of it — houses, apartments, data centers, EV fleets,
-            industry — so you can see, in peak megawatts, what different growth stories would mean for the
-            system Austin Energy has to serve.
+    <div className={`load-estimator ace-research-page ${className}`}>
+      <div className="le-page ace-page-shell">
+        <div className="le-masthead ace-page-header">
+          <div className="le-kicker ace-eyebrow">Austin Clean Energy calculator</div>
+          <h1 className="le-title ace-page-title">Load Growth Estimator</h1>
+          <p className="le-subtitle ace-page-lede">
+            Add possible housing, data centers, industry, and EV fleets to Austin Energy's permit pipeline. See
+            how each scenario changes peak demand.
           </p>
         </div>
 
         {/* 01 — baseline */}
-        <section className="le-section">
+        <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">01</span> Where Austin Energy stands today</h2>
-          <h3 className="le-section-sub">The real, sourced baseline</h3>
+          <h3 className="le-section-sub ace-section-heading">The sourced baseline</h3>
           <p className="le-section-lede">
             These four figures are not estimates — they're Austin Energy's own record peak and sales, plus the
             committed-growth output of the{" "}
@@ -214,7 +213,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
               <div className="le-sub">16.68% of FY2024 sales</div>
             </div>
           </div>
-          <details className="le-disclosure le-caveat-note">
+          <details className="le-disclosure le-caveat-note ace-disclosure">
             <summary>Important caveat about the permit pipeline</summary>
             <p>
               The underlying tool's 22,177 figure counts building permits that were <b>issued</b> (approved for
@@ -228,9 +227,9 @@ export default function LoadEstimator({ className = "" }: { className?: string }
         </section>
 
         {/* 02 — builder */}
-        <section className="le-section">
+        <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">02</span> Build a scenario</h2>
-          <h3 className="le-section-sub">What else might show up that isn't in a permit yet?</h3>
+          <h3 className="le-section-sub ace-section-heading">What is not in a permit yet?</h3>
           <p className="le-section-lede">
             Each category converts to peak MW the same way the base tool does — annual energy use ÷ 8,760 hours
             ÷ a load factor (or, where noted, entered directly as peak MW). Every default is editable. Figures
@@ -325,9 +324,9 @@ export default function LoadEstimator({ className = "" }: { className?: string }
         </section>
 
         {/* 03 — summary */}
-        <section className="le-section">
+        <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">03</span> What it would mean for the system</h2>
-          <h3 className="le-section-sub">Today, plus what's committed, plus your scenario</h3>
+          <h3 className="le-section-sub ace-section-heading">Today's peak, committed growth, and your scenario</h3>
           <div className="le-stat-row" style={{ marginBottom: 18 }}>
             <div className="le-stat-tile">
               <div className="le-label">Your scenario adds</div>
@@ -383,9 +382,9 @@ export default function LoadEstimator({ className = "" }: { className?: string }
         </section>
 
         {/* 04 — methodology */}
-        <section className="le-section">
+        <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">04</span> Methodology &amp; caveats</h2>
-          <details className="le-disclosure">
+          <details className="le-disclosure ace-disclosure">
             <summary>Open methodology and caveats</summary>
             <div className="le-method-grid">
               <div className="le-method-col">
@@ -412,11 +411,11 @@ export default function LoadEstimator({ className = "" }: { className?: string }
           </details>
         </section>
 
-        <details className="le-disclosure le-footer">
+        <details className="le-disclosure le-footer ace-disclosure">
           <summary>Sources and project context</summary>
           <div>
             <span>
-              Part of the Secret Vote toolkit · extends the{" "}
+              Extends the{" "}
               <a href="https://austincleanenergy.net/building-energy-usage" target="_blank" rel="noopener">
                 Austin Clean Energy building-permit tool
               </a>

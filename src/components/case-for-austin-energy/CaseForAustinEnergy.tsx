@@ -1,4 +1,5 @@
 import "./case-for-austin-energy.css";
+import "@/styles/research-page.css";
 import {
   PRICE_ROWS,
   RELIABILITY_ROWS,
@@ -54,7 +55,7 @@ function MixStack() {
       {MIX_ROWS.map((row) => (
         <div className="cae-mixrow" key={row.title}>
           <div className="cae-mlabel">
-            <b>{row.title}</b> &mdash; {row.sourceNote}
+            <b>{row.title}</b>. {row.sourceNote}
             <span>{row.badge}</span>
           </div>
           <div className="cae-stack">
@@ -80,18 +81,20 @@ function MixStack() {
 
 export default function CaseForAustinEnergy({ className = "" }: { className?: string }) {
   return (
-    <div className={`case-for-austin-energy ${className}`}>
-      <div className="cae-page">
-        <div className="cae-kicker">Secret Vote &middot; Explainer</div>
-        <h1>The Case for Austin Energy</h1>
-        <p className="cae-dek">
+    <div className={`case-for-austin-energy ace-research-page ${className}`}>
+      <div className="cae-page ace-page-shell">
+        <div className="ace-page-header">
+        <div className="cae-kicker ace-eyebrow">Austin Clean Energy research</div>
+        <h1 className="ace-page-title">The Case for Austin Energy</h1>
+        <p className="cae-dek ace-page-lede">
           Gov. Greg Abbott wants to end Austin Energy&rsquo;s status as the city&rsquo;s only power provider and
           open Austin to the same competitive retail market Houston and Dallas already have. He says it would
           cut bills more than 10%. Here&rsquo;s what the actual price, reliability, and emissions data say
-          &mdash; and what Austin stands to lose.
+            and what Austin stands to lose.
         </p>
+        </div>
 
-        <details className="cae-disclosure cae-status">
+        <details className="cae-disclosure cae-status ace-disclosure">
           <summary><span className="cae-dot" /><strong>Not law yet</strong></summary>
           <p>
             Abbott announced this as a legislative push in August 2026; it
@@ -101,10 +104,10 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </p>
         </details>
 
-        <section>
+        <section className="ace-section">
           <div className="cae-shead">
             <span className="cae-snum">01</span>
-            <h2>What Abbott is proposing</h2>
+            <h2 className="ace-section-heading">What Abbott is proposing</h2>
           </div>
           <p className="cae-intro">
             In August 2026, Abbott announced a plan to dismantle the municipal-utility model in Texas cities
@@ -119,10 +122,10 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </p>
         </section>
 
-        <section>
+        <section className="ace-section">
           <div className="cae-shead">
             <span className="cae-snum">02</span>
-            <h2>Do Austinites actually pay more?</h2>
+            <h2 className="ace-section-heading">Do Austinites pay more?</h2>
           </div>
           <p className="cae-intro">
             No &mdash; on the numbers available right now, Austin Energy customers pay <b>less</b> than the
@@ -137,7 +140,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             ]}
           />
           <BarChart rows={PRICE_ROWS} />
-          <details className="cae-disclosure cae-fine"><summary>About advertised rates and national comparisons</summary><p>
+          <details className="cae-disclosure cae-fine ace-disclosure"><summary>Advertised rates and national comparisons</summary><p>
             Deregulated markets do advertise cheaper <em>teaser</em> plans &mdash; as low as 6.7&ndash;7.2&cent;/kWh
             in Dallas and Houston &mdash; but Public Citizen&rsquo;s Kaiba White has pointed out those
             introductory rates tend to climb once the promotional period ends, so keeping ahead of a muni rate
@@ -149,10 +152,10 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </p></details>
         </section>
 
-        <section>
+        <section className="ace-section">
           <div className="cae-shead">
             <span className="cae-snum">03</span>
-            <h2>Is the muni model less reliable?</h2>
+            <h2 className="ace-section-heading">Is public power less reliable?</h2>
           </div>
           <p className="cae-intro">
             The opposite, at least nationally. Sierra Club&rsquo;s Reed also warned that letting individual
@@ -169,7 +172,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             ]}
           />
           <BarChart rows={RELIABILITY_ROWS} />
-          <details className="cae-disclosure cae-fine"><summary>Reliability context and source notes</summary><p>
+          <details className="cae-disclosure cae-fine ace-disclosure"><summary>Reliability context and sources</summary><p>
             Public power utilities were also the <b>only</b> ownership type to consistently average fewer than
             one outage per customer per year (0.845), and during major events like storms, public power
             customers were back on in roughly 2.5 hours &mdash; about 3 hours faster than investor-owned
@@ -179,10 +182,10 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </p></details>
         </section>
 
-        <section>
+        <section className="ace-section">
           <div className="cae-shead">
             <span className="cae-snum">04</span>
-            <h2>What about the air?</h2>
+            <h2 className="ace-section-heading">What about emissions?</h2>
           </div>
           <p className="cae-intro">
             Austin Energy&rsquo;s own numbers, presented to the city&rsquo;s Electric Utility Commission in May
@@ -192,7 +195,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             supplying 36%.
           </p>
           <MixStack />
-          <details className="cae-disclosure cae-fine"><summary>How these generation mixes compare</summary><p>
+          <details className="cae-disclosure cae-fine ace-disclosure"><summary>How the generation mixes compare</summary><p>
             These two figures aren&rsquo;t measured quite the same way &mdash; Austin&rsquo;s is one
             utility&rsquo;s own reported generation mix for a single quarter, ERCOT&rsquo;s is the whole
             grid&rsquo;s fuel mix averaged over three quarters, and the statewide &ldquo;other&rdquo; category
@@ -205,10 +208,10 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </p></details>
         </section>
 
-        <section>
+        <section className="ace-section">
           <div className="cae-shead">
             <span className="cae-snum">05</span>
-            <h2>The money question</h2>
+            <h2 className="ace-section-heading">The money question</h2>
           </div>
           <p className="cae-intro">
             Austin Energy isn&rsquo;t just a power company &mdash; it&rsquo;s a major line item in the city
@@ -224,7 +227,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
               </div>
             ))}
           </div>
-          <details className="cae-disclosure cae-fine"><summary>Budget and transition context</summary><p>
+          <details className="cae-disclosure cae-fine ace-disclosure"><summary>Budget and transition context</summary><p>
             San Antonio&rsquo;s CPS Energy, facing the same proposal, budgeted <b>$559.7 million</b> in
             transfers to that city for fiscal year 2027. Mayor Kirk Watson has described the transition as a
             technically difficult process that would take years and end up costing customers well over a
@@ -235,10 +238,10 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </p></details>
         </section>
 
-        <section>
+        <section className="ace-section">
           <div className="cae-shead">
             <span className="cae-snum">06</span>
-            <h2>Where things stand</h2>
+            <h2 className="ace-section-heading">Where things stand</h2>
           </div>
           <div className="cae-quotegrid">
             {STANCE_CARDS.map((c) => (
@@ -250,7 +253,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
           </div>
         </section>
 
-        <details className="cae-disclosure cae-sources">
+        <details className="cae-disclosure cae-sources ace-disclosure">
           <summary>Sources and last review</summary>
           <ul>
             {SOURCES.map((s) => (
@@ -266,8 +269,7 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
             ))}
           </ul>
           <p className="cae-tag">
-            Secret Vote documentary project &middot; explainer, not a Secret Vote scene &middot; last checked
-            September 2026
+            Last reviewed September 2026.
           </p>
         </details>
       </div>

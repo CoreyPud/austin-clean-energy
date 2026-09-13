@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCourseAuth } from "@/hooks/use-course-auth";
 import "./secret-vote-course.css";
+import "@/styles/research-page.css";
 import {
   MODULES,
   QUIZZES,
@@ -371,9 +372,10 @@ function SlideContentView({ item }: { item: Extract<SeqItem, { type: "content" }
         </div>
       )}
       {s.callout && (
-        <div className="sv-slide-callout">
-          <b>{s.callout.label}:</b> <span dangerouslySetInnerHTML={{ __html: s.callout.text }} />
-        </div>
+        <details className="sv-slide-callout ace-disclosure">
+          <summary>{s.callout.label}</summary>
+          <span dangerouslySetInnerHTML={{ __html: s.callout.text }} />
+        </details>
       )}
     </div>
   );
@@ -405,8 +407,8 @@ function QuizView({
         <div className="sv-score-label">correct</div>
         <p>
           {perfect
-            ? "Clean sweep — you've got this section down."
-            : "Worth a re-read of anything that felt shaky before moving on — use Back to revisit, or continue to the next module."}
+            ? "Perfect score. You have this section down."
+            : "Review anything that felt uncertain, or continue to the next module."}
         </p>
       </div>
     );
@@ -607,12 +609,12 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
   const nextLabel = currentItem?.type === "content" ? (cur === SEQUENCE.length - 1 ? "Finish" : "Next →") : "Skip →";
 
   return (
-    <div className={`secret-vote-course ${className}`}>
-      <div className="sv-wrap">
+    <div className={`secret-vote-course ace-research-page ${className}`}>
+      <div className="sv-wrap ace-page-shell">
         <div className="sv-topbar">
           <div className="sv-brand">
-            <div className="sv-eyebrow">{"Secret Vote · Companion Course"}</div>
-            <h1>The Grid Primer</h1>
+            <div className="sv-eyebrow ace-eyebrow">Austin Clean Energy course</div>
+            <h1 className="ace-page-title">The Grid Primer</h1>
           </div>
           <div className="sv-mode-toggle">
             <button type="button" className={mode === "course" ? "sv-active" : ""} onClick={() => setMode("course")}>
@@ -648,14 +650,12 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
             {screen === "landing" && (
               <div className="sv-panel sv-landing">
                 <p className="sv-landing-intro">
-                  Twelve short modules, grid basics to the specifics of Austin's May 2026 vote &mdash; each ends where
-                  the next picks up, so start at Module 1 or jump to whatever you need. A 5-question check-in follows
-                  every second module. Progress is remembered in this browser.
+                  Twelve short modules explain grid basics and Austin's May 2026 vote. Start at Module 1 or jump to
+                  any topic. A five-question check-in follows every second module.
                 </p>
                 {!session && (
                   <p className="sv-landing-signin">
-                    Want your check-in scores saved? <Link to="/course/login">Create a free account</Link> — or keep
-                    going without one.
+                    <Link to="/course/login">Create a free account</Link> to save scores, or continue without one.
                   </p>
                 )}
                 <ModuleMap modules={MODULES} sequence={SEQUENCE} cur={cur} onSelectModule={goToSlide} />
@@ -699,13 +699,10 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
           <LexiconView search={lexSearch} cat={lexCat} onSearchChange={setLexSearch} onCatChange={setLexCat} />
         )}
 
-        <footer className="sv-footer sv-panel">
-          Built for the <em>Secret Vote</em> documentary project as a plain-language on-ramp to the other tools here
-          (Grid Technology Explorer, Load Growth & Pricing Pressure, Battery & Peaker Economics, The Road to the
-          Vote, and the rest). Facts and figures are drawn from those tools and their sources &mdash; where a number
-          is estimated, disputed, or single-sourced, this course says so rather than smoothing it over. Not legal,
-          financial, or investment advice.
-        </footer>
+        <details className="sv-footer ace-disclosure">
+          <summary>Sources and course context</summary>
+          <p>Facts come from the site's research tools and their cited sources. Estimates and disputed figures are labeled. This is not legal, financial, or investment advice.</p>
+        </details>
       </div>
     </div>
   );
