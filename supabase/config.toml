@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.sync-agenda-items]
 verify_jwt = false
+
+[functions.chart-generator]
+verify_jwt = false
