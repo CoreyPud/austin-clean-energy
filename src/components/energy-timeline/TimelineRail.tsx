@@ -1,16 +1,6 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { KIND_LABEL, TIMELINE_EVENTS, type TimelineKind } from "@/lib/energy-timeline";
-
-const DOT: Record<TimelineKind, string> = {
-  policy: "bg-muted-foreground",
-  contract: "bg-primary",
-  vote: "bg-destructive",
-};
-
-const PRIORITY: TimelineKind[] = ["vote", "contract", "policy"];
+import { TIMELINE_EVENTS } from "@/lib/energy-timeline";
 
 const extractYear = (date: string) => {
   const m = date.match(/(\d{4})/);
@@ -32,18 +22,15 @@ const TimelineRail = () => {
       .map(([year, events]) => ({
         year,
         events,
-        kind: PRIORITY.find((k) => events.some((e) => e.kind === k)) ?? "policy",
       }));
   }, []);
 
-  const [activeYear, setActiveYear] = useState<number | null>(
-    years.length ? years[years.length - 1].year : null,
-  );
+  const [activeYear, setActiveYear] = useState<number | null>(null);
   const active = years.find((y) => y.year === activeYear) ?? null;
 
   return (
-    <section className="mt-14 border-t pt-10">
-      <h2 className="text-xl font-semibold text-foreground">Timeline at a glance</h2>
+    <section>
+      <h2 className="text-2xl font-bold text-foreground">Explore by year</h2>
       <p className="mt-1 mb-6 text-sm text-muted-foreground">
         Hover or tap a year to see what happened. Bigger marks mean more decisions that year.
       </p>
@@ -62,19 +49,12 @@ const TimelineRail = () => {
                   onFocus={() => setActiveYear(y.year)}
                   onClick={() => setActiveYear(y.year)}
                   aria-label={`${y.year}: ${y.events.length} event${y.events.length > 1 ? "s" : ""}`}
-                  className={cn(
-                    "group flex flex-1 flex-col items-center justify-end gap-1 rounded-md px-0.5 py-2 transition-colors",
-                    isActive ? "bg-muted" : "hover:bg-muted/60",
-                  )}
+                  className={`group flex flex-1 flex-col items-center justify-end gap-1 rounded-md px-0.5 py-2 transition-colors ${isActive ? "bg-muted" : "hover:bg-muted/60"}`}
                 >
                   {Array.from({ length: size }).map((_, i) => (
                     <span
                       key={i}
-                      className={cn(
-                        "h-2 w-2 rounded-full transition-transform",
-                        DOT[y.events[Math.min(i, y.events.length - 1)].kind],
-                        isActive ? "scale-125" : "opacity-70",
-                      )}
+                      className={`h-2 w-2 rounded-full bg-primary transition-transform ${isActive ? "scale-125" : "opacity-60"}`}
                       aria-hidden
                     />
                   ))}
@@ -89,12 +69,7 @@ const TimelineRail = () => {
             {years.map((y) => (
               <span
                 key={y.year}
-                className={cn(
-                  "flex-1 pt-1 text-center text-[10px] font-mono",
-                  y.year === activeYear
-                    ? "font-semibold text-foreground"
-                    : "text-muted-foreground/70",
-                )}
+                className={`flex-1 pt-1 text-center text-[10px] ${y.year === activeYear ? "font-semibold text-foreground" : "text-muted-foreground/70"}`}
               >
                 {String(y.year).slice(2)}
               </span>
@@ -104,7 +79,7 @@ const TimelineRail = () => {
       </div>
 
       {active && (
-        <Card className="mt-5">
+        <Card className="mt-5 rounded-md shadow-none">
           <CardContent className="p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-3">
               <span className="text-2xl font-semibold text-foreground">{active.year}</span>
@@ -115,21 +90,12 @@ const TimelineRail = () => {
             <ul className="space-y-3">
               {active.events.map((e) => (
                 <li key={e.date + e.title} className="flex gap-3">
-                  <span
-                    className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", DOT[e.kind])}
-                    aria-hidden
-                  />
                   <div>
                     <p className="text-sm font-medium text-foreground">
                       {e.title}
-                      {e.tag && (
-                        <Badge variant="destructive" className="ml-2 text-[10px] uppercase">
-                          {e.tag}
-                        </Badge>
-                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {e.date} · {KIND_LABEL[e.kind]}
+                      {e.date}
                     </p>
                   </div>
                 </li>

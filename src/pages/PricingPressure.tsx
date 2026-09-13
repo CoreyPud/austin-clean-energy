@@ -1,5 +1,5 @@
 import PricingPressureView from "@/components/pricing-pressure/PricingPressure";
-import BackToHome from "@/components/BackToHome";
+import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 
 export default function PricingPressurePage() {
@@ -11,7 +11,10 @@ export default function PricingPressurePage() {
 
   return (
     <>
-      <BackToHome />
+      <PageHeader
+        title="Load Zone Pricing Pressure"
+        subtitle="Explore Austin Energy's pricing history and how future load growth could affect it."
+      />
       <PricingPressureView />
     </>
   );

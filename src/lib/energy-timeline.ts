@@ -419,9 +419,9 @@ export const TIMELINE_EVENTS: TimelineEvent[] = [
     year: "2025–26",
     kind: "vote",
     tag: "The Secret Vote",
-    title: "A public item is withdrawn. A closed-session item is approved.",
+    title: "Council approves a $1 billion gas peaker project in closed session",
     body:
-      "Item 7 — the public agenda item on new gas generation — is withdrawn without a vote. Item 82, taken up in closed executive session, approves a roughly $1 billion, 400 MW gas peaker deal alongside the wind and battery package above. No public vote is ever held on the gas plants themselves.",
+      "Item 7, the public agenda item on new gas generation, is withdrawn without a vote. In a closed executive session, Council approves Item 82: a roughly $1 billion, 400 MW gas peaker deal alongside the wind and battery package above. No public vote is ever held on the gas plants themselves.",
     source: "Austin City Council agenda, May 21, 2026",
   },
   {
