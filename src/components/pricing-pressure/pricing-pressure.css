@@ -198,9 +198,49 @@
 }
 .pricing-pressure .pp-footer a { color: var(--pp-ink-muted); }
 
+/* Open report layout */
+.pricing-pressure {
+  --pp-paper: hsl(var(--background));
+  --pp-paper-raised: hsl(var(--card));
+  --pp-ink: hsl(var(--foreground));
+  --pp-ink-muted: hsl(var(--muted-foreground));
+  --pp-ink-faint: hsl(var(--muted-foreground));
+  --pp-line: hsl(var(--border));
+  --pp-line-strong: hsl(var(--input));
+  --pp-accent: hsl(var(--primary));
+  --pp-accent-ink: hsl(var(--primary));
+  --pp-accent-bg: hsl(var(--primary) / 0.1);
+  --pp-low: hsl(var(--accent));
+  --pp-low-bg: hsl(var(--accent) / 0.12);
+  --pp-mid: hsl(20 67% 44%);
+  --pp-mid-bg: hsl(20 67% 44% / 0.1);
+  --pp-high: hsl(var(--destructive));
+  --pp-high-bg: hsl(var(--destructive) / 0.1);
+}
+.pricing-pressure .pp-section { margin-top: 52px; padding-top: 30px; border-top: 1px solid var(--pp-line); }
+.pricing-pressure .pp-stat-row { gap: 0; border-block: 1px solid var(--pp-line); }
+.pricing-pressure .pp-stat-tile { background: transparent; border: 0; border-right: 1px solid var(--pp-line); border-radius: 0; padding: 18px; }
+.pricing-pressure .pp-stat-tile:last-child { border-right: 0; }
+.pricing-pressure .pp-chart-wrap { background: transparent; border: 0; border-radius: 0; padding: 22px 0 8px; box-shadow: none; }
+.pricing-pressure .pp-driver-grid { gap: 28px; }
+.pricing-pressure .pp-driver-card { background: transparent; border: 0; border-left: 2px solid var(--pp-accent); border-radius: 0; padding: 4px 0 4px 20px; }
+.pricing-pressure .pp-control-panel { border-radius: 6px; box-shadow: none; }
+.pricing-pressure .pp-disclosure { margin-top: 18px; border-top: 1px solid var(--pp-line); border-bottom: 1px solid var(--pp-line); color: var(--pp-ink-muted); }
+.pricing-pressure .pp-disclosure summary { cursor: pointer; list-style: none; padding: 14px 32px 14px 0; color: var(--pp-ink); font: 600 12px "IBM Plex Mono", monospace; text-transform: uppercase; position: relative; }
+.pricing-pressure .pp-disclosure summary::-webkit-details-marker { display: none; }
+.pricing-pressure .pp-disclosure summary::after { content: "+"; position: absolute; right: 4px; font-size: 18px; line-height: 1; }
+.pricing-pressure .pp-disclosure[open] summary::after { content: "−"; }
+.pricing-pressure .pp-disclosure summary:focus-visible { outline: 2px solid var(--pp-accent); outline-offset: 4px; }
+.pricing-pressure .pp-disclosure > p, .pricing-pressure .pp-disclosure > div { margin: 0; padding: 0 0 18px; }
+.pricing-pressure .pp-callout { background: transparent; border-left: 0; border-radius: 0; padding: 0; }
+.pricing-pressure .pp-footer { display: block; padding-top: 0; }
+.pricing-pressure .pp-footer > div { display: grid; gap: 8px; }
+
 @media (max-width: 720px) {
   .pricing-pressure .pp-stat-row { grid-template-columns: repeat(2, 1fr); }
   .pricing-pressure .pp-driver-grid { grid-template-columns: 1fr; }
   .pricing-pressure .pp-method-grid { grid-template-columns: 1fr; }
   .pricing-pressure .pp-title { font-size: 31px; }
+  .pricing-pressure .pp-stat-tile:nth-child(2) { border-right: 0; }
+  .pricing-pressure .pp-stat-tile:nth-child(-n+2) { border-bottom: 1px solid var(--pp-line); }
 }

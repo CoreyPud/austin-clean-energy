@@ -956,6 +956,39 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_help_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          notified_at: string | null
+          source_page: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          notified_at?: string | null
+          source_page?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          notified_at?: string | null
+          source_page?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       solar_installations: {
         Row: {
           address: string
@@ -1436,12 +1469,112 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_installs_deduped: {
+        Row: {
+          applied_date: string | null
+          calendar_year_issued: number | null
+          completed_date: string | null
+          council_district: string | null
+          description: string | null
+          id: string | null
+          installed_kw: number | null
+          issued_date: string | null
+          original_zip: string | null
+          permit_class: string | null
+          project_id: string | null
+          status_current: string | null
+        }
+        Relationships: []
+      }
       solar_permits_by_year_class_zip: {
         Row: {
           permit_class: string | null
           solar_count: number | null
           year: number | null
           zip: string | null
+        }
+        Relationships: []
+      }
+      stats_council_climate_votes_by_year: {
+        Row: {
+          avg_no_votes: number | null
+          avg_yes_votes: number | null
+          climate_items: number | null
+          contested: number | null
+          unanimous_yes: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      stats_ev_charging_by_year: {
+        Row: {
+          cumulative_ports: number | null
+          cumulative_stations: number | null
+          dc_fast_ports: number | null
+          l1_ports: number | null
+          l2_ports: number | null
+          stations_opened: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      stats_generation_by_month_fuel: {
+        Row: {
+          austin_energy_avg_mw: number | null
+          catalog_avg_mw: number | null
+          fuel: string | null
+          month: string | null
+          period: string | null
+        }
+        Relationships: []
+      }
+      stats_solar_by_district: {
+        Row: {
+          council_district: string | null
+          installs: number | null
+          total_kw: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      stats_solar_by_fiscal_year: {
+        Row: {
+          battery_installs: number | null
+          fiscal_year: number | null
+          installs: number | null
+          solar_only_installs: number | null
+          total_kw: number | null
+        }
+        Relationships: []
+      }
+      stats_solar_by_quarter: {
+        Row: {
+          battery_installs: number | null
+          installs: number | null
+          period: string | null
+          quarter: number | null
+          solar_only_installs: number | null
+          total_kw: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      stats_solar_by_year: {
+        Row: {
+          battery_installs: number | null
+          installs: number | null
+          solar_only_installs: number | null
+          total_kw: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      stats_solar_permit_timeline: {
+        Row: {
+          avg_days: number | null
+          median_days: number | null
+          permits: number | null
+          year: number | null
         }
         Relationships: []
       }
@@ -1804,6 +1937,7 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      refresh_stats_views: { Args: never; Returns: undefined }
       set_council_cron_secret: { Args: { _val: string }; Returns: undefined }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }

@@ -1,5 +1,5 @@
 import LoadEstimatorView from "@/components/load-estimator/LoadEstimator";
-import BackToHome from "@/components/BackToHome";
+import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 
 export default function LoadEstimatorPage() {
@@ -11,7 +11,10 @@ export default function LoadEstimatorPage() {
 
   return (
     <>
-      <BackToHome />
+      <PageHeader
+        title="Load Growth Estimator"
+        subtitle="Build a scenario for how housing, data centers, industry, and electric vehicles could change peak demand."
+      />
       <LoadEstimatorView />
     </>
   );
