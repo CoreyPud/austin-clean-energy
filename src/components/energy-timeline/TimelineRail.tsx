@@ -25,9 +25,7 @@ const TimelineRail = () => {
       }));
   }, []);
 
-  const [activeYear, setActiveYear] = useState<number | null>(
-    years.length ? years[years.length - 1].year : null,
-  );
+  const [activeYear, setActiveYear] = useState<number | null>(null);
   const active = years.find((y) => y.year === activeYear) ?? null;
 
   return (
