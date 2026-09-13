@@ -173,11 +173,10 @@ export default function LoadEstimator({ className = "" }: { className?: string }
         <section className="le-section ace-section">
           <h2 className="le-section-title">Current demand</h2>
           <p className="le-section-lede">
-            These figures combine Austin Energy's record peak and sales with the committed-growth output of the
+            These figures combine Austin Energy's record peak and sales with results from the{" "}
             <a href="https://austincleanenergy.net/building-energy-usage" target="_blank" rel="noopener" style={{ color: "var(--le-accent-ink)" }}>
               Austin Clean Energy building-permit tool
-            </a>{" "}
-            . Scenarios below are estimates.
+            </a>. Scenarios below are estimates.
           </p>
           <div className="le-stat-row">
             <div className="le-stat-tile">
@@ -312,8 +311,8 @@ export default function LoadEstimator({ className = "" }: { className?: string }
 
         {/* 03. summary */}
         <section className="le-section ace-section">
-          <h2 className="le-section-title"><span className="le-num">03</span> What it would mean for the system</h2>
-          <h3 className="le-section-sub ace-section-heading">Today's peak, committed growth, and your scenario</h3>
+          <h2 className="le-section-title">What it would mean for the system</h2>
+          <p className="le-section-sub">Today's peak, committed growth, and your scenario</p>
           <div className="le-stat-row" style={{ marginBottom: 18 }}>
             <div className="le-stat-tile">
               <div className="le-label">Your scenario adds</div>
@@ -370,7 +369,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
 
         {/* 04. methodology */}
         <section className="le-section ace-section">
-          <h2 className="le-section-title"><span className="le-num">04</span> Methodology &amp; caveats</h2>
+          <h2 className="le-section-title">Methodology and caveats</h2>
           <details className="le-disclosure ace-disclosure">
             <summary>Open methodology and caveats</summary>
             <div className="le-method-grid">

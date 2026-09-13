@@ -340,8 +340,8 @@ export default function PricingPressure({ className = "" }: { className?: string
       <div className="pp-page ace-page-shell">
         {/* 01. history */}
         <section className="pp-section ace-section">
-          <h2 className="pp-section-title"><span className="pp-num">01</span> The real, measured history</h2>
-          <h3 className="pp-section-sub ace-section-heading">Austin Energy's fleet-wide adverse basis cost, 2018–2026</h3>
+          <h2 className="pp-section-title">Measured history</h2>
+          <p className="pp-section-sub">Austin Energy's fleet-wide adverse basis cost, 2018 to 2026</p>
           <p className="pp-section-lede">
             Computed from ERCOT day-ahead and real-time settlement data across roughly 30 Austin-Energy-related
             generation resources by researcher Chris Gillett. the same dataset already underpinning the Peaker
@@ -375,8 +375,8 @@ export default function PricingPressure({ className = "" }: { className?: string
 
         {/* 02. drivers */}
         <section className="pp-section ace-section">
-          <h2 className="pp-section-title"><span className="pp-num">02</span> What could push it higher</h2>
-          <h3 className="pp-section-sub ace-section-heading">Two sourced numbers, before assumptions</h3>
+          <h2 className="pp-section-title">What could push it higher</h2>
+          <p className="pp-section-sub">Two sourced numbers, before assumptions</p>
           <p className="pp-section-lede">
             Before any scenario knob gets touched, here's what ERCOT itself has published about the gap between
             how fast load is arriving and how fast transmission relief is being built.
@@ -413,8 +413,8 @@ export default function PricingPressure({ className = "" }: { className?: string
 
         {/* 03. scenario */}
         <section className="pp-section ace-section">
-          <h2 className="pp-section-title"><span className="pp-num">03</span> Sketch a scenario</h2>
-          <h3 className="pp-section-sub ace-section-heading">How far could basis cost drift?</h3>
+          <h2 className="pp-section-title">Sketch a scenario</h2>
+          <p className="pp-section-sub">How far could basis cost drift?</p>
           <p className="pp-section-lede">
             One knob for how fast pressure builds, one for when relief arrives. Both apply a simple compounding
             rate to the 2025 baseline. not a power-flow model, just a transparent "what if this pattern from
@@ -527,7 +527,7 @@ export default function PricingPressure({ className = "" }: { className?: string
 
         {/* 04. methodology */}
         <section className="pp-section ace-section">
-          <h2 className="pp-section-title"><span className="pp-num">04</span> What this tool can't see</h2>
+          <h2 className="pp-section-title">What this tool cannot see</h2>
           <details className="pp-disclosure ace-disclosure">
             <summary>Open methodology and limitations</summary>
             <div className="pp-method-grid">
