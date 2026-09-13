@@ -58,6 +58,7 @@ import AdminCourseResults from "./pages/AdminCourseResults";
 import LoadEstimator from "./pages/LoadEstimator";
 import PeakerVsBatteryPage from "./pages/PeakerVsBattery";
 import CaseForAustinEnergy from "./pages/CaseForAustinEnergy";
+import AdminChartGenerator from "./pages/AdminChartGenerator";
 
 const queryClient = new QueryClient();
 
@@ -137,6 +138,7 @@ const AppRoutes = () => {
         <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
         <Route path="/admin/agenda-items" element={<CouncilVote admin />} />
         <Route path="/admin/course-results" element={<AdminCourseResults />} />
+        <Route path="/admin/chart-generator" element={<AdminChartGenerator />} />
 
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
