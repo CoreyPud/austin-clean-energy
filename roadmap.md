@@ -1,3 +1,6 @@
+# Current
+- [x] Unify research page headers, fonts, widths, and section hierarchy; simplify the energy timeline and Case for Austin Energy.
+
 # Roadmap
 
 - [x] `/energy-education` quiz page (5 modules, pre/post questions, explanations)

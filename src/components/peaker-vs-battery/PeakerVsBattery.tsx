@@ -850,15 +850,6 @@ export default function PeakerVsBattery() {
   return (
     <div className="peaker-vs-battery ace-research-page">
       <div className="pvb-page ace-page-shell">
-        <div className="ace-page-header">
-        <div className="pvb-kicker ace-eyebrow">Austin Clean Energy research</div>
-        <h1 className="ace-page-title">Peaker vs. Battery</h1>
-        <p className="pvb-dek ace-page-lede">
-          Compare a battery and gas peaker using real 15-minute Austin prices from 2024 and 2025. The model shows
-          when each would run, its operating savings, and simple payback at a $1 billion scale.
-        </p>
-        </div>
-
         <div className="pvb-yeartabs">
           <button className={year === "2024" ? "pvb-active" : ""} onClick={() => setYear("2024")}>
             2024

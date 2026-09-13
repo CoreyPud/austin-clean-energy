@@ -1,5 +1,5 @@
 import PeakerVsBatteryView from "@/components/peaker-vs-battery/PeakerVsBattery";
-import BackToHome from "@/components/BackToHome";
+import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 
 export default function PeakerVsBatteryPage() {
@@ -11,7 +11,10 @@ export default function PeakerVsBatteryPage() {
 
   return (
     <>
-      <BackToHome />
+      <PageHeader
+        title="Peaker vs. Battery"
+        subtitle="Compare a gas peaker and battery using Austin's real 15-minute electricity prices."
+      />
       <PeakerVsBatteryView />
     </>
   );

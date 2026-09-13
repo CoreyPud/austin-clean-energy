@@ -610,11 +610,7 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
   return (
     <div className={`secret-vote-course ace-research-page ${className}`}>
       <div className="sv-wrap ace-page-shell">
-        <div className="sv-topbar ace-page-header">
-          <div className="sv-brand">
-            <div className="sv-eyebrow ace-eyebrow">Austin Clean Energy course</div>
-            <h1 className="ace-page-title">The Grid Primer</h1>
-          </div>
+        <div className="sv-topbar">
           <div className="sv-mode-toggle">
             <button type="button" className={mode === "course" ? "sv-active" : ""} onClick={() => setMode("course")}>
               Course
