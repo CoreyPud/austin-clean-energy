@@ -9,6 +9,8 @@ project_id = "tnalryxoxswjofmtdtaf"
     verify_jwt = false
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.chart-generator]
+    verify_jwt = false
   [functions.check-api-fields]
     verify_jwt = false
   [functions.classify-new-votes]
