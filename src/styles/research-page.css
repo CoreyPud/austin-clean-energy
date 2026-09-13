@@ -1,0 +1,131 @@
+/* Shared visual system for Austin Clean Energy research and learning pages. */
+.ace-research-page {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  padding: 24px 16px 64px;
+}
+
+.ace-research-page .ace-page-shell {
+  width: 100%;
+  max-width: 1024px;
+  margin-inline: auto;
+  padding: 0;
+}
+
+.ace-research-page :is(h1, h2, h3, h4, .ace-page-title, .ace-section-heading) {
+  font-family: inherit;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.ace-research-page .ace-page-header {
+  padding: 16px 0 32px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.ace-research-page .ace-eyebrow {
+  margin: 0 0 10px;
+  color: hsl(var(--primary));
+  font: 600 12px/1.4 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.ace-research-page .ace-page-title {
+  margin: 0 0 12px;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.12;
+}
+
+.ace-research-page .ace-page-lede {
+  max-width: 720px;
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.ace-research-page .ace-section {
+  margin-top: 48px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ace-research-page .ace-section + .ace-section {
+  padding-top: 40px;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.ace-research-page .ace-section-heading {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ace-research-page .ace-disclosure {
+  margin-top: 18px;
+  padding: 0;
+  background: transparent;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+  box-shadow: none;
+  border-top: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+
+.ace-research-page .ace-disclosure > summary {
+  position: relative;
+  padding: 14px 36px 14px 0;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  list-style: none;
+  font: 600 0.875rem/1.4 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ace-research-page .ace-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ace-research-page .ace-disclosure > summary::after {
+  content: "+";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  translate: 0 -50%;
+  color: hsl(var(--primary));
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+
+.ace-research-page .ace-disclosure[open] > summary::after {
+  content: "−";
+}
+
+.ace-research-page .ace-disclosure > summary:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+
+.ace-research-page .ace-disclosure > :not(summary) {
+  margin-top: 0;
+  padding-bottom: 18px;
+}
+
+@media (min-width: 768px) {
+  .ace-research-page {
+    padding-top: 32px;
+    padding-bottom: 80px;
+  }
+
+  .ace-research-page .ace-page-title {
+    font-size: 3rem;
+  }
+}
