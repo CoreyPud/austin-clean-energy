@@ -179,12 +179,12 @@ export default function LoadEstimator({ className = "" }: { className?: string }
           </p>
         </div>
 
-        {/* 01 — baseline */}
+        {/* 01. baseline */}
         <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">01</span> Where Austin Energy stands today</h2>
           <h3 className="le-section-sub ace-section-heading">The sourced baseline</h3>
           <p className="le-section-lede">
-            These four figures are not estimates — they're Austin Energy's own record peak and sales, plus the
+            These four figures are not estimates. they're Austin Energy's own record peak and sales, plus the
             committed-growth output of the{" "}
             <a href="https://austincleanenergy.net/building-energy-usage" target="_blank" rel="noopener" style={{ color: "var(--le-accent-ink)" }}>
               Austin Clean Energy building-permit tool
@@ -217,7 +217,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
             <summary>Important caveat about the permit pipeline</summary>
             <p>
               The underlying tool's 22,177 figure counts building permits that were <b>issued</b> (approved for
-              construction), not permits still awaiting approval — but issuance isn't completion. The site doesn't
+              construction), not permits still awaiting approval. but issuance isn't completion. The site doesn't
               publish a date cutoff for its permit dataset, and a permit issued in, say, 2021 has likely already
               finished construction and is occupied today. That means some slice of this 533.1 MW is probably already
               reflected in Austin Energy's current 3,067 MW peak, not still "on the way." Treat the committed-pipeline
@@ -226,12 +226,12 @@ export default function LoadEstimator({ className = "" }: { className?: string }
           </details>
         </section>
 
-        {/* 02 — builder */}
+        {/* 02. builder */}
         <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">02</span> Build a scenario</h2>
           <h3 className="le-section-sub ace-section-heading">What is not in a permit yet?</h3>
           <p className="le-section-lede">
-            Each category converts to peak MW the same way the base tool does — annual energy use ÷ 8,760 hours
+            Each category converts to peak MW the same way the base tool does. annual energy use ÷ 8,760 hours
             ÷ a load factor (or, where noted, entered directly as peak MW). Every default is editable. Figures
             marked <span className="le-badge le-sourced">sourced</span> come from a cited benchmark; figures
             marked <span className="le-badge le-assumption">assumption</span> are this tool's own placeholder —
@@ -272,7 +272,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
               <SliderField id="in-dc1" label="Existing-pattern (~10 MW each)" value={dc1} min={0} max={20} step={1} onChange={setDc1} />
               <SliderField id="in-dc2" label="Mid-size inquiry (~45 MW each)" value={dc2} min={0} max={15} step={1} onChange={setDc2} />
               <div className="le-card-dc-tiers">
-                <SliderField id="in-dc3" label="Hyperscale — hypothetical (~200 MW each)" value={dc3} min={0} max={6} step={1} onChange={setDc3} />
+                <SliderField id="in-dc3" label="Hyperscale. hypothetical (~200 MW each)" value={dc3} min={0} max={6} step={1} onChange={setDc3} />
               </div>
             </div>
 
@@ -282,7 +282,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
                 <div className="le-card-out">{fmtMW(calc.values.mfg)}</div>
               </div>
               <div className="le-card-note">
-                <span className="le-badge le-assumption">assumption</span> entered directly as peak MW — industrial loads vary too widely for a single per-sqft benchmark
+                <span className="le-badge le-assumption">assumption</span> entered directly as peak MW. industrial loads vary too widely for a single per-sqft benchmark
               </div>
               <SliderField id="in-mfg" label="Peak MW added" value={mfg} min={0} max={300} step={5} onChange={setMfg} />
             </div>
@@ -293,7 +293,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
                 <div className="le-card-out">{fmtMW(calc.values.other)}</div>
               </div>
               <div className="le-card-note">
-                <span className="le-badge le-assumption">assumption</span> catch-all for anything not covered above — schools, municipal buildout, retail not yet permitted — entered directly as peak MW
+                <span className="le-badge le-assumption">assumption</span> catch-all for anything not covered above. schools, municipal buildout, retail not yet permitted. entered directly as peak MW
               </div>
               <SliderField id="in-other" label="Peak MW added" value={other} min={0} max={300} step={5} onChange={setOther} />
             </div>
@@ -304,7 +304,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
                 <div className="le-card-out">{fmtMW(calc.values.ev)}</div>
               </div>
               <div className="le-card-note">
-                <span className="le-badge le-assumption">assumption</span> ~7 kW/vehicle average depot draw · blends Level 2 AC for light-duty vans with some DC fast charging for heavier trucks/buses, assuming smart/staggered (not simultaneous full-power) charging — adjust for your fleet mix
+                <span className="le-badge le-assumption">assumption</span> ~7 kW/vehicle average depot draw · blends Level 2 AC for light-duty vans with some DC fast charging for heavier trucks/buses, assuming smart/staggered (not simultaneous full-power) charging. adjust for your fleet mix
               </div>
               <SliderField id="in-ev" label="New fleet vehicles (vans, trucks, buses)" value={ev} min={0} max={20000} step={100} onChange={setEv} />
             </div>
@@ -316,14 +316,14 @@ export default function LoadEstimator({ className = "" }: { className?: string }
               </div>
               <div className="le-card-note">
                 <span className="le-badge le-sourced">sourced program</span> <span className="le-badge le-assumption">assumption load factors</span>{" "}
-                real 2,600-acre mixed-use development (Hwy 183/130, Colorado River) City Council annexed in 2026 — 6,195 single-family homes, 6,200 multifamily units, 9M sqft industrial/retail/office/hospitality (Amazon's robotics division is the anchor tenant); not yet in the base tool's permit data. Construction runs 2030–2057; developer says it's "not a data center" but hasn't ruled one out later. Housing uses this tool's own home/unit benchmarks; the 9M sqft of commercial space uses an assumed 12 kWh/sqft/yr blended EUI (not an Austin ECAD figure).
+                real 2,600-acre mixed-use development (Hwy 183/130, Colorado River) City Council annexed in 2026. 6,195 single-family homes, 6,200 multifamily units, 9M sqft industrial/retail/office/hospitality (Amazon's robotics division is the anchor tenant); not yet in the base tool's permit data. Construction runs 2030–2057; developer says it's "not a data center" but hasn't ruled one out later. Housing uses this tool's own home/unit benchmarks; the 9M sqft of commercial space uses an assumed 12 kWh/sqft/yr blended EUI (not an Austin ECAD figure).
               </div>
               <SliderField id="in-dogshead" label="% of approved program built & energized" value={dogsheadPct} min={0} max={100} step={5} onChange={setDogsheadPct} />
             </div>
           </div>
         </section>
 
-        {/* 03 — summary */}
+        {/* 03. summary */}
         <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">03</span> What it would mean for the system</h2>
           <h3 className="le-section-sub ace-section-heading">Today's peak, committed growth, and your scenario</h3>
@@ -381,7 +381,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
           </div>
         </section>
 
-        {/* 04 — methodology */}
+        {/* 04. methodology */}
         <section className="le-section ace-section">
           <h2 className="le-section-title"><span className="le-num">04</span> Methodology &amp; caveats</h2>
           <details className="le-disclosure ace-disclosure">
@@ -390,21 +390,21 @@ export default function LoadEstimator({ className = "" }: { className?: string }
               <div className="le-method-col">
               <h4>How the math works</h4>
               <ul>
-                <li>Homes and units: <code>peak_mw = (kwh_per_yr ÷ 8760 ÷ load_factor) ÷ 1000</code>, per unit × count — identical formula to the underlying permit tool.</li>
+                <li>Homes and units: <code>peak_mw = (kwh_per_yr ÷ 8760 ÷ load_factor) ÷ 1000</code>, per unit × count. identical formula to the underlying permit tool.</li>
                 <li>Data centers, manufacturing, other/custom, and EV fleet charging: entered directly as peak MW (or MW per vehicle) and summed, since these loads don't fit a single per-sqft or per-unit benchmark the way housing does.</li>
-                <li>Dog's Head uses the same home/unit formula as single-family and multifamily above, plus an assumed 12 kWh/sqft/yr blended EUI for its 9M sqft of commercial space — all scaled by the "% built &amp; energized" slider.</li>
+                <li>Dog's Head uses the same home/unit formula as single-family and multifamily above, plus an assumed 12 kWh/sqft/yr blended EUI for its 9M sqft of commercial space. all scaled by the "% built &amp; energized" slider.</li>
                 <li>Projected total peak = today's record peak (3,067 MW) + the committed permit pipeline (533.1 MW, fixed) + your scenario (adjustable).</li>
               </ul>
               </div>
               <div className="le-method-col">
               <h4>What to distrust</h4>
               <ul>
-                <li>This is a scenario calculator, not a forecast or a load-flow study — it has no view of feeder capacity, substation headroom, or timing, only aggregate peak MW.</li>
+                <li>This is a scenario calculator, not a forecast or a load-flow study. it has no view of feeder capacity, substation headroom, or timing, only aggregate peak MW.</li>
                 <li>The 533.1 MW committed-pipeline figure likely overstates what's genuinely still coming: it's built from issued permits with no disclosed date cutoff, and issuance doesn't mean the building isn't already finished and drawing power today. See the note in Section 01.</li>
-                <li>The multifamily, manufacturing, other/custom, EV fleet, and Dog's Head commercial figures are this tool's own placeholder assumptions, not measured Austin data — treat them as starting points to argue with, not benchmarks.</li>
+                <li>The multifamily, manufacturing, other/custom, EV fleet, and Dog's Head commercial figures are this tool's own placeholder assumptions, not measured Austin data. treat them as starting points to argue with, not benchmarks.</li>
                 <li>Data center tier sizes are illustrative, not a prediction of specific projects. The hyperscale tier in particular is a what-if: no 75+ MW facility has been requested in AE's territory as of August 2026, and Austin City Council is actively moving to restrict them.</li>
                 <li>A load factor near 1.0 for data centers assumes near-continuous draw at rated capacity; a real facility ramps in over months to years, not instantly.</li>
-                <li>Dog's Head is a 28-year build-out (2030–2057) with no public phasing schedule yet — the "% built" slider has no timeline attached to it, so it can't tell you which year a given percentage would land in.</li>
+                <li>Dog's Head is a 28-year build-out (2030–2057) with no public phasing schedule yet. the "% built" slider has no timeline attached to it, so it can't tell you which year a given percentage would land in.</li>
               </ul>
               </div>
             </div>

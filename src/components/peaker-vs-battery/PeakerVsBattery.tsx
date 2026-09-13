@@ -26,7 +26,7 @@ function moneyK(v: number) {
 
 /** Sqrt-scale interpolation fraction (0-100), matching the original's
  * color ramp math. Endpoint colors stay as CSS custom properties so the
- * ramp is theme-adaptive automatically via color-mix() — no need to read
+ * ramp is theme-adaptive automatically via color-mix(). no need to read
  * computed styles or duplicate light/dark hex tables here. */
 function rampT(v: number, lo: number, hi: number) {
   const t = (Math.sqrt(Math.max(v, 0)) - Math.sqrt(lo)) / (Math.sqrt(hi) - Math.sqrt(lo));
@@ -93,7 +93,7 @@ function HeroTiles({ year }: { year: YearKey }) {
           {moneyK(s.battery_mw_yr)}
           <span style={{ fontSize: 13 }}>/MW-yr</span>
         </div>
-        <div className="pvb-hs">perfect-foresight, 2-hr &mdash; real fleets run $29&ndash;36K</div>
+        <div className="pvb-hs">perfect-foresight, 2-hr. real fleets run $29&ndash;36K</div>
       </div>
       <div className="pvb-htile pvb-peaker">
         <div className="pvb-hl">Peaker margin</div>
@@ -120,7 +120,7 @@ function HeroTiles({ year }: { year: YearKey }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Twin heatmaps — "when would each one actually run?"                */
+/*  Twin heatmaps. "when would each one actually run?"                */
 /* ------------------------------------------------------------------ */
 
 const HOUR_TICKS = [1, 4, 7, 10, 13, 16, 19, 22];
@@ -253,12 +253,12 @@ function HeatSection({ year, showTip, hideTip }: { year: YearKey; showTip: ShowT
   return (
     <>
       <p className="pvb-axisnote">
-        Columns are hour of day (HE1&ndash;HE24, &ldquo;hour ending&rdquo; &mdash; HE20 is the hour ending 8pm); rows
+        Columns are hour of day (HE1&ndash;HE24, &ldquo;hour ending&rdquo;. HE20 is the hour ending 8pm); rows
         are calendar month; the shaded last column sums that month's real hours.
       </p>
       <div className="pvb-twin">
         <div>
-          <div className="pvb-twinhead pvb-peaker">Peaker &mdash; clears its real monthly fuel cost</div>
+          <div className="pvb-twinhead pvb-peaker">Peaker. clears its real monthly fuel cost</div>
           <div className="pvb-legend">
             <span>
               <span className="pvb-sw" style={{ background: "var(--pvb-heat-lo)", border: "1px solid var(--pvb-line-strong)" }} />
@@ -278,7 +278,7 @@ function HeatSection({ year, showTip, hideTip }: { year: YearKey; showTip: ShowT
           </div>
         </div>
         <div>
-          <div className="pvb-twinhead pvb-battery">Battery &mdash; discharging (2-hr)</div>
+          <div className="pvb-twinhead pvb-battery">Battery. discharging (2-hr)</div>
           <div className="pvb-legend">
             <span>
               <span className="pvb-sw" style={{ background: "var(--pvb-heat2-lo)", border: "1px solid var(--pvb-line-strong)" }} />
@@ -300,19 +300,19 @@ function HeatSection({ year, showTip, hideTip }: { year: YearKey; showTip: ShowT
       </div>
       <p className="pvb-heatfoot">
         {clearing} of 288 peaker month-hour slots ({Math.round((100 * clearing) / totalCells)}%) clear its real
-        monthly cost in most real intervals — concentrated in the evening ramp. {battClearing} of 288 battery
+        monthly cost in most real intervals. concentrated in the evening ramp. {battClearing} of 288 battery
         month-hour slots ({Math.round((100 * battClearing) / totalCells)}%) are a top-2 discharge hour on most days
-        that month — even more concentrated, almost entirely HE18–21. The battery's busiest hour (HE20) discharges
+        that month. even more concentrated, almost entirely HE18–21. The battery's busiest hour (HE20) discharges
         on {busiestHE20}% of its priciest days that month.
       </p>
       <p className="pvb-heatnote">
-        The battery isn't held back by any cycle limit in this model &mdash; it cycles <b>every single day</b>, 365
+        The battery isn't held back by any cycle limit in this model. it cycles <b>every single day</b>, 365
         days a year (that's the flat green line in the &ldquo;hours actually running&rdquo; chart below),
         comfortably inside what utility-scale battery warranties typically allow (~400+ full cycles/year). What the
-        heatmap shows isn't <i>whether</i> it ran &mdash; it's <i>which hour</i> it ran in. The exact discharge hour
+        heatmap shows isn't <i>whether</i> it ran. it's <i>which hour</i> it ran in. The exact discharge hour
         drifts around the evening ramp from day to day, so only the tightest hours (mostly HE19&ndash;21) are
         consistent enough to cross the &ldquo;most days&rdquo; marker threshold. Charging is spread even wider,
-        across both overnight and midday hours &mdash; Austin solar depresses prices enough at midday that it's
+        across both overnight and midday hours. Austin solar depresses prices enough at midday that it's
         often cheaper to charge at 10am than at 2am.
       </p>
 
@@ -320,7 +320,7 @@ function HeatSection({ year, showTip, hideTip }: { year: YearKey; showTip: ShowT
         <div className="pvb-twinhead pvb-muted">Hours actually running, per month</div>
         <p className="pvb-sub" style={{ marginBottom: 12 }}>
           The peaker's runtime swings hard with the price spikes that clear its cost each month; the battery's
-          doesn't &mdash; it's built to run its priciest two hours every single day, so its monthly total is just
+          doesn't. it's built to run its priciest two hours every single day, so its monthly total is just
           &asymp;2&times; that month's day count, no matter how extreme prices get.
         </p>
         <div className="pvb-legend">
@@ -340,7 +340,7 @@ function HeatSection({ year, showTip, hideTip }: { year: YearKey; showTip: ShowT
 }
 
 /* ------------------------------------------------------------------ */
-/*  Duration chart — "how much battery duration do you actually need?" */
+/*  Duration chart. "how much battery duration do you actually need?" */
 /* ------------------------------------------------------------------ */
 
 function DurationChart({ year, showTip, hideTip }: { year: YearKey; showTip: ShowTipFn; hideTip: () => void }) {
@@ -392,13 +392,13 @@ function DurationChart({ year, showTip, hideTip }: { year: YearKey; showTip: Sho
       <details className="pvb-disclosure pvb-durnote">
         <summary>Capital cost versus operating margin</summary>
         <p><b>Capex vs. opex, spelled out:</b> none of the dollar figures above subtract the $1B it took to build any of
-        these &mdash; every bar (and the dashed line) is pure operating margin, revenue minus running cost, in one
-        real year. Rough, undiscounted payback &mdash; $1B &divide; that year's margin, ignoring financing, taxes,
-        capacity payments and everything else &mdash; runs <b>~{Math.round(1000 / curve[0].total_m)} years</b> for
+        these. every bar (and the dashed line) is pure operating margin, revenue minus running cost, in one
+        real year. Rough, undiscounted payback. $1B &divide; that year's margin, ignoring financing, taxes,
+        capacity payments and everything else. runs <b>~{Math.round(1000 / curve[0].total_m)} years</b> for
         the 1-hr battery up to <b>~{Math.round(1000 / curve[curve.length - 1].total_m)} years</b> for the 4-hr, and{" "}
         <b>~{peakerPayback} years</b> for the 400&nbsp;MW peaker in {year}. That's the honest point of this chart: at
         real {year} prices, arbitrage-only or margin-only economics don't come close to repaying a $1B build on
-        their own &mdash; either technology needs more than what's plotted here (capacity payments, ancillary
+        their own. either technology needs more than what's plotted here (capacity payments, ancillary
         services, decades of runtime) to actually pencil out.</p>
       </details>
     </>
@@ -406,7 +406,7 @@ function DurationChart({ year, showTip, hideTip }: { year: YearKey; showTip: Sho
 }
 
 /* ------------------------------------------------------------------ */
-/*  How the savings actually work — market rate vs. cost vs. margin     */
+/*  How the savings actually work. market rate vs. cost vs. margin     */
 /* ------------------------------------------------------------------ */
 
 function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: ShowTipFn; hideTip: () => void }) {
@@ -415,7 +415,7 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
   const RTE = 0.85;
 
   // Margin/MWh is derived from totals already shown elsewhere on the page, so it
-  // can never contradict the hero tiles above — cost/charge price are the one new,
+  // can never contradict the hero tiles above. cost/charge price are the one new,
   // independently-real inputs (see peaker-vs-battery-data.ts).
   const pMargin = s.peaker_mw_yr / s.peaker_hours;
   const pCost = s.avg_mc_running;
@@ -458,7 +458,7 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
               <div
                 className="pvb-eqseg pvb-eqseg-margin pvb-peaker"
                 style={{ height: (pMargin / maxV) * chartH }}
-                onMouseMove={(e) => showTip(e, [`Peaker margin: $${pMargin.toFixed(2)}/MWh — kept, not sold to anyone`])}
+                onMouseMove={(e) => showTip(e, [`Peaker margin: $${pMargin.toFixed(2)}/MWh. kept, not sold to anyone`])}
                 onMouseLeave={hideTip}
               />
             </div>
@@ -483,7 +483,7 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
                 className="pvb-eqseg pvb-eqseg-margin pvb-battery"
                 style={{ height: (bMargin / maxV) * chartH }}
                 onMouseMove={(e) =>
-                  showTip(e, [`Battery margin: $${bMargin.toFixed(2)}/MWh discharged — kept, not sold to anyone`])
+                  showTip(e, [`Battery margin: $${bMargin.toFixed(2)}/MWh discharged. kept, not sold to anyone`])
                 }
                 onMouseLeave={hideTip}
               />
@@ -569,9 +569,9 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
         <p>
           Nobody buys this margin. Austin Energy serves its own customers, so when the peaker clears its cost or the
           battery discharges, AE simply doesn't have to go <b>buy</b> that megawatt-hour from ERCOT at the real-time
-          price shown above &mdash; it pays its own lower cost instead and the gap never leaves AE's budget. Every
+          price shown above. it pays its own lower cost instead and the gap never leaves AE's budget. Every
           dollar figure on this page is money AE <b>doesn't spend</b>, not money AE collects from selling into the
-          market. (AE could instead choose to sell surplus output for real merchant revenue &mdash; that's a
+          market. (AE could instead choose to sell surplus output for real merchant revenue. that's a
           different, separate business decision than the one modeled here.)
         </p>
       </details>
@@ -580,7 +580,7 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
 }
 
 /* ------------------------------------------------------------------ */
-/*  Does this pay for itself? — peaker vs. every battery duration       */
+/*  Does this pay for itself?. peaker vs. every battery duration       */
 /* ------------------------------------------------------------------ */
 
 interface PaybackRow {
@@ -641,9 +641,9 @@ function PaybackTable({ year }: { year: YearKey }) {
       </div>
       <details className="pvb-disclosure pvb-paynote"><summary>What this simple payback leaves out</summary><p>
         Every option here takes {Math.round(fastest)}–{Math.round(slowest)} years to earn back its $1B from energy
-        savings alone in {year} — longer than a battery's typical 15&ndash;20 year service life, and on the same
+        savings alone in {year}. longer than a battery's typical 15&ndash;20 year service life, and on the same
         order as (or longer than) a gas plant's 30&ndash;40 year life. None of these "pay for themselves" as a pure
-        buy-vs.-avoid-buying play; the real case for either one depends on revenue this table doesn't count &mdash;
+        buy-vs.-avoid-buying play; the real case for either one depends on revenue this table doesn't count , 
         capacity payments, ancillary services, or reliability value.
       </p></details>
     </>
@@ -748,15 +748,15 @@ function Caveats() {
         <b>Savings, not merchant revenue:</b> every dollar figure on this page is framed as Austin Energy's own cost
         avoidance, not sales revenue. AE serves its own native load, so when the peaker runs (or the battery
         discharges), the value is AE <i>not having to buy</i> that megawatt-hour from the ERCOT market at the
-        real-time LZ price &mdash; it pays its own marginal cost instead and keeps the spread. That's the same size
-        number a merchant owner would earn selling the identical MWh into the market at that price &mdash; it's a
+        real-time LZ price. it pays its own marginal cost instead and keeps the spread. That's the same size
+        number a merchant owner would earn selling the identical MWh into the market at that price. it's a
         different accounting frame, not a different dollar amount: savings against a counterfactual purchase, rather
         than revenue from a sale. AE could instead choose to sell surplus output directly into ERCOT for real market
         revenue, but that's a different business decision than the one modeled here.
       </p>
       <p>
         <b>Independent of the day-ahead market and AE's PPA contracts?</b> Yes. Every number on this page is
-        benchmarked only against the real-time LZ_AEN settlement price &mdash; the model never touches Austin
+        benchmarked only against the real-time LZ_AEN settlement price. the model never touches Austin
         Energy's day-ahead market trades or its separately-contracted wind, solar, and nuclear PPAs, which are
         untouched, parallel parts of AE's portfolio. That's the economically correct comparison for a physical
         dispatch decision: whether to burn fuel or discharge a battery in a given 15-minute interval is a real-time
@@ -764,12 +764,12 @@ function Caveats() {
         day before. One simplification worth naming: to the extent AE had already locked in some of that hour's
         supply via a day-ahead purchase, its true avoided cost for that specific interval could differ slightly from
         the real-time print used here. AE's actual day-ahead trading book isn't in this dataset, so real-time price
-        stands in as the standard, defensible proxy &mdash; not a claim that this is exactly how AE's books settle.
+        stands in as the standard, defensible proxy. not a claim that this is exactly how AE's books settle.
       </p>
       <p>
-        <b>Gas price volatility &mdash; now modeled, not assumed:</b> the peaker's cost line uses real EIA Henry Hub
+        <b>Gas price volatility. now modeled, not assumed:</b> the peaker's cost line uses real EIA Henry Hub
         monthly average prices, not one fixed number. Those actually ranged from <b>$1.49/MMBtu (March 2024)</b> to{" "}
-        <b>$4.19/MMBtu (February 2025)</b> &mdash; a nearly 3&times; swing &mdash; which moves the peaker's marginal
+        <b>$4.19/MMBtu (February 2025)</b>. a nearly 3&times; swing. which moves the peaker's marginal
         cost from roughly <b>$20/MWh to $49/MWh</b> month to month. 2024 was a historically cheap gas year; 2025 was
         not. This is still only the past: nothing here forecasts where gas prices go from here, and that uncertainty
         cuts both ways for the peaker's future economics. (Sep&ndash;Dec 2025 gas prices are estimated from EIA's
@@ -777,34 +777,34 @@ function Caveats() {
         exact reported monthly figures like the rest of the series.)
       </p>
       <p>
-        <b>Decommissioning:</b> excluded from the peaker's marginal cost here &mdash; correctly. The turn-on/turn-off
+        <b>Decommissioning:</b> excluded from the peaker's marginal cost here. correctly. The turn-on/turn-off
         decision depends on short-run fuel + variable O&amp;M cost, not sunk or period charges like a decommissioning
         reserve, which get paid whether or not the plant runs that day. Separately, for what it's worth: Lazard's own
         cost modeling assumes a gas plant's decommissioning and site-restoration cost is offset by its salvage value
-        &mdash; net cost of essentially zero &mdash; unlike nuclear, where Lazard's figures do carry real
+       . net cost of essentially zero. unlike nuclear, where Lazard's figures do carry real
         decommissioning cost. So even in a full lifecycle-cost view, gas decommissioning isn't the number to worry
         about here.
       </p>
       <p>
-        <b>Battery model:</b> perfect-foresight daily dispatch &mdash; discharge the actual priciest hours of each
+        <b>Battery model:</b> perfect-foresight daily dispatch. discharge the actual priciest hours of each
         real day, charge the actual cheapest, 85% round-trip efficiency, now at 2-hour duration. This is a
         theoretical ceiling, not an achieved result: real ERCOT-wide merchant batteries earned roughly{" "}
-        <b>$29&ndash;36K/MW-year</b> (arbitrage plus ancillary combined) as of mid-2026 &mdash; below the
+        <b>$29&ndash;36K/MW-year</b> (arbitrage plus ancillary combined) as of mid-2026. below the
         $60&ndash;70K/MW-year this model shows even at 2 hours, because no real operator dispatches on tomorrow's
         prices today.
       </p>
       <p>
         <b>Peaker model:</b> runs only in intervals where real price clears that month's real marginal cost, earning
-        the margin above it. This assumes it's allowed to run every time it's economic &mdash; it doesn't model AE's
+        the margin above it. This assumes it's allowed to run every time it's economic. it doesn't model AE's
         own emissions guardrails on the plant, which are undisclosed and could cap it well below these hours
         regardless of price.
       </p>
       <p>
         <b>Duration finding, one more caveat:</b> "shorter wins" here is about energy arbitrage specifically. It
-        doesn't capture capacity/reliability credit, ancillary services, or multi-day resilience &mdash; and
+        doesn't capture capacity/reliability credit, ancillary services, or multi-day resilience. and
         interestingly, even on capacity credit, CAISO has been cutting the accreditation value of 4-hour batteries as
         more of them come online, for unrelated reasons. None of that changes the "not needed for the seven-day
-        problem" framing you started from &mdash; that's still the existing thermal fleet's job.
+        problem" framing you started from. that's still the existing thermal fleet's job.
       </p>
       <p>
         <b>Not modeled:</b> capital cost recovery for either technology (operating margin only, not full IRR); future
@@ -876,7 +876,7 @@ export default function PeakerVsBattery() {
           <h2 className="ace-section-heading">When would each one run?</h2>
           <p className="pvb-sub">
             Average real price by month and hour of day. The peaker's cost line moves with the real Henry Hub gas
-            price each month (&#8776;$20&ndash;49/MWh across these two years, not one fixed number &mdash; see
+            price each month (&#8776;$20&ndash;49/MWh across these two years, not one fixed number. see
             caveats). The marker shows hours where it clears in <b>most</b> of that month-hour's real intervals. The
             battery panel shows the mirror question: how often that hour was among its top-2 priciest hours of the
             day, i.e. when it would be discharging.
@@ -888,11 +888,11 @@ export default function PeakerVsBattery() {
           <h2 className="ace-section-heading">How much battery duration is needed?</h2>
           <p className="pvb-sub">
             Both axes come from the same $1B, but they're not the same <i>kind</i> of number. The bar's x-position
-            (MW) is what that $1B <b>buys</b> &mdash; Lazard's real installed-cost data says longer duration costs
+            (MW) is what that $1B <b>buys</b>. Lazard's real installed-cost data says longer duration costs
             more per MW, so $1B buys fewer of them. The bar's height ($) is what that capacity would have{" "}
-            <b>earned in one real year</b> of 2024/2025 prices &mdash; revenue minus running cost only, the same
+            <b>earned in one real year</b> of 2024/2025 prices. revenue minus running cost only, the same
             operating-margin math as everywhere else on this page. It is <b>not</b> profit net of the $1B build, and
-            it doesn't amortize or pay down that capex at all &mdash; see the note below the chart.
+            it doesn't amortize or pay down that capex at all. see the note below the chart.
           </p>
           <DurationChart year={year} showTip={showTip} hideTip={hideTip} />
         </section>
@@ -902,7 +902,7 @@ export default function PeakerVsBattery() {
           <p className="pvb-sub">
             One real number drives every dollar figure on this page: the gap between what Austin Energy would have
             paid ERCOT for a megawatt-hour and what it actually costs the asset to supply that megawatt-hour itself.
-            Stack them and the relationship is literal &mdash; the bar is the real-time price avoided; the grey base
+            Stack them and the relationship is literal. the bar is the real-time price avoided; the grey base
             is what it costs to earn that; what's left on top is the margin.
           </p>
           <SavingsEquation year={year} showTip={showTip} hideTip={hideTip} />
@@ -911,10 +911,10 @@ export default function PeakerVsBattery() {
         <section className="pvb-panel ace-section">
           <h2 className="ace-section-heading">Does it pay for itself?</h2>
           <p className="pvb-sub">
-            Same $1B, same real prices for the selected year &mdash; annual savings against Austin Energy simply
+            Same $1B, same real prices for the selected year. annual savings against Austin Energy simply
             buying that power from ERCOT, and a rough, undiscounted years-to-break-even. This ignores financing,
             taxes, capacity payments, ancillary services, and everything else that would actually make or break a
-            real investment case &mdash; it's the floor, not the full case.
+            real investment case. it's the floor, not the full case.
           </p>
           <PaybackTable year={year} />
         </section>
@@ -923,7 +923,7 @@ export default function PeakerVsBattery() {
           <h2 className="ace-section-heading">The battery's daily rhythm</h2>
           <p className="pvb-sub">
             How often each hour of the day falls among the battery's cheapest 2 hours (charge) or priciest 2 hours
-            (discharge), across every real day in the year. A peaker has no equivalent &mdash; it either clears its
+            (discharge), across every real day in the year. A peaker has no equivalent. it either clears its
             cost or it doesn't; it can't buy cheap power to sell later.
           </p>
           <div className="pvb-legend">
@@ -943,7 +943,7 @@ export default function PeakerVsBattery() {
           <h2 className="ace-section-heading">Monthly economics</h2>
           <p className="pvb-sub">
             What each technology would have captured per month, at the $1B-equivalent scale (485&nbsp;MW/2-hr
-            battery vs. 400&nbsp;MW peaker) &mdash; battery: perfect-foresight arbitrage spread; peaker: operating
+            battery vs. 400&nbsp;MW peaker). battery: perfect-foresight arbitrage spread; peaker: operating
             margin above its real monthly fuel + O&amp;M cost, only in hours it clears.
           </p>
           <div className="pvb-legend">
