@@ -338,16 +338,6 @@ export default function PricingPressure({ className = "" }: { className?: string
   return (
     <div className={`pricing-pressure ace-research-page ${className}`}>
       <div className="pp-page ace-page-shell">
-        <div className="pp-masthead ace-page-header">
-          <div className="pp-kicker ace-eyebrow">Austin Clean Energy research</div>
-          <h1 className="pp-title ace-page-title">Load Zone Pricing Pressure</h1>
-          <p className="pp-subtitle ace-page-lede">
-            Austin Energy pays an adverse basis cost when its resources settle below the ERCOT hub price. Explore
-            the history and test how load growth could widen that gap before new transmission arrives.
-          </p>
-          <p className="pp-subtitle pp-warn">This is a scenario sketch, not a forecast. Section 04 spells out everything it can't see.</p>
-        </div>
-
         {/* 01. history */}
         <section className="pp-section ace-section">
           <h2 className="pp-section-title"><span className="pp-num">01</span> The real, measured history</h2>

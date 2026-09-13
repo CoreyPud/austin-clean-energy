@@ -82,34 +82,12 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
   return (
     <div className={`case-for-austin-energy ace-research-page ${className}`}>
       <div className="cae-page ace-page-shell">
-        <div className="ace-page-header">
-        <div className="cae-kicker ace-eyebrow">Austin Clean Energy research</div>
-        <h1 className="ace-page-title">The Case for Austin Energy</h1>
-        <p className="cae-dek ace-page-lede">
-          Gov. Greg Abbott wants to end Austin Energy&rsquo;s status as the city&rsquo;s only power provider and
-          open Austin to the same competitive retail market Houston and Dallas already have. He says it would
-          cut bills more than 10%. Here&rsquo;s what the actual price, reliability, and emissions data say
-            and what Austin stands to lose.
-        </p>
-        </div>
-
-        <details className="cae-disclosure cae-status ace-disclosure">
-          <summary><span className="cae-dot" /><strong>Not law yet</strong></summary>
-          <p>
-            Abbott announced this as a legislative push in August 2026; it
-            would require the Texas Legislature to act. Austin Energy and CPS Energy (San Antonio) remain
-            municipally owned monopolies today. This page compares how that model is actually performing
-            against the deregulated market Abbott wants to move Austin into.
-          </p>
-        </details>
-
         <section className="ace-section">
           <div className="cae-shead">
-            <span className="cae-snum">01</span>
             <h2 className="ace-section-heading">What Abbott is proposing</h2>
           </div>
           <p className="cae-intro">
-            In August 2026, Abbott announced a plan to dismantle the municipal-utility model in Texas cities
+            This is a proposal, not current law. In August 2026, Abbott announced a plan to dismantle the municipal-utility model in Texas cities
             that still run their own power company. Austin Energy and CPS Energy in San Antonio are the
             two big ones. Instead of one city-owned utility that both delivers and effectively sells power,
             Austin would move to the same <b>retail-choice market</b> that Houston and Dallas already use: a
@@ -123,7 +101,6 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
 
         <section className="ace-section">
           <div className="cae-shead">
-            <span className="cae-snum">02</span>
             <h2 className="ace-section-heading">Do Austinites pay more?</h2>
           </div>
           <p className="cae-intro">
@@ -153,7 +130,6 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
 
         <section className="ace-section">
           <div className="cae-shead">
-            <span className="cae-snum">03</span>
             <h2 className="ace-section-heading">Is public power less reliable?</h2>
           </div>
           <p className="cae-intro">
@@ -183,7 +159,6 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
 
         <section className="ace-section">
           <div className="cae-shead">
-            <span className="cae-snum">04</span>
             <h2 className="ace-section-heading">What about emissions?</h2>
           </div>
           <p className="cae-intro">
@@ -209,7 +184,6 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
 
         <section className="ace-section">
           <div className="cae-shead">
-            <span className="cae-snum">05</span>
             <h2 className="ace-section-heading">The money question</h2>
           </div>
           <p className="cae-intro">
@@ -239,7 +213,6 @@ export default function CaseForAustinEnergy({ className = "" }: { className?: st
 
         <section className="ace-section">
           <div className="cae-shead">
-            <span className="cae-snum">06</span>
             <h2 className="ace-section-heading">Where things stand</h2>
           </div>
           <div className="cae-quotegrid">

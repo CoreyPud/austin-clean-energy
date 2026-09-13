@@ -43,15 +43,15 @@
 }
 
 .case-for-austin-energy .cae-page {
-  max-width: 920px;
+  max-width: 1024px;
   margin: 0 auto;
-  padding: 56px 24px 80px;
+  padding: 0;
 }
 
 .case-for-austin-energy h1,
 .case-for-austin-energy h2,
 .case-for-austin-energy h3 {
-  font-family: "Newsreader", Georgia, serif;
+  font-family: inherit;
   font-weight: 600;
   text-wrap: balance;
   margin: 0;
@@ -118,7 +118,7 @@
 }
 
 .case-for-austin-energy section {
-  margin-top: 64px;
+  margin-top: 48px;
 }
 
 .case-for-austin-energy .cae-shead {
@@ -398,7 +398,8 @@
 }
 
 /* Open chapter layout */
-.case-for-austin-energy section { margin-top: 56px; padding-top: 30px; border-top: 1px solid var(--cae-line); }
+.case-for-austin-energy section { margin-top: 48px; padding-top: 0; border-top: 0; }
+.case-for-austin-energy section + section { padding-top: 40px; border-top: 1px solid var(--cae-line); }
 .case-for-austin-energy .cae-snum { border: 0; border-radius: 0; padding: 0; color: var(--cae-muni-ink); }
 .case-for-austin-energy .cae-chartbox { background: transparent; border: 0; border-radius: 0; padding: 10px 0 0; box-shadow: none; }
 .case-for-austin-energy .cae-tiles { gap: 0; border-block: 1px solid var(--cae-line); }

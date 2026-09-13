@@ -169,26 +169,15 @@ export default function LoadEstimator({ className = "" }: { className?: string }
   return (
     <div className={`load-estimator ace-research-page ${className}`}>
       <div className="le-page ace-page-shell">
-        <div className="le-masthead ace-page-header">
-          <div className="le-kicker ace-eyebrow">Austin Clean Energy calculator</div>
-          <h1 className="le-title ace-page-title">Load Growth Estimator</h1>
-          <p className="le-subtitle ace-page-lede">
-            Add possible housing, data centers, industry, and EV fleets to Austin Energy's permit pipeline. See
-            how each scenario changes peak demand.
-          </p>
-        </div>
-
         {/* 01. baseline */}
         <section className="le-section ace-section">
-          <h2 className="le-section-title"><span className="le-num">01</span> Where Austin Energy stands today</h2>
-          <h3 className="le-section-sub ace-section-heading">The sourced baseline</h3>
+          <h2 className="le-section-title">Current demand</h2>
           <p className="le-section-lede">
-            These four figures are not estimates. they're Austin Energy's own record peak and sales, plus the
-            committed-growth output of the{" "}
+            These figures combine Austin Energy's record peak and sales with the committed-growth output of the
             <a href="https://austincleanenergy.net/building-energy-usage" target="_blank" rel="noopener" style={{ color: "var(--le-accent-ink)" }}>
               Austin Clean Energy building-permit tool
             </a>{" "}
-            this estimator extends. Everything below this point is hypothetical.
+            . Scenarios below are estimates.
           </p>
           <div className="le-stat-row">
             <div className="le-stat-tile">
@@ -227,8 +216,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
 
         {/* 02. builder */}
         <section className="le-section ace-section">
-          <h2 className="le-section-title"><span className="le-num">02</span> Build a scenario</h2>
-          <h3 className="le-section-sub ace-section-heading">What is not in a permit yet?</h3>
+          <h2 className="le-section-title">Build a scenario</h2>
           <p className="le-section-lede">
             Each category converts to peak MW the same way the base tool does. annual energy use ÷ 8,760 hours
             ÷ a load factor (or, where noted, entered directly as peak MW). Every default is editable. Figures
