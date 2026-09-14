@@ -186,49 +186,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      <CampaignPopup />
+      <PageHeader
+        title="Austin Clean Energy Progress and Resources"
+        subtitle="How Austin's solar buildout, EV adoption, spending, and energy decisions are trending, plus tools to see what clean energy means for your household."
+      />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-secondary/80" />
-        </div>
-        <div className="relative z-10 max-w-5xl mx-auto px-4 py-14 md:py-20">
-          <div className="animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-              Help Build Austin's Clean Energy Future
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 mb-4 leading-relaxed">
-              Austin is in the middle of a clean energy shift. We make the underlying data accessible so anyone can
-              follow the city's progress, understand the trends, and figure out what it means for their household and
-              their community.
-            </p>
-            <p className="text-lg text-white/80 mb-8 leading-relaxed">
-              Pick a place to start: track how Austin is doing, or calculate what clean energy would mean for your home.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:w-fit">
-              <Button
-                size="lg"
-                onClick={() =>
-                  document.getElementById("city-trends")?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }
-                className="bg-accent hover:bg-accent/90 text-foreground font-semibold w-full sm:w-48"
-              >
-                Austin Trends
-              </Button>
-              <Button
-                size="lg"
-                onClick={() =>
-                  document.getElementById("personal-picture")?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }
-                className="bg-accent hover:bg-accent/90 text-foreground font-semibold w-full sm:w-48"
-              >
-                What You Can Do
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Feature cards */}
       <section className="py-20 container mx-auto px-4">
