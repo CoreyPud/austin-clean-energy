@@ -12,13 +12,13 @@ const CHOICES = [
     to: "/property-assessment",
     icon: Home,
     title: "Residential Savings",
-    description: "See your roof's solar potential, Austin Energy rebates, and what it would save your household.",
+    description: "See your solar savings, including Austin Energy rebates, and Federal Incentives.",
   },
   {
     to: "/property-assessment?type=commercial",
     icon: Building2,
     title: "Commercial Savings",
-    description: "Run the same assessment for a business, multifamily, or non-profit property in Austin.",
+    description: "See your solar savings! Specific calculations for businesses, multifamily, or non-profit buildings in Austin.",
   },
   {
     to: "/progress-resources",
@@ -103,7 +103,7 @@ const Index = () => {
             />
             <Button size="lg" onClick={goToAssessment} className="h-12 sm:w-auto">
               <Search className="mr-2 h-4 w-4" />
-              Check my address
+              See my savings!
             </Button>
           </div>
         </div>
