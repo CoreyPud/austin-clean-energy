@@ -88,6 +88,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/nonprofit-solar-lender",
+    title: "Non-Profit Solar Bridge Loan Calculator",
+    description: "Model a 25-year non-profit solar pro forma with the Austin Energy rebate, IRS Direct Pay, and a bridge loan.",
+    icon: Gauge,
+  },
+  {
     path: "/import-capacity",
     title: "Austin Energy Import Capacity",
     description: "Model Austin's Total Transfer Capability (TTC) and see when ERCOT price separation triggers.",

@@ -61,6 +61,7 @@ import AdminCourseResults from "./pages/AdminCourseResults";
 import LoadEstimator from "./pages/LoadEstimator";
 import PeakerVsBatteryPage from "./pages/PeakerVsBattery";
 import CaseForAustinEnergy from "./pages/CaseForAustinEnergy";
+import NonprofitSolarLender from "./pages/NonprofitSolarLender";
 
 const queryClient = new QueryClient();
 
@@ -123,6 +124,7 @@ const AppRoutes = () => {
           <Route path="/load-estimator" element={<LoadEstimator />} />
           <Route path="/peaker-vs-battery" element={<PeakerVsBatteryPage />} />
           <Route path="/case-for-austin-energy" element={<CaseForAustinEnergy />} />
+          <Route path="/nonprofit-solar-lender" element={<NonprofitSolarLender />} />
         </Route>
 
         {/* Pages without footer */}
