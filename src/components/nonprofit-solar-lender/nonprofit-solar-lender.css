@@ -1,0 +1,143 @@
+.nonprofit-solar-lender.ace-research-page {
+  --npsl-section-gap: 28px;
+  padding-top: 32px;
+  padding-bottom: 48px;
+}
+
+.nonprofit-solar-lender.ace-research-page .ace-page-shell {
+  max-width: 1080px;
+}
+
+.nonprofit-solar-lender.ace-research-page .ace-section {
+  margin-top: var(--npsl-section-gap);
+}
+
+.nonprofit-solar-lender.ace-research-page .ace-section + .ace-section {
+  padding-top: var(--npsl-section-gap);
+}
+
+.nonprofit-solar-lender .ace-section-heading {
+  font-size: 1.25rem;
+  margin-bottom: 6px;
+}
+
+.nonprofit-solar-lender .ace-section-lede {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 760px;
+}
+
+.nonprofit-solar-lender .npsl-input-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .nonprofit-solar-lender .npsl-input-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.nonprofit-solar-lender .npsl-input-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nonprofit-solar-lender .npsl-number-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .nonprofit-solar-lender .npsl-number-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.nonprofit-solar-lender .npsl-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .nonprofit-solar-lender .npsl-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.nonprofit-solar-lender .npsl-kpi {
+  padding: 12px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+}
+
+.nonprofit-solar-lender .npsl-kpi-label {
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.nonprofit-solar-lender .npsl-kpi-value {
+  margin-top: 2px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.nonprofit-solar-lender .npsl-kpi-note {
+  margin-top: 2px;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+}
+
+.nonprofit-solar-lender .npsl-summary {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: hsl(var(--muted) / 0.35);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: hsl(var(--foreground));
+}
+
+.nonprofit-solar-lender .npsl-table-wrap {
+  overflow-x: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+}
+
+.nonprofit-solar-lender .npsl-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.nonprofit-solar-lender .npsl-table-wrap th,
+.nonprofit-solar-lender .npsl-table-wrap td {
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+.nonprofit-solar-lender .npsl-table-wrap thead {
+  background: hsl(var(--muted) / 0.4);
+}
+
+.nonprofit-solar-lender .npsl-table-wrap th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: hsl(var(--muted-foreground));
+}
+
+.nonprofit-solar-lender .npsl-table-scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.nonprofit-solar-lender .npsl-chart {
+  height: 240px;
+}
