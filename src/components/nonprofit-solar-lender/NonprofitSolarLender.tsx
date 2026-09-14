@@ -115,9 +115,18 @@ function Kpi({
 }
 
 export default function NonprofitSolarLender({ className = "" }: { className?: string }) {
-  const [inputs, setInputs] = useState<LenderInputs>(DEFAULT_INPUTS);
+  const [rawInputs, setInputs] = useState<LenderInputs>(DEFAULT_INPUTS);
+  const [offsetPct, setOffsetPct] = useState(100);
   const set = <Key extends keyof LenderInputs>(key: Key) => (v: number) =>
     setInputs((prev) => ({ ...prev, [key]: v }));
+
+  const fullOffsetKw = useMemo(() => {
+    const annualKwh = rawInputs.baselineBill / Math.max(rawInputs.utilityRate, 0.01);
+    return Math.max(1, Math.round(annualKwh / Math.max(rawInputs.specificYield, 1)));
+  }, [rawInputs.baselineBill, rawInputs.utilityRate, rawInputs.specificYield]);
+
+  const systemKw = Math.max(1, Math.round((fullOffsetKw * offsetPct) / 100));
+  const inputs = useMemo<LenderInputs>(() => ({ ...rawInputs, systemKw }), [rawInputs, systemKw]);
 
   const result = useMemo(() => calculateProforma(inputs), [inputs]);
 
