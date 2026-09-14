@@ -428,6 +428,23 @@ const ProgressResources = () => {
               />
 
               <FeatureCard
+                to="/nonprofit-solar-lender"
+                title="Non-Profit Solar Bridge Loan Calculator"
+                description="Model a 25-year solar pro forma for a non-profit using the Austin Energy rebate, IRS Direct Pay, and a bridge loan repaid from bill savings."
+                cta="Run the Numbers"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Landmark className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      Bridge financing for non-profit solar projects
+                    </span>
+                  </div>
+                }
+              />
+
+              <FeatureCard
                 to="/pricing-pressure"
                 title="Pricing Pressure"
                 description="See how Austin Energy's adverse basis costs have changed since 2018 and where current trends could lead next."
