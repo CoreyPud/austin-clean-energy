@@ -71,8 +71,8 @@ function SliderField({
   step: number;
 }) {
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-0.5 gap-3">
+    <div className="npsl-slider-field">
+      <div className="npsl-slider-heading">
         <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
         <span className="text-xs font-semibold text-primary whitespace-nowrap">{display}</span>
       </div>
@@ -278,6 +278,12 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
           <h2 className="ace-section-heading">What the model shows</h2>
           <div className="mt-3 npsl-kpi-grid">
             <Kpi
+              label="25-year net savings"
+              value={fmtCurr(result.savings25Yr)}
+              accent
+              note="Net cash created"
+            />
+            <Kpi
               label="Total project cost"
               value={fmtCurr(result.totalProjectCost)}
               note="Covered upfront by the loan"
@@ -297,12 +303,6 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
               label="Debt payoff time"
               value={`${(result.payoffMonth / 12).toFixed(1)} years`}
               note={`${result.payoffMonth} months total`}
-            />
-            <Kpi
-              label="25-year net savings"
-              value={fmtCurr(result.savings25Yr)}
-              accent
-              note="Net cash created"
             />
             <Kpi
               label="Lender interest earned"

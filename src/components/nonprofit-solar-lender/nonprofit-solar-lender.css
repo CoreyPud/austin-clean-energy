@@ -45,6 +45,18 @@
   gap: 14px;
 }
 
+.nonprofit-solar-lender .npsl-slider-field {
+  width: min(100%, 20rem);
+}
+
+.nonprofit-solar-lender .npsl-slider-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
 .nonprofit-solar-lender .npsl-slider-row {
   display: flex;
   align-items: center;
@@ -52,8 +64,8 @@
 }
 
 .nonprofit-solar-lender .npsl-slider-row input[type="range"] {
-  flex: 1 1 auto;
-  max-width: 240px;
+  width: 100%;
+  max-width: none;
   min-width: 120px;
   height: 0.6rem;
 }
