@@ -26,6 +26,7 @@ function NumberField({
   min,
   max,
   step = 1,
+  inputClassName = "",
 }: {
   label: string;
   value: number;
@@ -33,10 +34,11 @@ function NumberField({
   min: number;
   max: number;
   step?: number;
+  inputClassName?: string;
 }) {
   return (
-    <label className="block">
-      <span className="block text-[11px] font-medium text-muted-foreground mb-0.5 leading-tight">{label}</span>
+    <label className="npsl-number-field">
+      <span className="block text-[11px] font-medium text-muted-foreground mb-0.5 leading-tight whitespace-nowrap">{label}</span>
       <input
         type="number"
         value={value}
@@ -44,11 +46,12 @@ function NumberField({
         max={max}
         step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-md border border-input bg-background px-2 py-1 text-right text-xs text-foreground"
+        className={`rounded-md border border-input bg-background px-1.5 py-1 text-right text-xs text-foreground ${inputClassName}`}
       />
     </label>
   );
 }
+
 
 function SliderField({
   label,
