@@ -54,12 +54,15 @@ const PropertyAssessment = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const sharedAddress = searchParams.get("address") || "";
+  const requestedType = searchParams.get("type") || searchParams.get("propertyType") || "";
+  const VALID_TYPES = ["single-family", "multi-family", "condo", "commercial", "non-profit"];
   const { toast } = useToast();
   const [address, setAddress] = useState(sharedAddress);
-  const [propertyType, setPropertyType] = useState("single-family");
+  const [propertyType, setPropertyType] = useState(
+    VALID_TYPES.includes(requestedType) ? requestedType : "single-family",
+  );
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
-  const [autoRanFromUrl, setAutoRanFromUrl] = useState(false);
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [uploadedKwh, setUploadedKwh] = useState<number[] | null>(null);
   const [uploadedBillData, setUploadedBillData] = useState<{ label: string; kwh: number; bill: number }[] | null>(null);
@@ -325,17 +328,8 @@ const PropertyAssessment = () => {
     }
   };
 
-  // Auto-run when arriving via shared link (?address=...). Defaults propertyType to single-family.
-  useEffect(() => {
-    if (!sharedAddress || autoRanFromUrl || results || loading) return;
-    setAutoRanFromUrl(true);
-    if (!propertyType) setPropertyType("single-family");
-    // Defer to next tick so state settles
-    setTimeout(() => {
-      handleAssess();
-    }, 50);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sharedAddress]);
+  // Arriving via link (?address=...) only prefills the address; the visitor confirms the
+  // property type and other options, then starts the assessment themselves.
 
   const handleGetPersonalizedPlan = () => {
     setShowLifestyleForm(true);

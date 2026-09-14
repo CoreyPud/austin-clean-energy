@@ -10,6 +10,12 @@ const publicPages = [
     icon: Home,
   },
   {
+    path: "/progress-resources",
+    title: "Austin Clean Energy Progress and Resources",
+    description: "Solar and EV growth, energy spending, utility decisions, and the tools behind the data.",
+    icon: BarChart3,
+  },
+  {
     path: "/city-overview",
     title: "City Overview",
     description: "City-wide solar installation statistics, year-over-year trends, and quarterly comparisons.",
