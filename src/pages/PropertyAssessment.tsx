@@ -325,17 +325,8 @@ const PropertyAssessment = () => {
     }
   };
 
-  // Auto-run when arriving via shared link (?address=...). Defaults propertyType to single-family.
-  useEffect(() => {
-    if (!sharedAddress || autoRanFromUrl || results || loading) return;
-    setAutoRanFromUrl(true);
-    if (!propertyType) setPropertyType("single-family");
-    // Defer to next tick so state settles
-    setTimeout(() => {
-      handleAssess();
-    }, 50);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sharedAddress]);
+  // Arriving via link (?address=...) only prefills the address; the visitor confirms the
+  // property type and other options, then starts the assessment themselves.
 
   const handleGetPersonalizedPlan = () => {
     setShowLifestyleForm(true);
