@@ -274,7 +274,10 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
 
               <button
                 type="button"
-                onClick={() => setInputs(DEFAULT_INPUTS)}
+                onClick={() => {
+                  setInputs(DEFAULT_INPUTS);
+                  setOffsetPct(100);
+                }}
                 className="self-start text-xs font-semibold text-primary underline"
               >
                 Reset defaults
