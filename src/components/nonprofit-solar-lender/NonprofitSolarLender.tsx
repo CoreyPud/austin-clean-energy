@@ -135,10 +135,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
     savings: Math.round(y.cumulativeNetSavings),
     balance: Math.round(y.endBalance),
   }));
-  // eslint-disable-next-line no-console
-  console.log("chartData", JSON.stringify(chartData.slice(0, 5)));
-  // eslint-disable-next-line no-console
-  console.log("chartData last", JSON.stringify(chartData[chartData.length - 1]));
+
 
 
 
