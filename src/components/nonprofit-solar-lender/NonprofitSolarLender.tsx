@@ -26,6 +26,7 @@ function NumberField({
   min,
   max,
   step = 1,
+  inputClassName = "",
 }: {
   label: string;
   value: number;
@@ -33,10 +34,11 @@ function NumberField({
   min: number;
   max: number;
   step?: number;
+  inputClassName?: string;
 }) {
   return (
-    <label className="block">
-      <span className="block text-[11px] font-medium text-muted-foreground mb-0.5 leading-tight">{label}</span>
+    <label className="npsl-number-field">
+      <span className="block text-[11px] font-medium text-muted-foreground mb-0.5 leading-tight whitespace-nowrap">{label}</span>
       <input
         type="number"
         value={value}
@@ -44,11 +46,12 @@ function NumberField({
         max={max}
         step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-md border border-input bg-background px-2 py-1 text-right text-xs text-foreground"
+        className={`rounded-md border border-input bg-background px-1.5 py-1 text-right text-xs text-foreground ${inputClassName}`}
       />
     </label>
   );
 }
+
 
 function SliderField({
   label,
@@ -75,7 +78,7 @@ function SliderField({
         <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
         <span className="text-xs font-semibold text-primary">{display}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="npsl-slider-row">
         <input
           type="range"
           value={value}
@@ -83,7 +86,7 @@ function SliderField({
           max={max}
           step={step}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-primary h-4"
+          className="accent-primary"
         />
         {showNumber && (
           <input
@@ -93,13 +96,14 @@ function SliderField({
             max={max}
             step={step}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="w-20 rounded-md border border-input bg-background px-1.5 py-1 text-right text-[11px] text-foreground"
+            className="rounded-md border border-input bg-background px-1 py-0.5 text-right text-[11px] text-foreground"
           />
         )}
       </div>
     </div>
   );
 }
+
 
 function Kpi({
   label,
@@ -199,6 +203,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0.05}
                   max={0.5}
                   step={0.01}
+                  inputClassName="w-16"
                 />
                 <NumberField
                   label="Annual escalator (%)"
@@ -207,6 +212,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={10}
                   step={0.5}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Yield (kWh/kW)"
@@ -215,6 +221,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={900}
                   max={1900}
                   step={25}
+                  inputClassName="w-20"
                 />
                 <NumberField
                   label="Degradation (%)"
@@ -223,6 +230,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={3}
                   step={0.1}
+                  inputClassName="w-16"
                 />
                 <NumberField
                   label="O and M ($/kW/yr)"
@@ -231,6 +239,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={50}
                   step={1}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Austin Energy rebate ($/W-ac)"
@@ -239,6 +248,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={3}
                   step={0.05}
+                  inputClassName="w-16"
                 />
                 <NumberField
                   label="IRS Direct Pay (%)"
@@ -247,6 +257,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={70}
                   step={5}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Rebate receipt (month)"
@@ -254,6 +265,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   onChange={set("aeRebateTiming")}
                   min={1}
                   max={12}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Direct Pay receipt (month)"
@@ -261,8 +273,10 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   onChange={set("irsTiming")}
                   min={6}
                   max={24}
+                  inputClassName="w-14"
                 />
               </div>
+
               <button
                 type="button"
                 onClick={() => setInputs(DEFAULT_INPUTS)}
