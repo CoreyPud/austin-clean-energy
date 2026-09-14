@@ -621,4 +621,4 @@ const ProgressResources = () => {
   );
 };
 
-export default Index;
+export default ProgressResources;
