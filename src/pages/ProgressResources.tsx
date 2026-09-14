@@ -108,11 +108,11 @@ function texasPopEst(year: number) {
   return 29_000_000 + (year - 2019) * 230_000;
 }
 
-const Index = () => {
+const ProgressResources = () => {
   useSeo({
-    title: "Austin Clean Energy Opportunity Dashboard",
+    title: "Austin Clean Energy Progress and Resources",
     description:
-      "Data-driven insights for solar adoption, energy efficiency, and battery storage in Austin. Empowering residents and policymakers to accelerate clean energy transition.",
+      "Track Austin's solar buildout, EV adoption, energy spending, and key utility decisions, plus tools to see what clean energy means for your household.",
   });
   const navigate = useNavigate();
 
