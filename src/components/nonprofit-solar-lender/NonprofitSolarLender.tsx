@@ -203,6 +203,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0.05}
                   max={0.5}
                   step={0.01}
+                  inputClassName="w-16"
                 />
                 <NumberField
                   label="Annual escalator (%)"
@@ -211,6 +212,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={10}
                   step={0.5}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Yield (kWh/kW)"
@@ -219,6 +221,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={900}
                   max={1900}
                   step={25}
+                  inputClassName="w-20"
                 />
                 <NumberField
                   label="Degradation (%)"
@@ -227,6 +230,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={3}
                   step={0.1}
+                  inputClassName="w-16"
                 />
                 <NumberField
                   label="O and M ($/kW/yr)"
@@ -235,6 +239,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={50}
                   step={1}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Austin Energy rebate ($/W-ac)"
@@ -243,6 +248,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={3}
                   step={0.05}
+                  inputClassName="w-16"
                 />
                 <NumberField
                   label="IRS Direct Pay (%)"
@@ -251,6 +257,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   min={0}
                   max={70}
                   step={5}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Rebate receipt (month)"
@@ -258,6 +265,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   onChange={set("aeRebateTiming")}
                   min={1}
                   max={12}
+                  inputClassName="w-14"
                 />
                 <NumberField
                   label="Direct Pay receipt (month)"
@@ -265,8 +273,10 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   onChange={set("irsTiming")}
                   min={6}
                   max={24}
+                  inputClassName="w-14"
                 />
               </div>
+
               <button
                 type="button"
                 onClick={() => setInputs(DEFAULT_INPUTS)}
