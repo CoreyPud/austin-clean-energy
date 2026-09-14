@@ -125,7 +125,9 @@ export function calculateProforma(i: LenderInputs): ProformaResult {
     const currentYear = Math.ceil(m / 12);
     const currentEscalatedRate = rateKwh * Math.pow(1 + rateEsc, currentYear - 1);
     const currentYearGen = initialAnnualGenKwh * Math.pow(1 - degradationRate, currentYear - 1);
-    const currentMonthlySavings = (currentYearGen / 12) * currentEscalatedRate;
+    const currentAnnualBill = baselineBillYear1 * Math.pow(1 + rateEsc, currentYear - 1);
+    const currentAnnualSolarValue = currentYearGen * currentEscalatedRate;
+    const currentMonthlySavings = Math.min(currentAnnualSolarValue, currentAnnualBill) / 12;
 
     const monthlyInterest = currentLoanBalance * monthlyRate;
     totalInterestPaid += monthlyInterest;
@@ -180,7 +182,7 @@ export function calculateProforma(i: LenderInputs): ProformaResult {
     const yearGenKwh = initialAnnualGenKwh * Math.pow(1 - degradationRate, y - 1);
     const yearRate = rateKwh * Math.pow(1 + rateEsc, y - 1);
     const baselineBill = baselineBillYear1 * Math.pow(1 + rateEsc, y - 1);
-    const solarValue = yearGenKwh * yearRate;
+    const solarValue = Math.min(yearGenKwh * yearRate, baselineBill);
     const omExpense = systemKw * omRatePerKw * Math.pow(1.02, y - 1);
 
     let rebateCollected = 0;
