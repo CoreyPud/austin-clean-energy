@@ -177,7 +177,6 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                 min={0}
                 max={10}
                 step={0.25}
-                showNumber={false}
               />
             </div>
 
