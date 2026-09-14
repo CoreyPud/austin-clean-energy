@@ -115,9 +115,18 @@ function Kpi({
 }
 
 export default function NonprofitSolarLender({ className = "" }: { className?: string }) {
-  const [inputs, setInputs] = useState<LenderInputs>(DEFAULT_INPUTS);
+  const [rawInputs, setInputs] = useState<LenderInputs>(DEFAULT_INPUTS);
+  const [offsetPct, setOffsetPct] = useState(100);
   const set = <Key extends keyof LenderInputs>(key: Key) => (v: number) =>
     setInputs((prev) => ({ ...prev, [key]: v }));
+
+  const fullOffsetKw = useMemo(() => {
+    const annualKwh = rawInputs.baselineBill / Math.max(rawInputs.utilityRate, 0.01);
+    return Math.max(1, Math.round(annualKwh / Math.max(rawInputs.specificYield, 1)));
+  }, [rawInputs.baselineBill, rawInputs.utilityRate, rawInputs.specificYield]);
+
+  const systemKw = Math.max(1, Math.round((fullOffsetKw * offsetPct) / 100));
+  const inputs = useMemo<LenderInputs>(() => ({ ...rawInputs, systemKw }), [rawInputs, systemKw]);
 
   const result = useMemo(() => calculateProforma(inputs), [inputs]);
 
@@ -136,19 +145,28 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
         <section className="ace-section">
           <h2 className="ace-section-heading">Project and system inputs</h2>
           <p className="ace-section-lede">
-            Adjust the system, utility baseline, incentives, and loan terms. Every number below
-            updates as you change these.
+            Start with your annual electric bill. The system size defaults to covering 100% of that
+            usage, and you can dial it back if you want a smaller project.
           </p>
 
           <div className="mt-4 npsl-input-grid">
             <div className="npsl-input-stack">
               <SliderField
-                label="System size (kW DC)"
-                display={`${inputs.systemKw} kW`}
-                value={inputs.systemKw}
-                onChange={set("systemKw")}
+                label="Annual electric bill"
+                display={fmtCurr(inputs.baselineBill)}
+                value={inputs.baselineBill}
+                onChange={set("baselineBill")}
+                min={5000}
+                max={200000}
+                step={1000}
+              />
+              <SliderField
+                label="Share of bill covered by solar"
+                display={`${offsetPct}% - ${systemKw} kW`}
+                value={offsetPct}
+                onChange={setOffsetPct}
                 min={10}
-                max={500}
+                max={100}
                 step={5}
               />
               <SliderField
@@ -159,15 +177,6 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                 min={1}
                 max={4}
                 step={0.05}
-              />
-              <SliderField
-                label="Annual electric bill"
-                display={fmtCurr(inputs.baselineBill)}
-                value={inputs.baselineBill}
-                onChange={set("baselineBill")}
-                min={5000}
-                max={200000}
-                step={1000}
               />
               <SliderField
                 label="Lender loan interest rate (% APR)"
@@ -265,7 +274,10 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
 
               <button
                 type="button"
-                onClick={() => setInputs(DEFAULT_INPUTS)}
+                onClick={() => {
+                  setInputs(DEFAULT_INPUTS);
+                  setOffsetPct(100);
+                }}
                 className="self-start text-xs font-semibold text-primary underline"
               >
                 Reset defaults
