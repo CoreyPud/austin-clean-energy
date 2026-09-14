@@ -13,9 +13,8 @@ import {
   Gauge,
   BatteryCharging,
 } from "lucide-react";
-import heroImage from "@/assets/hero-austin-solar.jpg";
 import { useEffect, useMemo, useState } from "react";
-import CampaignPopup from "@/components/CampaignPopup";
+import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 import {
   BarChart,
