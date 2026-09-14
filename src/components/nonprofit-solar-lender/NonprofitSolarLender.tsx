@@ -17,6 +17,7 @@ import {
   summaryText,
   type LenderInputs,
 } from "./nonprofit-solar-lender-model";
+import "./nonprofit-solar-lender.css";
 
 function NumberField({
   label,
@@ -35,7 +36,7 @@ function NumberField({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs font-medium text-muted-foreground mb-1">{label}</span>
+      <span className="block text-[11px] font-medium text-muted-foreground mb-0.5 leading-tight">{label}</span>
       <input
         type="number"
         value={value}
@@ -43,7 +44,7 @@ function NumberField({
         max={max}
         step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-right text-sm text-foreground"
+        className="w-full rounded-md border border-input bg-background px-2 py-1 text-right text-xs text-foreground"
       />
     </label>
   );
@@ -70,11 +71,11 @@ function SliderField({
 }) {
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-1">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <span className="text-sm font-semibold text-primary">{display}</span>
+      <div className="flex items-baseline justify-between mb-0.5">
+        <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold text-primary">{display}</span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <input
           type="range"
           value={value}
@@ -82,7 +83,7 @@ function SliderField({
           max={max}
           step={step}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-primary"
+          className="w-full accent-primary h-4"
         />
         {showNumber && (
           <input
@@ -92,7 +93,7 @@ function SliderField({
             max={max}
             step={step}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="w-24 rounded-md border border-input bg-background px-2 py-1 text-right text-xs text-foreground"
+            className="w-20 rounded-md border border-input bg-background px-1.5 py-1 text-right text-[11px] text-foreground"
           />
         )}
       </div>
@@ -112,21 +113,19 @@ function Kpi({
   accent?: boolean;
 }) {
   return (
-    <div className="border-t pt-3">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div
-        className={`mt-1 text-2xl font-bold ${accent ? "text-primary" : "text-foreground"}`}
-      >
+    <div className="npsl-kpi">
+      <div className="npsl-kpi-label">{label}</div>
+      <div className={`npsl-kpi-value ${accent ? "text-primary" : "text-foreground"}`}>
         {value}
       </div>
-      <div className="mt-0.5 text-[11px] text-muted-foreground">{note}</div>
+      <div className="npsl-kpi-note">{note}</div>
     </div>
   );
 }
 
 export default function NonprofitSolarLender({ className = "" }: { className?: string }) {
   const [inputs, setInputs] = useState<LenderInputs>(DEFAULT_INPUTS);
-  const set = <K extends keyof LenderInputs>(key: K) => (v: number) =>
+  const set = <Key extends keyof LenderInputs>(key: Key) => (v: number) =>
     setInputs((prev) => ({ ...prev, [key]: v }));
 
   const result = useMemo(() => calculateProforma(inputs), [inputs]);
@@ -147,8 +146,8 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
             updates as you change these.
           </p>
 
-          <div className="mt-6 grid gap-8 lg:grid-cols-2">
-            <div className="space-y-5">
+          <div className="mt-4 npsl-input-grid">
+            <div className="npsl-input-stack">
               <SliderField
                 label="System size (kW DC)"
                 display={`${inputs.systemKw} kW`}
@@ -188,8 +187,8 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
               />
             </div>
 
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="npsl-input-stack">
+              <div className="npsl-number-grid">
                 <NumberField
                   label="Baseline rate ($/kWh)"
                   value={inputs.utilityRate}
@@ -223,7 +222,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                   step={0.1}
                 />
                 <NumberField
-                  label="Operations and maintenance ($/kW/yr)"
+                  label="O and M ($/kW/yr)"
                   value={inputs.omCost}
                   onChange={set("omCost")}
                   min={0}
@@ -264,7 +263,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
               <button
                 type="button"
                 onClick={() => setInputs(DEFAULT_INPUTS)}
-                className="text-xs font-semibold text-primary underline"
+                className="self-start text-xs font-semibold text-primary underline"
               >
                 Reset defaults
               </button>
@@ -274,7 +273,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
 
         <section className="ace-section">
           <h2 className="ace-section-heading">What the model shows</h2>
-          <div className="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 npsl-kpi-grid">
             <Kpi
               label="Total project cost"
               value={fmtCurr(result.totalProjectCost)}
@@ -309,7 +308,7 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
             />
           </div>
 
-          <p className="ace-section-lede mt-8">{summaryText(result, inputs)}</p>
+          <p className="npsl-summary">{summaryText(result, inputs)}</p>
         </section>
 
         <section className="ace-section">
@@ -317,17 +316,17 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
           <p className="ace-section-lede">
             Cumulative net savings against the remaining loan balance over 25 years.
           </p>
-          <div className="mt-6 h-72 w-full">
+          <div className="mt-3 npsl-chart w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
                 <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
                 <XAxis
                   dataKey="year"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   interval={2}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   tickFormatter={(v: number) => `$${Math.round(v / 1000)}k`}
                 />
                 <Tooltip
@@ -340,14 +339,14 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
                     color: "hsl(var(--foreground))",
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Area
                   type="monotone"
                   dataKey="savings"
                   name="Cumulative net savings"
                   stroke="hsl(var(--primary))"
                   fill="hsl(var(--primary) / 0.12)"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                 />
                 <Line
                   type="monotone"
@@ -368,37 +367,37 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
           <p className="ace-section-lede">
             Loan draws, rebate paydowns, and the Direct Pay lump sum.
           </p>
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
+          <div className="mt-3 npsl-table-wrap">
+            <table>
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-3 font-semibold">Timeline event</th>
-                  <th className="py-2 px-3 text-right font-semibold">Inflow</th>
-                  <th className="py-2 px-3 text-right font-semibold">Principal paid</th>
-                  <th className="py-2 px-3 text-right font-semibold">Interest paid</th>
-                  <th className="py-2 px-3 text-right font-semibold">Ending balance</th>
-                  <th className="py-2 pl-3 font-semibold">Milestone</th>
+                <tr>
+                  <th>Timeline event</th>
+                  <th className="text-right">Inflow</th>
+                  <th className="text-right">Principal paid</th>
+                  <th className="text-right">Interest paid</th>
+                  <th className="text-right">Ending balance</th>
+                  <th>Milestone</th>
                 </tr>
               </thead>
               <tbody>
                 {result.timeline.map((row, idx) => (
                   <tr key={`${row.month}-${idx}`} className="border-b last:border-0">
-                    <td className="py-2 pr-3 font-medium text-foreground">
+                    <td className="font-medium text-foreground">
                       {row.month === 0 ? "Month 0 (close)" : `Month ${row.month}`}
                     </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
+                    <td className="text-right text-muted-foreground">
                       {fmtCurr(row.inflowOutflow)}
                     </td>
-                    <td className="py-2 px-3 text-right font-medium text-primary">
+                    <td className="text-right font-medium text-primary">
                       {fmtCurr(row.principalPaid)}
                     </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
+                    <td className="text-right text-muted-foreground">
                       {fmtCurr(row.interestPaid)}
                     </td>
-                    <td className="py-2 px-3 text-right font-semibold text-foreground">
+                    <td className="text-right font-semibold text-foreground">
                       {fmtCurr(row.endingBalance)}
                     </td>
-                    <td className="py-2 pl-3 text-muted-foreground">
+                    <td className="text-muted-foreground">
                       {row.endingBalance === 0 ? "Paid off" : row.status}
                     </td>
                   </tr>
@@ -411,58 +410,63 @@ export default function NonprofitSolarLender({ className = "" }: { className?: s
         <section className="ace-section">
           <h2 className="ace-section-heading">25-year pro forma schedule</h2>
           <p className="ace-section-lede">Annual detail from year 1 through year 25, in dollars.</p>
-          <div className="mt-6 max-h-[560px] overflow-auto">
-            <table className="w-full min-w-[900px] border-collapse text-sm">
-              <thead className="sticky top-0 bg-background">
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-3 font-semibold">Year</th>
-                  <th className="py-2 px-3 text-right font-semibold">Baseline bill</th>
-                  <th className="py-2 px-3 text-right font-semibold">Solar gen (kWh)</th>
-                  <th className="py-2 px-3 text-right font-semibold">Solar value</th>
-                  <th className="py-2 px-3 text-right font-semibold">O and M</th>
-                  <th className="py-2 px-3 text-right font-semibold">Incentives</th>
-                  <th className="py-2 px-3 text-right font-semibold">Debt service</th>
-                  <th className="py-2 px-3 text-right font-semibold">Net cash flow</th>
-                  <th className="py-2 pl-3 text-right font-semibold">Cumulative savings</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.years.map((y) => (
-                  <tr key={y.year} className="border-b last:border-0">
-                    <td className="py-2 pr-3 font-semibold text-foreground">Year {y.year}</td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {fmtCurr(y.baselineBill)}
-                    </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {Math.round(y.solarGenKwh).toLocaleString()}
-                    </td>
-                    <td className="py-2 px-3 text-right font-medium text-primary">
-                      {fmtCurr(y.solarValue)}
-                    </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {fmtCurr(y.omExpense)}
-                    </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {y.incentives > 0 ? fmtCurr(y.incentives) : "-"}
-                    </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">
-                      {fmtCurr(y.debtService)}
-                    </td>
-                    <td className="py-2 px-3 text-right font-medium text-foreground">
-                      {fmtCurr(y.netAnnualCashFlow)}
-                    </td>
-                    <td className="py-2 pl-3 text-right font-semibold text-foreground">
-                      {fmtCurr(y.cumulativeNetSavings)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <details className="ace-disclosure mt-3">
+            <summary>Show 25-year schedule</summary>
+            <div className="npsl-table-scroll mt-2">
+              <div className="npsl-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Year</th>
+                      <th className="text-right">Baseline bill</th>
+                      <th className="text-right">Solar gen (kWh)</th>
+                      <th className="text-right">Solar value</th>
+                      <th className="text-right">O and M</th>
+                      <th className="text-right">Incentives</th>
+                      <th className="text-right">Debt service</th>
+                      <th className="text-right">Net cash flow</th>
+                      <th className="text-right">Cumulative savings</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.years.map((y) => (
+                      <tr key={y.year} className="border-b last:border-0">
+                        <td className="font-semibold text-foreground">Year {y.year}</td>
+                        <td className="text-right text-muted-foreground">
+                          {fmtCurr(y.baselineBill)}
+                        </td>
+                        <td className="text-right text-muted-foreground">
+                          {Math.round(y.solarGenKwh).toLocaleString()}
+                        </td>
+                        <td className="text-right font-medium text-primary">
+                          {fmtCurr(y.solarValue)}
+                        </td>
+                        <td className="text-right text-muted-foreground">
+                          {fmtCurr(y.omExpense)}
+                        </td>
+                        <td className="text-right text-muted-foreground">
+                          {y.incentives > 0 ? fmtCurr(y.incentives) : "-"}
+                        </td>
+                        <td className="text-right text-muted-foreground">
+                          {fmtCurr(y.debtService)}
+                        </td>
+                        <td className="text-right font-medium text-foreground">
+                          {fmtCurr(y.netAnnualCashFlow)}
+                        </td>
+                        <td className="text-right font-semibold text-foreground">
+                          {fmtCurr(y.cumulativeNetSavings)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
 
           <details className="ace-disclosure">
             <summary>Assumptions and caveats</summary>
-            <div className="pb-4 text-sm leading-relaxed">
+            <div className="pb-3 text-sm leading-relaxed">
               <p>
                 The model assumes the lender funds 100% of construction at close, the Austin Energy
                 commercial rebate and IRS Direct Pay under Section 6417 are applied directly to loan
