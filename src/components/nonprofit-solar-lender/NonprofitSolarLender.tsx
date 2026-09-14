@@ -78,7 +78,7 @@ function SliderField({
         <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
         <span className="text-xs font-semibold text-primary">{display}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="npsl-slider-row">
         <input
           type="range"
           value={value}
@@ -86,7 +86,7 @@ function SliderField({
           max={max}
           step={step}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-primary h-4"
+          className="accent-primary"
         />
         {showNumber && (
           <input
@@ -96,13 +96,14 @@ function SliderField({
             max={max}
             step={step}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="w-20 rounded-md border border-input bg-background px-1.5 py-1 text-right text-[11px] text-foreground"
+            className="rounded-md border border-input bg-background px-1 py-0.5 text-right text-[11px] text-foreground"
           />
         )}
       </div>
     </div>
   );
 }
+
 
 function Kpi({
   label,
