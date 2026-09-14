@@ -61,7 +61,6 @@ function SliderField({
   min,
   max,
   step,
-  showNumber = true,
 }: {
   label: string;
   display: string;
@@ -70,13 +69,12 @@ function SliderField({
   min: number;
   max: number;
   step: number;
-  showNumber?: boolean;
 }) {
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-0.5">
+      <div className="flex items-baseline justify-between mb-0.5 gap-3">
         <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
-        <span className="text-xs font-semibold text-primary">{display}</span>
+        <span className="text-xs font-semibold text-primary whitespace-nowrap">{display}</span>
       </div>
       <div className="npsl-slider-row">
         <input
@@ -88,17 +86,6 @@ function SliderField({
           onChange={(e) => onChange(Number(e.target.value))}
           className="accent-primary"
         />
-        {showNumber && (
-          <input
-            type="number"
-            value={value}
-            min={min}
-            max={max}
-            step={step}
-            onChange={(e) => onChange(Number(e.target.value))}
-            className="rounded-md border border-input bg-background px-1 py-0.5 text-right text-[11px] text-foreground"
-          />
-        )}
       </div>
     </div>
   );
