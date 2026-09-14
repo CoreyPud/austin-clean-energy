@@ -78,10 +78,10 @@
 }
 
 .nonprofit-solar-lender .npsl-number-field input[type="number"] {
-  width: auto;
   min-width: 3.25rem;
   text-align: right;
 }
+
 
 
 .nonprofit-solar-lender .npsl-kpi-grid {
