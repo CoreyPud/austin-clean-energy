@@ -1,0 +1,177 @@
+/* The Arbitrage Window — scoped styles.
+   Mirrors battery-ledger.css's token system and structure so the two tools
+   feel like one family. Everything lives under .arbitrage-window so it
+   can't leak into (or be leaked into by) the rest of the app's global
+   CSS/theme tokens. */
+
+.arbitrage-window {
+  --aw-paper: #f7f4ec;
+  --aw-paper-raised: #f2efe8;
+  --aw-ink: #1b2228;
+  --aw-ink-muted: #3a454e;
+  --aw-ink-faint: #6f7a83;
+  --aw-line: #d9d3c6;
+  --aw-line-strong: #bdb5a6;
+  --aw-accent: #c78e2b;
+  --aw-accent-ink: #8a5d12;
+  --aw-accent-bg: rgba(199, 142, 43, 0.1);
+  --aw-good: #4a8f70;
+  --aw-good-bg: rgba(74, 143, 112, 0.1);
+  --aw-bad: #b54a41;
+  --aw-bad-bg: rgba(181, 74, 65, 0.1);
+  --aw-illustrative: #4a7fb8;
+  --aw-illustrative-bg: rgba(74, 127, 184, 0.12);
+  --aw-solar-band: rgba(74, 143, 112, 0.08);
+  --aw-peak-band: rgba(181, 74, 65, 0.08);
+  --aw-shadow: 0 1px 2px rgba(27, 34, 40, 0.06), 0 6px 20px rgba(27, 34, 40, 0.05);
+
+  color-scheme: light;
+  background: var(--aw-paper);
+  color: var(--aw-ink);
+  font-family: 'Work Sans', system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+.arbitrage-window * { box-sizing: border-box; }
+
+.arbitrage-window { padding: 44px 20px 80px; }
+.arbitrage-window .aw-page { max-width: 980px; margin: 0 auto; }
+
+.arbitrage-window .aw-kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aw-accent-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.arbitrage-window .aw-kicker::before { content: ""; width: 22px; height: 1px; background: var(--aw-accent); }
+
+.arbitrage-window h1 {
+  font-family: 'Newsreader', serif;
+  font-weight: 500;
+  font-size: clamp(32px, 4.6vw, 46px);
+  letter-spacing: 0;
+  margin: 0 0 12px;
+  text-wrap: balance;
+}
+
+.arbitrage-window .aw-dek { font-size: 16px; color: var(--aw-ink-muted); max-width: 66ch; margin: 0; }
+.arbitrage-window .aw-masthead { border-bottom: 1px solid var(--aw-line-strong); padding-bottom: 26px; margin-bottom: 24px; }
+
+/* status bar */
+.arbitrage-window .aw-status-bar {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--aw-paper-raised); border: 1px solid var(--aw-line);
+  border-radius: 8px; padding: 14px 16px; margin-bottom: 36px;
+}
+.arbitrage-window .aw-status-dot {
+  width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: none;
+  background: var(--aw-ink-faint);
+  box-shadow: 0 0 0 3px var(--aw-paper);
+}
+.arbitrage-window .aw-status-text { font-size: 13.5px; color: var(--aw-ink-muted); line-height: 1.55; }
+.arbitrage-window .aw-status-text strong { color: var(--aw-ink); font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.02em; }
+
+/* sections */
+.arbitrage-window section { margin-bottom: 44px; }
+.arbitrage-window .aw-section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.arbitrage-window .aw-section-num {
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
+  color: var(--aw-ink-faint); border: 1px solid var(--aw-line-strong); border-radius: 4px;
+  padding: 2px 6px;
+}
+.arbitrage-window h2 { font-family: 'Newsreader', serif; font-size: 23px; font-weight: 500; margin: 0; letter-spacing: 0; }
+.arbitrage-window .aw-section-intro { font-size: 14px; color: var(--aw-ink-muted); max-width: 68ch; margin: 8px 0 18px; }
+.arbitrage-window .aw-section-intro b { color: var(--aw-ink); font-weight: 600; }
+
+/* tiles */
+.arbitrage-window .aw-tiles {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+  background: var(--aw-line); border: 1px solid var(--aw-line); border-radius: 8px; overflow: hidden;
+  margin-bottom: 44px;
+}
+@media (max-width: 820px) { .arbitrage-window .aw-tiles { grid-template-columns: repeat(2, 1fr); } }
+.arbitrage-window .aw-tile { background: var(--aw-paper); padding: 16px 16px 14px; }
+.arbitrage-window .aw-tile .aw-t-label { font-size: 11px; color: var(--aw-ink-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.arbitrage-window .aw-tile .aw-t-value { font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--aw-ink); }
+.arbitrage-window .aw-tile .aw-t-sub { font-size: 11px; color: var(--aw-ink-faint); margin-top: 4px; }
+
+/* controls */
+.arbitrage-window .aw-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.arbitrage-window .aw-seg { display: inline-flex; background: var(--aw-paper-raised); border: 1px solid var(--aw-line); border-radius: 8px; padding: 2px; gap: 2px; }
+.arbitrage-window .aw-seg button {
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; color: var(--aw-ink-muted);
+  background: none; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+.arbitrage-window .aw-seg button.aw-active { background: var(--aw-paper); color: var(--aw-ink); box-shadow: var(--aw-shadow); font-weight: 600; }
+.arbitrage-window .aw-seg button:focus-visible { outline: 2px solid var(--aw-accent); outline-offset: 1px; }
+
+/* charts */
+.arbitrage-window .aw-chart-box { background: var(--aw-paper-raised); border: 1px solid var(--aw-line); border-radius: 8px; padding: 18px 20px 12px; position: relative; }
+.arbitrage-window .aw-chart-box svg { display: block; width: 100%; height: auto; overflow: visible; }
+.arbitrage-window .aw-gridline { stroke: var(--aw-line); stroke-width: 1; }
+.arbitrage-window .aw-baseline { stroke: var(--aw-line-strong); stroke-width: 1.25; }
+.arbitrage-window .aw-axis-label { fill: var(--aw-ink-faint); font-size: 10.5px; font-family: 'IBM Plex Mono', monospace; }
+.arbitrage-window .aw-data-line { fill: none; stroke: var(--aw-ink); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.arbitrage-window .aw-curve-area { fill: var(--aw-accent-bg); }
+.arbitrage-window .aw-end-dot { fill: var(--aw-ink); stroke: var(--aw-paper-raised); stroke-width: 2; }
+.arbitrage-window .aw-direct-label { fill: var(--aw-ink); font-size: 11px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+.arbitrage-window .aw-bar-fill { fill: var(--aw-accent); }
+.arbitrage-window .aw-hover-line { stroke: var(--aw-ink-faint); stroke-width: 1; stroke-dasharray: 2 2; }
+.arbitrage-window .aw-ref-line { stroke: var(--aw-ink-faint); stroke-width: 1; stroke-dasharray: 4 3; }
+.arbitrage-window .aw-ref-label { fill: var(--aw-ink-muted); font-size: 10px; font-family: 'IBM Plex Mono', monospace; }
+.arbitrage-window .aw-tooltip {
+  position: absolute; pointer-events: none; background: var(--aw-ink); color: var(--aw-paper);
+  font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; padding: 7px 10px; border-radius: 6px;
+  white-space: nowrap; transform: translate(-50%,-100%);
+}
+.arbitrage-window .aw-tooltip .aw-t1 { font-weight: 600; margin-bottom: 2px; }
+
+/* illustrative (hour-of-day) chart */
+.arbitrage-window .aw-illustrative-tag {
+  display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.03em; color: var(--aw-illustrative); background: var(--aw-illustrative-bg);
+  border-radius: 20px; padding: 3px 10px; margin-bottom: 12px;
+}
+.arbitrage-window .aw-illustrative-line { fill: none; stroke: var(--aw-illustrative); stroke-width: 2; stroke-dasharray: 5 3; stroke-linejoin: round; stroke-linecap: round; }
+.arbitrage-window .aw-illustrative-area { fill: var(--aw-illustrative-bg); }
+.arbitrage-window .aw-solar-band { fill: var(--aw-solar-band); }
+.arbitrage-window .aw-peak-band { fill: var(--aw-peak-band); }
+
+/* ERCOT-wide context cards */
+.arbitrage-window .aw-context-grid { display: grid; grid-template-columns: 1.4fr 1.1fr 0.9fr 0.9fr; gap: 14px; }
+@media (max-width: 900px) { .arbitrage-window .aw-context-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .arbitrage-window .aw-context-grid { grid-template-columns: 1fr; } }
+.arbitrage-window .aw-context-card { background: var(--aw-paper-raised); border: 1px solid var(--aw-line); border-radius: 8px; padding: 16px 18px; }
+.arbitrage-window .aw-context-card-title { font-size: 11.5px; font-weight: 600; color: var(--aw-ink-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 12px; }
+.arbitrage-window .aw-context-note { font-size: 11px; color: var(--aw-ink-faint); margin-top: 10px; line-height: 1.5; }
+
+.arbitrage-window .aw-zonebars { display: flex; flex-direction: column; gap: 8px; }
+.arbitrage-window .aw-zonebar-row { display: grid; grid-template-columns: 62px 1fr 52px; align-items: center; gap: 8px; }
+.arbitrage-window .aw-zonebar-label { font-size: 12px; color: var(--aw-ink-muted); }
+.arbitrage-window .aw-zonebar-track { height: 8px; background: var(--aw-line); border-radius: 4px; overflow: hidden; }
+.arbitrage-window .aw-zonebar-fill { height: 100%; background: var(--aw-accent); border-radius: 4px; }
+.arbitrage-window .aw-zonebar-value { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--aw-ink); text-align: right; font-variant-numeric: tabular-nums; }
+
+.arbitrage-window .aw-stat-rows { display: flex; flex-direction: column; gap: 9px; }
+.arbitrage-window .aw-stat-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--aw-ink-muted); }
+.arbitrage-window .aw-stat-row-value { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--aw-ink); font-variant-numeric: tabular-nums; }
+
+.arbitrage-window .aw-context-card-mini { display: flex; flex-direction: column; justify-content: flex-start; }
+.arbitrage-window .aw-mini-stat { font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 600; color: var(--aw-accent-ink); font-variant-numeric: tabular-nums; }
+
+/* methodology */
+.arbitrage-window .aw-method-list { display: flex; flex-direction: column; gap: 14px; }
+.arbitrage-window .aw-method-item { display: flex; gap: 14px; }
+.arbitrage-window .aw-method-mark { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--aw-accent-ink); flex: none; width: 20px; padding-top: 2px; }
+.arbitrage-window .aw-method-body { font-size: 13.5px; color: var(--aw-ink-muted); }
+.arbitrage-window .aw-method-body b { color: var(--aw-ink); font-weight: 600; }
+
+.arbitrage-window footer.aw-sources { border-top: 1px solid var(--aw-line-strong); padding-top: 20px; margin-top: 8px; }
+.arbitrage-window footer.aw-sources .aw-src-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--aw-ink-faint); margin-bottom: 10px; }
+.arbitrage-window footer.aw-sources ul { margin: 0; padding: 0 0 0 18px; font-size: 12.5px; color: var(--aw-ink-muted); line-height: 1.8; }
