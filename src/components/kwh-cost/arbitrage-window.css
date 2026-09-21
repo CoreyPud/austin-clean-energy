@@ -99,7 +99,10 @@
   background: var(--aw-line); border: 1px solid var(--aw-line); border-radius: 8px; overflow: hidden;
   margin-bottom: 44px;
 }
-@media (max-width: 820px) { .arbitrage-window .aw-tiles { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 820px) {
+  .arbitrage-window .aw-tiles { grid-template-columns: repeat(2, 1fr); }
+  .arbitrage-window .aw-tile:last-child { grid-column: 1 / -1; }
+}
 .arbitrage-window .aw-tile { background: var(--aw-paper); padding: 16px 16px 14px; }
 .arbitrage-window .aw-tile .aw-t-label { font-size: 11px; color: var(--aw-ink-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
 .arbitrage-window .aw-tile .aw-t-value { font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--aw-ink); }
