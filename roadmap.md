@@ -1,4 +1,5 @@
 # Current
+- [ ] Add `dollar_amount` to council decisions and agenda sync extraction.
 - [x] Unify research page headers, fonts, widths, and section hierarchy; simplify the energy timeline and Case for Austin Energy.
 - [x] Tighten nonprofit lender slider values, apply the annual bill to savings, and lead with 25-year savings.
 
