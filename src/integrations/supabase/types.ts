@@ -159,6 +159,7 @@ export type Database = {
           decided_at: string | null
           decided_in_closed_session: boolean
           description: string | null
+          dollar_amount: number | null
           id: string
           imported_at: string
           is_climate: boolean | null
@@ -185,6 +186,7 @@ export type Database = {
           decided_at?: string | null
           decided_in_closed_session?: boolean
           description?: string | null
+          dollar_amount?: number | null
           id: string
           imported_at?: string
           is_climate?: boolean | null
@@ -211,6 +213,7 @@ export type Database = {
           decided_at?: string | null
           decided_in_closed_session?: boolean
           description?: string | null
+          dollar_amount?: number | null
           id?: string
           imported_at?: string
           is_climate?: boolean | null

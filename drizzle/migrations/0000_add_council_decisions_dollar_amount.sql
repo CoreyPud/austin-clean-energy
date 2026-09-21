@@ -1,0 +1,1 @@
+ALTER TABLE public.council_decisions ADD COLUMN IF NOT EXISTS dollar_amount numeric;

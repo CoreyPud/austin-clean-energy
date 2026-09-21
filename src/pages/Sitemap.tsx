@@ -94,6 +94,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/kwh-cost",
+    title: "kWh Cost",
+    description: "Explore Austin electricity price spreads and the daily arbitrage window batteries use.",
+    icon: Zap,
+  },
+  {
     path: "/import-capacity",
     title: "Austin Energy Import Capacity",
     description: "Model Austin's Total Transfer Capability (TTC) and see when ERCOT price separation triggers.",
