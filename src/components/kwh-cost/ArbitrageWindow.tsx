@@ -472,7 +472,7 @@ export default function ArbitrageWindow({ className = "" }: { className?: string
     <div className={`arbitrage-window ${className}`}>
       <div className="aw-page">
         <header className="aw-masthead">
-          <div className="aw-kicker">Secret Vote &middot; The Arbitrage Window</div>
+          <div className="aw-kicker">Austin Clean Energy &middot; The Arbitrage Window</div>
           <h1>kWh Cost</h1>
           <p className="aw-dek">
             Batteries don&rsquo;t make electricity &mdash; they move it in time. Charge when Austin&rsquo;s grid price is cheap,

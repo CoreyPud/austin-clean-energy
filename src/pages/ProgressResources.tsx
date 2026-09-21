@@ -462,6 +462,23 @@ const ProgressResources = () => {
               />
 
               <FeatureCard
+                to="/kwh-cost"
+                title="kWh Cost"
+                description="Explore Austin electricity price spreads and the daily arbitrage window batteries use to charge low and discharge high."
+                cta="Explore the Spread"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Zap className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      Battery arbitrage spreads for Austin's load zone
+                    </span>
+                  </div>
+                }
+              />
+
+              <FeatureCard
                 to="/load-estimator"
                 title="Austin Load Growth Estimator"
                 description="Build a scenario for how housing, data centers, industry, EV fleets, and planned development affect peak demand."

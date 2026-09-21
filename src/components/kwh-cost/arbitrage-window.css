@@ -5,25 +5,25 @@
    CSS/theme tokens. */
 
 .arbitrage-window {
-  --aw-paper: #f7f4ec;
-  --aw-paper-raised: #f2efe8;
-  --aw-ink: #1b2228;
-  --aw-ink-muted: #3a454e;
-  --aw-ink-faint: #6f7a83;
-  --aw-line: #d9d3c6;
-  --aw-line-strong: #bdb5a6;
-  --aw-accent: #c78e2b;
-  --aw-accent-ink: #8a5d12;
-  --aw-accent-bg: rgba(199, 142, 43, 0.1);
-  --aw-good: #4a8f70;
-  --aw-good-bg: rgba(74, 143, 112, 0.1);
-  --aw-bad: #b54a41;
-  --aw-bad-bg: rgba(181, 74, 65, 0.1);
-  --aw-illustrative: #4a7fb8;
-  --aw-illustrative-bg: rgba(74, 127, 184, 0.12);
-  --aw-solar-band: rgba(74, 143, 112, 0.08);
-  --aw-peak-band: rgba(181, 74, 65, 0.08);
-  --aw-shadow: 0 1px 2px rgba(27, 34, 40, 0.06), 0 6px 20px rgba(27, 34, 40, 0.05);
+  --aw-paper: hsl(var(--background));
+  --aw-paper-raised: hsl(var(--card));
+  --aw-ink: hsl(var(--foreground));
+  --aw-ink-muted: hsl(var(--muted-foreground));
+  --aw-ink-faint: hsl(var(--muted-foreground));
+  --aw-line: hsl(var(--border));
+  --aw-line-strong: hsl(var(--input));
+  --aw-accent: hsl(var(--accent));
+  --aw-accent-ink: hsl(var(--foreground));
+  --aw-accent-bg: hsl(var(--accent) / 0.12);
+  --aw-good: hsl(var(--primary));
+  --aw-good-bg: hsl(var(--primary) / 0.1);
+  --aw-bad: hsl(var(--destructive));
+  --aw-bad-bg: hsl(var(--destructive) / 0.1);
+  --aw-illustrative: hsl(var(--secondary));
+  --aw-illustrative-bg: hsl(var(--secondary) / 0.12);
+  --aw-solar-band: hsl(var(--primary) / 0.08);
+  --aw-peak-band: hsl(var(--destructive) / 0.08);
+  --aw-shadow: var(--shadow-soft);
 
   color-scheme: light;
   background: var(--aw-paper);
@@ -68,6 +68,10 @@
   display: flex; align-items: flex-start; gap: 12px;
   background: var(--aw-paper-raised); border: 1px solid var(--aw-line);
   border-radius: 8px; padding: 14px 16px; margin-bottom: 36px;
+}
+
+.dark .arbitrage-window {
+  color-scheme: dark;
 }
 .arbitrage-window .aw-status-dot {
   width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: none;

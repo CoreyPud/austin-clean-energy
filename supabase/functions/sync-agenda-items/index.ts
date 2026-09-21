@@ -33,7 +33,7 @@ const CLASSIFY_BATCH = 25;
 // Reused verbatim from this project's existing classifier so judgments stay
 // consistent across the app.
 const SYSTEM_PROMPT =
-  'You label Austin City Council agenda items for a climate/energy decisions tracker. For EVERY item given, return JSON {"items":[{item_number, is_climate(bool), topic, significance, summary}]}. is_climate = true if the item substantively concerns energy, electricity/utility, climate, emissions, transportation electrification, water, land use with climate bearing, or sustainability; else false. topic is one word-ish: generation|storage|renewable|efficiency|transport|emissions|land_use|water|climate_policy|other. significance distinguishes actual policy DECISIONS from routine operational business. CRITICAL: the department does NOT determine significance. A contract for Austin Energy or Austin Water is NOT significant just because it is energy/water-related. Judge the NATURE of the action, and ignore dollar size. \'routine\' (most items) = operational business: any contract/amendment/renewal for maintenance, repair, equipment, parts, pumps, supplies, chemicals, monitoring, software, IT, professional/engineering/construction services, insurance, easements, service extensions, revenue-bond issuance for ongoing capital programs, and individual rezoning/zoning/site cases (identifiable by a case number like C14-, C15-, C8-, SP-, PSP-, or NPA- followed by a year and number -- these are always routine regardless of topic, they are case-by-case zoning actions, not policy). Examples that are ROUTINE: \'replace condenser water pumps\', \'SCADA maintenance\', \'meter testing\', an individual property rezoning case. \'major\' = a genuine policy decision: adopt/amend a plan, ordinance, or City Code; set rates; grant a franchise; or newly commit to acquire/build ENERGY RESOURCES. \'notable\' = rare in-between only. When unsure, choose routine. summary: <=22 words, plain language, what the item does. Keep every item; do not drop any.';
+  'You label Austin City Council agenda items for a climate/energy decisions tracker. For EVERY item given, return JSON {"items":[{item_number, is_climate(bool), topic, significance, summary, dollar_amount}]}. is_climate = true if the item substantively concerns energy, electricity/utility, climate, emissions, transportation electrification, water, land use with climate bearing, or sustainability; else false. topic is one word-ish: generation|storage|renewable|efficiency|transport|emissions|land_use|water|climate_policy|other. significance distinguishes actual policy DECISIONS from routine operational business. CRITICAL: the department does NOT determine significance. A contract for Austin Energy or Austin Water is NOT significant just because it is energy/water-related. Judge the NATURE of the action, and ignore dollar size. dollar_amount is a plain number with no $ and no commas when the item text states a specific dollar figure such as a contract amount, not-to-exceed value, or funding amount; otherwise null. \'routine\' (most items) = operational business: any contract/amendment/renewal for maintenance, repair, equipment, parts, pumps, supplies, chemicals, monitoring, software, IT, professional/engineering/construction services, insurance, easements, service extensions, revenue-bond issuance for ongoing capital programs, and individual rezoning/zoning/site cases (identifiable by a case number like C14-, C15-, C8-, SP-, PSP-, or NPA- followed by a year and number -- these are always routine regardless of topic, they are case-by-case zoning actions, not policy). Examples that are ROUTINE: \'replace condenser water pumps\', \'SCADA maintenance\', \'meter testing\', an individual property rezoning case. \'major\' = a genuine policy decision: adopt/amend a plan, ordinance, or City Code; set rates; grant a franchise; or newly commit to acquire/build ENERGY RESOURCES. \'notable\' = rare in-between only. When unsure, choose routine. summary: <=22 words, plain language, what the item does. Keep every item; do not drop any.';
 
 // ---------- helpers ----------
 
@@ -102,6 +102,7 @@ interface Classified {
   topic: string | null;
   significance: string | null;
   summary: string | null;
+  dollar_amount: number | null;
 }
 
 async function classifyRows(rows: any[], apiKey: string): Promise<Map<string, Classified>> {
@@ -127,6 +128,7 @@ async function classifyRows(rows: any[], apiKey: string): Promise<Map<string, Cl
           topic: it.topic ? String(it.topic) : null,
           significance: it.significance ? String(it.significance) : null,
           summary: it.summary ? collapse(it.summary) : null,
+          dollar_amount: typeof it.dollar_amount === "number" ? it.dollar_amount : null,
         });
       }
     } catch (err) {
@@ -213,6 +215,7 @@ async function runHistory(lookbackDays: number, apiKey: string) {
       description,
       topic: c?.topic ?? null,
       significance: c?.significance ?? null,
+      dollar_amount: c?.dollar_amount ?? null,
       sponsor: r.sponsor ?? null,
       co_sponsor: r.co_sponsor ?? null,
       lead_dept: r.lead_dept ?? null,
@@ -328,8 +331,8 @@ async function runUpcoming(apiKey: string) {
     "For EVERY item given",
     "For every item in this agenda PDF",
   ).replace(
-    '{"items":[{item_number, is_climate(bool), topic, significance, summary}]}',
-    '{"items":[{item_number, posting_language, is_climate(bool), topic, significance, summary}]}',
+    '{"items":[{item_number, is_climate(bool), topic, significance, summary, dollar_amount}]}',
+    '{"items":[{item_number, posting_language, is_climate(bool), topic, significance, summary, sponsor, co_sponsor, dollar_amount}]}',
   );
 
   const parsed = await callGateway(
@@ -373,6 +376,9 @@ async function runUpcoming(apiKey: string) {
         description,
         topic: it.topic ? String(it.topic) : null,
         significance: it.significance ? String(it.significance) : null,
+        sponsor: it.sponsor ? String(it.sponsor) : null,
+        co_sponsor: it.co_sponsor ? String(it.co_sponsor) : null,
+        dollar_amount: typeof it.dollar_amount === "number" ? it.dollar_amount : null,
         is_climate: true,
         status: "open",
         source_url: found.pageUrl,
