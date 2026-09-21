@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Zap, Battery, Sun, Gauge, Car, Cloud, Map as MapIcon, Droplet, Scale, Tag, type LucideIcon } from "lucide-react";
 
 // council_decisions/agenda_item_vote_tallies aren't in the generated types until the
 // migration lands and Lovable regenerates types.ts -- cast, same as CouncilDecisions.tsx.
@@ -27,6 +28,7 @@ interface ItemMeta {
   significance: string | null;
   tags: string[] | null;
   decided_in_closed_session: boolean | null;
+  dollar_amount: number | null;
   visible: boolean;
   outcome?: string | null; // only ever fetched up front in admin mode
   imported_at?: string | null; // only ever fetched in admin mode
@@ -58,6 +60,23 @@ const fmtDate = (d: string) =>
   new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 const monthLabel = (d: string) =>
   new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long" });
+// meeting_date is the agenda date, whether the item is upcoming or already decided -- "Upcoming"
+// only makes sense while that date hasn't actually passed yet (a status='open' row whose meeting
+// already happened just hasn't been reconciled to 'decided' by a sync run yet).
+const isFutureDate = (d: string) => d >= new Date().toISOString().slice(0, 10);
+
+const TOPIC_ICON: Record<string, LucideIcon> = {
+  generation: Zap,
+  storage: Battery,
+  renewable: Sun,
+  efficiency: Gauge,
+  transport: Car,
+  emissions: Cloud,
+  land_use: MapIcon,
+  water: Droplet,
+  climate_policy: Scale,
+  other: Tag,
+};
 
 // Source data (CIUR) stores names "Last, First" -- e.g. "Siegel, Mike" -- and co_sponsor packs
 // multiple people into one flat comma list ("Alter, Ryan, Velasquez, Jose"), so every consecutive
@@ -71,7 +90,8 @@ function formatNames(raw: string | null | undefined): string | null {
   return names.join(", ");
 }
 
-const ITEM_COLUMNS = "id, meeting_date, item_number, title, description, lead_dept, sub_depts, sponsor, co_sponsor, source_url, status, topic, significance, tags, decided_in_closed_session, visible";
+const ITEM_COLUMNS = "id, meeting_date, item_number, title, description, lead_dept, sub_depts, sponsor, co_sponsor, source_url, status, topic, significance, tags, decided_in_closed_session, dollar_amount, visible";
+const fmtUSD = (n: number) => `$${n.toLocaleString()}`;
 
 // Same page backs both /council-vote (public) and /admin/agenda-items (admin=true), rather than
 // maintaining two near-identical card layouts. Admin mode: session-gated, sees every item
@@ -87,6 +107,7 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
   const [syncing, setSyncing] = useState(false);
   const [lookbackDays, setLookbackDays] = useState("183");
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [topicFilter, setTopicFilter] = useState("");
 
   useEffect(() => {
     if (!admin) {
@@ -279,8 +300,10 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
     }
   }
 
-  const open = (items ?? []).filter((i) => i.status === "open").sort((a, b) => a.meeting_date.localeCompare(b.meeting_date));
-  const decided = (items ?? []).filter((i) => i.status === "decided").sort((a, b) => b.meeting_date.localeCompare(a.meeting_date));
+  const topics = [...new Set((items ?? []).map((i) => i.topic).filter((t): t is string => !!t))].sort();
+  const byTopic = (i: ItemMeta) => !topicFilter || i.topic === topicFilter;
+  const open = (items ?? []).filter((i) => i.status === "open" && byTopic(i)).sort((a, b) => a.meeting_date.localeCompare(b.meeting_date));
+  const decided = (items ?? []).filter((i) => i.status === "decided" && byTopic(i)).sort((a, b) => b.meeting_date.localeCompare(a.meeting_date));
 
   return (
     <div className="min-h-screen bg-background">
@@ -323,6 +346,20 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
                 council actually did, only shows after you vote, so it can't sway your answer first.
               </p>
             </>
+          )}
+          {topics.length > 0 && (
+            <div className="flex items-center gap-2 pt-1">
+              <label className="text-xs text-muted-foreground" htmlFor="topic-filter">Topic</label>
+              <select
+                id="topic-filter"
+                value={topicFilter}
+                onChange={(e) => setTopicFilter(e.target.value)}
+                className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+              >
+                <option value="">All topics</option>
+                {topics.map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+              </select>
+            </div>
           )}
         </header>
 
@@ -390,6 +427,15 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
                 </div>
               )}
             </section>
+
+            {!admin && (
+              <p className="text-xs text-muted-foreground">
+                Sources: decided items come from the City's Council Items Update Report (CIUR,{" "}
+                <a href="https://datahub.austintexas.gov/City-Government/City-of-Austin-Council-Agenda-Items-Updates-Februa/sich-49ay" target="_blank" rel="noopener noreferrer" className="underline">open data</a>
+                ); upcoming items come from the next meeting's Draft Agenda, read directly from the
+                posted PDF. Community tallies are votes cast on this page, not a scientific survey.
+              </p>
+            )}
           </>
         )}
       </div>
@@ -422,12 +468,16 @@ function VoteCard({
 
   return (
     <div
-      className={`p-4 space-y-2 rounded-lg border ${item.status === "open" ? "border-primary/30 bg-primary/[0.03]" : "border-border bg-card"} ${admin && !item.visible ? "opacity-50" : ""}`}
+      className={`p-4 space-y-2 rounded-lg border ${item.status === "open" && isFutureDate(item.meeting_date) ? "border-primary/30 bg-primary/[0.03]" : "border-border bg-card"} ${admin && !item.visible ? "opacity-50" : ""}`}
     >
       <div className="min-w-0 space-y-0.5">
         <p className="text-xs text-muted-foreground">
-          {item.status === "open" ? <span className="font-medium text-primary">Upcoming</span> : null}
-          {item.status === "open" ? " · " : ""}
+          {item.status === "open" && isFutureDate(item.meeting_date) ? (
+            <>
+              <span className="font-medium text-primary">Upcoming</span>
+              {" · "}
+            </>
+          ) : null}
           {fmtDate(item.meeting_date)}
         </p>
         {editing ? (
@@ -468,6 +518,21 @@ function VoteCard({
             {item.title || `Item ${item.item_number}`}
           </p>
         )}
+        {(item.topic || item.sponsor || item.co_sponsor) && (
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+            {item.topic && (() => {
+              const Icon = TOPIC_ICON[item.topic] ?? Tag;
+              return (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+                  <Icon className="h-3 w-3" />
+                  {item.topic.replace(/_/g, " ")}
+                </span>
+              );
+            })()}
+            {item.sponsor && <span>Sponsor: {formatNames(item.sponsor)}</span>}
+            {item.co_sponsor && <span>Co-sponsor: {formatNames(item.co_sponsor)}</span>}
+          </p>
+        )}
         <details className="text-xs">
           <summary className="cursor-pointer text-primary">More details</summary>
           <div className="mt-1.5 space-y-1 text-muted-foreground">
@@ -476,15 +541,8 @@ function VoteCard({
               item {item.item_number}
               {item.lead_dept ? ` · ${item.lead_dept}` : ""}
             </p>
-            {(item.sponsor || item.co_sponsor) && (
-              <p>
-                {item.sponsor ? `Sponsor: ${formatNames(item.sponsor)}` : ""}
-                {item.sponsor && item.co_sponsor ? " · " : ""}
-                {item.co_sponsor ? `Co-sponsor: ${formatNames(item.co_sponsor)}` : ""}
-              </p>
-            )}
-            {item.topic && <p>Topic: {item.topic}</p>}
             {item.significance && <p>Significance: {item.significance}</p>}
+            {item.dollar_amount != null && <p>Budget impact: {fmtUSD(item.dollar_amount)}</p>}
             {item.tags?.length ? <p>Tags: {item.tags.join(", ")}</p> : null}
             {item.sub_depts?.length ? <p>Sub-departments: {item.sub_depts.join(", ")}</p> : null}
             {item.decided_in_closed_session && <p>Decided in executive session</p>}

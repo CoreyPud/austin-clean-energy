@@ -9,15 +9,22 @@ export interface ItemClass {
   topic: string; // generation | storage | renewable | efficiency | transport | emissions | land_use | water | climate_policy | other
   significance: "major" | "notable" | "routine";
   summary: string; // <= 22 words
+  dollar_amount: number | null; // best-effort, most items won't state one
+  sponsor?: string | null; // only meaningful when the source text states it directly (e.g. Draft Agenda items)
+  co_sponsor?: string | null;
 }
 
 const SYSTEM = [
   "You label Austin City Council agenda items for a climate/energy decisions tracker.",
-  "For EVERY item given, return JSON {\"items\":[{item_number, is_climate(bool), topic, significance, summary}]}.",
+  "For EVERY item given, return JSON {\"items\":[{item_number, is_climate(bool), topic, significance, summary, dollar_amount, sponsor, co_sponsor}]}.",
   "is_climate = true if the item substantively concerns energy, electricity/utility, climate, emissions,",
   "transportation electrification, water, land use with climate bearing, or sustainability; else false.",
   "topic is one word-ish: generation|storage|renewable|efficiency|transport|emissions|land_use|water|climate_policy|other.",
   "significance distinguishes actual policy DECISIONS from routine operational business.",
+  "dollar_amount is a plain number with no $ and no commas when the item text states a specific dollar figure",
+  "such as a contract amount, not-to-exceed value, or funding amount; otherwise null.",
+  "sponsor/co_sponsor: plain text of the name(s) exactly as they appear in the item text (e.g. after 'Sponsors:'",
+  "or 'Co-Sponsor:'), null if not stated in the text -- don't reformat or reorder them.",
   "CRITICAL: the department does NOT determine significance. A contract for Austin Energy or Austin Water is NOT",
   "significant just because it is energy/water-related. Judge the NATURE of the action, and ignore dollar size.",
   "'routine' (most items) = operational business: any contract/amendment/renewal for maintenance, repair, equipment,",

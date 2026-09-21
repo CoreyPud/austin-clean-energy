@@ -210,9 +210,13 @@ export default function CouncilDecisions() {
             </div>
 
             <footer className="border-t border-border pt-4 text-xs text-muted-foreground max-w-2xl">
-              Extracted from Austin City Council minutes (outcome + verbatim disposition) joined to the
-              voting record (per-member votes). Classification &amp; summaries by {data.meta.llmModel}.
-              Funding/department detail from the item RCA is a planned enrichment.
+              Extracted from Austin City Council{" "}
+              <a href="https://www.austintexas.gov/department/city-council" target="_blank" rel="noopener noreferrer" className="underline">minutes</a>
+              {" "}(outcome + verbatim disposition) joined to the{" "}
+              <a href="https://data.austintexas.gov/resource/3c89-i35a.json" target="_blank" rel="noopener noreferrer" className="underline">voting record</a>
+              {" "}(per-member votes). Classification &amp; summaries by {data.meta.llmModel}.
+              Funding/department detail from the item RCA is a planned enrichment. Each decision's own
+              source link and quote are under "Sources" below it.
             </footer>
           </>
         )}
