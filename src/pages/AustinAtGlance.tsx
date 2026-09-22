@@ -27,7 +27,6 @@ import { loadPowerMoney, FUEL_META, FUEL_ORDER, type FuelKey } from "@/lib/power
 
 const PRI = "hsl(var(--primary))";
 const BLUE = "#3b82f6";
-const ORNG = "#f59e0b";
 
 const BUILDING_ENERGY_TYPES = [
   "Office",
