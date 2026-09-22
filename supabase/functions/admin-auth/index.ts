@@ -114,16 +114,26 @@ serve(async (req) => {
         );
       }
       
-      const ADMIN_PASSWORD = Deno.env.get('ADMIN_CORRECTIONS_PASSWORD');
-      if (!ADMIN_PASSWORD) {
-        console.error('ADMIN_CORRECTIONS_PASSWORD not configured');
+      const allowedPasswords = [
+        Deno.env.get('ADMIN_CORRECTIONS_PASSWORD'),
+        Deno.env.get('ADMIN_CORRECTIONS_PASSWORD_2'),
+      ].filter((p): p is string => typeof p === 'string' && p.length > 0);
+
+      if (allowedPasswords.length === 0) {
+        console.error('No admin password configured');
         return new Response(
           JSON.stringify({ error: 'Admin authentication not configured' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         );
       }
-      
-      if (!constantTimeEqual(password, ADMIN_PASSWORD)) {
+
+      // Compare against every configured password so timing does not reveal which matched
+      let matched = false;
+      for (const candidate of allowedPasswords) {
+        if (constantTimeEqual(password, candidate)) matched = true;
+      }
+
+      if (!matched) {
         console.warn('Invalid admin login attempt');
         return new Response(
           JSON.stringify({ error: 'Invalid password' }),
