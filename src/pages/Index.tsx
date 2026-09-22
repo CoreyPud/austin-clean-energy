@@ -103,7 +103,7 @@ const Index = () => {
             />
             <Button size="lg" onClick={goToAssessment} className="h-12 sm:w-auto">
               <Search className="mr-2 h-4 w-4" />
-              See my savings!
+              Check solar potential
             </Button>
           </div>
         </div>
