@@ -18,7 +18,8 @@ const CHOICES = [
     to: "/what-you-can-do",
     icon: Lightbulb,
     title: "What You Can Do",
-    description: "Explore clean energy options, compare electric and gas vehicles, and build a personalized clean energy plan.",
+    description:
+      "Explore clean energy options, compare electric and gas vehicles, and build a personalized clean energy plan.",
   },
   {
     to: "/austin-at-a-glance",
@@ -56,9 +57,9 @@ const Index = () => {
             Help Build Austin's Clean Energy Future
           </h1>
           <p className="text-lg md:text-xl text-white/90 leading-relaxed">
-            Austin is in the middle of a clean energy shift. We help you find savings and make the data accessible so
-            anyone can follow the city's progress, understand the trends, and figure out what it means for their
-            household and their community.
+            Austin is in the middle of a clean energy shift. We help you find savings on clean energy, and make the data
+            accessible so anyone can be informed on the city's progress, and what it means for your household and
+            community.
           </p>
         </div>
       </section>
