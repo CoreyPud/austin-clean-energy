@@ -156,7 +156,8 @@ RULES:
 - Background stays "#ffffff" with dark text ("#111111") unless the user explicitly asks for a dark chart -- if so, use "#08090a" background with "#e2e8f0" text/grid, applied consistently to title, legend, and all scale ticks/titles.
 - Always set responsive = true, maintainAspectRatio = false.
 - Always include a descriptive title that names what the data actually is (source view's subject, not the raw view name) and the range covered.
-- Format large axis tick values compactly (1200000 -> "1.2M") via scales[axis].ticks.callback.
+- NEVER output JavaScript functions, arrow functions, expressions, comments, or any non-JSON value anywhere in the object. Every value must be valid JSON (string, number, boolean, null, array, object). In particular do NOT emit ticks.callback.
+- To format large axis tick values compactly, use JSON only: "ticks": { "format": { "notation": "compact", "maximumFractionDigits": 1 } }.
 - For "pie"/"doughnut", data must be a flat array of numbers with no y-axis scale.
 - For "bar"/"line", datasets[].data must be a flat array of numbers matching labels, in the same order as ROWS.
 - Include reasonable backgroundColor values (hex or rgba) that read well on the chosen background.
