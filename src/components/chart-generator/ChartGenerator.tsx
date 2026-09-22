@@ -6,6 +6,27 @@ import { ComposerPane, type HistoryEntry } from "./ComposerPane";
 type GenerateResponse = { spec: Record<string, unknown>; source: ChartSource } | { error: string };
 type TweakResponse = { spec: Record<string, unknown> } | { error: string };
 
+const TEST_SPEC: Record<string, unknown> = {
+  type: "line",
+  data: {
+    labels: ["2020", "2021", "2022", "2023", "2024", "2025"],
+    datasets: [
+      {
+        label: "Solar installations",
+        data: [812, 936, 1104, 1298, 1517, 1732],
+        borderColor: "#2A7656",
+        backgroundColor: "rgba(42, 118, 86, 0.16)",
+        fill: true,
+        tension: 0.25,
+      },
+    ],
+  },
+  options: {
+    plugins: { title: { display: true, text: "Chart preview test" } },
+    scales: { y: { beginAtZero: true } },
+  },
+};
+
 function adminHeaders(): Record<string, string> {
   const token = sessionStorage.getItem("admin_token");
   return token ? { "x-admin-token": token } : {};
@@ -74,6 +95,13 @@ export function ChartGenerator() {
     setError(null);
   }
 
+  function handleLoadTestChart() {
+    setSpec(TEST_SPEC);
+    setSource({ view: "local test data", columns: ["year", "installs"], rowCount: 6 });
+    setHistory([{ kind: "prompt", text: "Local test chart — no AI credits used" }]);
+    setError(null);
+  }
+
   return (
     <div className="mx-auto flex h-[calc(100dvh-8rem)] w-full max-w-7xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div className="grid min-h-0 flex-1 grid-rows-2 lg:grid-cols-[minmax(0,22rem)_1fr] lg:grid-rows-1">
@@ -81,6 +109,7 @@ export function ChartGenerator() {
           <ComposerPane
             mode={mode}
             onGenerate={handleGenerate}
+            onLoadTestChart={handleLoadTestChart}
             onRefine={handleRefine}
             onReset={handleReset}
             history={history}

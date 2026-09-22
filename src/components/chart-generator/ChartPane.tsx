@@ -1,4 +1,4 @@
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Loader2, Download, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,19 @@ type ChartJsConfig = {
   options?: Record<string, unknown>;
 };
 
+function normalizeChartConfig(config: ChartJsConfig): ChartJsConfig {
+  const cloned = JSON.parse(JSON.stringify(config)) as ChartJsConfig;
+  const allowedTypes = new Set(["bar", "line", "pie", "doughnut", "polarArea", "radar", "scatter", "bubble"]);
+  if (!allowedTypes.has(cloned.type)) cloned.type = "bar";
+
+  const datasets = (cloned.data as { datasets?: unknown }).datasets;
+  if (!Array.isArray(datasets)) {
+    throw new Error("The chart response did not include a datasets array.");
+  }
+
+  return cloned;
+}
+
 export type ChartSource = { view: string; columns: string[]; rowCount: number };
 
 type Props = {
@@ -122,6 +135,7 @@ function ChartJsChart({
   chartRef: React.RefObject<Chart<ChartConfiguration["type"]> | null>;
 }) {
   const hasCalledReady = useRef(false);
+  const safeConfig = useMemo(() => normalizeChartConfig(config), [config]);
 
   useEffect(() => {
     hasCalledReady.current = false;
@@ -135,7 +149,7 @@ function ChartJsChart({
   }
 
   const options = {
-    ...(config.options ?? {}),
+    ...(safeConfig.options ?? {}),
     responsive: true,
     maintainAspectRatio: false,
     animation: { onComplete: handleAnimationComplete },
@@ -145,8 +159,8 @@ function ChartJsChart({
     <div className="relative h-full w-full p-4">
       <ReactChart
         ref={chartRef as React.ComponentProps<typeof ReactChart>["ref"]}
-        type={config.type as Parameters<typeof ReactChart>[0]["type"]}
-        data={config.data as unknown as Parameters<typeof ReactChart>[0]["data"]}
+        type={safeConfig.type as Parameters<typeof ReactChart>[0]["type"]}
+        data={safeConfig.data as unknown as Parameters<typeof ReactChart>[0]["data"]}
         options={options as Parameters<typeof ReactChart>[0]["options"]}
       />
     </div>
