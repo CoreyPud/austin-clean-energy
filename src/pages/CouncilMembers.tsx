@@ -43,10 +43,8 @@ export default function CouncilMembers() {
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
           <h1 className="text-3xl font-bold tracking-tight">Who funds your council</h1>
           <p className="text-muted-foreground max-w-2xl">
-            Austin's council votes on climate almost entirely by consensus, so how a member votes
-            rarely sets them apart — but who funds them does. Pick a member to see their campaign
-            money and the rare climate votes where they broke from the pack. For the body's overall
-            record, see the{" "}
+            Pick a member to see their campaign money and the rare climate votes where they broke
+            from the pack. For the body's overall record, see the{" "}
             <Link to="/council-climate-record" className="underline">climate record</Link>.
           </p>
         </header>
@@ -84,8 +82,12 @@ export default function CouncilMembers() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Campaign finance: City of Austin Clerk (2016–present). Funding totals are all reported
-          contributions across cycles. Contributor street addresses are redacted by the Clerk.
+          Sources: campaign finance from the{" "}
+          <a href="https://www.austintexas.gov/department/campaign-finance" target="_blank" rel="noopener noreferrer" className="underline">City of Austin Clerk</a>
+          {" "}(2016–present, all reported contributions across cycles; contributor street addresses are
+          redacted by the Clerk); climate votes and dissents from the City's{" "}
+          <a href="https://data.austintexas.gov/resource/3c89-i35a.json" target="_blank" rel="noopener noreferrer" className="underline">council voting record</a>
+          {" "}(open data).
         </p>
       </div>
     </div>

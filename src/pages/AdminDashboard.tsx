@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw, Table2, Vote, Mail } from "lucide-react";
+import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw, Table2, Vote, Sparkles, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -121,6 +121,13 @@ export default function AdminDashboard() {
       icon: Vote,
       path: "/admin/agenda-items",
       color: "text-indigo-600"
+    },
+    {
+      title: "Chart Generator",
+      description: "Describe a chart in plain English and generate it from the site's stats_* views (solar, generation, EV, council votes). Internal use -- no fabricated data.",
+      icon: Sparkles,
+      path: "/admin/chart-generator",
+      color: "text-amber-600"
     },
     {
       title: "Solar Help Requests",
