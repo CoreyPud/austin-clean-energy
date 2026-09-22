@@ -208,6 +208,53 @@ async function callGateway(apiKey: string, system: string, user: string): Promis
   return text;
 }
 
+// Models occasionally slip a JavaScript function into an otherwise-JSON object
+// (classically scales.y.ticks.callback), which makes JSON.parse fail. Drop any
+// such property instead of failing the whole chart.
+function stripFunctionValues(src: string): string {
+  const re = /,?\s*"[^"\\]*"\s*:\s*(?:function\s*\w*\s*\(|\([^)]*\)\s*=>|\w+\s*=>)/g;
+  let out = src;
+  let guard = 0;
+  while (guard++ < 40) {
+    re.lastIndex = 0;
+    const m = re.exec(out);
+    if (!m) break;
+    // Walk forward from the match to the end of the function body / expression.
+    let i = m.index + m[0].length - 1; // at "(" or ">"
+    let depth = 0;
+    let end = -1;
+    let started = false;
+    for (; i < out.length; i++) {
+      const ch = out[i];
+      if (ch === "(" || ch === "{" || ch === "[") {
+        depth++;
+        started = true;
+      } else if (ch === ")" || ch === "}" || ch === "]") {
+        depth--;
+        if (started && depth <= 0) {
+          // For `function(...) { ... }` the body follows the arg list; keep going
+          // until the block closes.
+          const rest = out.slice(i + 1);
+          const next = rest.match(/^\s*\{/);
+          if (next) {
+            i += next[0].length;
+            depth = 1;
+            continue;
+          }
+          end = i + 1;
+          break;
+        }
+      } else if ((ch === "," || ch === "}") && depth === 0 && started) {
+        end = i;
+        break;
+      }
+    }
+    if (end === -1) break;
+    out = out.slice(0, m.index) + out.slice(end);
+  }
+  return out;
+}
+
 function extractJson(text: string): any {
   let cleaned = String(text ?? "").trim()
     .replace(/^```json\s*/i, "")
@@ -219,7 +266,16 @@ function extractJson(text: string): any {
     const end = cleaned.lastIndexOf("}");
     if (start !== -1 && end > start) cleaned = cleaned.slice(start, end + 1);
   }
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (firstErr) {
+    try {
+      return JSON.parse(stripFunctionValues(cleaned));
+    } catch {
+      console.error("[chart-generator] JSON parse failed:", (firstErr as Error).message, cleaned.slice(0, 1500));
+      throw new Error("MODEL_BAD_JSON");
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
