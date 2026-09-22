@@ -156,7 +156,8 @@ RULES:
 - Background stays "#ffffff" with dark text ("#111111") unless the user explicitly asks for a dark chart -- if so, use "#08090a" background with "#e2e8f0" text/grid, applied consistently to title, legend, and all scale ticks/titles.
 - Always set responsive = true, maintainAspectRatio = false.
 - Always include a descriptive title that names what the data actually is (source view's subject, not the raw view name) and the range covered.
-- Format large axis tick values compactly (1200000 -> "1.2M") via scales[axis].ticks.callback.
+- NEVER output JavaScript functions, arrow functions, expressions, comments, or any non-JSON value anywhere in the object. Every value must be valid JSON (string, number, boolean, null, array, object). In particular do NOT emit ticks.callback.
+- To format large axis tick values compactly, use JSON only: "ticks": { "format": { "notation": "compact", "maximumFractionDigits": 1 } }.
 - For "pie"/"doughnut", data must be a flat array of numbers with no y-axis scale.
 - For "bar"/"line", datasets[].data must be a flat array of numbers matching labels, in the same order as ROWS.
 - Include reasonable backgroundColor values (hex or rgba) that read well on the chosen background.
@@ -171,6 +172,7 @@ Rules:
 - Keep responsive = true, maintainAspectRatio = false, and a visible title.
 - If changing the background, update title/legend/tick/grid colors to stay legible, consistently.
 - If changing chart type (e.g. bar to pie), reshape data appropriately for the new type without changing the numbers.
+- NEVER output JavaScript functions, arrow functions, expressions, or comments -- every value must be valid JSON. Use "ticks": { "format": { "notation": "compact" } } instead of ticks.callback.
 - The config must be directly usable as Chart.js constructor options with no modification.`;
 
 // ---------------------------------------------------------------------------
@@ -207,6 +209,53 @@ async function callGateway(apiKey: string, system: string, user: string): Promis
   return text;
 }
 
+// Models occasionally slip a JavaScript function into an otherwise-JSON object
+// (classically scales.y.ticks.callback), which makes JSON.parse fail. Drop any
+// such property instead of failing the whole chart.
+function stripFunctionValues(src: string): string {
+  const re = /,?\s*"[^"\\]*"\s*:\s*(?:function\s*\w*\s*\(|\([^)]*\)\s*=>|\w+\s*=>)/g;
+  let out = src;
+  let guard = 0;
+  while (guard++ < 40) {
+    re.lastIndex = 0;
+    const m = re.exec(out);
+    if (!m) break;
+    // Walk forward from the match to the end of the function body / expression.
+    let i = m.index + m[0].length - 1; // at "(" or ">"
+    let depth = 0;
+    let end = -1;
+    let started = false;
+    for (; i < out.length; i++) {
+      const ch = out[i];
+      if (ch === "(" || ch === "{" || ch === "[") {
+        depth++;
+        started = true;
+      } else if (ch === ")" || ch === "}" || ch === "]") {
+        depth--;
+        if (started && depth <= 0) {
+          // For `function(...) { ... }` the body follows the arg list; keep going
+          // until the block closes.
+          const rest = out.slice(i + 1);
+          const next = rest.match(/^\s*\{/);
+          if (next) {
+            i += next[0].length;
+            depth = 1;
+            continue;
+          }
+          end = i + 1;
+          break;
+        }
+      } else if ((ch === "," || ch === "}") && depth === 0 && started) {
+        end = i;
+        break;
+      }
+    }
+    if (end === -1) break;
+    out = out.slice(0, m.index) + out.slice(end);
+  }
+  return out;
+}
+
 function extractJson(text: string): any {
   let cleaned = String(text ?? "").trim()
     .replace(/^```json\s*/i, "")
@@ -218,7 +267,16 @@ function extractJson(text: string): any {
     const end = cleaned.lastIndexOf("}");
     if (start !== -1 && end > start) cleaned = cleaned.slice(start, end + 1);
   }
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (firstErr) {
+    try {
+      return JSON.parse(stripFunctionValues(cleaned));
+    } catch {
+      console.error("[chart-generator] JSON parse failed:", (firstErr as Error).message, cleaned.slice(0, 1500));
+      throw new Error("MODEL_BAD_JSON");
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -493,5 +551,6 @@ function describeGatewayError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   if (message === "RATE_LIMITED") return "The model is rate-limited right now. Try again shortly.";
   if (message === "OUT_OF_CREDITS") return "AI usage limit reached for this workspace.";
+  if (message === "MODEL_BAD_JSON") return "The model returned a chart that could not be read. Try again or rephrase your prompt.";
   return "The model request failed. Try rephrasing your prompt.";
 }
