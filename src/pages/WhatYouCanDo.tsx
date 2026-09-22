@@ -102,7 +102,7 @@ const WhatYouCanDo = () => {
                         width={40}
                       />
                       <Bar dataKey="cumulative" radius={[2, 2, 0, 0]}>
-                        {solarCumulative.map((entry, index) => (
+                        {solarCumulative.map((entry) => (
                           <Cell key={entry.year} fill={entry.cumulative >= 0 ? "#047857" : "#b91c1c"} />
                         ))}
                       </Bar>
