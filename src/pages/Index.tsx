@@ -18,7 +18,7 @@ const CHOICES = [
     to: "/what-you-can-do",
     icon: Lightbulb,
     title: "What You Can Do",
-    description: "Explore solar savings, compare electric and gas vehicles, and build a personalized clean energy plan.",
+    description: "Explore clean energy options, compare electric and gas vehicles, and build a personalized clean energy plan.",
   },
   {
     to: "/austin-at-a-glance",
