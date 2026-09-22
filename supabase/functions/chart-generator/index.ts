@@ -23,6 +23,10 @@ const MODEL = "google/gemini-2.5-flash";
 const MAX_LIMIT = 500;
 const DEFAULT_LIMIT = 200;
 
+// ---------------------------------------------------------------------------
+// Admin gate -- mirrors manage-agenda-items: validate an x-admin-token header
+// against the admin-auth function (backed by the admin_sessions table).
+// ---------------------------------------------------------------------------
 async function validateAdminToken(token: string | null): Promise<boolean> {
   if (!token) return false;
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -45,6 +49,11 @@ async function validateAdminToken(token: string | null): Promise<boolean> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// View catalog -- the ONLY things the model is allowed to query. Column lists
+// and descriptions mirror the COMMENT ON <view> text in
+// supabase/migrations/20260910000000_stats_materialized_views.sql -- keep in sync.
+// ---------------------------------------------------------------------------
 type ViewEntry = { columns: string[]; description: string };
 
 const VIEW_CATALOG: Record<string, ViewEntry> = {
@@ -88,6 +97,9 @@ const CATALOG_TEXT = Object.entries(VIEW_CATALOG)
 
 const ALLOWED_OPS = new Set(["eq", "neq", "gt", "gte", "lt", "lte", "in"]);
 
+// ---------------------------------------------------------------------------
+// Call 1: routing. Ask the model which view/columns/filters answer the prompt.
+// ---------------------------------------------------------------------------
 const ROUTE_SYSTEM = `You turn a chart request into a query plan against a fixed set of read-only database views.
 
 Available views:
@@ -108,6 +120,11 @@ Rules:
 - Only reference columns that exist on the chosen view.
 - If the request doesn't clearly match any view, still pick the closest one and return an empty filters array rather than refusing.`;
 
+// ---------------------------------------------------------------------------
+// Call 2: charting. Adapted from switchdev00/s_austin_app's chartgen.ts --
+// same Chart.js structure/color rules, but grounded in real rows instead of
+// inventing plausible numbers.
+// ---------------------------------------------------------------------------
 const CHART_SYSTEM = `You are a data visualization expert. You will be given a user's chart request and a ROWS array: real rows just queried from the site's database (with the source view name and its column list).
 
 Return ONLY a raw JSON object -- no markdown, no code fences, no explanation.
@@ -156,6 +173,10 @@ Rules:
 - If changing chart type (e.g. bar to pie), reshape data appropriately for the new type without changing the numbers.
 - The config must be directly usable as Chart.js constructor options with no modification.`;
 
+// ---------------------------------------------------------------------------
+// Gateway call + JSON extraction (matches the "strip fences, else slice braces"
+// pattern already used by parse-bill / classify-new-votes in this repo).
+// ---------------------------------------------------------------------------
 async function callGateway(apiKey: string, system: string, user: string): Promise<string> {
   const res = await fetch(GATEWAY, {
     method: "POST",
@@ -200,6 +221,11 @@ function extractJson(text: string): any {
   return JSON.parse(cleaned);
 }
 
+// ---------------------------------------------------------------------------
+// Query-plan validation -- the actual safety boundary. The model's plan is
+// never trusted directly: every view name, column, filter op, and the row
+// limit are checked against VIEW_CATALOG before touching Supabase.
+// ---------------------------------------------------------------------------
 type SafePlan = {
   view: string;
   columns: string[];
@@ -260,6 +286,9 @@ async function runPlan(supabase: any, plan: SafePlan) {
   return data ?? [];
 }
 
+// ---------------------------------------------------------------------------
+// Chart.js spec validation (mirrors s_austin_app's validateChartJs).
+// ---------------------------------------------------------------------------
 function validateChartSpec(spec: any): string | null {
   if (!spec || typeof spec !== "object") return "Model did not return an object.";
   if (!spec.type) return 'Missing required field "type".';
@@ -267,6 +296,9 @@ function validateChartSpec(spec: any): string | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Handler
+// ---------------------------------------------------------------------------
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -309,6 +341,9 @@ Deno.serve(async (req) => {
   const { action } = body ?? {};
 
   try {
+    // -----------------------------------------------------------------
+    // generate: prompt -> query plan -> real rows -> Chart.js spec
+    // -----------------------------------------------------------------
     if (action === "generate") {
       const prompt = String(body.prompt ?? "").trim();
       if (prompt.length < 3 || prompt.length > 2000) {
@@ -386,6 +421,9 @@ Deno.serve(async (req) => {
       );
     }
 
+    // -----------------------------------------------------------------
+    // tweak: existing spec + instruction -> restyled spec (no re-query)
+    // -----------------------------------------------------------------
     if (action === "tweak") {
       const instruction = String(body.instruction ?? "").trim();
       const currentSpec = body.currentSpec;
@@ -429,6 +467,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    // -----------------------------------------------------------------
+    // catalog: let the client list what it can ask for (examples UI)
+    // -----------------------------------------------------------------
     if (action === "catalog") {
       return new Response(JSON.stringify({ views: VIEW_CATALOG }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
