@@ -172,6 +172,7 @@ Rules:
 - Keep responsive = true, maintainAspectRatio = false, and a visible title.
 - If changing the background, update title/legend/tick/grid colors to stay legible, consistently.
 - If changing chart type (e.g. bar to pie), reshape data appropriately for the new type without changing the numbers.
+- NEVER output JavaScript functions, arrow functions, expressions, or comments -- every value must be valid JSON. Use "ticks": { "format": { "notation": "compact" } } instead of ticks.callback.
 - The config must be directly usable as Chart.js constructor options with no modification.`;
 
 // ---------------------------------------------------------------------------
