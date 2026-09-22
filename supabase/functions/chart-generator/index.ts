@@ -551,5 +551,6 @@ function describeGatewayError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   if (message === "RATE_LIMITED") return "The model is rate-limited right now. Try again shortly.";
   if (message === "OUT_OF_CREDITS") return "AI usage limit reached for this workspace.";
+  if (message === "MODEL_BAD_JSON") return "The model returned a chart that could not be read. Try again or rephrase your prompt.";
   return "The model request failed. Try rephrasing your prompt.";
 }
