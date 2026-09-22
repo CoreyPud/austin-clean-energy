@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Home, Building2, BarChart3, Search } from "lucide-react";
+import { ArrowRight, Home, Lightbulb, BarChart3, Search } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
 import CampaignPopup from "@/components/CampaignPopup";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -15,16 +15,16 @@ const CHOICES = [
     description: "See your solar savings, including Austin Energy rebates, and Federal Incentives.",
   },
   {
-    to: "/property-assessment?type=commercial",
-    icon: Building2,
-    title: "Commercial Savings",
-    description: "See your solar savings! Specific calculations for businesses, multifamily, or non-profit buildings in Austin.",
+    to: "/what-you-can-do",
+    icon: Lightbulb,
+    title: "What You Can Do",
+    description: "Explore solar savings, compare electric and gas vehicles, and build a personalized clean energy plan.",
   },
   {
-    to: "/progress-resources",
+    to: "/austin-at-a-glance",
     icon: BarChart3,
-    title: "Austin Clean Energy Progress and Resources",
-    description: "Track solar and EV growth, energy spending, utility decisions, and the tools behind the data.",
+    title: "Austin at a Glance",
+    description: "Track solar and EV growth, energy spending, utility decisions, and Austin's clean energy progress.",
   },
 ];
 

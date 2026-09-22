@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route, Outlet, useLocation, type Location } from
 import Footer from "./components/Footer";
 import ShareWidget from "./components/ShareWidget";
 import Index from "./pages/Index";
-import ProgressResources from "./pages/ProgressResources";
+import AustinAtGlance from "./pages/AustinAtGlance";
+import WhatYouCanDo from "./pages/WhatYouCanDo";
 import CityOverview from "./pages/CityOverview";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
@@ -86,7 +87,9 @@ const AppRoutes = () => {
         {/* Public pages with footer */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Index />} />
-          <Route path="/progress-resources" element={<ProgressResources />} />
+          <Route path="/austin-at-a-glance" element={<AustinAtGlance />} />
+          <Route path="/what-you-can-do" element={<WhatYouCanDo />} />
+          <Route path="/progress-resources" element={<Navigate to="/austin-at-a-glance" replace />} />
           <Route path="/city-overview" element={<CityOverview />} />
           <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
           <Route path="/property-assessment" element={<PropertyAssessment />} />
