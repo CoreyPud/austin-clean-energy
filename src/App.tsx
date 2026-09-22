@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Outlet, useLocation, type Location } from
 import Footer from "./components/Footer";
 import ShareWidget from "./components/ShareWidget";
 import Index from "./pages/Index";
+import ProgressResources from "./pages/ProgressResources";
 import CityOverview from "./pages/CityOverview";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
@@ -27,6 +28,8 @@ import GuideDetail from "./pages/GuideDetail";
 import Contact from "./pages/Contact";
 import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
+import AdminSolarHelpRequests from "./pages/AdminSolarHelpRequests";
+
 import AdminSchemaDocs from "./pages/AdminSchemaDocs";
 import NotFound from "./pages/NotFound";
 import TrailingSlashRedirect from "./components/TrailingSlashRedirect";
@@ -59,6 +62,8 @@ import LoadEstimator from "./pages/LoadEstimator";
 import PeakerVsBatteryPage from "./pages/PeakerVsBattery";
 import CaseForAustinEnergy from "./pages/CaseForAustinEnergy";
 import AdminChartGenerator from "./pages/AdminChartGenerator";
+import NonprofitSolarLender from "./pages/NonprofitSolarLender";
+import KwhCostPage from "./pages/KwhCost";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +87,7 @@ const AppRoutes = () => {
         {/* Public pages with footer */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Index />} />
+          <Route path="/progress-resources" element={<ProgressResources />} />
           <Route path="/city-overview" element={<CityOverview />} />
           <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
           <Route path="/property-assessment" element={<PropertyAssessment />} />
@@ -120,6 +126,8 @@ const AppRoutes = () => {
           <Route path="/load-estimator" element={<LoadEstimator />} />
           <Route path="/peaker-vs-battery" element={<PeakerVsBatteryPage />} />
           <Route path="/case-for-austin-energy" element={<CaseForAustinEnergy />} />
+          <Route path="/nonprofit-solar-lender" element={<NonprofitSolarLender />} />
+          <Route path="/kwh-cost" element={<KwhCostPage />} />
         </Route>
 
         {/* Pages without footer */}
@@ -135,6 +143,8 @@ const AppRoutes = () => {
         <Route path="/admin/pir-import" element={<PIRImport />} />
         <Route path="/admin/data-comparison" element={<DataComparison />} />
         <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
+        <Route path="/admin/solar-help-requests" element={<AdminSolarHelpRequests />} />
+
         <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
         <Route path="/admin/agenda-items" element={<CouncilVote admin />} />
         <Route path="/admin/course-results" element={<AdminCourseResults />} />

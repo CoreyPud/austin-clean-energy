@@ -1,11 +1,9 @@
 import PageHeader from "@/components/PageHeader";
 import TimelineRail from "@/components/energy-timeline/TimelineRail";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useSeo } from "@/hooks/use-seo";
 import { cn } from "@/lib/utils";
 import {
-  KIND_LABEL,
   TIMELINE_SOURCES,
   groupedByYear,
   type TimelineKind,
@@ -14,26 +12,14 @@ import {
 const DOT_CLASS: Record<TimelineKind, string> = {
   policy: "bg-background border-2 border-muted-foreground",
   contract: "bg-primary border-2 border-primary",
-  vote: "bg-destructive border-2 border-destructive ring-4 ring-destructive/15",
-};
-
-const CARD_CLASS: Record<TimelineKind, string> = {
-  policy: "",
-  contract: "border-primary/40 bg-primary/5",
-  vote: "border-destructive/50 bg-destructive/5 shadow-md",
-};
-
-const LEGEND_DOT: Record<TimelineKind, string> = {
-  policy: "bg-muted-foreground",
-  contract: "bg-primary",
-  vote: "bg-destructive",
+  vote: "bg-destructive border-2 border-destructive",
 };
 
 const EnergyTimeline = () => {
   useSeo({
-    title: "Energy Timeline: The Road to Austin's Gas Vote",
+    title: "Austin Energy Timeline",
     description:
-      "Four decades of Austin Energy decisions — from the first efficiency rebates and the fight over Fayette coal to the May 2026 closed-session approval of a 400 MW gas peaker package.",
+      "Four decades of Austin Energy programs, resource plans, contracts, retirements, and public decisions.",
   });
 
   const groups = groupedByYear();
@@ -42,21 +28,13 @@ const EnergyTimeline = () => {
     <div className="min-h-screen bg-background">
       <PageHeader
         title="Energy Timeline"
-        subtitle="From Austin Energy's earliest efficiency programs and the Beyond Coal campaign's fight to close the Fayette coal plant, to the closed-session approval of a new gas plant — four decades of decisions that set up May 21, 2026."
-        contentClassName="max-w-4xl mx-auto px-4"
+        subtitle="Four decades of programs, resource plans, contracts, retirements, and public decisions."
       />
 
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <div className="mb-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
-          {(Object.keys(KIND_LABEL) as TimelineKind[]).map((kind) => (
-            <span key={kind} className="flex items-center gap-2">
-              <span className={cn("h-2.5 w-2.5 rounded-full", LEGEND_DOT[kind])} aria-hidden />
-              {KIND_LABEL[kind]}
-            </span>
-          ))}
-        </div>
+      <div className="max-w-5xl mx-auto px-4 py-12">
+        <TimelineRail />
 
-        <div className="relative">
+        <div className="relative mt-12">
           <div
             className="absolute top-2 bottom-2 w-px bg-border left-[70px] sm:left-[104px]"
             aria-hidden
@@ -76,7 +54,7 @@ const EnergyTimeline = () => {
                   key={event.date + event.title}
                   className="grid grid-cols-[54px_32px_1fr] sm:grid-cols-[88px_32px_1fr] gap-x-4 pb-6"
                 >
-                  <div className="pt-1 text-[11px] sm:text-xs font-mono text-muted-foreground text-left sm:text-right">
+                  <div className="pt-1 text-[11px] sm:text-xs text-muted-foreground text-left sm:text-right">
                     {event.date}
                   </div>
                   <div className="relative flex justify-center">
@@ -88,23 +66,15 @@ const EnergyTimeline = () => {
                       aria-hidden
                     />
                   </div>
-                  <Card className={cn("overflow-hidden", CARD_CLASS[event.kind])}>
+                  <Card className="overflow-hidden">
                     <CardContent className="p-4 sm:p-5">
-                      {event.tag && (
-                        <Badge variant="destructive" className="mb-2 text-[10px] uppercase tracking-wide">
-                          {event.tag}
-                        </Badge>
-                      )}
-                      <h3
-                        className={cn(
-                          "mb-1.5 font-semibold text-foreground",
-                          event.kind === "vote" ? "text-lg" : "text-base",
-                        )}
-                      >
+                      <h3 className="mb-1.5 text-base font-semibold text-foreground">
                         {event.title}
                       </h3>
-                      <p className="mb-2 text-sm text-muted-foreground">{event.body}</p>
-                      <p className="text-[11px] font-mono text-muted-foreground/80">
+                      <p className="mb-2 text-sm leading-relaxed text-muted-foreground">
+                        {event.body}
+                      </p>
+                      <p className="text-xs text-muted-foreground/80">
                         {event.sourceUrl ? (
                           <a
                             href={event.sourceUrl}
@@ -126,22 +96,16 @@ const EnergyTimeline = () => {
           ))}
         </div>
 
-        <TimelineRail />
-
-        <footer className="mt-8 border-t pt-6">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <details className="mt-10 border-y border-border">
+          <summary className="cursor-pointer py-4 text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Sources
-          </h2>
-          <ul className="space-y-1 text-xs text-muted-foreground/90">
-            {TIMELINE_SOURCES.map((s) => (
-              <li key={s}>{s}</li>
+          </summary>
+          <ul className="space-y-1 pb-5 text-xs text-muted-foreground">
+            {TIMELINE_SOURCES.map((source) => (
+              <li key={source}>{source}</li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-muted-foreground/80">
-            Full detail, primary-source citations, and direct quotes for every event above: this
-            project's Evidence Index.
-          </p>
-        </footer>
+        </details>
       </div>
     </div>
   );

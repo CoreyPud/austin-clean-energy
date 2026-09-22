@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw, Table2, Vote, Sparkles } from "lucide-react";
+import { ArrowLeft, FileEdit, Upload, GitCompare, BookOpen, LogOut, Database, Users, FileText, BarChart3, RefreshCw, Table2, Vote, Sparkles, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -128,8 +128,16 @@ export default function AdminDashboard() {
       icon: Sparkles,
       path: "/admin/chart-generator",
       color: "text-amber-600"
+    },
+    {
+      title: "Solar Help Requests",
+      description: "Review submissions from the \"Want help navigating your solar options?\" form and download them as a CSV.",
+      icon: Mail,
+      path: "/admin/solar-help-requests",
+      color: "text-sky-600"
     }
   ];
+
 
   const documentationLinks = [
     {

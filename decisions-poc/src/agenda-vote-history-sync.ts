@@ -110,6 +110,7 @@ async function main() {
       description: (r.posting_language || "").replace(/\s+/g, " ").trim(),
       topic: c?.topic ?? null,
       significance: c?.significance ?? null,
+      dollar_amount: c?.dollar_amount ?? null,
       sponsor: r.sponsor ?? null,
       co_sponsor: r.co_sponsor ?? null,
       lead_dept: r.lead_dept ?? null,

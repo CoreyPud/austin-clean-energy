@@ -1,5 +1,5 @@
 import CaseForAustinEnergyView from "@/components/case-for-austin-energy/CaseForAustinEnergy";
-import BackToHome from "@/components/BackToHome";
+import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 
 export default function CaseForAustinEnergyPage() {
@@ -11,7 +11,10 @@ export default function CaseForAustinEnergyPage() {
 
   return (
     <>
-      <BackToHome />
+      <PageHeader
+        title="The Case for Austin Energy"
+        subtitle="How Austin's public utility compares with Texas's deregulated markets."
+      />
       <CaseForAustinEnergyView />
     </>
   );

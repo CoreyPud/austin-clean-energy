@@ -77,6 +77,23 @@ export const AUSTIN_INSTALL_COST_PER_KW = 2950;
 const AUSTIN_BATTERY_COST_PER_KWH   = 1000;
 
 export const DEFAULT_PRODUCTION_PER_KW = 1500; // kWh/kW-year (Austin avg)
+
+// ── Long-run assumptions behind the breakeven / payback year ──────────────────
+// Panel output loss per year. 0.5%/yr is NREL's median degradation rate for modern
+// crystalline-silicon modules and matches typical 25-year manufacturer warranties
+// (~87% of nameplate at year 25).
+export const PANEL_DEGRADATION_RATE = 0.005;
+// Electricity price escalation applied to avoided-bill savings. Austin Energy's residential
+// rates have risen a little over 2%/yr on a long-run average; 2.5% is a deliberately
+// conservative middle figure. Without it, payback is overstated because the model would
+// hold 2025 rates flat for 30 years while system cost is paid in today's dollars.
+export const UTILITY_RATE_ESCALATION = 0.025;
+// One inverter replacement partway through the term -- a real owner cost that a payback
+// figure has to carry. String inverters typically last 12-15 years; $0.20/W is in line with
+// current replacement pricing including labor.
+export const INVERTER_REPLACEMENT_YEAR = 15;    // 1-indexed
+export const INVERTER_REPLACEMENT_PER_W = 0.20; // $/W of DC system size
+
 export const DEFAULT_MONTHLY_USAGE_KWH = 1167;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -244,7 +261,7 @@ export function buildYearModel(
   yearIndex = 0,
   startingCreditBalance = 0,
 ): YearResult {
-  const degradation = Math.pow(1 - 0.005, yearIndex);
+  const degradation = Math.pow(1 - PANEL_DEGRADATION_RATE, yearIndex);
   const annualSolar = inputs.systemKw * inputs.productionPerKw * degradation;
   let creditBalance = Math.max(0, startingCreditBalance);
 
@@ -311,19 +328,31 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
 
   let cumulative = hasLoan ? 0 : -installCost;
   let paybackYear: number | null = null;
+  let totalSavings = 0;
   const cumulativeByYear: { year: number; cumulative: number }[] = [];
 
+  // Each year's bill savings are computed at today's rates (with panel degradation already
+  // applied in buildYearModel), then escalated for electricity price inflation. The one-time
+  // inverter replacement is charged in its year, so breakeven reflects a real owner cost
+  // rather than assuming the hardware never needs work.
   yearlyResults.forEach((r, i) => {
+    const year = i + 1;
     const loanPayment = i < inputs.loanTermYears ? annualLoanPayment : 0;
-    cumulative += r.savings - loanPayment;
-    if (paybackYear === null && cumulative >= 0) paybackYear = i + 1;
-    cumulativeByYear.push({ year: i + 1, cumulative: Math.round(cumulative) });
+    const escalatedSavings = r.savings * Math.pow(1 + UTILITY_RATE_ESCALATION, i);
+    const inverterCost = year === INVERTER_REPLACEMENT_YEAR
+      ? inputs.systemKw * 1000 * INVERTER_REPLACEMENT_PER_W
+      : 0;
+    totalSavings += escalatedSavings - inverterCost;
+    cumulative += escalatedSavings - inverterCost - loanPayment;
+    if (paybackYear === null && cumulative >= 0) paybackYear = year;
+    cumulativeByYear.push({ year, cumulative: Math.round(cumulative) });
   });
 
   return {
     yearlyResults,
     totalInstallCost: installCost,
-    totalSavings: sumBy(yearlyResults, 'savings'),
+    totalSavings: Math.round(totalSavings),
+
     paybackYear,
     hasLoan,
     annualLoanPayment,

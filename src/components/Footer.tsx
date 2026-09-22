@@ -54,6 +54,14 @@ const Footer = () => {
               </li>
               <li>
                 <button
+                  onClick={() => navigate('/kwh-cost')}
+                  className="text-white/70 hover:text-white transition-colors text-left"
+                >
+                  kWh Cost
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => navigate('/sitemap')}
                   className="text-white/70 hover:text-white transition-colors text-left"
                 >

@@ -10,6 +10,12 @@ const publicPages = [
     icon: Home,
   },
   {
+    path: "/progress-resources",
+    title: "Austin Clean Energy Progress and Resources",
+    description: "Solar and EV growth, energy spending, utility decisions, and the tools behind the data.",
+    icon: BarChart3,
+  },
+  {
     path: "/city-overview",
     title: "City Overview",
     description: "City-wide solar installation statistics, year-over-year trends, and quarterly comparisons.",
@@ -80,6 +86,18 @@ const publicPages = [
     title: "The Case for Austin Energy",
     description: "How Austin's municipal utility compares to deregulated Texas markets on price, reliability, mix, and city revenue.",
     icon: Gauge,
+  },
+  {
+    path: "/nonprofit-solar-lender",
+    title: "Non-Profit Solar Bridge Loan Calculator",
+    description: "Model a 25-year non-profit solar pro forma with the Austin Energy rebate, IRS Direct Pay, and a bridge loan.",
+    icon: Gauge,
+  },
+  {
+    path: "/kwh-cost",
+    title: "kWh Cost",
+    description: "Explore Austin electricity price spreads and the daily arbitrage window batteries use.",
+    icon: Zap,
   },
   {
     path: "/import-capacity",
