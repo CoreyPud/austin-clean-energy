@@ -1,4 +1,5 @@
 # Current
+- [x] Split Progress and Resources into Austin at a Glance and What You Can Do pages; update home and sitemap links.
 - [x] Add `/kwh-cost` from the Secret Vote project, including navigation, sitemap, and Work Sans.
 - [x] Add `dollar_amount` to council decisions and agenda sync extraction.
 - [x] Unify research page headers, fonts, widths, and section hierarchy; simplify the energy timeline and Case for Austin Energy.
