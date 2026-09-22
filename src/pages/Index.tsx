@@ -56,7 +56,9 @@ const Index = () => {
             Help Build Austin's Clean Energy Future
           </h1>
           <p className="text-lg md:text-xl text-white/90 leading-relaxed">
-            Find what clean energy would save you, and follow how Austin is doing.
+            Austin is in the middle of a clean energy shift. We make the underlying data accessible so anyone can
+            follow the city's progress, understand the trends, and figure out what it means for their household and
+            their community.
           </p>
         </div>
       </section>
