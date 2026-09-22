@@ -12,7 +12,7 @@ const CHOICES = [
     to: "/property-assessment",
     icon: Home,
     title: "Residential Solar",
-    description: "See your solar savings, including Austin Energy rebates, and Federal Incentives.",
+    description: "See your home's solar potential, including Austin Energy rebates, and Federal Incentives.",
   },
   {
     to: "/what-you-can-do",
