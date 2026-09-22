@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { Loader2, Download, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +7,18 @@ import { exportChartPng } from "./chart-export";
 import {
   Chart,
   type ChartConfiguration,
+  BarController,
+  BubbleController,
   CategoryScale,
+  DoughnutController,
   LinearScale,
   LogarithmicScale,
+  LineController,
   RadialLinearScale,
+  PieController,
+  PolarAreaController,
+  RadarController,
+  ScatterController,
   BarElement,
   LineElement,
   PointElement,
@@ -23,10 +31,18 @@ import {
 import { Chart as ReactChart } from "react-chartjs-2";
 
 Chart.register(
+  BarController,
+  BubbleController,
   CategoryScale,
+  DoughnutController,
   LinearScale,
   LogarithmicScale,
+  LineController,
   RadialLinearScale,
+  PieController,
+  PolarAreaController,
+  RadarController,
+  ScatterController,
   BarElement,
   LineElement,
   PointElement,
@@ -68,6 +84,33 @@ type Props = {
   isGenerating: boolean;
   isTweaking: boolean;
 };
+
+class ChartErrorBoundary extends Component<
+  { children: ReactNode; onError: (message: string) => void; resetKey: unknown },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    const message = error instanceof Error ? error.message : "Chart rendering failed.";
+    this.props.onError(message);
+  }
+
+  componentDidUpdate(prevProps: { resetKey: unknown }) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 function ChartJsChart({
   config,
@@ -113,15 +156,23 @@ function ChartJsChart({
 export function ChartPane({ spec, source, isGenerating, isTweaking }: Props) {
   const [chartState, setChartState] = useState<ChartState>("idle");
   const [prevSpec, setPrevSpec] = useState<Record<string, unknown> | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const chartRef = useRef<Chart<ChartConfiguration["type"]> | null>(null);
 
   if (spec !== prevSpec) {
     setPrevSpec(spec);
     setChartState(spec !== null ? "rendering" : "idle");
+    setRenderError(null);
   }
 
   function handleReady() {
     setChartState("ready");
+  }
+
+  function handleRenderError(message: string) {
+    console.error("[ChartPane] Chart render failed:", message);
+    setRenderError(message);
+    setChartState("error");
   }
 
   function handleDownload() {
@@ -186,7 +237,15 @@ export function ChartPane({ spec, source, isGenerating, isTweaking }: Props) {
         {hasChart && (
           <div className="absolute inset-0 flex items-stretch p-3">
             <div className="relative flex-1 overflow-hidden rounded-lg border border-border shadow-sm">
-              <ChartJsChart config={spec as unknown as ChartJsConfig} onReady={handleReady} chartRef={chartRef} />
+              <ChartErrorBoundary onError={handleRenderError} resetKey={spec}>
+                <ChartJsChart config={spec as unknown as ChartJsConfig} onReady={handleReady} chartRef={chartRef} />
+              </ChartErrorBoundary>
+              {renderError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background p-8 text-center">
+                  <p className="text-sm font-medium">This chart could not be drawn.</p>
+                  <p className="max-w-md text-xs text-muted-foreground">Try generating it again or simplifying the request.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
