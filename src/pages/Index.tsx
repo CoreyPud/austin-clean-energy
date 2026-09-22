@@ -57,9 +57,9 @@ const Index = () => {
             Help Build Austin's Clean Energy Future
           </h1>
           <p className="text-lg md:text-xl text-white/90 leading-relaxed">
-            Austin, Texas is in the middle of a clean energy shift. We help you find savings on clean energy, and make
-            the data accessible so anyone can be informed on the city's progress, and what it means for your household
-            and community.
+            Austin is in the middle of a clean energy shift. We help you find savings on clean energy, and make the data
+            accessible so anyone can be informed on the city's progress, and what it means for your household and
+            community.
           </p>
         </div>
       </section>
@@ -90,7 +90,8 @@ const Index = () => {
         <div className="max-w-2xl mx-auto mt-14 text-center">
           <h2 className="text-2xl font-bold mb-2">Start with your address</h2>
           <p className="text-muted-foreground mb-5">
-            Enter an Austin address and we will carry it into the assessment so you can pick your options and run it.
+            Enter an Austin, Texas address and we will carry it into the assessment so you can pick your options and run
+            it.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <AddressAutocomplete
