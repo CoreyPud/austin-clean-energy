@@ -6,6 +6,7 @@ import {
   TrendingUp,
   Gauge,
   BatteryCharging,
+  GraduationCap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/PageHeader";
@@ -454,6 +455,23 @@ const AustinAtGlance = () => {
                     </div>
                     <span className="text-xs text-muted-foreground text-center px-6">
                       Distributed storage compared with gas capacity
+                    </span>
+                  </div>
+                }
+              />
+
+              <FeatureCard
+                to="/course"
+                title="The Grid Primer Course"
+                description="A short, interactive course on how the Texas grid, electricity prices, and Austin's energy decisions actually work."
+                cta="Start the Course"
+                preview={
+                  <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+                    <div className="h-16 w-16 rounded-full bg-accent/15 flex items-center justify-center">
+                      <GraduationCap className="h-7 w-7 text-accent-foreground" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center px-6">
+                      Learn the grid, prices, and Austin's choices
                     </span>
                   </div>
                 }

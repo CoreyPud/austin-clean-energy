@@ -106,6 +106,12 @@ const publicPages = [
     icon: Zap,
   },
   {
+    path: "/course",
+    title: "The Grid Primer Course",
+    description: "An interactive course on the Texas grid, electricity prices, and Austin's energy decisions.",
+    icon: Zap,
+  },
+  {
     path: "/import-capacity",
     title: "Austin Energy Import Capacity",
     description: "Model Austin's Total Transfer Capability (TTC) and see when ERCOT price separation triggers.",

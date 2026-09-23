@@ -26,6 +26,7 @@ export type HistoryEntry = { kind: "prompt" | "tweak"; text: string };
 type Props = {
   mode: "generate" | "refine";
   onGenerate: (prompt: string) => void;
+  onLoadTestChart: () => void;
   onRefine: (instruction: string) => void;
   onReset: () => void;
   history: HistoryEntry[];
@@ -117,7 +118,7 @@ function AddChangeBlock({
   );
 }
 
-export function ComposerPane({ mode, onGenerate, onRefine, onReset, history, isGenerating, isRefining, error }: Props) {
+export function ComposerPane({ mode, onGenerate, onLoadTestChart, onRefine, onReset, history, isGenerating, isRefining, error }: Props) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [addingChange, setAddingChange] = useState(false);
@@ -179,6 +180,9 @@ export function ComposerPane({ mode, onGenerate, onRefine, onReset, history, isG
 
           <div className="flex items-center gap-1">
             <ExamplesMenu mode="generate" onSelect={fillExample} />
+            <Button type="button" variant="outline" size="sm" disabled={isBusy} onClick={onLoadTestChart}>
+              Test chart
+            </Button>
             <Button type="submit" size="sm" disabled={!canGenerate} className="ml-auto">
               {isGenerating ? <><Loader2 size={13} className="mr-1.5 animate-spin" /> Generating&hellip;</> : <><BarChart2 size={13} className="mr-1.5" /> Generate Chart</>}
             </Button>
