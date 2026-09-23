@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import CouncilNav from "@/components/CouncilNav";
+import PageHeader from "@/components/PageHeader";
+import { useSeo } from "@/hooks/use-seo";
 import { supabase } from "@/integrations/supabase/client";
 
 // Read-only register generated offline by decisions-poc and written to
@@ -111,26 +112,27 @@ export default function CouncilDecisions() {
     return ds;
   }, [data, climateOnly, showRoutine, closedOnly, topic, outcome, q]);
 
+  useSeo({
+    title: "Climate & Energy Decisions",
+    description: "Every Austin City Council climate and energy decision, from the meeting minutes, with outcome, result, and vote.",
+  });
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageHeader
+        title="Climate & energy decisions"
+        subtitle="Every council climate and energy decision, from the meeting minutes — with its outcome, result, and vote. Executive-session decisions are included and flagged."
+      />
+      <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
-        <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Back to Home</Link>
         <CouncilNav />
 
-        <header className="space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
-          <h1 className="text-3xl font-bold tracking-tight">Climate &amp; energy decisions</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            Every council climate and energy decision, from the meeting minutes — with its outcome,
-            result, and vote. Executive-session decisions are included and flagged.
+        {data && (
+          <p className="text-xs text-muted-foreground -mt-4">
+            {data.meta.years.join(", ")} · {data.meta.counts.climate} climate decisions
+            {data.meta.generatedAt ? ` · generated ${new Date(data.meta.generatedAt).toISOString().slice(0, 10)}` : ""}
           </p>
-          {data && (
-            <p className="text-xs text-muted-foreground">
-              {data.meta.years.join(", ")} · {data.meta.counts.climate} climate decisions
-              {data.meta.generatedAt ? ` · generated ${new Date(data.meta.generatedAt).toISOString().slice(0, 10)}` : ""}
-            </p>
-          )}
-        </header>
+        )}
 
         {err && <p className="text-sm text-destructive">Couldn’t load decisions ({err}).</p>}
         {!data && !err && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -223,6 +225,7 @@ export default function CouncilDecisions() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

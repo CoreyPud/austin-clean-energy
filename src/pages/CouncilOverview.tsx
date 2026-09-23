@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import SectorBar from "@/components/SectorBar";
 import { SECTOR_LABEL, SECTOR_COLOR, fmtUSD, COUNCIL_MEMBERS } from "@/lib/council-members";
 import CouncilNav from "@/components/CouncilNav";
+import PageHeader from "@/components/PageHeader";
+import { useSeo } from "@/hooks/use-seo";
 import companiesData from "@/data/council-companies.json";
 import { noteFor } from "@/data/council-company-notes";
 
@@ -86,20 +88,20 @@ export default function CouncilOverview() {
   const lobbySectors = lobby ? Object.entries(lobby.sector_breakdown).sort((a, b) => b[1] - a[1]) : [];
   const lobbyTotal = lobbySectors.reduce((s, [, n]) => s + n, 0);
 
+  useSeo({
+    title: "Who Really Influences Austin City Council",
+    description: "Campaign finance, lobbying, and the climate voting record behind Austin City Council decisions.",
+  });
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageHeader
+        title="Who really influences Austin City Council on climate"
+        subtitle="The council decides climate policy by near-total consensus — so the story isn't how any one member votes, it's who funds and lobbies them. Real estate and development dominate both; energy and climate interests barely register."
+      />
+      <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
-        <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Back to Home</Link>
         <CouncilNav />
-        <header className="space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
-          <h1 className="text-3xl font-bold tracking-tight">Who really influences Austin City Council on climate</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            The council decides climate policy by near-total consensus — so the story isn't how any
-            one member votes, it's who funds and lobbies them. Real estate and development dominate
-            both; energy and climate interests barely register.
-          </p>
-        </header>
 
         {/* Influence: funding + lobbying */}
         <section className="rounded-lg border border-border bg-card p-6 space-y-5">
@@ -280,6 +282,7 @@ export default function CouncilOverview() {
           (open data). Climate relevance and donor/lobby sectors are inferred from official descriptions.
         </p>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import CouncilNav from "@/components/CouncilNav";
+import PageHeader from "@/components/PageHeader";
+import { useSeo } from "@/hooks/use-seo";
 import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -305,68 +307,69 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
   const open = (items ?? []).filter((i) => i.status === "open" && byTopic(i)).sort((a, b) => a.meeting_date.localeCompare(b.meeting_date));
   const decided = (items ?? []).filter((i) => i.status === "decided" && byTopic(i)).sort((a, b) => b.meeting_date.localeCompare(a.meeting_date));
 
+  useSeo({
+    title: admin ? "Agenda Item Editor" : "Vote on Climate & Energy Items",
+    description: admin
+      ? "Manage which Austin City Council agenda items are shown on the public vote page."
+      : "Support or oppose Austin City Council climate and energy agenda items yourself, then see the community tally.",
+  });
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      {!admin && (
+        <PageHeader
+          title="Vote on climate & energy items"
+          subtitle="Support or oppose each item yourself. The community tally, and for decided items what council actually did, only shows after you vote, so it can't sway your answer first."
+        />
+      )}
+      <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-14">
-        {!admin && (
-          <>
-            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Back to Home</Link>
-            <CouncilNav />
-          </>
-        )}
-        <header className="space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
-          {admin ? (
-            <>
-              <h1 className="text-3xl font-bold tracking-tight">Agenda Item Editor</h1>
-              <p className="text-muted-foreground max-w-2xl">
-                Every item, including ones hidden from the public page. Toggle visibility or edit
-                the title directly.
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <label className="text-xs text-muted-foreground" htmlFor="lookback-days">
-                  Lookback (days)
-                </label>
-                <input
-                  id="lookback-days"
-                  type="number"
-                  min={1}
-                  value={lookbackDays}
-                  onChange={(e) => setLookbackDays(e.target.value)}
-                  className="w-20 rounded border border-input bg-background px-1.5 py-0.5 text-xs"
-                />
-                <Button size="sm" onClick={runSync} disabled={syncing}>
-                  {syncing ? "Importing…" : "Import agenda items"}
-                </Button>
-                <span className="text-xs text-muted-foreground">
-                  {lastSync ? `Last synced ${new Date(lastSync).toLocaleString()}` : "Never synced"}
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1 className="text-3xl font-bold tracking-tight">Vote on climate &amp; energy items</h1>
-              <p className="text-muted-foreground max-w-2xl">
-                Support or oppose each item yourself. The community tally, and for decided items what
-                council actually did, only shows after you vote, so it can't sway your answer first.
-              </p>
-            </>
-          )}
-          {topics.length > 0 && (
+        {!admin && <CouncilNav />}
+
+        {admin && (
+          <header className="space-y-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Austin City Council</p>
+            <h1 className="text-3xl font-bold tracking-tight">Agenda Item Editor</h1>
+            <p className="text-muted-foreground max-w-2xl">
+              Every item, including ones hidden from the public page. Toggle visibility or edit
+              the title directly.
+            </p>
             <div className="flex items-center gap-2 pt-1">
-              <label className="text-xs text-muted-foreground" htmlFor="topic-filter">Topic</label>
-              <select
-                id="topic-filter"
-                value={topicFilter}
-                onChange={(e) => setTopicFilter(e.target.value)}
-                className="rounded-md border border-input bg-background px-2 py-1 text-xs"
-              >
-                <option value="">All topics</option>
-                {topics.map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
-              </select>
+              <label className="text-xs text-muted-foreground" htmlFor="lookback-days">
+                Lookback (days)
+              </label>
+              <input
+                id="lookback-days"
+                type="number"
+                min={1}
+                value={lookbackDays}
+                onChange={(e) => setLookbackDays(e.target.value)}
+                className="w-20 rounded border border-input bg-background px-1.5 py-0.5 text-xs"
+              />
+              <Button size="sm" onClick={runSync} disabled={syncing}>
+                {syncing ? "Importing…" : "Import agenda items"}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {lastSync ? `Last synced ${new Date(lastSync).toLocaleString()}` : "Never synced"}
+              </span>
             </div>
-          )}
-        </header>
+          </header>
+        )}
+
+        {topics.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground" htmlFor="topic-filter">Topic</label>
+            <select
+              id="topic-filter"
+              value={topicFilter}
+              onChange={(e) => setTopicFilter(e.target.value)}
+              className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+            >
+              <option value="">All topics</option>
+              {topics.map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+            </select>
+          </div>
+        )}
 
         {err && <p className="text-sm text-destructive">{err}</p>}
         {!items && !err && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -444,7 +447,8 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
