@@ -319,7 +319,7 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
       {!admin && (
         <PageHeader
           title="Vote on climate & energy items"
-          subtitle="Support or oppose each item yourself. The community tally, and for decided items what council actually did, only shows after you vote, so it can't sway your answer first."
+          subtitle="View recent and upcoming items the Austin City Council is voting on, and share your opinion. After you vote on each item, you can view how others have voted."
         />
       )}
       <div className="min-h-screen bg-background">
