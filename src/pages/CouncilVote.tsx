@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Zap, Battery, Sun, Gauge, Car, Cloud, Map as MapIcon, Droplet, Scale, Tag, type LucideIcon } from "lucide-react";
+import { Zap, Battery, Sun, Gauge, Car, Cloud, Map as MapIcon, Droplet, Scale, Tag, ChevronDown, ThumbsUp, ThumbsDown, type LucideIcon } from "lucide-react";
 
 // council_decisions/agenda_item_vote_tallies aren't in the generated types until the
 // migration lands and Lovable regenerates types.ts -- cast, same as CouncilDecisions.tsx.
@@ -469,6 +469,7 @@ function VoteCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(item.title ?? "");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const revealed = admin || !!voted;
   // "New" = this exact id was first inserted by the most recent sync run, not just re-touched --
   // upsert never overwrites imported_at on an existing row, so a match here means brand new,
@@ -478,9 +479,9 @@ function VoteCard({
 
   return (
     <div
-      className={`p-4 space-y-2 rounded-lg border ${item.status === "open" && isFutureDate(item.meeting_date) ? "border-primary/30 bg-primary/[0.03]" : "border-border bg-card"} ${admin && !item.visible ? "opacity-50" : ""}`}
+      className={`p-5 space-y-4 rounded-lg border ${item.status === "open" && isFutureDate(item.meeting_date) ? "border-primary/30 bg-primary/[0.03]" : "border-border bg-card"} ${admin && !item.visible ? "opacity-50" : ""}`}
     >
-      <div className="min-w-0 space-y-0.5">
+      <div className="min-w-0 space-y-2">
         <p className="text-xs text-muted-foreground">
           {item.status === "open" && isFutureDate(item.meeting_date) ? (
             <>
@@ -519,7 +520,7 @@ function VoteCard({
             </div>
           </div>
         ) : (
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-sm font-medium text-foreground leading-snug">
             {isNew && item.status === "open" && (
               <span className="mr-1.5 inline-block rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary align-middle">
                 New
@@ -529,11 +530,11 @@ function VoteCard({
           </p>
         )}
         {(item.topic || item.sponsor || item.co_sponsor) && (
-          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-xs text-muted-foreground">
             {item.topic && (() => {
               const Icon = TOPIC_ICON[item.topic] ?? Tag;
               return (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
                   <Icon className="h-3 w-3" />
                   {item.topic.replace(/_/g, " ")}
                 </span>
@@ -543,9 +544,19 @@ function VoteCard({
             {item.co_sponsor && <span>Co-sponsor: {formatNames(item.co_sponsor)}</span>}
           </p>
         )}
-        <details className="text-xs">
-          <summary className="cursor-pointer text-primary">More details</summary>
-          <div className="mt-1.5 space-y-1 text-muted-foreground">
+
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          aria-expanded={detailsOpen}
+          className="flex items-center gap-1 rounded text-xs font-medium text-primary hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${detailsOpen ? "rotate-180" : ""}`} />
+          {detailsOpen ? "Hide details" : "More details"}
+        </button>
+
+        {detailsOpen && (
+          <div className="rounded-md bg-muted/40 p-3 space-y-1.5 text-xs text-muted-foreground">
             {item.description && item.description !== item.title && <p>{item.description}</p>}
             <p>
               item {item.item_number}
@@ -562,11 +573,11 @@ function VoteCard({
               </a>
             )}
           </div>
-        </details>
+        )}
       </div>
 
       {revealed ? (
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 pt-3 border-t border-border/60">
           <p className="text-xs">
             {voted && (
               <span className={voted === "support" ? "text-emerald-600 font-medium" : "text-rose-600 font-medium"}>
@@ -584,29 +595,31 @@ function VoteCard({
           )}
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="flex gap-3 pt-3 border-t border-border/60">
           <button
             type="button"
             disabled={pending}
             onClick={() => onVote("support")}
-            className="rounded-md border border-emerald-600/40 text-emerald-600 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500/10 disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-4 py-2 text-sm font-medium hover:bg-emerald-500/20 hover:border-emerald-600/50 transition-colors disabled:opacity-50"
           >
+            <ThumbsUp className="h-3.5 w-3.5" />
             Support
           </button>
           <button
             type="button"
             disabled={pending}
             onClick={() => onVote("oppose")}
-            className="rounded-md border border-rose-600/40 text-rose-600 px-3 py-1.5 text-xs font-medium hover:bg-rose-500/10 disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-rose-600/30 bg-rose-500/10 text-rose-700 dark:text-rose-400 px-4 py-2 text-sm font-medium hover:bg-rose-500/20 hover:border-rose-600/50 transition-colors disabled:opacity-50"
           >
+            <ThumbsDown className="h-3.5 w-3.5" />
             Oppose
           </button>
         </div>
       )}
 
       {admin && (
-        <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        <div className="pt-3 border-t border-border flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground">{item.visible ? "Shown on public page" : "Hidden from public page"}</span>
             <Switch checked={item.visible} onCheckedChange={(v) => onToggleVisible?.(v)} />
             {item.imported_at && (
