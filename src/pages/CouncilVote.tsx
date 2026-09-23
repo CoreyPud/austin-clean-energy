@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import CouncilNav from "@/components/CouncilNav";
+import CouncilPageCards from "@/components/CouncilPageCards";
 import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 import { supabase } from "@/integrations/supabase/client";
@@ -324,7 +324,6 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
       )}
       <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-14">
-        {!admin && <CouncilNav />}
 
         {admin && (
           <header className="space-y-3">
@@ -446,6 +445,8 @@ export default function CouncilVote({ admin = false }: { admin?: boolean }) {
             )}
           </>
         )}
+
+        {!admin && <CouncilPageCards current="vote" />}
       </div>
       </div>
     </>

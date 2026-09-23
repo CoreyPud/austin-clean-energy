@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { COUNCIL_MEMBERS, fmtUSD } from "@/lib/council-members";
 import SectorBar from "@/components/SectorBar";
-import CouncilNav from "@/components/CouncilNav";
+import CouncilPageCards from "@/components/CouncilPageCards";
 import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 
@@ -55,7 +55,6 @@ export default function CouncilMembers() {
       />
       <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
-        <CouncilNav />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {COUNCIL_MEMBERS.map(m => {
@@ -97,6 +96,8 @@ export default function CouncilMembers() {
           <a href="https://data.austintexas.gov/resource/3c89-i35a.json" target="_blank" rel="noopener noreferrer" className="underline">council voting record</a>
           {" "}(open data).
         </p>
+
+        <CouncilPageCards current="members" />
       </div>
       </div>
     </>

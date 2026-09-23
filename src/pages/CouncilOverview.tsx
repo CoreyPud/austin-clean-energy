@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import SectorBar from "@/components/SectorBar";
 import { SECTOR_LABEL, SECTOR_COLOR, fmtUSD, COUNCIL_MEMBERS } from "@/lib/council-members";
-import CouncilNav from "@/components/CouncilNav";
+import CouncilPageCards from "@/components/CouncilPageCards";
 import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 import companiesData from "@/data/council-companies.json";
@@ -101,7 +101,6 @@ export default function CouncilOverview() {
       />
       <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
-        <CouncilNav />
 
         {/* Influence: funding + lobbying */}
         <section className="rounded-lg border border-border bg-card p-6 space-y-5">
@@ -281,6 +280,8 @@ export default function CouncilOverview() {
           Sources: City of Austin Council Voting Record, campaign finance, and lobbyist registration
           (open data). Climate relevance and donor/lobby sectors are inferred from official descriptions.
         </p>
+
+        <CouncilPageCards current="overview" />
       </div>
       </div>
     </>

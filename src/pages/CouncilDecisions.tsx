@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import CouncilNav from "@/components/CouncilNav";
+import CouncilPageCards from "@/components/CouncilPageCards";
 import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,7 +127,6 @@ export default function CouncilDecisions() {
       <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
         <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Back to Home</Link>
-        <CouncilNav />
 
         {data && (
           <p className="text-xs text-muted-foreground -mt-4">
@@ -226,6 +225,8 @@ export default function CouncilDecisions() {
             </footer>
           </>
         )}
+
+        <CouncilPageCards current="decisions" />
       </div>
       </div>
     </>
