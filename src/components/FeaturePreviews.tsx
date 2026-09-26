@@ -164,7 +164,7 @@ export function CalculatorPreview() {
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
       </div>
-      <div className="relative flex flex-1 flex-col justify-center gap-3 border-l bg-muted/20 px-3">
+      <div className="flex flex-1 flex-col justify-center gap-3 border-l bg-muted/20 px-3">
         <div>
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">System size</div>
           <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.systemKw} kW</div>
@@ -184,11 +184,6 @@ export function CalculatorPreview() {
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Payback</div>
           <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.paybackYears} years</div>
         </div>
-        {/* Imagery attribution, required by Mapbox wherever their imagery appears; kept beside the
-            image rather than on it. */}
-        <span className="absolute bottom-1 right-2 text-[8px] leading-tight text-muted-foreground/70">
-          Imagery © Mapbox © Maxar
-        </span>
       </div>
     </div>
   );
