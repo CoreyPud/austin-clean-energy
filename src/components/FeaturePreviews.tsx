@@ -158,14 +158,17 @@ export function CalculatorPreview() {
   const fillPct = Math.round((SAMPLE_ROOF.systemKw / SAMPLE_ROOF.roofMaxKw) * 100);
   return (
     <div className="pointer-events-none relative flex border-b" style={{ height: "232px" }}>
-      <div className="relative w-[56%] overflow-hidden bg-muted/20">
-        <img
-          src="/solar-potential-preview.jpg"
-          alt="Solar panel layout drawn on a house roof in the calculator"
-          className="absolute inset-0 h-full w-full object-cover object-center"
-        />
+      {/* Photo framed by the same gray as the numbers panel, so the preview reads as one unit. */}
+      <div className="w-[56%] bg-muted p-2 pr-1">
+        <div className="relative h-full overflow-hidden rounded-md border border-border">
+          <img
+            src="/solar-potential-preview.jpg"
+            alt="Solar panel layout drawn on a house roof in the calculator"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+        </div>
       </div>
-      <div className="flex flex-1 flex-col justify-center gap-3 border-l bg-muted px-3">
+      <div className="flex flex-1 flex-col justify-center gap-3 bg-muted px-3">
         <div>
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">System size</div>
           <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.systemKw} kW</div>
