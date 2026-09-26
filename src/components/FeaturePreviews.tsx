@@ -196,16 +196,17 @@ export function CalculatorPreview() {
 /** The four areas a clean energy plan covers. */
 export function PlanCategoriesPreview() {
   return (
-    <div className="pointer-events-none flex items-center justify-center border-b bg-muted/10 px-3" style={{ height: "232px" }}>
+    <div className="pointer-events-none flex items-center justify-center border-b bg-muted px-3" style={{ height: "232px" }}>
       <div className="grid w-full grid-cols-2 gap-5 px-6">
         {[
-          { icon: Car, label: "Transportation", color: "text-primary", bg: "bg-primary/10" },
-          { icon: Zap, label: "Electrification", color: "text-blue-500", bg: "bg-blue-500/10" },
-          { icon: Leaf, label: "Home Power", color: "text-emerald-600", bg: "bg-emerald-500/10" },
-          { icon: Wrench, label: "Efficiency", color: "text-amber-600", bg: "bg-amber-500/10" },
-        ].map(({ icon: Icon, label, color, bg }) => (
+          { icon: Car, label: "Transportation", color: "text-primary" },
+          { icon: Zap, label: "Electrification", color: "text-blue-500" },
+          { icon: Leaf, label: "Home Power", color: "text-emerald-600" },
+          { icon: Wrench, label: "Efficiency", color: "text-amber-600" },
+        ].map(({ icon: Icon, label, color }) => (
           <div key={label} className="flex flex-col items-center gap-2">
-            <div className={`flex h-14 w-14 items-center justify-center rounded-full ${bg}`}>
+            {/* White circles so they stand out on the gray panel; the icon carries the color. */}
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-background shadow-sm">
               <Icon className={`h-6 w-6 ${color}`} />
             </div>
             <span className="text-center text-xs font-medium leading-tight text-muted-foreground">{label}</span>
