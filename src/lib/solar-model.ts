@@ -10,8 +10,10 @@ import {
   AUSTIN_ENERGY_SOLAR_REBATE,
   AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
   PANEL_DEGRADATION_RATE,
+  CO2_FALLBACK_KG_PER_MWH,
 } from "../../supabase/functions/_shared/solar-rates";
 export {
+  CO2_FALLBACK_KG_PER_MWH,
   VOS_RATE,
   AUSTIN_ENERGY_SOLAR_REBATE,
   AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
@@ -427,9 +429,8 @@ export function buildSsoModel(systemKw: number, productionPerKw: number, install
 
 // ── Environmental impact ──────────────────────────────────────────────────────
 
-// Fallback matches Google's carbonOffsetFactorKgPerMwh methodology for ERCOT/Austin (~400 kg/MWh).
+// Grid factor: Google's per-property value when available, else CO2_FALLBACK_KG_PER_MWH (shared).
 // Use the live Google value when available — pass carbonOffsetKgPerMwh in kg/MWh.
-export const CO2_FALLBACK_KG_PER_MWH = 400; // ERCOT grid approx, same units as Google's factor
 const CO2_PER_KWH_FALLBACK   = CO2_FALLBACK_KG_PER_MWH / 1_000_000; // metric tons CO2 / kWh
 const TONS_CO2_PER_CAR_MILE  = 0.000404; // metric tons CO2 / mile
 const TONS_CO2_PER_TREE      = 0.021;    // metric tons CO2 / tree / year

@@ -1,9 +1,20 @@
-// The Google Solar API call, response shape, and DB upsert used by fetch-property-solar (the
-// only caller). Split out from the endpoint handler for readability, not reuse.
+// The Google Solar API call, the tcad_properties / tcad_roof_segments storage format (both
+// directions: Google response -> rows, and cached rows -> Google-shaped response), and the DB
+// upsert. Shared by fetch-property-solar and unified-assessment so the two can't store or read
+// the cache differently.
 
 import { calcEligibleKw } from "./solar-filters.ts";
 
 type SupabaseClientLike = ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.58.0").createClient>;
+
+/** Re-fetch Google data older than this even if we already have it: solar potential doesn't
+ *  change often, but roofs get replaced or shaded out and imagery improves. */
+export const SOLAR_CACHE_MAX_AGE_DAYS = 365;
+
+export function isSolarCacheFresh(fetchedAt: string | null | undefined): boolean {
+  if (!fetchedAt) return false;
+  return Date.now() - new Date(fetchedAt).getTime() <= SOLAR_CACHE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+}
 
 export interface FetchSolarResult {
   status: "ok" | "not-found" | "error";
@@ -30,6 +41,14 @@ export async function fetchAndBuildSolarRecord(
   }
 
   const raw = await solarRes.json();
+  return { status: "ok", ...buildSolarRecord(pid, raw) };
+}
+
+/** Google buildingInsights response -> tcad_properties row + tcad_roof_segments rows. */
+export function buildSolarRecord(
+  pid: string,
+  raw: any,
+): { property: Record<string, unknown>; segments: Record<string, unknown>[] } {
   const sp = raw.solarPotential ?? {};
   const id = raw.imageryDate;
   const imageryDate = id?.year
@@ -90,7 +109,44 @@ export async function fetchAndBuildSolarRecord(
     };
   });
 
-  return { status: "ok", property, segments };
+  return { property, segments };
+}
+
+/** Cached tcad_properties row + its tcad_roof_segments rows -> the subset of a Google
+ *  buildingInsights response that callers read, so a cache hit and a live fetch go through the
+ *  same downstream code. Returns null when the row has no stored panel layout. Fields Google
+ *  provides but we don't store (e.g. carbonOffsetFactorKgPerMwh) come back absent. */
+export function solarResponseFromCache(row: any, segRows: any[]): any | null {
+  const layout = row?.solar_panels_layout;
+  if (!layout?.ref || !Array.isArray(layout.p) || !layout.p.length) return null;
+  const [refLat, refLon] = layout.ref;
+  const [y, m, d] = typeof row.solar_imagery_date === "string" ? row.solar_imagery_date.split("-").map(Number) : [];
+  const roofSegmentStats: any[] = [];
+  for (const s of segRows ?? []) {
+    roofSegmentStats[s.segment_index] = {
+      pitchDegrees: s.pitch_deg ?? undefined,
+      azimuthDegrees: s.azimuth_deg ?? undefined,
+    };
+  }
+  for (let i = 0; i < roofSegmentStats.length; i++) roofSegmentStats[i] ??= {};
+  return {
+    center: { latitude: refLat, longitude: refLon },
+    imageryDate: y ? { year: y, month: m, day: d } : undefined,
+    imageryQuality: row.solar_imagery_quality ?? undefined,
+    solarPotential: {
+      maxArrayPanelsCount: row.solar_max_panels ?? layout.p.length,
+      maxArrayAreaMeters2: row.solar_max_area_m2 ?? undefined,
+      maxSunshineHoursPerYear: row.solar_sunshine_hrs ?? undefined,
+      panelCapacityWatts: row.solar_panel_capacity_w ?? undefined,
+      roofSegmentStats,
+      solarPanels: layout.p.map(([dlat, dlon, o, kwh, seg]: number[]) => ({
+        center: { latitude: refLat + dlat / 1e6, longitude: refLon + dlon / 1e6 },
+        orientation: o ? "LANDSCAPE" : "PORTRAIT",
+        yearlyEnergyDcKwh: kwh,
+        segmentIndex: seg,
+      })),
+    },
+  };
 }
 
 export async function persistSolarResult(
