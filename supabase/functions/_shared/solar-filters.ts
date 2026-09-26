@@ -34,6 +34,8 @@ export const BORDER_SMOOTH_M = 4;
 export const AUSTIN_REF_HRS = 1950;
 /** Google's per-panel energy figures assume this panel size, kW. */
 export const GOOGLE_PANEL_KW = 0.4;
+/** Physical size of Google's reference panel, metres (height = long side). */
+export const GOOGLE_PANEL_DIMS = { h: 1.879, w: 1.045 } as const;
 const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
 const SETBACK_M = 1.22; // 4 ft

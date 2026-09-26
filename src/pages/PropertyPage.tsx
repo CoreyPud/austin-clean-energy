@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { GOOGLE_PANEL_DIMS } from "@/lib/solar-filters";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SatellitePane, { type SolarPanel } from "@/components/SatellitePane";
@@ -157,7 +158,7 @@ export default function PropertyPage() {
         yearlyEnergyDcKwh: kwh,
         segmentIndex: si,
       })));
-      setPanelDims({ h: 1.879, w: 1.045 });
+      setPanelDims(GOOGLE_PANEL_DIMS);
     } else if (data.solar_fetched_at) {
       // Checked, confirmed no panels -- distinct from "haven't checked yet" (undefined).
       setSolarPanels([]);

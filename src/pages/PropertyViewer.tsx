@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { AUSTIN_REF_HRS, TSRF_MIN } from "@/lib/solar-filters";
+import { AUSTIN_REF_HRS, TSRF_MIN, GOOGLE_PANEL_DIMS } from "@/lib/solar-filters";
 import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Search, Download, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -311,10 +311,10 @@ export default function PropertyViewer() {
           const azimuths: Record<number, number> = {};
           const pitches: Record<number, number> = {};
           segs.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; pitches[s.segment_index] = s.pitch_deg; });
-          setPanelOverlay({ panels, dims: { h: 1.879, w: 1.045 }, azimuths, pitches });
+          setPanelOverlay({ panels, dims: GOOGLE_PANEL_DIMS, azimuths, pitches });
         } else {
           // Signal "loaded, no panels" so SatellitePane shows satellite instead of staying hidden
-          setPanelOverlay({ panels: [], dims: { h: 1.879, w: 1.045 }, azimuths: {}, pitches: {} });
+          setPanelOverlay({ panels: [], dims: GOOGLE_PANEL_DIMS, azimuths: {}, pitches: {} });
         }
       });
   }, [focusPid, solarRefreshKey]);

@@ -17,7 +17,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
-import { applySolarFilters, type SolarPanel } from "../_shared/solar-filters.ts";
+import { applySolarFilters, GOOGLE_PANEL_DIMS, type SolarPanel } from "../_shared/solar-filters.ts";
 import {
   VOS_RATE,
   AUSTIN_INSTALL_COST_PER_KW,
@@ -281,7 +281,7 @@ serve(async (req) => {
       const refLat = solarApiResp.center.latitude;
       const refLon = solarApiResp.center.longitude;
       solarCenter = { lat: refLat, lon: refLon };
-      panelDims = { h: 1.879, w: 1.045 };
+      panelDims = GOOGLE_PANEL_DIMS;
       roofSegments = (sp.roofSegmentStats || []).map((seg: any, i: number) => ({
         segmentIndex: i,
         azimuthDeg: seg.azimuthDegrees,
