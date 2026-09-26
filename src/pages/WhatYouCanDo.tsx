@@ -1,24 +1,10 @@
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Car, Leaf, Wrench, Zap } from "lucide-react";
-import { Bar, BarChart, Cell, Legend, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import FeatureCard from "@/components/FeatureCard";
 import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
-import {
-  austinEnergyRebate,
-  buildThirtyYearModel,
-  DEFAULT_MONTHLY_USAGE_KWH,
-  DEFAULT_PRODUCTION_PER_KW,
-  AUSTIN_INSTALL_COST_PER_KW,
-  type CalcInputs,
-} from "@/lib/solar-model";
-import { calcEVResults, DEFAULT_EV_INPUTS } from "@/lib/ev-model";
-
-const PRI = "hsl(var(--primary))";
-const BLUE = "#3b82f6";
-const ORNG = "#f59e0b";
+import { SolarPaybackPreview, EvCostPreview } from "@/components/FeaturePreviews";
 
 const WhatYouCanDo = () => {
   useSeo({
@@ -27,39 +13,6 @@ const WhatYouCanDo = () => {
       "Explore Austin solar savings, compare electric and gas vehicles, and build a personalized clean energy plan.",
   });
   const navigate = useNavigate();
-
-  const solarCumulative = useMemo(() => {
-    const sampleKw = 8;
-    const inputs: CalcInputs = {
-      annualUsageKwh: DEFAULT_MONTHLY_USAGE_KWH * 12,
-      systemKw: sampleKw,
-      loanTermYears: 0,
-      loanInterestRate: 0,
-      productionPerKw: DEFAULT_PRODUCTION_PER_KW,
-    };
-    return buildThirtyYearModel(
-      inputs,
-      sampleKw * AUSTIN_INSTALL_COST_PER_KW - austinEnergyRebate(sampleKw, "single_family"),
-    ).cumulativeByYear.slice(0, 25);
-  }, []);
-
-  const evAnnualCostData = useMemo(() => {
-    const results = calcEVResults(DEFAULT_EV_INPUTS);
-    return [
-      {
-        vehicle: "Gas Vehicle",
-        fuel: Math.round(results.gasAnnualFuel),
-        maintenance: Math.round(results.gasAnnualMaintenance),
-        registration: results.gasRegistrationFee,
-      },
-      {
-        vehicle: "Electric Vehicle",
-        fuel: Math.round(results.evAnnualFuel),
-        maintenance: Math.round(results.evAnnualMaintenance),
-        registration: results.evRegistrationSurcharge,
-      },
-    ];
-  }, []);
 
   return (
     <div className="min-h-screen">
@@ -83,33 +36,7 @@ const WhatYouCanDo = () => {
               title="Check Solar for Your Home"
               description="Enter your address to see neighborhood solar trends, your roof's potential, cost estimates, your council member, and a personalized plan — all in one place."
               cta="Calculate Savings"
-              preview={
-                <div className="pointer-events-none border-b bg-muted/10 px-3 pb-1 pt-4">
-                  <ResponsiveContainer width="100%" height={210}>
-                    <BarChart data={solarCumulative} margin={{ left: 0, right: 4, top: 2, bottom: 0 }}>
-                      <XAxis
-                        dataKey="year"
-                        tickFormatter={(value) => (value % 5 === 0 ? `Yr ${value}` : "")}
-                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={false}
-                        tickLine={false}
-                        width={40}
-                      />
-                      <Bar dataKey="cumulative" radius={[2, 2, 0, 0]}>
-                        {solarCumulative.map((entry) => (
-                          <Cell key={entry.year} fill={entry.cumulative >= 0 ? "#047857" : "#b91c1c"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              }
+              preview={<SolarPaybackPreview />}
             />
 
             <FeatureCard
@@ -117,37 +44,7 @@ const WhatYouCanDo = () => {
               title="EV vs. Gas Calculator"
               description="Compare the real cost of going electric using Austin Energy rates, local gas prices, and Austin-specific incentives."
               cta="Compare Costs"
-              preview={
-                <div className="pointer-events-none border-b bg-muted/10 px-3 pb-1 pt-4">
-                  <ResponsiveContainer width="100%" height={210}>
-                    <BarChart data={evAnnualCostData} margin={{ left: 0, right: 4, top: 2, bottom: 0 }} barSize={56}>
-                      <XAxis
-                        dataKey="vehicle"
-                        tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `$${value}`}
-                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={false}
-                        tickLine={false}
-                        width={40}
-                      />
-                      <Legend
-                        iconType="square"
-                        iconSize={8}
-                        formatter={(value) => (
-                          <span style={{ fontSize: 10, color: "hsl(var(--muted-foreground))" }}>{value}</span>
-                        )}
-                      />
-                      <Bar dataKey="fuel" stackId="cost" fill={PRI} name="Fuel" />
-                      <Bar dataKey="maintenance" stackId="cost" fill={BLUE} name="Maintenance" />
-                      <Bar dataKey="registration" stackId="cost" fill={ORNG} name="Registration" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              }
+              preview={<EvCostPreview />}
             />
 
             <FeatureCard

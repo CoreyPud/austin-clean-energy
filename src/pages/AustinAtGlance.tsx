@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { evAdoptionSeries } from "@/data/ev-adoption";
 import FeatureCard from "@/components/FeatureCard";
+import { ImagePreview } from "@/components/FeaturePreviews";
 import { loadPowerMoney, FUEL_META, FUEL_ORDER, type FuelKey } from "@/lib/power-money";
 
 const PRI = "hsl(var(--primary))";
@@ -158,20 +159,11 @@ const AustinAtGlance = () => {
                 description="See how Austin is trending on new solar and battery installs, and which areas are adopting solar the fastest."
                 cta="Learn More"
                 preview={
-                  <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground select-none">
-                      <MapPin className="h-8 w-8 opacity-30" />
-                      <span className="text-xs opacity-40">Map preview</span>
-                    </div>
-                    <img
-                      src="/city-map-preview.png"
-                      alt="Austin solar installations map"
-                      className="absolute inset-0 w-full h-full object-cover object-center"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
+                  <ImagePreview
+                    src="/city-map-preview.png"
+                    alt="Austin solar installations map"
+                    placeholder={<><MapPin className="h-8 w-8 opacity-30" /><span className="text-xs opacity-40">Map preview</span></>}
+                  />
                 }
               />
 
@@ -181,20 +173,11 @@ const AustinAtGlance = () => {
                 description="Zoom into any Austin property to check its solar status and potential, and filter by value, year built, or council district."
                 cta="Explore the Map"
                 preview={
-                  <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground select-none">
-                      <MapPin className="h-8 w-8 opacity-30" />
-                      <span className="text-xs opacity-40">Map preview</span>
-                    </div>
-                    <img
-                      src="/explore-preview.png"
-                      alt="Austin property explorer map"
-                      className="absolute inset-0 w-full h-full object-cover object-center"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
+                  <ImagePreview
+                    src="/explore-preview.png"
+                    alt="Austin property explorer map"
+                    placeholder={<><MapPin className="h-8 w-8 opacity-30" /><span className="text-xs opacity-40">Map preview</span></>}
+                  />
                 }
               />
 
@@ -253,19 +236,12 @@ const AustinAtGlance = () => {
                 description="Model what it would take for Austin to reach zero emissions by 2035 — adjust solar buildout, EV adoption, and efficiency targets to see the emissions impact."
                 cta="Learn More"
                 preview={
-                  <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground select-none">
-                      <span className="text-xs opacity-40">Preview</span>
-                    </div>
-                    <img
-                      src="/2035-zero-calc-preview.png"
-                      alt="Path to 2035 net zero simulator"
-                      className="absolute inset-0 w-full h-full object-cover object-top"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
+                  <ImagePreview
+                    src="/2035-zero-calc-preview.png"
+                    alt="Path to 2035 net zero simulator"
+                    position="top"
+                    placeholder={<span className="text-xs opacity-40">Preview</span>}
+                  />
                 }
               />
 

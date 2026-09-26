@@ -1,31 +1,41 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Home, Lightbulb, BarChart3, Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
 import CampaignPopup from "@/components/CampaignPopup";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useSeo } from "@/hooks/use-seo";
+import FeatureCard from "@/components/FeatureCard";
+import { SolarPaybackPreview, EvCostPreview, ImagePreview } from "@/components/FeaturePreviews";
 
+// Each card reuses the preview from the section page it links to (FeaturePreviews), so the
+// homepage and that page show the same visual.
 const CHOICES = [
   {
     to: "/property-assessment",
-    icon: Home,
-    title: "Residential Solar",
-    description: "See your home's solar potential, including Austin Energy rebates, and Federal Incentives.",
+    title: "Your Solar Potential",
+    description: "See what solar could do for your property, including Austin Energy rebates and Federal Incentives.",
+    preview: <SolarPaybackPreview />,
   },
   {
     to: "/what-you-can-do",
-    icon: Lightbulb,
     title: "What You Can Do",
     description:
       "Explore clean energy options, compare electric and gas vehicles, and build a personalized clean energy plan.",
+    preview: <EvCostPreview />,
   },
   {
     to: "/austin-at-a-glance",
-    icon: BarChart3,
     title: "Austin at a Glance",
     description: "Track solar and EV growth, energy spending, utility decisions, and Austin's clean energy progress.",
+    preview: (
+      <ImagePreview
+        src="/city-map-preview.png"
+        alt="Austin solar installations map"
+        placeholder={<MapPin className="h-8 w-8 opacity-30" />}
+      />
+    ),
   },
 ];
 
@@ -66,23 +76,9 @@ const Index = () => {
 
       {/* Three choices */}
       <section className="container mx-auto px-4 py-14">
-        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-          {CHOICES.map(({ to, icon: Icon, title, description }) => (
-            <Link
-              key={title}
-              to={to}
-              className="group flex flex-col items-start gap-4 rounded-xl border bg-card p-7 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-lg"
-            >
-              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-                <Icon className="h-6 w-6 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold leading-snug">{title}</h2>
-              <p className="text-base text-muted-foreground">{description}</p>
-              <span className="mt-auto pt-3 inline-flex items-center text-sm font-medium text-primary">
-                Get started
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </span>
-            </Link>
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto items-stretch">
+          {CHOICES.map(({ to, title, description, preview }) => (
+            <FeatureCard key={title} to={to} title={title} description={description} cta="Get started" preview={preview} />
           ))}
         </div>
 
