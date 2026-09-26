@@ -4,7 +4,7 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 
 // Defined in the filter lib (which must stay import-free so scripts can load it);
 // re-exported here since components already import the type from this module.
-import { panelTsrf, type SolarPanel } from "@/lib/solar-filters";
+import { panelTsrf, GOOGLE_PANEL_DIMS, type SolarPanel } from "@/lib/solar-filters";
 export type { SolarPanel };
 
 interface LatLon { lat: number; lon: number }
@@ -30,17 +30,25 @@ const PANEL_LAYERS = ["panels-fill", "panels-outline", "walkways-fill", "walkway
 const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
 
+/** Top-down footprint of a tilted panel. Only the side running up/down the slope (along the
+ *  azimuth) is foreshortened by cos(pitch); the side running across the slope is level. Which
+ *  physical side that is depends on orientation: the long side (height) in portrait, the short
+ *  side (width) in landscape. Picking the side first and then foreshortening it matters --
+ *  foreshortening height before the orientation swap drew landscape panels full-length up the
+ *  slope, overlapping the rows above and below them. */
 function panelPolygon(
   lat: number, lon: number,
   halfH: number, halfW: number,
   azimuthDeg: number,
+  pitchDeg: number,
   isLandscape: boolean,
 ): [number, number][] {
   const mPerDegLon = M_PER_DEG_LAT * Math.cos(lat * RAD);
   const az = azimuthDeg * RAD;
   const ax = Math.sin(az), ay = Math.cos(az);
   const px = -ay, py = ax;
-  const [longH, longW] = isLandscape ? [halfW, halfH] : [halfH, halfW];
+  const longH = (isLandscape ? halfW : halfH) * Math.cos(pitchDeg * RAD); // along the slope
+  const longW = isLandscape ? halfH : halfW;                              // across the slope
   const corners: [number, number][] = [
     [ ax * longH + px * longW,  ay * longH + py * longW],
     [ ax * longH - px * longW,  ay * longH - py * longW],
@@ -67,7 +75,7 @@ interface MapProps extends Omit<Props, "className"> {
 }
 
 function SatelliteMap({
-  lat, lon, panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM = 1.0, panelWidthM = 1.65,
+  lat, lon, panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
   segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey,
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -249,7 +257,7 @@ function SatelliteMap({
         const az    = segmentAzimuths[p.segmentIndex] ?? 180;
         const pitch = segmentPitches[p.segmentIndex] ?? 20;
         const tsrf  = panelTsrf(p.yearlyEnergyDcKwh);
-        const coords = panelPolygon(p.lat, p.lon, halfH * Math.cos(pitch * RAD), halfW, az, p.orientation === "LANDSCAPE");
+        const coords = panelPolygon(p.lat, p.lon, halfH, halfW, az, pitch, p.orientation === "LANDSCAPE");
         return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] },
@@ -293,7 +301,7 @@ function SatelliteMap({
       features: (walkwayPanels ?? []).map((p) => {
         const az    = segmentAzimuths[p.segmentIndex] ?? 180;
         const pitch = segmentPitches[p.segmentIndex] ?? 0;
-        const coords = panelPolygon(p.lat, p.lon, halfH * Math.cos(pitch * RAD), halfW, az, p.orientation === "LANDSCAPE");
+        const coords = panelPolygon(p.lat, p.lon, halfH, halfW, az, pitch, p.orientation === "LANDSCAPE");
         return {
           type: "Feature" as const,
           geometry: { type: "Polygon" as const, coordinates: [[...coords, coords[0]]] },
