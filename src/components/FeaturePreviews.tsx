@@ -122,12 +122,15 @@ export function ImagePreview({
   alt,
   placeholder,
   position = "center",
+  credit,
 }: {
   src: string;
   alt: string;
   /** Shown behind the image while it loads or if it's missing. */
   placeholder: React.ReactNode;
   position?: "center" | "top";
+  /** Attribution for third-party imagery, shown small in the corner. */
+  credit?: string;
 }) {
   return (
     <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
@@ -142,6 +145,11 @@ export function ImagePreview({
           (e.target as HTMLImageElement).style.display = "none";
         }}
       />
+      {credit && (
+        <span className="absolute bottom-1 right-1.5 rounded bg-black/40 px-1 text-[9px] leading-tight text-white/90">
+          {credit}
+        </span>
+      )}
     </div>
   );
 }
