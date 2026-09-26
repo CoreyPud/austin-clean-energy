@@ -21,6 +21,12 @@ export const SYSTEM_DERATE = 0.86;
 /** Austin average production, kWh per kW-year, when no roof-specific data is available. */
 export const DEFAULT_PRODUCTION_PER_KW = 1500;
 
+/** Grid CO2 intensity for Austin (ERCOT), kg per MWh, used when Google's per-property factor
+ *  isn't available (e.g. a cached lookup, which doesn't store it). Google Solar API's
+ *  carbonOffsetFactorKgPerMwh returned 639 at all five addresses sampled on 2026-09-26
+ *  (78660, 78705, 78745, 78758, 78723): it's a grid-level figure, not per-roof. */
+export const CO2_FALLBACK_KG_PER_MWH = 639;
+
 /** Panel output loss per year: NREL's median degradation for modern crystalline-silicon
  *  modules, matching typical 25-year warranties (~87% of nameplate at year 25). */
 export const PANEL_DEGRADATION_RATE = 0.005;

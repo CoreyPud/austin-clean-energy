@@ -18,6 +18,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
 import { applySolarFilters, type SolarPanel } from "../_shared/solar-filters.ts";
+import { tcadAddressMatch } from "../_shared/tcad-address.ts";
+import {
+  buildSolarRecord,
+  isSolarCacheFresh,
+  persistSolarResult,
+  solarResponseFromCache,
+} from "../_shared/solarFetch.ts";
 import {
   VOS_RATE,
   AUSTIN_INSTALL_COST_PER_KW,
@@ -142,20 +149,50 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const knowledgeFiles = await supabase.from("knowledge_files").select("name,content");
-    const councilOverride = knowledgeFiles.data?.find(
-      (k: any) => k.name === "council-members",
-    )?.content;
+    // 2. Everything below is independent, so it all runs in parallel. Solar data comes from our
+    // tcad_properties cache when this address matches a single parcel with fresh Google data;
+    // only a miss calls the Google Solar API (the slow, paid step).
+    const tcadMatch = tcadAddressMatch(standardizedAddress);
+    const tcadPromise: Promise<any | null> = tcadMatch
+      ? (() => {
+          let q = supabase
+            .from("tcad_properties")
+            .select("pid, solar_fetched_at, solar_panels_layout, solar_max_panels, solar_max_area_m2, solar_sunshine_hrs, solar_panel_capacity_w, solar_imagery_quality, solar_imagery_date")
+            .ilike("situs_address", tcadMatch.pattern);
+          if (tcadMatch.zip) q = q.eq("situs_zip", tcadMatch.zip);
+          return q.limit(2).then(({ data }) => (data?.length === 1 ? data[0] : null), () => null);
+        })()
+      : Promise.resolve(null);
 
-    // 2. Parallel: Solar API, nearby installations, council lookup, ZIP-level db stats
-    const [solarApiResp, nearbyDbResp, zipDbResp, councilMember] = await Promise.all([
-      GOOGLE_KEY
-        ? fetch(
-            `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${GOOGLE_KEY}`,
-          )
-            .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null)
-        : Promise.resolve(null),
+    const solarPromise: Promise<{ resp: any; fromCache: boolean }> = tcadPromise.then(async (row) => {
+      if (row && isSolarCacheFresh(row.solar_fetched_at)) {
+        const { data: segRows } = await supabase
+          .from("tcad_roof_segments")
+          .select("segment_index, pitch_deg, azimuth_deg")
+          .eq("pid", row.pid);
+        const cached = solarResponseFromCache(row, segRows ?? []);
+        if (cached) return { resp: cached, fromCache: true };
+      }
+      if (!GOOGLE_KEY) return { resp: null, fromCache: false };
+      const resp = await fetch(
+        `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${GOOGLE_KEY}`,
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      return { resp, fromCache: false };
+    });
+
+    const councilPromise = supabase
+      .from("knowledge_files")
+      .select("name,content")
+      .then((knowledgeFiles: any) => {
+        const councilOverride = knowledgeFiles.data?.find((k: any) => k.name === "council-members")?.content;
+        return resolveCouncilMember(lat, lng, councilOverride);
+      });
+
+    const [{ resp: solarApiResp, fromCache: solarFromCache }, tcadRow, nearbyDbResp, zipDbResp, zipCountResp, councilMember] = await Promise.all([
+      solarPromise,
+      tcadPromise,
       // nearby installations from city open data (same ZIP)
       zipCode
         ? fetch(
@@ -166,7 +203,7 @@ serve(async (req) => {
         : Promise.resolve([]),
       // ZIP-level adoption count from our DB (deduped, complete view).
       // NOTE: PostgREST caps row results at 1000, so we fetch a sample for markers/avg
-      // but use a separate head+count query below for the true total.
+      // but use a separate head+count query for the true total.
       zipCode
         ? supabase
             .from("solar_installations")
@@ -177,18 +214,17 @@ serve(async (req) => {
             .order("completed_date", { ascending: false, nullsFirst: false })
             .limit(1000)
         : Promise.resolve({ data: [] as any[] }),
-      resolveCouncilMember(lat, lng, councilOverride),
+      // True total installations in ZIP (exact count, not capped by row limit)
+      zipCode
+        ? supabase
+            .from("solar_installations")
+            .select("id", { count: "exact", head: true })
+            .eq("original_zip", zipCode)
+            .not("latitude", "is", null)
+            .not("longitude", "is", null)
+        : Promise.resolve({ count: 0 }),
+      councilPromise,
     ]);
-
-    // True total installations in ZIP (exact count, not capped by row limit)
-    const zipCountResp = zipCode
-      ? await supabase
-          .from("solar_installations")
-          .select("id", { count: "exact", head: true })
-          .eq("original_zip", zipCode)
-          .not("latitude", "is", null)
-          .not("longitude", "is", null)
-      : { count: 0 };
     const zipInstallationsTotal = (zipCountResp as any).count ?? 0;
 
     const dbInstallations = (zipDbResp as any).data || [];
@@ -295,68 +331,16 @@ serve(async (req) => {
         p.segmentIndex,
       ]);
 
-      // Persist to DB if we can match a single TCAD property by street
-      try {
-        const streetPart = standardizedAddress.split(",")[0].trim();
-        const matchResp = await supabase
-          .from("tcad_properties")
-          .select("pid")
-          .ilike("situs_address", streetPart + "%")
-          .limit(2);
-        if (matchResp.data && matchResp.data.length === 1) {
-          const pid = matchResp.data[0].pid;
-          const imageryDateStr = solarApiResp.imageryDate
-            ? `${solarApiResp.imageryDate.year}-${String(solarApiResp.imageryDate.month).padStart(2, "0")}-${String(solarApiResp.imageryDate.day).padStart(2, "0")}`
-            : null;
-          const wholeQuantiles = sp.wholeRoofStats?.sunshineQuantiles || [];
-          const propertyRow = {
-            pid,
-            solar_fetched_at: new Date().toISOString(),
-            solar_imagery_quality: solarApiResp.imageryQuality ?? null,
-            solar_imagery_date: imageryDateStr,
-            solar_max_panels: sp.maxArrayPanelsCount ?? null,
-            solar_max_area_m2: sp.maxArrayAreaMeters2 ?? null,
-            solar_sunshine_hrs: sp.maxSunshineHoursPerYear ?? null,
-            solar_sunshine_median: wholeQuantiles[5] ?? null,
-            solar_panel_capacity_w: sp.panelCapacityWatts ?? null,
-            solar_panels_layout: { ref: [refLat, refLon], p: solarPanelsCompact },
-          };
-          const propUpsert = await supabase
-            .from("tcad_properties")
-            .upsert(propertyRow, { onConflict: "pid" });
-          if (propUpsert.error) console.error("tcad_properties upsert error:", propUpsert.error);
-
-          const lastConfig = sp.solarPanelConfigs?.at?.(-1);
-          const segSummaries: any[] = lastConfig?.roofSegmentSummaries || [];
-          const segRows = (sp.roofSegmentStats || []).map((seg: any, i: number) => {
-            const summary = segSummaries.find((s: any) => s.segmentIndex === i);
-            const q = seg.stats?.sunshineQuantiles || [];
-            return {
-              pid,
-              segment_index: i,
-              pitch_deg: seg.pitchDegrees ?? null,
-              azimuth_deg: seg.azimuthDegrees ?? null,
-              area_m2: seg.stats?.areaMeters2 ?? null,
-              sunshine_median: q[5] ?? null,
-              sunshine_max: q[10] ?? null,
-              center_lat: seg.center?.latitude ?? null,
-              center_lon: seg.center?.longitude ?? null,
-              max_panels: summary?.panelsCount ?? null,
-              max_kw: summary?.yearlyEnergyDcKwh != null && sp.panelCapacityWatts
-                ? +((summary.panelsCount * sp.panelCapacityWatts) / 1000).toFixed(3)
-                : null,
-              yearly_energy_kwh: summary?.yearlyEnergyDcKwh ?? null,
-            };
-          });
-          if (segRows.length > 0) {
-            const segUpsert = await supabase
-              .from("tcad_roof_segments")
-              .upsert(segRows, { onConflict: "pid,segment_index" });
-            if (segUpsert.error) console.error("tcad_roof_segments upsert error:", segUpsert.error);
-          }
-        }
-      } catch (persistErr) {
-        console.error("solar persistence error (non-fatal):", persistErr);
+      // Fresh Google data for a matched parcel: save it (same row format fetch-property-solar
+      // writes) so the next lookup is a cache hit. Runs after the response is sent -- the user
+      // shouldn't wait on a write they don't need.
+      if (!solarFromCache && tcadRow?.pid) {
+        const { property, segments } = buildSolarRecord(tcadRow.pid, solarApiResp);
+        const save = persistSolarResult(supabase, { status: "ok", property, segments })
+          .then(({ error }) => { if (error) console.error("solar persistence error (non-fatal):", error); })
+          .catch((e) => console.error("solar persistence error (non-fatal):", e));
+        // deno-lint-ignore no-explicit-any
+        (globalThis as any).EdgeRuntime?.waitUntil?.(save);
       }
     }
 

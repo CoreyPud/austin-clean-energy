@@ -51,6 +51,7 @@ import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-plan";
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
+import { tcadAddressMatch } from "../../supabase/functions/_shared/tcad-address";
 
 const DEFAULT_COST_PER_W = AUSTIN_INSTALL_COST_PER_KW / 1000;
 
@@ -403,13 +404,15 @@ const PropertyAssessment = () => {
   };
 
   const handlePlaceSelected = async (fullAddress: string) => {
-    const streetPart = fullAddress.split(",")[0].trim();
-    if (!streetPart) return;
-    const { data } = await supabase
+    // Same matcher the edge function uses to find the cached solar row.
+    const match = tcadAddressMatch(fullAddress);
+    if (!match) return;
+    let query = supabase
       .from("tcad_properties")
       .select("property_type")
-      .ilike("situs_address", streetPart + "%")
-      .limit(2);
+      .ilike("situs_address", match.pattern);
+    if (match.zip) query = query.eq("situs_zip", match.zip);
+    const { data } = await query.limit(2);
     if (data?.length === 1 && data[0].property_type) {
       const mapped = DB_TYPE_MAP[data[0].property_type];
       if (mapped) setPropertyType(mapped);
