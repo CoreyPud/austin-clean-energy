@@ -1,22 +1,31 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, Sun } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
 import CampaignPopup from "@/components/CampaignPopup";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useSeo } from "@/hooks/use-seo";
 import FeatureCard from "@/components/FeatureCard";
-import { SolarPaybackPreview, EvCostPreview, ImagePreview } from "@/components/FeaturePreviews";
+import { EvCostPreview, ImagePreview } from "@/components/FeaturePreviews";
 
-// Each card reuses the preview from the section page it links to (FeaturePreviews), so the
-// homepage and that page show the same visual.
+// Card previews come from FeaturePreviews, shared with the section pages that link to the
+// same tools.
 const CHOICES = [
   {
     to: "/property-assessment",
     title: "Your Solar Potential",
     description: "See what solar could do for your property, including Austin Energy rebates and Federal Incentives.",
-    preview: <SolarPaybackPreview />,
+    // A real calculator result (roof layout drawn over satellite imagery), captured as a
+    // static image so the homepage doesn't load the live map.
+    preview: (
+      <ImagePreview
+        src="/solar-potential-preview.jpg"
+        alt="Solar panel layout drawn on a house roof in the calculator"
+        placeholder={<Sun className="h-8 w-8 opacity-30" />}
+        credit="© Mapbox © Maxar"
+      />
+    ),
   },
   {
     to: "/what-you-can-do",
