@@ -164,11 +164,11 @@ export function CalculatorPreview() {
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
       </div>
-      <div className="flex flex-1 flex-col justify-center gap-3 border-l bg-muted/20 px-3">
+      <div className="flex flex-1 flex-col justify-center gap-3 border-l bg-muted px-3">
         <div>
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">System size</div>
           <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.systemKw} kW</div>
-          <div className="relative mt-1.5 h-1.5 rounded-full bg-muted">
+          <div className="relative mt-1.5 h-1.5 rounded-full bg-background">
             <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${fillPct}%` }} />
             <div
               className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background"
