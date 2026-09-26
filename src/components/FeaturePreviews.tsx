@@ -1,6 +1,7 @@
 // Preview visuals for FeatureCard, shared by the homepage and the section pages that link to the
 // same tools, so a card looks the same wherever it appears.
 import { useMemo } from "react";
+import { Car, Leaf, Wrench, Zap } from "lucide-react";
 import { Bar, BarChart, Cell, Legend, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import {
   austinEnergyRebate,
@@ -122,15 +123,12 @@ export function ImagePreview({
   alt,
   placeholder,
   position = "center",
-  credit,
 }: {
   src: string;
   alt: string;
   /** Shown behind the image while it loads or if it's missing. */
   placeholder: React.ReactNode;
   position?: "center" | "top";
-  /** Attribution for third-party imagery, shown small in the corner. */
-  credit?: string;
 }) {
   return (
     <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
@@ -145,11 +143,77 @@ export function ImagePreview({
           (e.target as HTMLImageElement).style.display = "none";
         }}
       />
-      {credit && (
-        <span className="absolute bottom-1 right-1.5 rounded bg-black/40 px-1 text-[9px] leading-tight text-white/90">
-          {credit}
-        </span>
-      )}
     </div>
   );
 }
+
+// Figures the calculator showed for the sample roof in /solar-potential-preview.jpg (19624
+// Cheyenne Valley, 78664, at its default recommended size) when it was captured on 2026-09-26.
+// Illustrative only: they don't recompute if rates change, so re-capture both together.
+const SAMPLE_ROOF = { systemKw: 8.6, roofMaxKw: 24.8, monthlySavings: 133, billOffsetPct: 89 };
+
+/** A compact mock of the calculator: the roof's panel layout beside its headline numbers, in
+ *  large type so they read at card size. Static, not interactive. */
+export function CalculatorPreview() {
+  const fillPct = Math.round((SAMPLE_ROOF.systemKw / SAMPLE_ROOF.roofMaxKw) * 100);
+  return (
+    <div className="pointer-events-none relative flex border-b" style={{ height: "232px" }}>
+      {/* Photo framed by the same gray as the numbers panel, so the preview reads as one unit. */}
+      <div className="w-[56%] bg-muted p-2 pr-1">
+        <div className="relative h-full overflow-hidden rounded-md border border-border">
+          <img
+            src="/solar-potential-preview.jpg"
+            alt="Solar panel layout drawn on a house roof in the calculator"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col justify-center gap-3 bg-muted px-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">System size</div>
+          <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.systemKw} kW</div>
+          <div className="relative mt-1.5 h-1.5 rounded-full bg-background">
+            <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${fillPct}%` }} />
+            <div
+              className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background"
+              style={{ left: `${fillPct}%` }}
+            />
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Monthly savings</div>
+          <div className="text-2xl font-bold tabular-nums leading-tight text-primary">${SAMPLE_ROOF.monthlySavings}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Bill offset</div>
+          <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.billOffsetPct}%</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The four areas a clean energy plan covers. */
+export function PlanCategoriesPreview() {
+  return (
+    <div className="pointer-events-none flex items-center justify-center border-b bg-muted px-3" style={{ height: "232px" }}>
+      <div className="grid w-full grid-cols-2 gap-5 px-6">
+        {[
+          { icon: Car, label: "Transportation", color: "text-primary" },
+          { icon: Zap, label: "Electrification", color: "text-blue-500" },
+          { icon: Leaf, label: "Home Power", color: "text-emerald-600" },
+          { icon: Wrench, label: "Efficiency", color: "text-amber-600" },
+        ].map(({ icon: Icon, label, color }) => (
+          <div key={label} className="flex flex-col items-center gap-2">
+            {/* White circles so they stand out on the gray panel; the icon carries the color. */}
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-background shadow-sm">
+              <Icon className={`h-6 w-6 ${color}`} />
+            </div>
+            <span className="text-center text-xs font-medium leading-tight text-muted-foreground">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
