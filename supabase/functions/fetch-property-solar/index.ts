@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
-import { fetchAndBuildSolarRecord, persistSolarResult } from "../_shared/solarFetch.ts";
+import { fetchAndBuildSolarRecord, persistSolarResult, isSolarCacheFresh } from "../_shared/solarFetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,10 +13,7 @@ function json(status: number, body: unknown) {
   });
 }
 
-// Re-fetch data older than this even if we already have it -- solar potential doesn't change
-// often, but roofs get replaced/shaded out and imagery improves, so treat it as stale
-// eventually rather than frozen forever.
-const MAX_AGE_DAYS = 365;
+// Staleness (SOLAR_CACHE_MAX_AGE_DAYS) lives in _shared/solarFetch.ts, shared with the calculator.
 // Global cost guard, independent of the per-pid staleness check above: caps how many *new*
 // Google Solar API calls this endpoint will make across all properties combined per hour,
 // so a traffic spike (or a scraper working through never-seen pids) can't run up an unbounded
@@ -60,9 +57,7 @@ Deno.serve(async (req) => {
     if (lookupErr) return json(500, { error: lookupErr.message });
     if (!existing) return json(404, { error: "Property not found" });
 
-    const ageMs = existing.solar_fetched_at ? Date.now() - new Date(existing.solar_fetched_at).getTime() : Infinity;
-    const isStale = ageMs > MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-    if (existing.solar_fetched_at && !isStale) {
+    if (isSolarCacheFresh(existing.solar_fetched_at)) {
       return json(200, { ok: true, alreadyFetched: true, property: existing });
     }
     if (existing.centroid_lat == null || existing.centroid_lon == null) {

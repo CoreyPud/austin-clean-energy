@@ -121,7 +121,7 @@ const EnvironmentalImpactCard = ({ annualSolarKwh, carbonOffsetKgPerMwh }: Props
 
           {showMethodology && (
             <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-              Austin's ERCOT grid produces about {co2Factor} kg of CO₂ per megawatt-hour — roughly a third of grid power already comes from wind and solar, which is why this is lower than a purely fossil fuel grid. Every kWh your panels produce displaces a kWh you'd otherwise draw from that grid. We use this factor{carbonOffsetKgPerMwh ? ", sourced from Google's local data," : " (an ERCOT grid estimate — we use Google's local figure when available)"} to convert your solar production into CO₂ avoided.
+              Austin's ERCOT grid produces about {co2Factor} kg of CO₂ per megawatt-hour. Roughly a third of grid power already comes from wind and solar, which is why this is lower than a purely fossil fuel grid. Every kWh your panels produce displaces a kWh you'd otherwise draw from that grid. We use this factor{carbonOffsetKgPerMwh ? ", sourced from Google's local data," : " (an ERCOT grid estimate; we use Google's local figure when available)"} to convert your solar production into CO₂ avoided.
             </p>
           )}
         </div>
