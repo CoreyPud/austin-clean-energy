@@ -29,11 +29,35 @@ export const SOLAR_FILTER_VERSION = 1;
 /** Default closing radius used when tracing the roof border, in metres. */
 export const BORDER_SMOOTH_M = 4;
 
-const AUSTIN_REF_HRS = 1950;
+/** Austin NREL TMY reference: peak sun hours/yr on a south-facing ~30° tilt. The "ideal"
+ *  a panel's TSRF is measured against. */
+export const AUSTIN_REF_HRS = 1950;
+/** Google's per-panel energy figures assume this panel size, kW. */
+export const GOOGLE_PANEL_KW = 0.4;
 const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
 const SETBACK_M = 1.22; // 4 ft
-const TSRF_MIN = 0.75;
+/** Minimum TSRF (total solar resource fraction) for a panel to count as buildable. */
+export const TSRF_MIN = 0.75;
+
+/** A panel's TSRF: its yearly output relative to an ideal Austin panel of the same size. */
+export function panelTsrf(yearlyEnergyDcKwh: number, panelKw = GOOGLE_PANEL_KW): number {
+  return yearlyEnergyDcKwh / (panelKw * AUSTIN_REF_HRS);
+}
+
+/** Largest system (kW) among Google's panel configs whose average panel still meets
+ *  TSRF_MIN. Null when the response has no configs. Used for tcad_properties.solar_eligible_kw
+ *  by both the fetch-property-solar edge function and scripts/populate_solar_db.mjs. */
+export function calcEligibleKw(sp: any): number | null {
+  const configs = sp?.solarPanelConfigs;
+  if (!configs?.length) return null;
+  const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
+  let best: any = null;
+  for (const cfg of configs) {
+    if (panelTsrf(cfg.yearlyEnergyDcKwh / cfg.panelsCount, panelKw) >= TSRF_MIN) best = cfg;
+  }
+  return best ? +(best.panelsCount * panelKw).toFixed(2) : 0;
+}
 const MIN_HOLE_CELLS = 2;
 const MAX_GRID_CELLS = 4_000_000;
 
@@ -562,7 +586,7 @@ export function applyCommercialFilters(
   const tsrfRemoved = new Set<number>();
   for (let i = 0; i < allPanels.length; i++) {
     if (setbackRemoved.has(i)) continue;
-    if (allPanels[i].yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS) < TSRF_MIN) tsrfRemoved.add(i);
+    if (panelTsrf(allPanels[i].yearlyEnergyDcKwh) < TSRF_MIN) tsrfRemoved.add(i);
   }
 
   // === Interior holes ===
@@ -715,7 +739,7 @@ export function applySolarFilters(
     return applyCommercialFilters(panels, azimuths, smoothM);
   }
 
-  const kept = panels.filter(p => p.yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS) >= TSRF_MIN);
+  const kept = panels.filter(p => panelTsrf(p.yearlyEnergyDcKwh) >= TSRF_MIN);
   return {
     panels: kept,
     walkwayPanels: [],

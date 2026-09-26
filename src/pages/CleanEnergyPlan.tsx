@@ -21,8 +21,7 @@ const CleanEnergyPlan = () => {
       solarInsights: null,
       lifestyleData: data,
       neighborhoodSnapshot: null,
-      savings: null,
-      recommendedKw: null,
+      solar: null,
     });
     setCards(result);
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });

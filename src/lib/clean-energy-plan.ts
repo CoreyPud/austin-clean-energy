@@ -1,22 +1,25 @@
 /**
- * Frontend plan and recommendation generators.
- * Both use the same recommendedKw derived from the user's actual bill,
- * avoiding the backend's cruder 60%-of-max estimate.
+ * Frontend recommendation cards. The solar card is built from the calculator's own figures
+ * (SolarSummary, derived from the same model and system size the page shows) so the card
+ * can never disagree with the numbers above it.
  */
-import { billToMonthlyKwh } from "@/lib/solar-model";
 
-export function computeRecommendedKw(
-  solarInsights: any,
-  annualUsageKwh: number,
-): number | null {
-  if (!solarInsights?.maxPanels || !solarInsights?.panelCapacityWatts) return null;
-  const maxKw = Math.round((solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 100) / 10;
-  const prodPerKw =
-    solarInsights.annualProductionKwh > 0 && maxKw > 0
-      ? solarInsights.annualProductionKwh / maxKw
-      : 1500;
-  const unconstrained = prodPerKw > 0 ? annualUsageKwh / prodPerKw : 0;
-  return Math.round(Math.min(Math.max(unconstrained, 2), maxKw) * 2) / 2;
+/** The calculator's current solar numbers, as shown on the page (cash purchase basis). Also
+ *  sent to the unified-assessment edge function so its council outreach script quotes the
+ *  same figures. Field names match that function's `savings` shape. */
+export interface SolarSummary {
+  recommendedSystemKw: number;
+  /** Owner's year-1 bill savings. Null for multifamily, where the credits go to tenants. */
+  annualSavingsUsd: number | null;
+  /** Year-1 Value of Solar credits to tenants; multifamily only. */
+  tenantCreditsUsd: number | null;
+  grossSystemCostUsd: number;
+  austinEnergyRebateUsd: number;
+  netSystemCostUsd: number;
+  paybackYears: number | null;
+  /** Net cumulative savings at the end of the modeled horizon; null for multifamily. */
+  lifetimeNetSavingsUsd: number | null;
+  horizonYears: number;
 }
 
 interface CardOpts {
@@ -24,18 +27,15 @@ interface CardOpts {
   solarInsights: any;
   lifestyleData: any;
   neighborhoodSnapshot: any;
-  savings: any;
-  recommendedKw: number | null;
+  solar: SolarSummary | null;
 }
 
 export function buildRecommendationCards(opts: CardOpts) {
-  const { propertyType, solarInsights, lifestyleData, savings, recommendedKw } = opts;
+  const { propertyType, solarInsights, lifestyleData, solar } = opts;
   const isOwner = lifestyleData?.housingStatus !== "rent";
   const hasSolar = lifestyleData?.currentEnergy === "solar-existing";
   const hasEv = lifestyleData?.transportation === "ev";
   const hasSolarPotential = !!solarInsights?.maxPanels;
-
-  const kw = recommendedKw ?? savings?.recommendedSystemKw;
 
   const cards: any[] = [];
 
@@ -55,17 +55,30 @@ export function buildRecommendationCards(opts: CardOpts) {
     });
   }
 
-  if (!hasSolar && isOwner && hasSolarPotential && savings && kw) {
+  if (!hasSolar && isOwner && hasSolarPotential && solar) {
+    const $ = (n: number) => `$${Math.round(n).toLocaleString()}`;
+    const summary = solar.tenantCreditsUsd != null
+      ? `About ${$(solar.tenantCreditsUsd)} a year in Value of Solar bill credits for your tenants.`
+      : solar.annualSavingsUsd != null
+      ? `About ${$(solar.annualSavingsUsd)} a year in bill savings${solar.paybackYears
+          ? `, paying for itself in about ${solar.paybackYears} years`
+          : `, but it doesn't pay for itself within ${solar.horizonYears} years at these assumptions`}.`
+      : "";
+    const bullets = [
+      solar.austinEnergyRebateUsd > 0
+        ? `Net cost after the ${$(solar.austinEnergyRebateUsd)} Austin Energy rebate: about ${$(solar.netSystemCostUsd)}`
+        : `Install cost: about ${$(solar.grossSystemCostUsd)}`,
+    ];
+    if (solar.lifetimeNetSavingsUsd != null) {
+      bullets.push(`${solar.horizonYears}-year net savings: about ${$(solar.lifetimeNetSavingsUsd)}`);
+    }
     cards.push({
       id: "solar",
       impact: "high",
       category: "Home Power",
-      title: `Install a ${kw} kW solar system`,
-      summary: `Estimated $${savings.annualSavingsUsd.toLocaleString()}/year savings, payback in ~${savings.paybackYears} years after the Austin Energy rebate.`,
-      bullets: [
-        `Net cost after $${savings.austinEnergyRebateUsd.toLocaleString()} rebate: ~$${savings.netSystemCostUsd.toLocaleString()}`,
-        `25-year savings: ~$${savings.twentyFiveYearSavingsUsd.toLocaleString()}`,
-      ],
+      title: `Install a ${solar.recommendedSystemKw} kW solar system`,
+      summary,
+      bullets,
       cta: { label: "Calculate Solar Savings", url: "/property-assessment" },
       icon: "Sun",
     });

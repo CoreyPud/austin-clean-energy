@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import {
   BarChart, Bar, Cell, ReferenceLine,
@@ -25,6 +25,15 @@ import {
   PANEL_DEGRADATION_RATE,
   INVERTER_REPLACEMENT_YEAR,
   ssoRate,
+  environmentalImpact,
+  COMMERCIAL_CBI_PER_W,
+  NONPROFIT_CBI_PER_W,
+  NONPROFIT_CBI_CAP_KW,
+  PBI_MIN_KW,
+  COMMERCIAL_PBI_YEARS,
+  SYSTEM_DERATE,
+  AUSTIN_ENERGY_SOLAR_REBATE,
+  AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
 } from "@/lib/solar-model";
 
 import { buildProgramFinancials, isSsoEligible, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
@@ -115,21 +124,11 @@ export default function SolarProgramView({
   financingSlot,
 }: SolarProgramViewProps) {
   const [showCalcDetails, setShowCalcDetails] = useState(false);
-  const [batteryKwh, setBatteryKwh] = useState(0);
-  // Sliders below drag against these "live" locals instead of committing straight to
-  // systemKw/batteryKwh/rec.costPerW on every pointer-move tick. Those three each drive a full
-  // financials + chart recompute (systemKw and costPerW also bubble up to a full page
-  // re-render), which made dragging visibly laggy -- onValueCommit below only pushes the real
-  // value once the drag ends, while these track the thumb smoothly in the meantime.
-  const [liveSystemKwRaw, setLiveSystemKw] = useState(systemKw);
-  // systemKw can briefly exceed the roof max (the page seeds a default before results load);
-  // never display or drag from a size the model will clamp away.
-  const liveSystemKw = Math.min(liveSystemKwRaw, rec.maxKw);
-  const [liveBatteryKwh, setLiveBatteryKwh] = useState(batteryKwh);
-  const [liveCostPerW, setLiveCostPerW] = useState(rec.costPerW);
-  useEffect(() => setLiveSystemKw(systemKw), [systemKw]);
-  useEffect(() => setLiveBatteryKwh(batteryKwh), [batteryKwh]);
-  useEffect(() => setLiveCostPerW(rec.costPerW), [rec.costPerW]);
+  // Sliders commit on every drag tick so every number updates live; the model is cheap enough
+  // (a 30-year monthly loop) to recompute per tick. systemKw can briefly exceed the roof max
+  // (the page seeds a default before results load), so never display a size the model clamps.
+  const liveSystemKw = Math.min(systemKw, rec.maxKw);
+  const liveCostPerW = rec.costPerW;
   const isResidential = propertyClass === "residential";
   const isMultifamily = propertyClass === "multifamily";
   const isCommercial = propertyClass === "commercial";
@@ -145,7 +144,6 @@ export default function SolarProgramView({
     annualUsageKwh,
     productionPerKw,
     isSSO,
-    batteryKwh,
     loanTermYears,
     loanInterestRate,
     monthlyUsageKwh,
@@ -156,9 +154,8 @@ export default function SolarProgramView({
   const billOffsetPct = yearOne.billWithoutSolar > 0
     ? Math.round((yearOne.savings / yearOne.billWithoutSolar) * 100)
     : 0;
-  const co2TonsPerYear = Math.round(
-    rec.recommendedKw * productionPerKw * (carbonOffsetKgPerMwh ? carbonOffsetKgPerMwh / 1_000_000 : 0.000400) * 10,
-  ) / 10;
+  // Same formula and grid-factor fallback as EnvironmentalImpactCard below.
+  const co2TonsPerYear = environmentalImpact(yearOne.solarTotal, carbonOffsetKgPerMwh).metricTonsCo2;
 
   const billData = yearOne.monthlyRows.map(r => ({
     month: r.month,
@@ -204,7 +201,7 @@ export default function SolarProgramView({
 
   return (
     <div className="space-y-8">
-      {/* Sticky control card: system/battery sliders, KPI strip. The billing-mode toggle and
+      {/* Sticky control card: system size slider, KPI strip. The billing-mode toggle and
           its explainer text live in the separately-exported SolarBillingToggle instead of
           here, so callers can position it earlier in the page (e.g. above a bill input whose
           visibility depends on billingMode) without it being sticky. */}
@@ -223,13 +220,12 @@ export default function SolarProgramView({
                   max={rec.maxKw}
                   step={rec.maxKw > 50 ? 1 : 0.1}
                   value={[liveSystemKw]}
-                  onValueChange={([v]) => setLiveSystemKw(v)}
-                  onValueCommit={([v]) => onSystemKwChange(v)}
+                  onValueChange={([v]) => onSystemKwChange(v)}
                 />
                 {recommendedKw != null && billingMode === "vos" && liveSystemKw !== recommendedKw && (
                   <div className="flex justify-end mt-1.5">
                     <button
-                      onClick={() => { setLiveSystemKw(recommendedKw); onSystemKwChange(recommendedKw); }}
+                      onClick={() => onSystemKwChange(recommendedKw)}
                       className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums transition-colors hover:text-primary"
                     >
                       <RotateCcw className="h-3 w-3 shrink-0" />
@@ -239,18 +235,6 @@ export default function SolarProgramView({
                 )}
               </div>
 
-              <div className="h-16 w-px bg-border shrink-0" />
-
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-muted-foreground mb-1">Battery system size</div>
-                <div className="text-2xl font-bold tabular-nums mb-3">{liveBatteryKwh === 0 ? "None" : `${liveBatteryKwh} kWh`}</div>
-                <Slider
-                  min={0} max={30} step={1}
-                  value={[liveBatteryKwh]}
-                  onValueChange={([v]) => setLiveBatteryKwh(v)}
-                  onValueCommit={([v]) => setBatteryKwh(v)}
-                />
-              </div>
             </div>
 
             {isMultifamily ? (
@@ -305,8 +289,7 @@ export default function SolarProgramView({
               <Slider
                 min={1.5} max={5.0} step={0.05}
                 value={[liveCostPerW]}
-                onValueChange={([v]) => setLiveCostPerW(v)}
-                onValueCommit={([v]) => onCostPerWChange(v)}
+                onValueChange={([v]) => onCostPerWChange(v)}
               />
               <p className="text-xs text-muted-foreground">Drag to match an installer's quote.</p>
             </>
@@ -547,10 +530,10 @@ export default function SolarProgramView({
         <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
           <p className="font-medium text-foreground">How we calculated this</p>
           <ul className="space-y-1 list-disc list-inside">
-            <li>Install cost: $2,950/kW (Berkeley Lab 2024 Austin average, get real quotes to verify)</li>
-            <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
+            <li>Install cost: ${(rec.costPerW * 1000).toLocaleString()}/kW (${rec.costPerW.toFixed(2)}/W; the default is Berkeley Lab's 2024 Austin average, get real quotes to verify)</li>
+            <li>Production: Google Solar peak-sun-hours × {SYSTEM_DERATE} performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
             {isResidential && <li>Savings rate: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production)</li>}
-            {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
+            {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate (${AUSTIN_ENERGY_SOLAR_REBATE.toLocaleString()} for systems {AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW} kW and up) applied</li>}
             {isMultifamily && <li>System sized to maximum roof capacity. Tenant credits: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production), split across tenants' accounts</li>}
             {isMultifamily && <li>Austin Energy's multifamily rebate isn't included yet; see their multifamily solar page for current amounts</li>}
           </ul>
@@ -580,13 +563,13 @@ export default function SolarProgramView({
                     . Get real quotes to verify.)
                   </li>
                   {isNonProfit ? (
-                    <li>Austin Energy non-profit solar rebate: $1.00/W, capped at 200 kW</li>
+                    <li>Austin Energy non-profit solar rebate: ${NONPROFIT_CBI_PER_W.toFixed(2)}/W, on up to {NONPROFIT_CBI_CAP_KW} kW</li>
                   ) : isSSO ? (
                     <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
                   ) : rec.pbiEligible ? (
-                    <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI). That program is only for systems under 100 kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
+                    <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI). That program is only for systems under {PBI_MIN_KW} kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
                   ) : (
-                    <li>Austin Energy commercial capacity rebate: $0.70/W, capped at 100 kW</li>
+                    <li>Austin Energy commercial capacity rebate: ${COMMERCIAL_CBI_PER_W.toFixed(2)}/W, for systems under {PBI_MIN_KW} kW</li>
                   )}
                 </ul>
               </div>
@@ -652,7 +635,7 @@ export function SolarBillingToggle({
     <div className="space-y-2">
       {ssoEligible && (
         <p className="text-sm text-muted-foreground">
-          This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems 100 kW and up) can also stack a 5-year Performance-Based Incentive on top. Pick one below to see the numbers.
+          This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems {PBI_MIN_KW} kW and up) can also stack a {COMMERCIAL_PBI_YEARS}-year Performance-Based Incentive on top. Pick one below to see the numbers.
         </p>
       )}
 
@@ -685,7 +668,7 @@ export function SolarBillingToggle({
               <>
                 Austin Energy's{" "}
                 <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
-                {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill, up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? " This system size also qualifies for the Performance-Based Incentive, a 5-year credit on top of Value of Solar, see below." : ""}
+                {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill, up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? ` This system size also qualifies for the Performance-Based Incentive, a ${COMMERCIAL_PBI_YEARS}-year credit on top of Value of Solar, see below.` : ""}
               </>
             )}
           </p>

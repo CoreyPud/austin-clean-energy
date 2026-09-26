@@ -41,15 +41,18 @@ import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   billToMonthlyKwh,
+  AUSTIN_INSTALL_COST_PER_KW,
   calculateAustinEnergyUsageBill,
   SSO_MIN_KW,
 } from "@/lib/solar-model";
-import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, isSsoEligible, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
+import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, isSsoEligible, buildSolarSummary, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
-import { buildRecommendationCards, computeRecommendedKw } from "@/lib/clean-energy-plan";
+import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-plan";
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
+
+const DEFAULT_COST_PER_W = AUSTIN_INSTALL_COST_PER_KW / 1000;
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -72,7 +75,7 @@ const PropertyAssessment = () => {
   const [billParseSummary, setBillParseSummary] = useState<{ months: number; avgBill: number; avgKwh: number } | null>(null);
   const [billParseError, setBillParseError] = useState<string | null>(null);
   const [billViewMode, setBillViewMode] = useState<"estimate" | "bill">("estimate");
-  const [costPerW, setCostPerW] = useState<number>(2.95);
+  const [costPerW, setCostPerW] = useState<number>(DEFAULT_COST_PER_W);
 
   // Derived solar values, recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
@@ -99,8 +102,11 @@ const PropertyAssessment = () => {
     });
     return [az, pt];
   }, [results]);
-  const annualUsageKwh = (billViewMode === "bill" && uploadedKwh)
-    ? uploadedKwh.reduce((s, v) => s + v, 0)
+  // The uploaded bill drives the model only while "use my bill" is selected; switching back to
+  // the estimate must drop its month-by-month figures too, not just its annual total.
+  const activeMonthlyKwh = billViewMode === "bill" && uploadedKwh ? uploadedKwh : undefined;
+  const annualUsageKwh = activeMonthlyKwh
+    ? activeMonthlyKwh.reduce((s, v) => s + v, 0)
     : billToMonthlyKwh(monthlyBill) * 12;
 
   // Same buildable-layout derate (setbacks, low-TSRF panels, rooftop walkways removed) that
@@ -143,17 +149,28 @@ const PropertyAssessment = () => {
   const effectiveLoanTerm = financeMode === "cash" || isMultifamily ? 0 : loanTermYears;
   const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_MIN_KW;
 
-  // Reset to recommended only when a fresh assessment result loads. Defaults to Standard
-  // Offer whenever it's actually available (real roof-size eligibility, not just property
-  // type), same isSsoEligible formula SolarProgramView/SolarBillingToggle use.
+  // Reset size, billing mode, and $/W to the recommendation when a fresh result loads or the
+  // property type changes. Deferred through a flag rather than done inside those triggers
+  // directly: a type change also resets the default monthly bill in the same batch, and
+  // resizing before that lands would size a commercial roof off a residential bill. The flag
+  // waits for the next render, where the bill, type, and recommendations all agree.
+  // Defaults to Standard Offer whenever it's actually available (real roof-size eligibility,
+  // not just property type), same isSsoEligible formula SolarProgramView/SolarBillingToggle use.
+  // assessmentRun bumps only on a new address lookup (handleAssess), not when the quiz merges
+  // its response into `results` -- otherwise finishing the quiz would wipe the size the user
+  // had picked.
+  const [assessmentRun, setAssessmentRun] = useState(0);
+  const [needsResize, setNeedsResize] = useState(false);
+  useEffect(() => setNeedsResize(true), [assessmentRun, propertyType]);
   useEffect(() => {
-    const eligible = recSso ? isSsoEligible(recSso, classifyProperty(propertyType), propertyType === "non-profit") : false;
-    const nextKw = eligible ? recSso?.recommendedKw ?? null : recommendedKw;
-    if (nextKw != null) setSystemKw(nextKw);
+    if (!needsResize || !recVos || !recSso) return;
+    setNeedsResize(false);
+    const eligible = isSsoEligible(recSso, classifyProperty(propertyType), propertyType === "non-profit");
+    const next = eligible ? recSso : recVos;
+    setSystemKw(next.recommendedKw);
     setBillingMode(eligible ? "sso" : "vos");
-    if (eligible && nextKw != null) setCostPerW(pickSsoScenario(nextKw).costPerWatt);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results]);
+    setCostPerW(next.costPerW);
+  }, [needsResize, recVos, recSso, propertyType]);
 
   // Switching to SSO maximizes system size; switching back restores VoS recommended
   useEffect(() => {
@@ -169,10 +186,9 @@ const PropertyAssessment = () => {
 
   useEffect(() => {
     setMonthlyBill(DEFAULT_MONTHLY_BILL[propertyType] ?? 150);
-    setBillingMode(propertyType === "commercial" ? "sso" : "vos");
-    // Real system size isn't known yet at this point (results haven't loaded) -- seed with
-    // the smaller-tier rate; the [results] effect above refines it once size is known.
-    setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : 2.95);
+    // Billing mode and a size-aware $/W are set by the resize effect above once results exist;
+    // this only seeds $/W before then.
+    setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : DEFAULT_COST_PER_W);
   }, [propertyType]);
 
   // The single recommendation for whatever's currently selected (billing mode, manual size
@@ -290,9 +306,9 @@ const PropertyAssessment = () => {
     return null;
   };
 
-  const callUnified = async (lifestyleData?: LifestyleData) => {
+  const callUnified = async (lifestyleData?: LifestyleData, solarSummary?: SolarSummary | null) => {
     const { data, error } = await supabase.functions.invoke("unified-assessment", {
-      body: { address: address.trim(), propertyType, lifestyleData },
+      body: { address: address.trim(), propertyType, lifestyleData, solarSummary },
     });
     if (error) throw new Error(await edgeFunctionErrorMessage(error));
     if (data?.error) throw new Error(data.error);
@@ -319,6 +335,7 @@ const PropertyAssessment = () => {
     try {
       const data = await callUnified();
       setResults(data);
+      setAssessmentRun((n) => n + 1);
       
     } catch (e: any) {
       console.error("Assessment error:", e);
@@ -348,16 +365,20 @@ const PropertyAssessment = () => {
   const handleGeneratePlan = async (lifestyleData: LifestyleData) => {
     setPlanLoading(true);
     try {
-      const data = await callUnified(lifestyleData);
+      // The calculator's own numbers for the size currently selected, so the solar card and
+      // the outreach script quote exactly what's shown above rather than a separate estimate.
+      const cls = classifyProperty(propertyType);
+      const solar = rec
+        ? buildSolarSummary(rec, cls, {
+            annualUsageKwh,
+            productionPerKw,
+            isSSO: billingMode === "sso" && isSsoEligible(rec, cls, propertyType === "non-profit"),
+            monthlyUsageKwh: activeMonthlyKwh,
+          })
+        : null;
+      const data = await callUnified(lifestyleData, solar);
 
-      // Derive recommendedKw from fresh solar data and current bill inputs,
-      // same formula the tool uses, so both plan and cards stay in sync.
-      const usage = (billViewMode === "bill" && uploadedKwh)
-        ? uploadedKwh.reduce((s, v) => s + v, 0)
-        : billToMonthlyKwh(monthlyBill) * 12;
-      const localRecommendedKw = computeRecommendedKw(data.solarInsights, usage);
-
-      const cardOpts = { propertyType, solarInsights: data.solarInsights, lifestyleData, neighborhoodSnapshot: data.neighborhoodSnapshot, savings: data.savings, recommendedKw: localRecommendedKw };
+      const cardOpts = { propertyType, solarInsights: data.solarInsights, lifestyleData, neighborhoodSnapshot: data.neighborhoodSnapshot, solar };
 
       setResults({ ...data, recommendationCards: buildRecommendationCards(cardOpts) });
       setQuizCompleted(true);
@@ -676,7 +697,7 @@ const PropertyAssessment = () => {
                         productionPerKw={productionPerKw}
                         loanTermYears={effectiveLoanTerm}
                         loanInterestRate={loanRate / 100}
-                        monthlyUsageKwh={uploadedKwh ?? undefined}
+                        monthlyUsageKwh={activeMonthlyKwh}
                         carbonOffsetKgPerMwh={si.carbonOffsetKgPerMwh}
                         sunshineHrsDisplay={sunshineHrsDisplay}
                         roofSqft={roofSqft}

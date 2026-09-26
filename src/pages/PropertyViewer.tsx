@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { AUSTIN_REF_HRS, TSRF_MIN } from "@/lib/solar-filters";
 import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Search, Download, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1159,8 +1160,8 @@ export default function PropertyViewer() {
                             </thead>
                             <tbody>
                               {[...segments].filter(s => s.max_panels != null && s.max_panels > 0).sort((a, b) => (b.sunshine_median ?? 0) - (a.sunshine_median ?? 0)).map(s => {
-                                const tsrf = s.sunshine_median / 1950;
-                                const passes = tsrf >= 0.75;
+                                const tsrf = s.sunshine_median / AUSTIN_REF_HRS;
+                                const passes = tsrf >= TSRF_MIN;
                                 const color = passes ? "text-emerald-600" : "text-amber-600";
                                 return (
                                   <tr key={s.segment_index} className={`border-t border-border/50 ${passes ? "" : "opacity-60"}`}>
