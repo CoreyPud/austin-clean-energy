@@ -1,6 +1,7 @@
 // Preview visuals for FeatureCard, shared by the homepage and the section pages that link to the
 // same tools, so a card looks the same wherever it appears.
 import { useMemo } from "react";
+import { Car, Leaf, Wrench, Zap } from "lucide-react";
 import { Bar, BarChart, Cell, Legend, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import {
   austinEnergyRebate,
@@ -184,6 +185,29 @@ export function CalculatorPreview() {
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Bill offset</div>
           <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.billOffsetPct}%</div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** The four areas a clean energy plan covers. */
+export function PlanCategoriesPreview() {
+  return (
+    <div className="pointer-events-none flex items-center justify-center border-b bg-muted/10 px-3" style={{ height: "232px" }}>
+      <div className="grid w-full grid-cols-2 gap-5 px-6">
+        {[
+          { icon: Car, label: "Transportation", color: "text-primary", bg: "bg-primary/10" },
+          { icon: Zap, label: "Electrification", color: "text-blue-500", bg: "bg-blue-500/10" },
+          { icon: Leaf, label: "Home Power", color: "text-emerald-600", bg: "bg-emerald-500/10" },
+          { icon: Wrench, label: "Efficiency", color: "text-amber-600", bg: "bg-amber-500/10" },
+        ].map(({ icon: Icon, label, color, bg }) => (
+          <div key={label} className="flex flex-col items-center gap-2">
+            <div className={`flex h-14 w-14 items-center justify-center rounded-full ${bg}`}>
+              <Icon className={`h-6 w-6 ${color}`} />
+            </div>
+            <span className="text-center text-xs font-medium leading-tight text-muted-foreground">{label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

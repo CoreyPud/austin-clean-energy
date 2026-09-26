@@ -7,7 +7,7 @@ import CampaignPopup from "@/components/CampaignPopup";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useSeo } from "@/hooks/use-seo";
 import FeatureCard from "@/components/FeatureCard";
-import { CalculatorPreview, EvCostPreview, ImagePreview } from "@/components/FeaturePreviews";
+import { CalculatorPreview, PlanCategoriesPreview, ImagePreview } from "@/components/FeaturePreviews";
 
 // Card previews come from FeaturePreviews, shared with the section pages that link to the
 // same tools.
@@ -23,7 +23,7 @@ const CHOICES = [
     title: "What You Can Do",
     description:
       "Explore clean energy options, compare electric and gas vehicles, and build a personalized clean energy plan.",
-    preview: <EvCostPreview />,
+    preview: <PlanCategoriesPreview />,
   },
   {
     to: "/austin-at-a-glance",

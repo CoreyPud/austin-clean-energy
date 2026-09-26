@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Car, Leaf, Wrench, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FeatureCard from "@/components/FeatureCard";
 import PageHeader from "@/components/PageHeader";
 import { useSeo } from "@/hooks/use-seo";
-import { SolarPaybackPreview, EvCostPreview } from "@/components/FeaturePreviews";
+import { SolarPaybackPreview, EvCostPreview, PlanCategoriesPreview } from "@/components/FeaturePreviews";
 
 const WhatYouCanDo = () => {
   useSeo({
@@ -52,25 +52,7 @@ const WhatYouCanDo = () => {
               title="Your Clean Energy Plan"
               description="Answer a few questions about your home and lifestyle to get personalized recommendations across solar, EVs, efficiency, and more."
               cta="Build My Plan"
-              preview={
-                <div className="pointer-events-none flex h-[226px] items-center justify-center border-b bg-muted/10 px-3 pb-1 pt-4">
-                  <div className="grid w-full grid-cols-2 gap-4 px-8">
-                    {[
-                      { icon: Car, label: "Transportation", color: "text-primary", bg: "bg-primary/10" },
-                      { icon: Zap, label: "Electrification", color: "text-blue-500", bg: "bg-blue-500/10" },
-                      { icon: Leaf, label: "Home Power", color: "text-emerald-600", bg: "bg-emerald-500/10" },
-                      { icon: Wrench, label: "Efficiency", color: "text-amber-600", bg: "bg-amber-500/10" },
-                    ].map(({ icon: Icon, label, color, bg }) => (
-                      <div key={label} className="flex flex-col items-center gap-2">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-full ${bg}`}>
-                          <Icon className={`h-5 w-5 ${color}`} />
-                        </div>
-                        <span className="text-center text-[10px] leading-tight text-muted-foreground">{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              }
+              preview={<PlanCategoriesPreview />}
             />
           </div>
         </div>
