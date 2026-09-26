@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { buildPbiModel, COMMERCIAL_PBI_YEARS, PBI_MIN_KW } from "@/lib/solar-model";
+import { buildPbiModel, pbiTier, PBI_RATE_TIERS, COMMERCIAL_PBI_YEARS, PBI_MIN_KW } from "@/lib/solar-model";
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -14,10 +14,20 @@ interface Props {
 }
 
 function tierLabel(systemKw: number): string {
-  if (systemKw >= 1000) return "Extra-Large";
-  if (systemKw >= 400) return "Large";
-  return "Medium";
+  return pbiTier(systemKw).label;
 }
+
+// e.g. "10¢/kWh under 400 kW-ac (Medium), 8¢/kWh 400–999 kW-ac (Large), ..."
+const TIER_SUMMARY = [...PBI_RATE_TIERS].reverse().map((t, i, arr) => {
+  const cents = `${Math.round(t.rate * 100)}¢/kWh`;
+  const next = arr[i + 1];
+  const range = t.minKw === 0
+    ? `under ${next.minKw.toLocaleString()} kW-ac`
+    : next
+    ? `${t.minKw.toLocaleString()}–${(next.minKw - 1).toLocaleString()} kW-ac`
+    : `${t.minKw.toLocaleString()} kW-ac and above`;
+  return `${cents} ${range} (${t.label})`;
+}).join(", ");
 
 const PbiBreakdown = ({ systemKw, productionPerKw }: Props) => {
   const model = useMemo(() => buildPbiModel(systemKw, productionPerKw), [systemKw, productionPerKw]);
@@ -77,7 +87,7 @@ const PbiBreakdown = ({ systemKw, productionPerKw }: Props) => {
 
         {showAssumptions && (
           <div className="mt-3 rounded-lg border bg-muted/30 p-4 text-xs space-y-1.5">
-            <Row k="Rate tiers" v="10¢/kWh under 400 kW-ac (Medium), 8¢/kWh 400–999 kW-ac (Large), 6¢/kWh 1,000 kW-ac and above (Extra-Large)" />
+            <Row k="Rate tiers" v={TIER_SUMMARY} />
             <Row k="Term" v={`${COMMERCIAL_PBI_YEARS} years, paid monthly as an on-bill credit`} />
             <Row k="Stacking" v="Paid in addition to the Value of Solar credit, not instead of it. After the term ends, only Value of Solar continues." />
             <Row k="Eligibility" v={`For-profit commercial systems ${PBI_MIN_KW} kW-ac and above are PBI-only, not eligible for the upfront Capacity-Based Incentive (CBI). Systems under ${PBI_MIN_KW} kW-ac can choose CBI or PBI instead.`} />

@@ -12,7 +12,7 @@
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { applySolarFilters } from "./load_solar_filters.mjs";
+import { applySolarFilters, calcEligibleKw } from "./load_solar_filters.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT    = join(__dirname, "..");
@@ -43,22 +43,6 @@ if (!SECRET)       { console.error("Missing SOLAR_IMPORT_SECRET in supabase/.env
 
 const ENDPOINT = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/solar-data-import`;
 const ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-// Austin NREL TMY reference: south-facing ~30° tilt, peak sun hours/yr
-const AUSTIN_REF_HRS = 1950;
-const TSRF_MIN = 0.75;
-
-function calcEligibleKw(sp) {
-  const configs = sp.solarPanelConfigs;
-  if (!configs?.length) return null;
-  const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
-  const threshold = panelKw * AUSTIN_REF_HRS * TSRF_MIN; // kWh/yr per panel
-  let best = null;
-  for (const cfg of configs) {
-    if (cfg.yearlyEnergyDcKwh / cfg.panelsCount >= threshold) best = cfg;
-  }
-  return best ? +(best.panelsCount * panelKw).toFixed(2) : 0;
-}
 
 /**
  * Buildable capacity after the derate, using the same supabase/functions/_shared/solar-filters.ts the site

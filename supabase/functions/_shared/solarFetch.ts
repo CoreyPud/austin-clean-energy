@@ -1,22 +1,9 @@
 // The Google Solar API call, response shape, and DB upsert used by fetch-property-solar (the
 // only caller). Split out from the endpoint handler for readability, not reuse.
 
+import { calcEligibleKw } from "./solar-filters.ts";
+
 type SupabaseClientLike = ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.58.0").createClient>;
-
-const AUSTIN_REF_HRS = 1950;
-const TSRF_MIN = 0.75;
-
-function calcEligibleKw(sp: any): number | null {
-  const configs = sp.solarPanelConfigs;
-  if (!configs?.length) return null;
-  const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
-  const threshold = panelKw * AUSTIN_REF_HRS * TSRF_MIN;
-  let best: any = null;
-  for (const cfg of configs) {
-    if (cfg.yearlyEnergyDcKwh / cfg.panelsCount >= threshold) best = cfg;
-  }
-  return best ? +(best.panelsCount * panelKw).toFixed(2) : 0;
-}
 
 export interface FetchSolarResult {
   status: "ok" | "not-found" | "error";

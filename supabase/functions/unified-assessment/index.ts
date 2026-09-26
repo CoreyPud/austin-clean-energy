@@ -18,15 +18,22 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
 import { applySolarFilters, type SolarPanel } from "../_shared/solar-filters.ts";
+import {
+  VOS_RATE,
+  AUSTIN_INSTALL_COST_PER_KW,
+  AUSTIN_ENERGY_SOLAR_REBATE,
+  AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
+  SYSTEM_DERATE,
+} from "../_shared/solar-rates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Rate limiting: 15 req/hour per IP
+// Rate limiting: 100 req/hour per IP
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 15;
+const RATE_LIMIT = 100;
 const RATE_WINDOW = 60 * 60 * 1000;
 
 function checkRateLimit(ip: string) {
@@ -50,11 +57,6 @@ function validateAddress(address: string) {
   return { valid: true };
 }
 
-// Austin Energy residential rate (approximate blended $/kWh, 2025)
-const AE_BLENDED_RATE = 0.117;
-// Approximate installed cost per kW
-const COST_PER_KW = 2700;
-const AE_REBATE_FLAT = 2500;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -73,7 +75,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { address, propertyType, lifestyleData } = body;
+    const { address, propertyType, lifestyleData, solarSummary } = body;
 
     const v = validateAddress(address);
     if (!v.valid) {
@@ -358,15 +360,17 @@ serve(async (req) => {
       }
     }
 
-    // 4. Savings card (deterministic) — rough initial estimate; frontend recomputes with optimised sizing.
+    // 4. Rough fallback estimate, only used when the page doesn't send its own figures (4b).
+    // Rates, cost, rebate, and derate come from the same shared constants as the calculator.
     let savings: any = null;
     if (solarInsights?.maxPanels && solarInsights?.panelCapacityWatts) {
       const maxSystemKw = (solarInsights.maxPanels * solarInsights.panelCapacityWatts) / 1000;
       const recommendedKw = Math.min(Math.max(Math.round(maxSystemKw * 0.6 * 10) / 10, 4), 12);
-      const annualKwh = Math.round((recommendedKw / maxSystemKw) * (solarInsights.annualProductionKwh || 0));
-      const annualSavingsUsd = Math.round(annualKwh * AE_BLENDED_RATE);
-      const grossCost = Math.round(recommendedKw * COST_PER_KW);
-      const netCostAfterRebate = Math.max(grossCost - AE_REBATE_FLAT, 0);
+      const annualKwh = Math.round((recommendedKw / maxSystemKw) * (solarInsights.annualProductionKwh || 0) * SYSTEM_DERATE);
+      const annualSavingsUsd = Math.round(annualKwh * VOS_RATE);
+      const grossCost = Math.round(recommendedKw * AUSTIN_INSTALL_COST_PER_KW);
+      const rebate = recommendedKw >= AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW ? AUSTIN_ENERGY_SOLAR_REBATE : 0;
+      const netCostAfterRebate = Math.max(grossCost - rebate, 0);
       const paybackYears = annualSavingsUsd > 0 ? +(netCostAfterRebate / annualSavingsUsd).toFixed(1) : null;
       const lifetimeSavings = annualSavingsUsd * 25 - netCostAfterRebate;
 
@@ -375,15 +379,21 @@ serve(async (req) => {
         annualProductionKwh: annualKwh,
         annualSavingsUsd,
         grossSystemCostUsd: grossCost,
-        austinEnergyRebateUsd: AE_REBATE_FLAT,
+        austinEnergyRebateUsd: rebate,
         netSystemCostUsd: netCostAfterRebate,
         paybackYears,
         twentyFiveYearSavingsUsd: lifetimeSavings,
-        blendedRateUsdPerKwh: AE_BLENDED_RATE,
+        vosRateUsdPerKwh: VOS_RATE,
         notes:
-          "Estimates use Austin Energy's blended residential rate and current solar rebate. Actual savings depend on usage, financing, and AE program changes. The federal residential solar tax credit is no longer available.",
+          "Estimates use Austin Energy's Value of Solar credit and current solar rebate. Actual savings depend on usage, financing, and AE program changes. The federal residential solar tax credit is no longer available.",
       };
     }
+
+    // 4b. When the calculator page sends its own figures (the model and system size the user
+    // is actually looking at), use those instead of the rough estimate above, so the outreach
+    // script quotes the same numbers as the page. Only known numeric fields are taken.
+    const clientSolar = sanitizeSolarSummary(solarSummary);
+    if (clientSolar) savings = { ...(savings ?? {}), ...clientSolar };
 
     // 5. Neighborhood snapshot (deterministic counts)
     const neighborhoodSnapshot = {
@@ -474,6 +484,29 @@ serve(async (req) => {
     );
   }
 });
+
+const SOLAR_SUMMARY_FIELDS = [
+  "recommendedSystemKw", "annualSavingsUsd", "grossSystemCostUsd",
+  "austinEnergyRebateUsd", "netSystemCostUsd", "paybackYears",
+] as const;
+
+/** Keep only finite numbers (or null) for known fields; anything else is dropped. */
+function sanitizeSolarSummary(raw: unknown): Record<string, number | null> | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.recommendedSystemKw !== "number" || !Number.isFinite(r.recommendedSystemKw) || r.recommendedSystemKw <= 0) return null;
+  const out: Record<string, number | null> = {};
+  for (const k of SOLAR_SUMMARY_FIELDS) {
+    const v = r[k];
+    if (v === null) out[k] = null;
+    else if (typeof v === "number" && Number.isFinite(v)) out[k] = Math.round(v * 10) / 10;
+  }
+  return out;
+}
+
+function rebateStr(savings: any): string {
+  return savings?.austinEnergyRebateUsd > 0 ? `$${Math.round(savings.austinEnergyRebateUsd).toLocaleString()}` : "";
+}
 
 /**
  * Build deterministic, card-friendly recommendations ordered by impact.
@@ -671,7 +704,7 @@ function generatePersonalizedPlan(opts: {
     const payback = savings.paybackYears ? `~${savings.paybackYears} yr payback` : "";
     moves.push({
       title: `Install a ${kw} kW solar system`,
-      description: `Your roof can support it${savingsStr ? `, saving roughly ${savingsStr}` : ""}. After Austin Energy's $2,500 rebate${payback ? `, ${payback}` : ""}.`,
+      description: `Your roof can support it${savingsStr ? `, saving roughly ${savingsStr}` : ""}.${rebateStr(savings) ? ` After Austin Energy's ${rebateStr(savings)} rebate${payback ? `, ${payback}` : ""}.` : payback ? ` ${payback}.` : ""}`,
     });
   }
 
@@ -738,7 +771,7 @@ function generatePersonalizedPlan(opts: {
   const thisYear: string[] = [];
   if (isOwner && !hasSolar && hasSolarPotential && savings) {
     thisYear.push(
-      `Install your ${savings.recommendedSystemKw} kW system and lock in the $2,500 Austin Energy rebate`,
+      `Install your ${savings.recommendedSystemKw} kW system${rebateStr(savings) ? ` and lock in the ${rebateStr(savings)} Austin Energy rebate` : ""}`,
     );
   }
   if (!hasEv) {

@@ -2,6 +2,9 @@ import {
   austinEnergyRebate,
   AUSTIN_INSTALL_COST_PER_KW,
   AUSTIN_ENERGY_RATES,
+  SYSTEM_DERATE,
+  DEFAULT_PRODUCTION_PER_KW,
+  DEFAULT_MONTHLY_USAGE_KWH,
   PBI_MIN_KW,
   SSO_MIN_KW,
   buildPbiModel,
@@ -10,11 +13,13 @@ import {
   buildThirtyYearModel,
   buildSsoModel,
   mergePbiIntoThirtyYear,
+  FINANCIAL_HORIZON_YEARS,
   type CalcInputs,
   type YearResult,
   type ThirtyYearResult,
 } from "@/lib/solar-model";
 import { pickSsoScenario } from "@/lib/sso-proforma";
+import type { SolarSummary } from "@/lib/clean-energy-plan";
 
 export function slugifyAddress(address: string): string {
   return address
@@ -72,11 +77,7 @@ export function classifyProperty(propertyType: string | null): PropertyClass {
   }
 }
 
-const RESIDENTIAL_ANNUAL_USAGE_KWH = 14_004; // Austin avg: 1167 kWh/mo × 12
-const SYSTEM_DERATE = 0.86;                  // NREL PVWatts default performance ratio: inverter/wiring/
-                                              // soiling/temperature losses on top of Google's geometry-
-                                              // and-shading-adjusted sunshine hours. Not redundant with
-                                              // anything Google already applies, a different loss category.
+const RESIDENTIAL_ANNUAL_USAGE_KWH = DEFAULT_MONTHLY_USAGE_KWH * 12; // Austin avg
 const VOS_RATE = AUSTIN_ENERGY_RATES.vosRate; // single-sourced from solar-model.ts
 const MIN_SYSTEM_KW = 2;                     // floor for usage-based (VoS) default sizing
 // Default monthly bill assumption when no real usage is known, by AE property type (matches
@@ -114,7 +115,7 @@ export function fromTcadProperty(p: {
  *  components, PbiBreakdown, SsoProForma) that need a per-kW production estimate independent
  *  of any specific system size. */
 export function estimateProductionPerKw(sunshineHours: number | null): number {
-  return sunshineHours ? sunshineHours * SYSTEM_DERATE : 1500;
+  return sunshineHours ? sunshineHours * SYSTEM_DERATE : DEFAULT_PRODUCTION_PER_KW;
 }
 
 export function fromGoogleSolarInsights(
@@ -185,8 +186,9 @@ export function computeRecommendation(
 
   let recommendedKw: number;
   if (cls === "multifamily") {
-    // Virtual net metering, not a per-unit-usage or SSO/VoS billing concept -- always size to
-    // the full buildable roof capacity, independent of billingMode.
+    // AE's multifamily program splits Value of Solar credits across the tenants' own meters,
+    // so there's no single owner bill to size against -- always size to the full buildable
+    // roof capacity, independent of billingMode.
     recommendedKw = maxKw;
   } else if (cls === "commercial" && billingMode === "sso") {
     recommendedKw = maxKw;
@@ -277,7 +279,6 @@ export function buildProgramFinancials(
     annualUsageKwh: number;
     productionPerKw: number;
     isSSO: boolean;
-    batteryKwh?: number;
     loanTermYears?: number;
     loanInterestRate?: number;
     monthlyUsageKwh?: number[];
@@ -286,7 +287,6 @@ export function buildProgramFinancials(
   const inputs: CalcInputs = {
     annualUsageKwh: opts.annualUsageKwh,
     systemKw: rec.recommendedKw,
-    batteryKwh: opts.batteryKwh ?? 0,
     loanTermYears: opts.loanTermYears ?? 0,
     loanInterestRate: opts.loanInterestRate ?? 0,
     productionPerKw: opts.productionPerKw,
@@ -314,6 +314,30 @@ export function buildProgramFinancials(
     : yearOne.savings + (rec.pbiEligible ? rec.pbiAnnualCredit : 0);
 
   return { yearOne, thirtyYear, sso, isSSO: opts.isSSO, net25, paybackYear, annualAmount };
+}
+
+/** The calculator's headline numbers for the size currently selected, on a cash-purchase basis
+ *  (no loan), for the Next Steps solar card and the edge function's outreach script -- so both
+ *  quote exactly what the calculator shows instead of a separate estimate. */
+export function buildSolarSummary(
+  rec: SolarRecommendation,
+  cls: PropertyClass,
+  opts: { annualUsageKwh: number; productionPerKw: number; isSSO: boolean; monthlyUsageKwh?: number[] },
+): SolarSummary {
+  const f = buildProgramFinancials(rec, opts);
+  const isMultifamily = cls === "multifamily";
+  const cumulative = opts.isSSO ? f.sso.cumulativeByYear : f.thirtyYear.cumulativeByYear;
+  return {
+    recommendedSystemKw: rec.recommendedKw,
+    annualSavingsUsd: isMultifamily ? null : Math.round(f.annualAmount),
+    tenantCreditsUsd: isMultifamily ? Math.round(f.yearOne.solarTotal * VOS_RATE) : null,
+    grossSystemCostUsd: rec.grossCost,
+    austinEnergyRebateUsd: opts.isSSO ? 0 : rec.aeRebate,
+    netSystemCostUsd: opts.isSSO ? rec.grossCost : rec.netCost,
+    paybackYears: isMultifamily ? null : f.paybackYear,
+    lifetimeNetSavingsUsd: isMultifamily ? null : cumulative[cumulative.length - 1]?.cumulative ?? null,
+    horizonYears: FINANCIAL_HORIZON_YEARS,
+  };
 }
 
 /** Single source for the contact-CTA copy shown at the bottom of both PropertyPage.tsx and

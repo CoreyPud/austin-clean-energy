@@ -4,7 +4,7 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 
 // Defined in the filter lib (which must stay import-free so scripts can load it);
 // re-exported here since components already import the type from this module.
-import type { SolarPanel } from "@/lib/solar-filters";
+import { panelTsrf, type SolarPanel } from "@/lib/solar-filters";
 export type { SolarPanel };
 
 interface LatLon { lat: number; lon: number }
@@ -25,7 +25,6 @@ interface Props {
   fitKey?: string | number;
 }
 
-const AUSTIN_REF_HRS = 1950;
 const PANEL_OPACITY = 0.9;
 const PANEL_LAYERS = ["panels-fill", "panels-outline", "walkways-fill", "walkways-outline"];
 const RAD = Math.PI / 180;
@@ -206,7 +205,7 @@ function SatelliteMap({
     const TSRF_THRESH = 0.80;
     const withMeta = panels.map((p, i) => ({
       i, lat: p.lat, lon: p.lon,
-      tsrf: p.yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS),
+      tsrf: panelTsrf(p.yearlyEnergyDcKwh),
     }));
 
     const highQ = withMeta.filter(x => x.tsrf >= TSRF_THRESH);
@@ -249,7 +248,7 @@ function SatelliteMap({
       features: panels.map((p, i) => {
         const az    = segmentAzimuths[p.segmentIndex] ?? 180;
         const pitch = segmentPitches[p.segmentIndex] ?? 20;
-        const tsrf  = p.yearlyEnergyDcKwh / (0.4 * AUSTIN_REF_HRS);
+        const tsrf  = panelTsrf(p.yearlyEnergyDcKwh);
         const coords = panelPolygon(p.lat, p.lon, halfH * Math.cos(pitch * RAD), halfW, az, p.orientation === "LANDSCAPE");
         return {
           type: "Feature",

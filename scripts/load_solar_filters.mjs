@@ -26,6 +26,7 @@ const { code } = transformSync(readFileSync(SRC, "utf8"), {
 export const {
   applySolarFilters,
   applyCommercialFilters,
+  calcEligibleKw,
   SOLAR_FILTER_VERSION,
   BORDER_SMOOTH_M,
 } = await import("data:text/javascript;base64," + Buffer.from(code).toString("base64"));

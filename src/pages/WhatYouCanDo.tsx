@@ -11,6 +11,7 @@ import {
   buildThirtyYearModel,
   DEFAULT_MONTHLY_USAGE_KWH,
   DEFAULT_PRODUCTION_PER_KW,
+  AUSTIN_INSTALL_COST_PER_KW,
   type CalcInputs,
 } from "@/lib/solar-model";
 import { calcEVResults, DEFAULT_EV_INPUTS } from "@/lib/ev-model";
@@ -32,14 +33,13 @@ const WhatYouCanDo = () => {
     const inputs: CalcInputs = {
       annualUsageKwh: DEFAULT_MONTHLY_USAGE_KWH * 12,
       systemKw: sampleKw,
-      batteryKwh: 0,
       loanTermYears: 0,
       loanInterestRate: 0,
       productionPerKw: DEFAULT_PRODUCTION_PER_KW,
     };
     return buildThirtyYearModel(
       inputs,
-      sampleKw * 2950 - austinEnergyRebate(sampleKw, "single_family"),
+      sampleKw * AUSTIN_INSTALL_COST_PER_KW - austinEnergyRebate(sampleKw, "single_family"),
     ).cumulativeByYear.slice(0, 25);
   }, []);
 

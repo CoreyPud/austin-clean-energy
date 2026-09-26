@@ -3,27 +3,36 @@
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-export const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const MONTH_DAYS  = [31,28,31,30,31,30,31,31,30,31,30,31];
-export const FINANCIAL_HORIZON_YEARS = 30;
+// Shared with the edge functions and scripts; see that file. Re-exported so app code keeps
+// importing everything solar from "@/lib/solar-model".
+import {
+  VOS_RATE,
+  AUSTIN_ENERGY_SOLAR_REBATE,
+  AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
+  PANEL_DEGRADATION_RATE,
+} from "../../supabase/functions/_shared/solar-rates";
+export {
+  VOS_RATE,
+  AUSTIN_ENERGY_SOLAR_REBATE,
+  AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
+  AUSTIN_INSTALL_COST_PER_KW,
+  SYSTEM_DERATE,
+  DEFAULT_PRODUCTION_PER_KW,
+  PANEL_DEGRADATION_RATE,
+} from "../../supabase/functions/_shared/solar-rates";
 
-const DAYLIGHT_HOURS_BY_MONTH = [10.2,10.8,11.8,12.8,13.6,14.1,13.8,13.1,12.2,11.3,10.5,10.0];
-const FALLBACK_SOLAR_PROFILE_EXPONENT = 1.35;
+export const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+export const FINANCIAL_HORIZON_YEARS = 30;
 
 // Normalised monthly solar production weights (Austin, Jan–Dec)
 const RAW_SOLAR_PROFILE = [0.78,0.86,0.99,1.06,1.11,1.10,1.07,1.01,0.96,0.91,0.82,0.74];
 
-// Normalised hourly load profile (midnight → 11 pm)
-const RAW_HOURLY_LOAD = [0.62,0.56,0.53,0.51,0.52,0.58,0.71,0.82,0.85,0.81,0.77,0.75,
-                          0.76,0.79,0.84,0.92,1.00,0.98,0.94,0.90,0.88,0.83,0.76,0.68];
-
 export const MONTHLY_SOLAR_PROFILE = normalizeProfile(RAW_SOLAR_PROFILE);
-const HOURLY_LOAD_PROFILE          = normalizeProfile(RAW_HOURLY_LOAD);
 
 // Austin Energy tiered rates (2025)
 export const AUSTIN_ENERGY_RATES = {
   customerCharge: 16.50,
-  vosRate: 0.126,
+  vosRate: VOS_RATE,
   citySalesTaxRate: 0.01,
   tierRates: [
     { maxKwh: 300,      rate: 0.04640 },
@@ -39,50 +48,51 @@ export const AUSTIN_ENERGY_RATES = {
   },
 };
 
-export const AUSTIN_ENERGY_SOLAR_REBATE = 4000; // residential flat rebate (systems > 3 kW)
-
 // Capacity-Based Incentive (CBI) eligibility cutoff for for-profit commercial: per Austin
 // Energy's CBI guidelines, only systems under this size can choose CBI; at or above it, the
 // system is PBI-only (see PBI section below) and gets $0 CBI, not a capped amount.
 export const PBI_MIN_KW = 100;
+export const COMMERCIAL_CBI_PER_W = 0.70;   // $/W, for-profit commercial, only under PBI_MIN_KW
+export const NONPROFIT_CBI_PER_W = 1.00;    // $/W
+export const NONPROFIT_CBI_CAP_KW = 200;    // non-profit rebate applies to the first 200 kW
 
 export function austinEnergyRebate(systemKw: number, propertyType: string): number {
   switch (propertyType) {
     case "commercial":
-      return systemKw < PBI_MIN_KW ? systemKw * 1000 * 0.70 : 0; // $0.70/W, only under 100 kW
+      return systemKw < PBI_MIN_KW ? systemKw * 1000 * COMMERCIAL_CBI_PER_W : 0;
     case "non-profit":
-      return Math.min(systemKw, 200) * 1000 * 1.00; // $1.00/W, capped at 200 kW
+      return Math.min(systemKw, NONPROFIT_CBI_CAP_KW) * 1000 * NONPROFIT_CBI_PER_W;
     case "multi-family":
-      return 0; // virtual net metering — separate program, no upfront rebate
-    default: // single-family, condo — flat rebate for systems > 3 kW
-      return systemKw > 3 ? 4000 : 0;
+      return 0; // AE multifamily CBI ($0.60/W, cap $2,500/unit) not modeled yet: needs unit count
+    default: // single-family, condo: flat rebate at or above the minimum size
+      return systemKw >= AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW ? AUSTIN_ENERGY_SOLAR_REBATE : 0;
   }
 }
 
 // Performance-Based Incentive (PBI) — paid per kWh generated over 5 years
 export const COMMERCIAL_PBI_YEARS = 5;
 
+/** PBI rate tiers by system size, largest first. $/kWh. */
+export const PBI_RATE_TIERS = [
+  { minKw: 1000, rate: 0.06, label: "Extra-Large" },
+  { minKw: 400,  rate: 0.08, label: "Large" },
+  { minKw: 0,    rate: 0.10, label: "Medium" },
+] as const;
+
+export function pbiTier(systemKw: number) {
+  return PBI_RATE_TIERS.find(t => systemKw >= t.minKw) ?? PBI_RATE_TIERS[PBI_RATE_TIERS.length - 1];
+}
+
 export function commercialPbiRate(systemKw: number): number {
-  if (systemKw >= 1000) return 0.06; // $/kWh
-  if (systemKw >= 400)  return 0.08;
-  return 0.10;
+  return pbiTier(systemKw).rate;
 }
 
 export function commercialPbiBenefit(systemKw: number, productionPerKw: number): number {
   return systemKw * productionPerKw * commercialPbiRate(systemKw) * COMMERCIAL_PBI_YEARS;
 }
-// Berkeley Lab 2024 regression for Austin residential installs
-const AUSTIN_INSTALL_COST_INTERCEPT  = 4800;
-export const AUSTIN_INSTALL_COST_PER_KW = 2950;
-const AUSTIN_BATTERY_COST_PER_KWH   = 1000;
-
-export const DEFAULT_PRODUCTION_PER_KW = 1500; // kWh/kW-year (Austin avg)
 
 // ── Long-run assumptions behind the breakeven / payback year ──────────────────
-// Panel output loss per year. 0.5%/yr is NREL's median degradation rate for modern
-// crystalline-silicon modules and matches typical 25-year manufacturer warranties
-// (~87% of nameplate at year 25).
-export const PANEL_DEGRADATION_RATE = 0.005;
+// (Panel degradation, PANEL_DEGRADATION_RATE, is in the shared solar-rates file.)
 // Electricity price escalation applied to avoided-bill savings. Austin Energy's residential
 // rates have risen a little over 2%/yr on a long-run average; 2.5% is a deliberately
 // conservative middle figure. Without it, payback is overstated because the model would
@@ -109,10 +119,6 @@ function normalizeProfile(values: number[]): number[] {
 
 function sumBy<T>(rows: T[], key: keyof T): number {
   return rows.reduce((s, r) => s + (r[key] as number), 0);
-}
-
-function clamp(v: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, v));
 }
 
 // ── Austin Energy billing ─────────────────────────────────────────────────────
@@ -153,72 +159,11 @@ export function billToMonthlyKwh(monthlyBill: number): number {
   return Math.max(0, Math.round((lo + hi) / 2));
 }
 
-// ── Install cost ─────────────────────────────────────────────────────────────
-
-export function austinInstallCost(systemKw: number, batteryKwh = 0): number {
-  const solar = AUSTIN_INSTALL_COST_INTERCEPT + AUSTIN_INSTALL_COST_PER_KW * Math.max(0, systemKw);
-  const battery = batteryKwh * AUSTIN_BATTERY_COST_PER_KWH;
-  return solar + battery;
-}
-
-// ── Hourly solar shape ────────────────────────────────────────────────────────
-
-function buildMonthlySolarHourlyProfile(monthIndex: number): number[] {
-  const daylightHours = DAYLIGHT_HOURS_BY_MONTH[monthIndex] ?? 12;
-  const sunrise = 12 - daylightHours / 2;
-  const sunset  = 12 + daylightHours / 2;
-  const raw = Array.from({ length: 24 }, (_, hour) => {
-    const h = hour + 0.5;
-    if (h <= sunrise || h >= sunset) return 0;
-    const progress = (h - sunrise) / Math.max(0.01, sunset - sunrise);
-    return Math.pow(Math.sin(Math.PI * progress), FALLBACK_SOLAR_PROFILE_EXPONENT);
-  });
-  return normalizeProfile(raw);
-}
-
-// ── Monthly energy flow (hourly battery dispatch) ─────────────────────────────
-
-function simulateMonthlyFlow(
-  monthlyUsage: number,
-  monthlySolar: number,
-  monthIndex: number,
-  daysInMonth: number,
-  batteryCapacityKwh = 0,
-) {
-  const solarProfile = buildMonthlySolarHourlyProfile(monthIndex);
-  const batteryPower = batteryCapacityKwh / 2; // 2-hour discharge rate
-  let imported = 0, exported = 0, directSolar = 0, batteryDischarge = 0;
-
-  for (let day = 0; day < daysInMonth; day++) {
-    let soc = 0;
-    for (let hour = 0; hour < 24; hour++) {
-      const load  = (monthlyUsage * HOURLY_LOAD_PROFILE[hour]) / daysInMonth;
-      const solar = (monthlySolar * solarProfile[hour]) / daysInMonth;
-      directSolar += Math.min(load, solar);
-      const net = solar - load;
-
-      if (net >= 0) {
-        const charge = Math.min(net, batteryPower, batteryCapacityKwh - soc);
-        soc += charge;
-        exported += Math.max(0, net - charge);
-      } else {
-        const deficit = Math.max(0, load - solar);
-        const discharge = Math.min(deficit, batteryPower, soc);
-        soc -= discharge;
-        batteryDischarge += discharge;
-        imported += Math.max(0, deficit - discharge);
-      }
-    }
-  }
-  return { imported, exported, directSolar, batteryDischarge };
-}
-
 // ── Model types ───────────────────────────────────────────────────────────────
 
 export interface CalcInputs {
   annualUsageKwh: number;
   systemKw: number;
-  batteryKwh: number;
   loanTermYears: number;
   loanInterestRate: number;   // decimal
   productionPerKw: number;    // kWh/kW-year
@@ -270,8 +215,6 @@ export function buildYearModel(
       ? (inputs.monthlyUsageKwh[mi] ?? inputs.annualUsageKwh / 12)
       : inputs.annualUsageKwh * MONTHLY_SOLAR_PROFILE[mi];
     const solar = annualSolar * MONTHLY_SOLAR_PROFILE[mi];
-
-    const flow = simulateMonthlyFlow(usage, solar, mi, MONTH_DAYS[mi], inputs.batteryKwh);
 
     const billWithoutSolar = calculateAustinEnergyUsageBill(usage).total;
     const exportCredits = solar * AUSTIN_ENERGY_RATES.vosRate;
@@ -385,7 +328,7 @@ export function buildPbiModel(systemKw: number, productionPerKw: number): PbiMod
   let totalFiveYearCredit = 0;
   for (let y = 0; y < FINANCIAL_HORIZON_YEARS; y++) {
     const year = y + 1;
-    const credit = year <= COMMERCIAL_PBI_YEARS ? annualKwh * Math.pow(0.995, y) * rate : 0;
+    const credit = year <= COMMERCIAL_PBI_YEARS ? annualKwh * Math.pow(1 - PANEL_DEGRADATION_RATE, y) * rate : 0;
     if (year <= COMMERCIAL_PBI_YEARS) totalFiveYearCredit += credit;
     yearlyRows.push({ year, credit: Math.round(credit) });
   }
@@ -463,7 +406,7 @@ export function buildSsoModel(systemKw: number, productionPerKw: number, install
 
   for (let y = 0; y < FINANCIAL_HORIZON_YEARS; y++) {
     const year = y + 1;
-    const degradedKwh = annualKwh * Math.pow(0.995, y);
+    const degradedKwh = annualKwh * Math.pow(1 - PANEL_DEGRADATION_RATE, y);
     const revenue = degradedKwh * ssoRate(systemKw, year);
     const om = systemKw * SSO_OM_PER_KW_YEAR * Math.pow(1 + SSO_OM_ESCALATION, y);
     const inverterCost = year === SSO_INVERTER_REPLACEMENT_YEAR
@@ -486,7 +429,8 @@ export function buildSsoModel(systemKw: number, productionPerKw: number, install
 
 // Fallback matches Google's carbonOffsetFactorKgPerMwh methodology for ERCOT/Austin (~400 kg/MWh).
 // Use the live Google value when available — pass carbonOffsetKgPerMwh in kg/MWh.
-const CO2_PER_KWH_FALLBACK   = 0.000400; // metric tons CO2 / kWh (ERCOT grid approx)
+export const CO2_FALLBACK_KG_PER_MWH = 400; // ERCOT grid approx, same units as Google's factor
+const CO2_PER_KWH_FALLBACK   = CO2_FALLBACK_KG_PER_MWH / 1_000_000; // metric tons CO2 / kWh
 const TONS_CO2_PER_CAR_MILE  = 0.000404; // metric tons CO2 / mile
 const TONS_CO2_PER_TREE      = 0.021;    // metric tons CO2 / tree / year
 const TONS_CO2_PER_FLIGHT    = 1.0;      // metric tons CO2 / long-haul flight

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronDown } from "lucide-react";
-import { environmentalImpact } from "@/lib/solar-model";
+import { environmentalImpact, CO2_FALLBACK_KG_PER_MWH, PANEL_DEGRADATION_RATE } from "@/lib/solar-model";
 
 interface Props {
   annualSolarKwh: number;
@@ -16,8 +16,10 @@ const PRI = "hsl(var(--primary))";
 const PRI20 = "hsl(var(--primary) / 0.2)";
 const SEC = "hsl(var(--secondary))";
 
-// 0.5% annual panel degradation summed over 25 years
-const lifetimeMultiplier = Array.from({ length: 25 }, (_, i) => Math.pow(0.995, i))
+// Panel degradation summed over a 25-year panel life (the warranty term, not the 30-year
+// financial horizon).
+const PANEL_LIFE_YEARS = 25;
+const lifetimeMultiplier = Array.from({ length: PANEL_LIFE_YEARS }, (_, i) => Math.pow(1 - PANEL_DEGRADATION_RATE, i))
   .reduce((a, b) => a + b, 0);
 
 const EnvironmentalImpactCard = ({ annualSolarKwh, carbonOffsetKgPerMwh }: Props) => {
@@ -25,7 +27,7 @@ const EnvironmentalImpactCard = ({ annualSolarKwh, carbonOffsetKgPerMwh }: Props
   const [showMethodology, setShowMethodology] = useState(false);
   const kwh = mode === "lifetime" ? annualSolarKwh * lifetimeMultiplier : annualSolarKwh;
   const impact = environmentalImpact(kwh, carbonOffsetKgPerMwh);
-  const co2Factor = carbonOffsetKgPerMwh ?? 400;
+  const co2Factor = carbonOffsetKgPerMwh ?? CO2_FALLBACK_KG_PER_MWH;
 
   return (
     <Card id="section-environmental" className="border-2 border-primary/20 shadow-md bg-gradient-to-br from-primary/5 via-background to-background scroll-mt-52">
@@ -34,7 +36,7 @@ const EnvironmentalImpactCard = ({ annualSolarKwh, carbonOffsetKgPerMwh }: Props
           <p className="text-sm text-muted-foreground">
             By going solar, your system will avoid{" "}
             <span className="font-semibold text-foreground">{impact.metricTonsCo2}</span> metric tons of
-            CO₂e {mode === "annual" ? "per year" : "over 25 years"}, equivalent to:
+            CO₂e {mode === "annual" ? "per year" : `over ${PANEL_LIFE_YEARS} years`}, equivalent to:
           </p>
           <div className="flex shrink-0 rounded-md border overflow-hidden text-[10px] font-medium">
             <button
@@ -47,7 +49,7 @@ const EnvironmentalImpactCard = ({ annualSolarKwh, carbonOffsetKgPerMwh }: Props
               onClick={() => setMode("lifetime")}
               className={`px-2 py-1 transition-colors ${mode === "lifetime" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
-              25 year
+              {PANEL_LIFE_YEARS} year
             </button>
           </div>
         </div>

@@ -57,7 +57,8 @@ export function useSeo({ title, description, type = "website", jsonLd }: SeoOpti
   const location = useLocation();
 
   useEffect(() => {
-    const fullTitle = title === DEFAULT_TITLE ? title : `${title} | ${SITE_NAME}`;
+    // Some pages already end their title with the site name; don't append it twice.
+    const fullTitle = title === DEFAULT_TITLE || title.endsWith(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
     const canonicalUrl = `${BASE_URL}${location.pathname}`;
 
     // Title
