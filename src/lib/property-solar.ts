@@ -185,8 +185,9 @@ export function computeRecommendation(
 
   let recommendedKw: number;
   if (cls === "multifamily") {
-    // Virtual net metering, not a per-unit-usage or SSO/VoS billing concept -- always size to
-    // the full buildable roof capacity, independent of billingMode.
+    // AE's multifamily program splits Value of Solar credits across the tenants' own meters,
+    // so there's no single owner bill to size against -- always size to the full buildable
+    // roof capacity, independent of billingMode.
     recommendedKw = maxKw;
   } else if (cls === "commercial" && billingMode === "sso") {
     recommendedKw = maxKw;

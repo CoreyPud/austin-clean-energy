@@ -31,7 +31,7 @@ import { buildProgramFinancials, isSsoEligible, type SolarRecommendation, type P
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const fmtKwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`;
-const VOS_RATE_DISPLAY = `$${AUSTIN_ENERGY_RATES.vosRate.toFixed(3)}/kWh`;
+const VOS_RATE_DISPLAY = `$${AUSTIN_ENERGY_RATES.vosRate.toFixed(4)}/kWh`;
 
 const StickyKpi = ({
   label, value, href, highlight,
@@ -121,7 +121,10 @@ export default function SolarProgramView({
   // financials + chart recompute (systemKw and costPerW also bubble up to a full page
   // re-render), which made dragging visibly laggy -- onValueCommit below only pushes the real
   // value once the drag ends, while these track the thumb smoothly in the meantime.
-  const [liveSystemKw, setLiveSystemKw] = useState(systemKw);
+  const [liveSystemKwRaw, setLiveSystemKw] = useState(systemKw);
+  // systemKw can briefly exceed the roof max (the page seeds a default before results load);
+  // never display or drag from a size the model will clamp away.
+  const liveSystemKw = Math.min(liveSystemKwRaw, rec.maxKw);
   const [liveBatteryKwh, setLiveBatteryKwh] = useState(batteryKwh);
   const [liveCostPerW, setLiveCostPerW] = useState(rec.costPerW);
   useEffect(() => setLiveSystemKw(systemKw), [systemKw]);
@@ -133,7 +136,7 @@ export default function SolarProgramView({
   const ssoEligible = isSsoEligible(rec, propertyClass, isNonProfit);
   const isSSO = ssoEligible && billingMode === "sso";
   // Only residential and commercial-VoS reflect a real bill/usage figure -- multifamily's
-  // annualUsageKwh is a production proxy (virtual net metering has no per-unit bill), and SSO
+  // credits land on the tenants' meters (no single owner bill to compare against), and SSO
   // revenue doesn't depend on usage at all. Showing a "vs. consumption" chart in either case
   // would compare production against a number that isn't really consumption.
   const hasRealUsage = !isMultifamily && !isSSO;
@@ -180,6 +183,16 @@ export default function SolarProgramView({
   // Net position at the end of the full modeled term (not just year 25) -- the headline figure
   // above the payback chart.
   const netFullTerm = cumulativeSource[cumulativeSource.length - 1]?.cumulative ?? net25;
+  // Financed (VoS only; SSO has no financing option). A single "payback year" is misleading
+  // here -- cheap long loans read as "year 1" while pricier ones read as never -- so the
+  // breakeven framing is swapped for what a borrower actually feels: savings minus the loan
+  // payment each month.
+  const isFinanced = !isSSO && financials.thirtyYear.hasLoan;
+  const netMonthly = (annualAmount - financials.thirtyYear.annualLoanPayment) / 12;
+  const fmtNetMonthly = `${netMonthly >= 0 ? "+" : "−"}${fmt$(Math.abs(netMonthly))}/mo`;
+  // Multifamily: Value of Solar credits go to the tenants' accounts, not the owner's, so there's
+  // no owner bill savings or payback to show -- just what the array credits tenants each year.
+  const tenantCreditsYear1 = yearOne.solarTotal * AUSTIN_ENERGY_RATES.vosRate;
 
 
   const ssoRateSteps = [1, ...SSO_RATE_STEP_YEARS].map((year, i) => ({
@@ -203,9 +216,12 @@ export default function SolarProgramView({
                 <div className="text-xs text-muted-foreground mb-1">Solar system size</div>
                 <div className="text-2xl font-bold tabular-nums mb-3">{liveSystemKw.toFixed(1)} kW</div>
                 <Slider
-                  min={1}
-                  max={Math.max(rec.maxKw, 16)}
-                  step={rec.maxKw > 50 ? 1 : 0.5}
+                  // Capped at the buildable roof max: computeRecommendation clamps any larger
+                  // override down to it, so letting the thumb go further would show a kW figure
+                  // the cost, savings, and payback numbers silently ignore.
+                  min={Math.min(1, rec.maxKw)}
+                  max={rec.maxKw}
+                  step={rec.maxKw > 50 ? 1 : 0.1}
                   value={[liveSystemKw]}
                   onValueChange={([v]) => setLiveSystemKw(v)}
                   onValueCommit={([v]) => onSystemKwChange(v)}
@@ -237,19 +253,31 @@ export default function SolarProgramView({
               </div>
             </div>
 
-            <div className="border-t mt-3 pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5">
+            {isMultifamily ? (
+            <div className="border-t mt-3 pt-3 grid grid-cols-1 md:grid-cols-4 gap-1.5">
               <StickyKpi label="install cost" value={fmt$(installCost)} href="#section-install" />
+              <StickyKpi label="yearly tenant credits" value={fmt$(tenantCreditsYear1)} href="#section-savings" highlight />
+              <StickyKpi label="yearly production" value={fmtKwh(yearOne.solarTotal)} href="#section-savings" />
+              <StickyKpi label="yearly CO₂ offset" value={`${co2TonsPerYear} tons`} href="#section-environmental" />
+            </div>
+            ) : (
+            <div className="border-t mt-3 pt-3 grid grid-cols-1 md:grid-cols-5 gap-1.5">
+              <StickyKpi label="net install cost" value={fmt$(installCost)} href="#section-install" />
               <StickyKpi
                 label={isSSO ? "monthly revenue" : "monthly savings"}
                 value={fmt$(annualAmount / 12)}
                 href="#section-savings"
                 highlight
               />
-              <StickyKpi
-                label="payback"
-                value={paybackYear ? `${paybackYear} years` : "> 30 years"}
-                href="#section-payback"
-              />
+              {isFinanced ? (
+                <StickyKpi label="net monthly (after loan)" value={fmtNetMonthly} href="#section-payback" />
+              ) : (
+                <StickyKpi
+                  label="payback"
+                  value={paybackYear ? `${paybackYear} years` : "> 30 years"}
+                  href="#section-payback"
+                />
+              )}
               {isSSO ? (
                 <StickyKpi label="SSO rate" value={`${(ssoRate(systemKw) * 100).toFixed(1)}¢/kWh`} href="#section-savings" />
               ) : (
@@ -257,24 +285,33 @@ export default function SolarProgramView({
               )}
               <StickyKpi label="yearly CO₂ offset" value={`${co2TonsPerYear} tons`} href="#section-environmental" />
             </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Cost breakdown */}
       <div id="section-install" className="rounded-lg border border-border bg-card p-4 space-y-3 scroll-mt-52">
-        <div className="flex justify-between items-baseline">
-          <p className="text-sm font-medium">Cost breakdown</p>
-          <span className="text-xs text-muted-foreground tabular-nums">${rec.costPerW.toFixed(2)}/W</span>
+        <p className="text-sm font-medium">Cost breakdown</p>
+        {/* Label and value sit together on the left so the $/W figure reads as the slider's
+            value, not a stray number off at the far edge. */}
+        <div className="space-y-2">
+          <div className="flex items-baseline gap-2 text-sm">
+            <span className="text-muted-foreground">Install cost per watt</span>
+            <span className="font-semibold tabular-nums">${liveCostPerW.toFixed(2)}/W</span>
+          </div>
+          {onCostPerWChange && (
+            <>
+              <Slider
+                min={1.5} max={5.0} step={0.05}
+                value={[liveCostPerW]}
+                onValueChange={([v]) => setLiveCostPerW(v)}
+                onValueCommit={([v]) => onCostPerWChange(v)}
+              />
+              <p className="text-xs text-muted-foreground">Drag to match an installer's quote.</p>
+            </>
+          )}
         </div>
-        {onCostPerWChange && (
-          <Slider
-            min={1.5} max={5.0} step={0.05}
-            value={[liveCostPerW]}
-            onValueChange={([v]) => setLiveCostPerW(v)}
-            onValueCommit={([v]) => onCostPerWChange(v)}
-          />
-        )}
         {/* Each figure sits directly above the words that explain it, so a number and its
             label always read as one unit instead of facing each other across the panel. */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -290,10 +327,13 @@ export default function SolarProgramView({
               <div className="text-xs text-green-700/80 dark:text-green-400/80 leading-snug">Austin Energy rebate</div>
             </div>
           )}
-          <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
-            <div className="text-lg font-bold tabular-nums leading-tight text-primary">{fmt$(installCost)}</div>
-            <div className="text-xs text-muted-foreground leading-snug">Net cost after rebate</div>
-          </div>
+          {/* Multifamily has no modeled rebate yet, so a "net" tile would just repeat gross. */}
+          {!isMultifamily && (
+            <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
+              <div className="text-lg font-bold tabular-nums leading-tight text-primary">{fmt$(installCost)}</div>
+              <div className="text-xs text-muted-foreground leading-snug">Net cost after rebate</div>
+            </div>
+          )}
         </div>
         {isSSO && (
           <p className="text-xs text-muted-foreground">
@@ -350,6 +390,14 @@ export default function SolarProgramView({
           </ResponsiveContainer>
         </div>
 
+        {isMultifamily ? (
+          <p className="text-sm text-muted-foreground">
+            Under Austin Energy's multifamily program, Value of Solar credits are split across the
+            tenants' own electric accounts rather than the owner's, so this system's payoff shows
+            up as about {fmt$(tenantCreditsYear1)} a year in tenant bill credits, not as owner
+            savings or a payback period.
+          </p>
+        ) : (
         <div id="section-payback" className="space-y-3 scroll-mt-52">
           {/* Headline pair: full-term net total and the payback year, each number grouped with
               its own label. Framed as payback, not loss -- pre-breakeven years are neutral. */}
@@ -359,19 +407,33 @@ export default function SolarProgramView({
                 {fmt$(netFullTerm)}
               </div>
               <div className="text-xs text-muted-foreground leading-snug">
-                Total net {isSSO ? "revenue" : "savings"} over {FINANCIAL_HORIZON_YEARS} years, after the system pays for itself
+                {isFinanced
+                  ? `Total net savings over ${FINANCIAL_HORIZON_YEARS} years, after all loan payments`
+                  : `Total net ${isSSO ? "revenue" : "savings"} over ${FINANCIAL_HORIZON_YEARS} years, after the system pays for itself`}
               </div>
             </div>
-            <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
-              <div className="text-3xl font-bold tabular-nums leading-tight text-primary">
-                {paybackYear ? `Year ${paybackYear}` : "Never"}
+            {isFinanced ? (
+              <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
+                <div className="text-3xl font-bold tabular-nums leading-tight text-primary">
+                  {fmtNetMonthly}
+                </div>
+                <div className="text-xs text-muted-foreground leading-snug">
+                  Year 1 savings minus your {fmt$(financials.thirtyYear.annualLoanPayment / 12)}/mo loan payment
+                  {loanTermYears ? ` (${loanTermYears}-year loan)` : ""}
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground leading-snug">
-                {paybackYear
-                  ? "Breakeven — everything after this is money ahead"
-                  : `Does not break even within ${FINANCIAL_HORIZON_YEARS} years at these assumptions`}
+            ) : (
+              <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
+                <div className="text-3xl font-bold tabular-nums leading-tight text-primary">
+                  {paybackYear ? `Year ${paybackYear}` : "Never"}
+                </div>
+                <div className="text-xs text-muted-foreground leading-snug">
+                  {paybackYear
+                    ? "Breakeven: everything after this is money ahead"
+                    : `Does not break even within ${FINANCIAL_HORIZON_YEARS} years at these assumptions`}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <p className="text-sm font-medium">
             {isSSO ? `Cumulative net revenue over ${FINANCIAL_HORIZON_YEARS} years` : `Cumulative net savings over ${FINANCIAL_HORIZON_YEARS} years`}
@@ -383,7 +445,7 @@ export default function SolarProgramView({
               <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} width={48} />
               <Tooltip formatter={(v: number) => fmt$(v)} />
               <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
-              {paybackYear && (
+              {paybackYear && !isFinanced && (
                 <ReferenceLine
                   x={`Yr ${paybackYear}`}
                   stroke="hsl(var(--primary))"
@@ -404,7 +466,8 @@ export default function SolarProgramView({
                     key={i}
                     fill={
                       // Red only when the system never reaches breakeven in the modeled term.
-                      paybackYear == null
+                      // Financed: no breakeven framing, so just color by sign.
+                      paybackYear == null && !isFinanced
                         ? "#b91c1c"
                         : Number(entry[cumulativeKey]) >= 0
                         ? "#047857"
@@ -416,13 +479,16 @@ export default function SolarProgramView({
             </BarChart>
           </ResponsiveContainer>
           <p className="text-xs text-muted-foreground">
-            Neutral bars are the years still paying back the up-front cost; green bars are years
-            you're ahead. Modeled on Austin Energy's current tiered rates and Value of Solar
+            {isFinanced
+              ? "Each bar is your running total of bill savings minus loan payments; green bars are years you're ahead. "
+              : "Neutral bars are the years still paying back the up-front cost; green bars are years you're ahead. "}
+            Modeled on Austin Energy's current tiered rates and Value of Solar
             credit, {(UTILITY_RATE_ESCALATION * 100).toFixed(1)}% a year electricity price
             escalation, {(PANEL_DEGRADATION_RATE * 100).toFixed(1)}% a year panel output loss,
             and one inverter replacement in year {INVERTER_REPLACEMENT_YEAR}.
           </p>
         </div>
+        )}
 
       </div>
 
@@ -485,7 +551,8 @@ export default function SolarProgramView({
             <li>Production: Google Solar peak-sun-hours × 0.86 performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
             {isResidential && <li>Savings rate: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production)</li>}
             {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate ($4,000 for systems &gt;3 kW) applied</li>}
-            {isMultifamily && <li>System sized to maximum roof capacity; check AE's current multifamily rebate program for incentives</li>}
+            {isMultifamily && <li>System sized to maximum roof capacity. Tenant credits: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production), split across tenants' accounts</li>}
+            {isMultifamily && <li>Austin Energy's multifamily rebate isn't included yet; see their multifamily solar page for current amounts</li>}
           </ul>
         </div>
       )}
@@ -634,9 +701,9 @@ export function SolarBillingToggle({
       )}
       {isMultifamily && (
         <p className="text-sm text-muted-foreground">
-          Austin Energy offers solar rebates and incentives for multifamily properties. See{" "}
+          On multifamily properties, Austin Energy credits the system's production at {VOS_RATE_DISPLAY} to the tenants' own electric bills, and the owner can apply for an upfront rebate. See{" "}
           <a href="https://austinenergy.com/green-power/solar-solutions/for-your-multifamily" target="_blank" rel="noopener noreferrer" className="underline">AE's multifamily solar page</a>
-          {" "}for current program options, availability and eligibility change frequently.
+          {" "}for current amounts and eligibility, which change frequently.
         </p>
       )}
       {isCommercial && !ssoEligible && (

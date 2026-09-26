@@ -23,7 +23,7 @@ const HOURLY_LOAD_PROFILE          = normalizeProfile(RAW_HOURLY_LOAD);
 // Austin Energy tiered rates (2025)
 export const AUSTIN_ENERGY_RATES = {
   customerCharge: 16.50,
-  vosRate: 0.126,
+  vosRate: 0.1288,
   citySalesTaxRate: 0.01,
   tierRates: [
     { maxKwh: 300,      rate: 0.04640 },
@@ -53,7 +53,7 @@ export function austinEnergyRebate(systemKw: number, propertyType: string): numb
     case "non-profit":
       return Math.min(systemKw, 200) * 1000 * 1.00; // $1.00/W, capped at 200 kW
     case "multi-family":
-      return 0; // virtual net metering — separate program, no upfront rebate
+      return 0; // AE multifamily CBI ($0.60/W, cap $2,500/unit) not modeled yet: needs unit count
     default: // single-family, condo — flat rebate for systems > 3 kW
       return systemKw > 3 ? 4000 : 0;
   }

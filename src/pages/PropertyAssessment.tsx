@@ -49,6 +49,7 @@ import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import { buildRecommendationCards, computeRecommendedKw } from "@/lib/clean-energy-plan";
+import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
 
 const PropertyAssessment = () => {
   const navigate = useNavigate();
@@ -136,7 +137,10 @@ const PropertyAssessment = () => {
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
   const [loanTermYears, setLoanTermYears] = useState(20);
   const [loanRate, setLoanRate] = useState(6);
-  const effectiveLoanTerm = financeMode === "cash" ? 0 : loanTermYears;
+  const isMultifamily = propertyType === "multi-family";
+  // Multifamily has no owner bill savings to finance against (credits go to tenants), so the
+  // financing tabs are hidden there and any earlier Finance selection is ignored.
+  const effectiveLoanTerm = financeMode === "cash" || isMultifamily ? 0 : loanTermYears;
   const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_MIN_KW;
 
   // Reset to recommended only when a fresh assessment result loads. Defaults to Standard
@@ -241,7 +245,7 @@ const PropertyAssessment = () => {
         const { data, error: fnError } = await supabase.functions.invoke("parse-bill", {
           body: { file: base64, filename: file.name },
         });
-        if (fnError) throw new Error(fnError.message);
+        if (fnError) throw new Error(await edgeFunctionErrorMessage(fnError));
         if (data?.error) throw new Error(data.error);
         if (!Array.isArray(data?.months) || data.months.length === 0)
           throw new Error("No monthly usage data found.");
@@ -290,7 +294,7 @@ const PropertyAssessment = () => {
     const { data, error } = await supabase.functions.invoke("unified-assessment", {
       body: { address: address.trim(), propertyType, lifestyleData },
     });
-    if (error) throw error;
+    if (error) throw new Error(await edgeFunctionErrorMessage(error));
     if (data?.error) throw new Error(data.error);
     return data;
   };
@@ -318,11 +322,16 @@ const PropertyAssessment = () => {
       
     } catch (e: any) {
       console.error("Assessment error:", e);
-      toast({
-        title: "Couldn't build your profile",
-        description: e.message || "Please try again.",
-        variant: "destructive",
-      });
+      // Results from an earlier lookup are still on screen, so a failed re-run isn't worth a
+      // red toast -- the console has it. Only surface it when there'd otherwise be nothing to
+      // show and the button would look like it did nothing.
+      if (!results) {
+        toast({
+          title: "Couldn't build your profile",
+          description: e.message || "Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -357,12 +366,8 @@ const PropertyAssessment = () => {
       setTimeout(() => postQuizRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       toast({ title: "Personalized plan ready", description: "Your tailored next steps are below." });
     } catch (e: any) {
+      // The solar results above are unaffected, so log rather than toast.
       console.error("Plan error:", e);
-      toast({
-        title: "Couldn't generate plan",
-        description: e.message || "Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setPlanLoading(false);
     }
@@ -447,9 +452,9 @@ const PropertyAssessment = () => {
                   </Select>
                 </div>
 
-                {(propertyType === "commercial" || propertyType === "non-profit") ? (
+                {isMultifamily ? null : (propertyType === "commercial" || propertyType === "non-profit") ? (
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <Label className="text-xs text-muted-foreground">Monthly bill</Label>
                       <span className="text-xs text-muted-foreground">~{billToMonthlyKwh(monthlyBill).toLocaleString()} kWh/mo</span>
                     </div>
@@ -481,7 +486,7 @@ const PropertyAssessment = () => {
                         e.target.value = "";
                       }}
                     />
-                    <div className="flex justify-between items-center mb-1.5">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
@@ -679,7 +684,7 @@ const PropertyAssessment = () => {
                         imageryQuality={si.imageryQuality}
                         imageryDate={imageryDateStr}
                         onCostPerWChange={setCostPerW}
-                        financingSlot={billingMode === "vos" && (
+                        financingSlot={billingMode === "vos" && !isMultifamily && (
                           <div className="rounded-lg border border-border bg-card p-4">
                             <Tabs value={financeMode} onValueChange={(v) => setFinanceMode(v as "cash" | "finance")}>
                               <div className="flex items-center gap-3 mb-4">
@@ -691,14 +696,14 @@ const PropertyAssessment = () => {
                               </div>
                               <TabsContent value="finance" className="mt-0 space-y-4">
                                 <div>
-                                  <div className="flex justify-between text-sm mb-2">
+                                  <div className="flex items-baseline gap-2 text-sm mb-2">
                                     <span className="text-muted-foreground">Loan term</span>
-                                    <span className="font-semibold">{loanTermYears} year</span>
+                                    <span className="font-semibold">{loanTermYears} years</span>
                                   </div>
                                   <Slider min={5} max={30} step={5} value={[loanTermYears]} onValueChange={([v]) => setLoanTermYears(v)} />
                                 </div>
                                 <div>
-                                  <div className="flex justify-between text-sm mb-2">
+                                  <div className="flex items-baseline gap-2 text-sm mb-2">
                                     <span className="text-muted-foreground">Interest rate</span>
                                     <span className="font-semibold">{loanRate}%</span>
                                   </div>
