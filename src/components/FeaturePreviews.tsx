@@ -149,7 +149,7 @@ export function ImagePreview({
 // Figures the calculator showed for the sample roof in /solar-potential-preview.jpg (19624
 // Cheyenne Valley, 78664, at its default recommended size) when it was captured on 2026-09-26.
 // Illustrative only: they don't recompute if rates change, so re-capture both together.
-const SAMPLE_ROOF = { systemKw: 8.6, roofMaxKw: 24.8, monthlySavings: 133, paybackYears: 12 };
+const SAMPLE_ROOF = { systemKw: 8.6, roofMaxKw: 24.8, monthlySavings: 133, billOffsetPct: 89 };
 
 /** A compact mock of the calculator: the roof's panel layout beside its headline numbers, in
  *  large type so they read at card size. Static, not interactive. */
@@ -181,8 +181,8 @@ export function CalculatorPreview() {
           <div className="text-2xl font-bold tabular-nums leading-tight text-primary">${SAMPLE_ROOF.monthlySavings}</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Payback</div>
-          <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.paybackYears} years</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Bill offset</div>
+          <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.billOffsetPct}%</div>
         </div>
       </div>
     </div>
