@@ -122,15 +122,12 @@ export function ImagePreview({
   alt,
   placeholder,
   position = "center",
-  credit,
 }: {
   src: string;
   alt: string;
   /** Shown behind the image while it loads or if it's missing. */
   placeholder: React.ReactNode;
   position?: "center" | "top";
-  /** Attribution for third-party imagery, shown small in the corner. */
-  credit?: string;
 }) {
   return (
     <div className="relative border-b overflow-hidden bg-muted/20" style={{ height: "232px" }}>
@@ -145,11 +142,55 @@ export function ImagePreview({
           (e.target as HTMLImageElement).style.display = "none";
         }}
       />
-      {credit && (
-        <span className="absolute bottom-1 right-1.5 rounded bg-black/40 px-1 text-[9px] leading-tight text-white/90">
-          {credit}
-        </span>
-      )}
     </div>
   );
 }
+
+// Figures the calculator showed for the sample roof in /solar-potential-preview.jpg (19624
+// Cheyenne Valley, 78664, at its default recommended size) when it was captured on 2026-09-26.
+// Illustrative only: they don't recompute if rates change, so re-capture both together.
+const SAMPLE_ROOF = { systemKw: 8.6, roofMaxKw: 24.8, monthlySavings: 133, paybackYears: 12 };
+
+/** A compact mock of the calculator: the roof's panel layout beside its headline numbers, in
+ *  large type so they read at card size. Static, not interactive. */
+export function CalculatorPreview() {
+  const fillPct = Math.round((SAMPLE_ROOF.systemKw / SAMPLE_ROOF.roofMaxKw) * 100);
+  return (
+    <div className="pointer-events-none relative flex border-b" style={{ height: "232px" }}>
+      <div className="relative w-[56%] overflow-hidden bg-muted/20">
+        <img
+          src="/solar-potential-preview.jpg"
+          alt="Solar panel layout drawn on a house roof in the calculator"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+      </div>
+      <div className="relative flex flex-1 flex-col justify-center gap-3 border-l bg-muted/20 px-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">System size</div>
+          <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.systemKw} kW</div>
+          <div className="relative mt-1.5 h-1.5 rounded-full bg-muted">
+            <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${fillPct}%` }} />
+            <div
+              className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background"
+              style={{ left: `${fillPct}%` }}
+            />
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Monthly savings</div>
+          <div className="text-2xl font-bold tabular-nums leading-tight text-primary">${SAMPLE_ROOF.monthlySavings}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Payback</div>
+          <div className="text-2xl font-bold tabular-nums leading-tight">{SAMPLE_ROOF.paybackYears} years</div>
+        </div>
+        {/* Imagery attribution, required by Mapbox wherever their imagery appears; kept beside the
+            image rather than on it. */}
+        <span className="absolute bottom-1 right-2 text-[8px] leading-tight text-muted-foreground/70">
+          Imagery © Mapbox © Maxar
+        </span>
+      </div>
+    </div>
+  );
+}
+
