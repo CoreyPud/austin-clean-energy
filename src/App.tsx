@@ -27,6 +27,7 @@ import Sitemap from "./pages/Sitemap";
 import Guides from "./pages/Guides";
 import GuideDetail from "./pages/GuideDetail";
 import Contact from "./pages/Contact";
+import Unsubscribe from "./pages/Unsubscribe";
 import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
 import AdminSolarHelpRequests from "./pages/AdminSolarHelpRequests";
@@ -114,6 +115,7 @@ const AppRoutes = () => {
           <Route path="/guides/:slug" element={<GuideDetail />} />
           <Route path="/sitemap" element={<Sitemap />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/join-the-community" element={<JoinCommunity />} />
           <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
           <Route path="/building-energy-usage" element={<BuildingEnergyUsage />} />
