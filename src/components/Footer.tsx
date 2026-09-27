@@ -125,7 +125,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="https://data.austintexas.gov/resource/3syk-w9eu.json"
+                  href="https://data.austintexas.gov/Building-and-Development/Issued-Construction-Permits/3syk-w9eu/about_data"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/70 hover:text-white transition-colors"
