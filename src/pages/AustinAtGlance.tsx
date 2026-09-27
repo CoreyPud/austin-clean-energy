@@ -524,8 +524,9 @@ const AustinAtGlance = () => {
       {/* Feature cards */}
       <section className="py-20 container mx-auto px-4">
         <div className="space-y-16 max-w-5xl mx-auto">
-          {/* Search across all tools */}
-          <div className="max-w-md relative">
+          {/* Search across all tools, with jump links attached right below */}
+          <div>
+            <div className="max-w-md relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="text"
