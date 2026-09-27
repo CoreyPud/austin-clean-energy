@@ -551,6 +551,22 @@ const AustinAtGlance = () => {
                 {matchCount} {matchCount === 1 ? "tool matches" : "tools match"} “{query.trim()}”
               </p>
             )}
+            </div>
+
+            {/* Jump links to each visible section */}
+            {visibleSections.length > 0 && (
+              <nav aria-label="Sections" className="mt-6 flex flex-wrap gap-2">
+                {visibleSections.map(({ id, title }) => (
+                  <a
+                    key={id}
+                    href={`#${id}`}
+                    className="rounded-full border bg-background px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    {title}
+                  </a>
+                ))}
+              </nav>
+            )}
           </div>
 
           {visibleSections.length === 0 ? (
@@ -562,19 +578,6 @@ const AustinAtGlance = () => {
             </div>
           ) : (
             <>
-              {/* Jump links to each visible section */}
-              <nav aria-label="Sections" className="flex flex-wrap gap-2">
-                {visibleSections.map(({ id, title }) => (
-                  <a
-                    key={id}
-                    href={`#${id}`}
-                    className="rounded-full border bg-background px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                  >
-                    {title}
-                  </a>
-                ))}
-              </nav>
-
               {visibleSections.map(({ id, title, cards }) => (
                 <div key={id} id={id} className="scroll-mt-8">
                   <h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">{title}</h2>
