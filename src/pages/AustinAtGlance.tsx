@@ -524,8 +524,9 @@ const AustinAtGlance = () => {
       {/* Feature cards */}
       <section className="py-20 container mx-auto px-4">
         <div className="space-y-16 max-w-5xl mx-auto">
-          {/* Search across all tools */}
-          <div className="max-w-md relative">
+          {/* Search across all tools, with jump links attached right below */}
+          <div>
+            <div className="max-w-md relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="text"
@@ -550,6 +551,22 @@ const AustinAtGlance = () => {
                 {matchCount} {matchCount === 1 ? "tool matches" : "tools match"} “{query.trim()}”
               </p>
             )}
+            </div>
+
+            {/* Jump links to each visible section */}
+            {visibleSections.length > 0 && (
+              <nav aria-label="Sections" className="mt-6 flex flex-wrap gap-2">
+                {visibleSections.map(({ id, title }) => (
+                  <a
+                    key={id}
+                    href={`#${id}`}
+                    className="rounded-full border bg-background px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    {title}
+                  </a>
+                ))}
+              </nav>
+            )}
           </div>
 
           {visibleSections.length === 0 ? (
@@ -561,19 +578,6 @@ const AustinAtGlance = () => {
             </div>
           ) : (
             <>
-              {/* Jump links to each visible section */}
-              <nav aria-label="Sections" className="flex flex-wrap gap-2">
-                {visibleSections.map(({ id, title }) => (
-                  <a
-                    key={id}
-                    href={`#${id}`}
-                    className="rounded-full border bg-background px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                  >
-                    {title}
-                  </a>
-                ))}
-              </nav>
-
               {visibleSections.map(({ id, title, cards }) => (
                 <div key={id} id={id} className="scroll-mt-8">
                   <h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">{title}</h2>
