@@ -457,7 +457,7 @@ function SavingsEquation({ year, showTip, hideTip }: { year: YearKey; showTip: S
               <div
                 className="pvb-eqseg pvb-eqseg-margin pvb-peaker"
                 style={{ height: (pMargin / maxV) * chartH }}
-                onMouseMove={(e) => showTip(e, [`Peaker margin: $${pMargin.toFixed(2)}/MWh. kept, not sold to anyone`])}
+                onMouseMove={(e) => showTip(e, [`Peaker margin: $${pMargin.toFixed(2)}/MWh — kept, not sold to anyone`])}
                 onMouseLeave={hideTip}
               />
             </div>
@@ -768,7 +768,7 @@ function Caveats() {
       <p>
         <b>Gas price volatility — now modeled, not assumed:</b> the peaker's cost line uses real EIA Henry Hub
         monthly average prices, not one fixed number. Those actually ranged from <b>$1.49/MMBtu (March 2024)</b> to{" "}
-        <b>$4.19/MMBtu (February 2025)</b>. a nearly 3&times; swing — which moves the peaker's marginal
+        <b>$4.19/MMBtu (February 2025)</b> — a nearly 3&times; swing — which moves the peaker's marginal
         cost from roughly <b>$20/MWh to $49/MWh</b> month to month. 2024 was a historically cheap gas year; 2025 was
         not. This is still only the past: nothing here forecasts where gas prices go from here, and that uncertainty
         cuts both ways for the peaker's future economics. (Sep&ndash;Dec 2025 gas prices are estimated from EIA's
