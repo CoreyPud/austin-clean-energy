@@ -220,7 +220,7 @@ export default function LoadEstimator({ className = "" }: { className?: string }
             Each category converts to peak MW the same way the base tool does — annual energy use ÷ 8,760 hours
             ÷ a load factor (or, where noted, entered directly as peak MW). Every default is editable. Figures
             marked <span className="le-badge le-sourced">sourced</span> come from a cited benchmark; figures
-            marked <span className="le-badge le-assumption">assumption</span> are starting points.
+            marked <span className="le-badge le-assumption">assumption</span> are starting points —
             adjust them if you have a better basis.
           </p>
 
