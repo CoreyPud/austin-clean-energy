@@ -48,10 +48,13 @@ const AddressAutocomplete = ({ id, value, onChange, onPlaceSelected, onKeyDown, 
   // Attach Places Autocomplete once the SDK is available
   useEffect(() => {
     if (!mapsReady || !inputRef.current || autocompleteRef.current) return;
+    // The SDK can report ready before (or without) google.maps.places existing — fall back to a plain input.
+    const gmaps = window.google?.maps;
+    if (!gmaps?.places?.Autocomplete || !gmaps.LatLngBounds) return;
 
-    const bounds = new window.google.maps.LatLngBounds(AUSTIN_BOUNDS.sw, AUSTIN_BOUNDS.ne);
+    const bounds = new gmaps.LatLngBounds(AUSTIN_BOUNDS.sw, AUSTIN_BOUNDS.ne);
 
-    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+    const ac = new gmaps.places.Autocomplete(inputRef.current, {
       types: ["address"],
       componentRestrictions: { country: "us" },
       bounds,
