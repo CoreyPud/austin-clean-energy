@@ -99,6 +99,13 @@ export default function CouncilDecisions() {
     [data],
   );
 
+  // Debounce search so typing doesn't re-filter thousands of rows per keystroke.
+  const [dq, setDq] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDq(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
   const rows = useMemo(() => {
     let ds = data?.decisions ?? [];
     if (climateOnly) ds = ds.filter((d) => d.isClimate);
@@ -106,12 +113,18 @@ export default function CouncilDecisions() {
     if (closedOnly) ds = ds.filter((d) => d.decidedInClosedSession);
     if (topic) ds = ds.filter((d) => d.topic === topic);
     if (outcome) ds = ds.filter((d) => d.outcome === outcome);
-    if (q) {
-      const s = q.toLowerCase();
+    if (dq) {
+      const s = dq.toLowerCase();
       ds = ds.filter((d) => `${d.title} ${d.summary} ${d.topic}`.toLowerCase().includes(s));
     }
     return ds;
-  }, [data, climateOnly, showRoutine, closedOnly, topic, outcome, q]);
+  }, [data, climateOnly, showRoutine, closedOnly, topic, outcome, dq]);
+
+  // Only draw a page of results at a time; reset when filters change.
+  const PAGE_SIZE = 50;
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  useEffect(() => setLimit(PAGE_SIZE), [climateOnly, showRoutine, closedOnly, topic, outcome, dq]);
+  const visibleRows = rows.slice(0, limit);
 
   useSeo({
     title: "Climate & Energy Decisions",
@@ -171,7 +184,7 @@ export default function CouncilDecisions() {
             </div>
 
             <div className="divide-y divide-border">
-              {rows.map((d) => (
+              {visibleRows.map((d) => (
                 <article key={d.id} className={`grid grid-cols-[92px_1fr] gap-4 py-5 ${d.decidedInClosedSession ? "rounded-md bg-rose-500/5 -mx-3 px-3" : ""}`}>
                   <div className="text-xs">
                     <div className="font-mono tabular-nums">{d.meetingDate}</div>
@@ -213,6 +226,17 @@ export default function CouncilDecisions() {
               ))}
               {rows.length === 0 && <p className="py-10 text-sm text-muted-foreground">No decisions match these filters.</p>}
             </div>
+            {rows.length > limit && (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setLimit((l) => l + PAGE_SIZE)}
+                  className="rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-muted"
+                >
+                  Load more ({rows.length - limit} remaining)
+                </button>
+              </div>
+            )}
 
             <footer className="border-t border-border pt-4 text-xs text-muted-foreground max-w-2xl">
               Extracted from Austin City Council{" "}
