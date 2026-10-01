@@ -47,7 +47,7 @@ const NREL: Cell = {
   basis: "industry",
   note: "National NREL Annual Technology Baseline O&M and capital rates applied to Austin Energy's ownership share of EIA-860 capacity — not Austin Energy's books.",
 };
-const IN_PPA: Cell = { basis: "ae_calc", note: "Included in the contract price; PPAs carry no separate plant cost." };
+const IN_PPA: Cell = null;
 const fossil = (f: string): Cell => ({
   basis: "eia_calc",
   note: `Fuel burned at each plant (EIA Form 923) x Texas electric-utility average ${f} price (EIA). Not Austin Energy's actual invoices.`,
@@ -82,7 +82,7 @@ const ROWS: Row[] = [
   },
 ];
 
-const CellView = ({ c }: { c: Cell }) => (c ? <SourceBadge basis={c.basis} note={c.note} /> : <span>—</span>);
+const CellView = ({ c }: { c: Cell }) => (c ? <SourceBadge basis={c.basis} note={c.note} /> : <span className="text-xs text-muted-foreground">Included in contract price</span>);
 
 export function SourceMatrix({ data }: { data: PowerMoneyData }) {
   const ppas = Object.values(data.assumptions.plantPpas ?? {});
