@@ -295,7 +295,7 @@ const AustinAtGlance = () => {
         {
           key: "power-money",
           to: "/power-money",
-          title: "Power Money",
+          title: "Price of electricity at different stages from different sources",
           description:
             "How many dollars Austin Energy customers spend on coal, gas, nuclear, wind and solar each year, as system totals and per household.",
           cta: "See the Spending",
