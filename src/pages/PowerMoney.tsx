@@ -1,5 +1,6 @@
 import { SourceMatrix } from "@/components/power-money/SourceProvenance";
 import { useEffect, useMemo, useState } from "react";
+import { SourceMatrix } from "@/components/power-money/SourceProvenance";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -399,12 +400,12 @@ const PowerMoney = () => {
               <CardHeader>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <CardTitle>Dollars by fuel source, by year</CardTitle>
+                    <CardTitle>Dollars by supply source, by year</CardTitle>
                     <CardDescription>
                       {basis === "total"
-                        ? `Total Austin Energy cost — ${LAYER_LABEL[layer].toLowerCase()}`
-                        : `Residential share of that cost, per customer — ${LAYER_LABEL[layer].toLowerCase()}`}{" "}
-                      · 2001–{data.years[data.years.length - 1]?.year}
+                        ? "Total Austin Energy cost\u00a0"
+                        : `Residential share of that cost, per customer — ${LAYER_LABEL[layer].toLowerCase()} · `}
+                      2001–{data.years[data.years.length - 1]?.year}
                     </CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">
