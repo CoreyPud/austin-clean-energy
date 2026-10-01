@@ -290,22 +290,6 @@ const AustinAtGlance = () => {
             </div>
           ),
         },
-        {
-          key: "decarb-dashboard",
-          to: "/decarb-dashboard",
-          title: "Path to Zero Emissions by 2035",
-          description:
-            "Model what it would take for Austin to reach zero emissions by 2035. Adjust solar buildout, EV adoption, and efficiency targets to see the emissions impact.",
-          cta: "Learn More",
-          preview: (
-            <ImagePreview
-              src="/2035-zero-calc-preview.png"
-              alt="Path to 2035 net zero simulator"
-              position="top"
-              placeholder={<span className="text-xs opacity-40">Preview</span>}
-            />
-          ),
-        },
       ],
       "austin-energy": [
         {
@@ -337,24 +321,6 @@ const AustinAtGlance = () => {
                   ))}
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          ),
-        },
-        {
-          key: "atb-options",
-          to: "/atb-options",
-          title: "ATB Options",
-          description:
-            "Browse NREL's projected costs for new solar, wind, storage, gas, nuclear and more through 2050, and filter by technology.",
-          cta: "Compare Technologies",
-          preview: (
-            <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Zap className="h-7 w-7 text-primary" />
-              </div>
-              <span className="text-xs text-muted-foreground text-center px-6">
-                NREL Annual Technology Baseline, 2022–2050
-              </span>
             </div>
           ),
         },
@@ -505,6 +471,40 @@ const AustinAtGlance = () => {
                 Learn the grid, prices, and Austin's choices
               </span>
             </div>
+          ),
+        },
+        {
+          key: "atb-options",
+          to: "/atb-options",
+          title: "ATB Options",
+          description:
+            "Browse NREL's projected costs for new solar, wind, storage, gas, nuclear and more through 2050, and filter by technology.",
+          cta: "Compare Technologies",
+          preview: (
+            <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Zap className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground text-center px-6">
+                NREL Annual Technology Baseline, 2022–2050
+              </span>
+            </div>
+          ),
+        },
+        {
+          key: "decarb-dashboard",
+          to: "/decarb-dashboard",
+          title: "Path to Zero Emissions by 2035",
+          description:
+            "Model what it would take for Austin to reach zero emissions by 2035. Adjust solar buildout, EV adoption, and efficiency targets to see the emissions impact.",
+          cta: "Learn More",
+          preview: (
+            <ImagePreview
+              src="/2035-zero-calc-preview.png"
+              alt="Path to 2035 net zero simulator"
+              position="top"
+              placeholder={<span className="text-xs opacity-40">Preview</span>}
+            />
           ),
         },
       ],
