@@ -11,8 +11,8 @@ type PageKey = "overview" | "members" | "decisions" | "vote";
 export const PAGES: Record<PageKey, { to: string; title: string; description: string; cta: string; icon: LucideIcon }> = {
   overview: {
     to: "/council",
-    title: "Who Really Influences Council",
-    description: "Campaign finance and lobbying by industry, and the companies funding city hall.",
+    title: "Campaign Finance and Austin City Council",
+    description: "Campaign finance and lobbying by industry.",
     cta: "See the influence picture",
     icon: Landmark,
   },
