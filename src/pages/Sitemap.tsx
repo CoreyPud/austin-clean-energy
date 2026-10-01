@@ -100,6 +100,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/atb-options",
+    title: "ATB Options",
+    description: "Browse and filter NREL's projected costs for solar, wind, storage, gas and more.",
+    icon: Zap,
+  },
+  {
     path: "/kwh-cost",
     title: "kWh Cost",
     description: "Explore Austin electricity price spreads and the daily arbitrage window batteries use.",

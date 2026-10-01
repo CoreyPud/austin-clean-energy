@@ -66,6 +66,7 @@ import CaseForAustinEnergy from "./pages/CaseForAustinEnergy";
 import AdminChartGenerator from "./pages/AdminChartGenerator";
 import NonprofitSolarLender from "./pages/NonprofitSolarLender";
 import KwhCostPage from "./pages/KwhCost";
+import AtbOptions from "./pages/AtbOptions";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +134,7 @@ const AppRoutes = () => {
           <Route path="/case-for-austin-energy" element={<CaseForAustinEnergy />} />
           <Route path="/nonprofit-solar-lender" element={<NonprofitSolarLender />} />
           <Route path="/kwh-cost" element={<KwhCostPage />} />
+          <Route path="/atb-options" element={<AtbOptions />} />
         </Route>
 
         {/* Pages without footer */}
