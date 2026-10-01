@@ -341,6 +341,24 @@ const AustinAtGlance = () => {
           ),
         },
         {
+          key: "atb-options",
+          to: "/atb-options",
+          title: "ATB Options",
+          description:
+            "Browse NREL's projected costs for new solar, wind, storage, gas, nuclear and more through 2050, and filter by technology.",
+          cta: "Compare Technologies",
+          preview: (
+            <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Zap className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground text-center px-6">
+                NREL Annual Technology Baseline, 2022–2050
+              </span>
+            </div>
+          ),
+        },
+        {
           key: "kwh-cost",
           to: "/kwh-cost",
           title: "kWh Cost",
