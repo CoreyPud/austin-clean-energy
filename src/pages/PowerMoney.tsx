@@ -511,7 +511,7 @@ const PowerMoney = () => {
                   <TrendingDown className="h-5 w-5" /> Effective cost per MWh
                 </CardTitle>
                 <CardDescription>
-                  What each fuel cost per megawatt-hour of energy generated or contracted — not a retail or all-in
+                  What each supply type cost per megawatt-hour of energy generated or contracted — not a retail or all-in
                   price. Excludes transmission, distribution, congestion and other grid charges. Gas volatility —
                   including the 2021 winter storm spike — shows up here first.
                 </CardDescription>
