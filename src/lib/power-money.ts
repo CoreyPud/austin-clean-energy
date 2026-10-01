@@ -109,8 +109,8 @@ export type Basis = "total" | "household";
 export type CostLayer = "fuel" | "plant" | "system";
 
 export const LAYER_LABEL: Record<CostLayer, string> = {
-  fuel: "Fuel only",
-  plant: "Fuel + plant costs",
+  fuel: "Energy only",
+  plant: "Energy + plant costs",
   system: "Full system cost",
 };
 
