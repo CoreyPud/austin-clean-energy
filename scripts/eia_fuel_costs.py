@@ -77,6 +77,35 @@ CONTRACTED_USD_PER_MWH = {
     "other": [(2001, 0.0)],
 }
 
+# Per-plant solar PPA prices, $/MWh, overriding the flat solar schedule above.
+# basis: ae_doc = stated in an Austin Energy / City document; ae_calc = calculated
+# from a City document (estimated annual contract amount / actual EIA output);
+# reported = press report of the contract price; estimate = no public price found.
+_EDIMS = "https://services.austintexas.gov/edims/document.cfm?id="
+PLANT_PPA_USD_PER_MWH = {
+    57699: {"name": "Webberville (2011)", "usdPerMwh": 174.0, "basis": "ae_calc",
+            "note": "Council RCA, Feb 12 2009: est. $10,000,000/yr for 30 MW; divided by ~57,500 MWh/yr actual EIA output.",
+            "url": _EDIMS + "125999"},
+    59994: {"name": "Roserock (2016)", "usdPerMwh": 48.0, "basis": "ae_doc",
+            "note": "Austin Energy briefing to the Generation Resource Planning Task Force, Jun 4 2014, prices the recent West Texas solar contract at $48-55/MWh; council award reported under 5 cents/kWh. Low end used.",
+            "url": _EDIMS + "211783"},
+    60436: {"name": "East Pecos (2017)", "usdPerMwh": 40.0, "basis": "reported",
+            "note": "Approved Sep 2015; Austin Energy said prices would be under 4 cents/kWh (Utility Dive). Upper bound used.",
+            "url": "https://www.utilitydive.com/news/austin-energy-approved-for-300-mw-utility-solar-buy-under-4kwh/406752/"},
+    60581: {"name": "Upton County (2018)", "usdPerMwh": 40.0, "basis": "reported",
+            "note": "Part of the same 2015 approval, under 4 cents/kWh (Utility Dive). Upper bound used.",
+            "url": "https://www.utilitydive.com/news/austin-energy-approved-for-300-mw-utility-solar-buy-under-4kwh/406752/"},
+    61368: {"name": "Midway (2019)", "usdPerMwh": 33.0, "basis": "ae_calc",
+            "note": "Council RCA, Dec 14 2017: est. $10-12M/yr for 150-180 MW; $11M midpoint divided by ~330,000 MWh/yr actual EIA output.",
+            "url": _EDIMS + "289144"},
+    57659: {"name": "East Blackland (2021)", "usdPerMwh": 38.0, "basis": "ae_calc",
+            "note": "Council RCA, Oct 18 2018: est. $11,000,000/yr for 144 MW; divided by ~290,000 MWh/yr actual EIA output.",
+            "url": _EDIMS + "307573"},
+    63329: {"name": "Aragorn (2021)", "usdPerMwh": 30.0, "basis": "estimate",
+            "note": "No public contract price found. Estimate based on Texas solar PPA prices at the time.",
+            "url": None},
+}
+
 # Approximate Austin Energy residential customer counts (published AE annual reports,
 # linearly interpolated between anchor years). Used only for the per-household view.
 AE_RES_CUSTOMERS = {2001: 318000, 2005: 340000, 2010: 366000, 2015: 400000,
@@ -268,6 +297,8 @@ def main():
         if cpb and mmbtu > 0:
             f["fuel_usd"] += mmbtu * share * cpb
             f["cost_reported"] = True
+        elif plant in PLANT_PPA_USD_PER_MWH:
+            f["contracted_usd"] += max(mwh, 0.0) * share * PLANT_PPA_USD_PER_MWH[plant]["usdPerMwh"]
         elif group in CONTRACTED_USD_PER_MWH:
             f["contracted_usd"] += max(mwh, 0.0) * share * rate_for(group, year)
 
@@ -338,6 +369,7 @@ def main():
         "years": out_years,
         "assumptions": {
             "contractedUsdPerMwh": CONTRACTED_USD_PER_MWH,
+            "plantPpas": {str(k): v for k, v in PLANT_PPA_USD_PER_MWH.items()},
             "residentialShareOfSales": RES_SHARE_OF_SALES,
             "aeResidentialCustomers": AE_RES_CUSTOMERS,
             "aePct": {str(k): v for k, v in AE_PCT.items()},

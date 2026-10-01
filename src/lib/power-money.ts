@@ -51,6 +51,7 @@ export interface PowerMoneyData {
   years: PowerMoneyYear[];
   assumptions: {
     contractedUsdPerMwh: Record<string, [number, number][]>;
+    plantPpas?: Record<string, { name: string; usdPerMwh: number; basis: string; note: string; url: string | null }>;
     residentialShareOfSales: number;
     aeResidentialCustomers: Record<string, number>;
     aePct: Record<string, number>;

@@ -568,6 +568,8 @@ const PowerMoney = () => {
               </CardContent>
             </Card>
 
+            <SourceMatrix data={data} />
+
             {/* Side-by-side all-in cost per source */}
             <Card>
               <CardHeader>
@@ -691,7 +693,9 @@ const PowerMoney = () => {
                   Honest take: this is the closest apples-to-apples comparison the public data supports, but the
                   segments do not mean the same thing for every source. Wind, solar, biomass and hydro come through
                   power purchase agreements — the contract price is already all-in, so they carry no separate plant
-                  segment and their rate is a documented assumption rather than a reported cost. Gas, coal and nuclear
+                  segment. Solar uses per-contract prices from council documents (see "How solid is each number?"
+                  above); wind, biomass and nuclear fuel are still our estimates. None of the bars include backup
+                  power for when the sun or wind drops. Gas, coal and nuclear
                   show reported fuel cost plus modeled O&amp;M and capital / debt service at NREL-range rates, not
                   Austin Energy's books. The system segment — transmission, distribution, ERCOT congestion,
                   ancillary services and administration — genuinely cannot be attributed to one source, so it is
