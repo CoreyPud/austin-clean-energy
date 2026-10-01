@@ -24,7 +24,7 @@ for sheet, (key, label, unit) in METRICS.items():
         if TECH_INCLUDE and r[4] not in TECH_INCLUDE: continue
         v = [round(r[i], 4 if key == "cf" else 2) if isinstance(r[i], (int, float)) else None for i in yi]
         if all(x is None for x in v): continue
-        rows.append({"m": key, "f": r[1], "c": r[2], "y": r[3], "t": r[4], "d": r[5], "n": r[6], "v": v})
+        rows.append({"m": key, "f": "R&D" if r[1] == "RD" else r[1], "c": r[2], "y": r[3], "t": r[4], "d": r[5], "n": r[6], "v": v})
 out = {"source": "NREL Annual Technology Baseline 2024 v3 workbook", "url": "https://atb.nrel.gov/electricity/2024/data",
        "years": years, "metrics": {k: {"label": l, "unit": u} for k, l, u in METRICS.values()},
        "techLabels": TECH_LABELS, "rows": rows}
