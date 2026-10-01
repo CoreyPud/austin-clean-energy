@@ -254,7 +254,7 @@ const AustinAtGlance = () => {
         {
           key: "building-energy-usage",
           to: "/building-energy-usage",
-          title: "Building Energy Usage",
+          title: "Building Demand Growth 2020-2025 based on permits",
           description:
             "Estimated annual electricity load of newly permitted Austin buildings, stacked by property type using ECAD and third-party benchmarks.",
           cta: "Learn More",
