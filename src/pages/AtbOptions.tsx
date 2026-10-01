@@ -81,6 +81,7 @@ export default function AtbOptions() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, metric, costCase, techs, crp, q, crpOptions]);
 
+  const missing = techs.filter((t) => !rows.some((r) => r.t === t));
   const yi = data ? data.years.indexOf(year) : -1;
   const meta = data?.metrics[metric];
   const fmt = (v: number | null) =>
@@ -160,6 +161,11 @@ export default function AtbOptions() {
                   {costCase} outlook · {meta?.unit === "fraction" ? "share of the year at full output" : meta?.unit} ·
                   {rows.length > MAX_LINES ? ` showing the ${MAX_LINES} lowest in ${year} of ${rows.length} matches` : ` ${rows.length} matches`}
                 </CardDescription>
+                {missing.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No {meta?.label.toLowerCase()} data for {missing.map(label).join(", ")} with these filters — try another measure or cost recovery period.
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 {chartRows.length === 0 ? (
