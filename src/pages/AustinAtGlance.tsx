@@ -476,7 +476,7 @@ const AustinAtGlance = () => {
         {
           key: "atb-options",
           to: "/atb-options",
-          title: "ATB Options",
+          title: "NREL Technology Database (ATB)",
           description:
             "Browse NREL's projected costs for new solar, wind, storage, gas, nuclear and more through 2050, and filter by technology.",
           cta: "Compare Technologies",
