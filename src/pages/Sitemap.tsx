@@ -88,6 +88,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/gets",
+    title: "GETs vs. Peaker",
+    description: "How grid-enhancing technologies compare with a gas peaker for adding grid capacity.",
+    icon: Gauge,
+  },
+  {
     path: "/case-for-austin-energy",
     title: "The Case for Austin Energy",
     description: "How Austin's municipal utility compares to deregulated Texas markets on price, reliability, mix, and city revenue.",
