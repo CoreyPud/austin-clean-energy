@@ -62,6 +62,7 @@ import CourseLogin from "./pages/CourseLogin";
 import AdminCourseResults from "./pages/AdminCourseResults";
 import LoadEstimator from "./pages/LoadEstimator";
 import PeakerVsBatteryPage from "./pages/PeakerVsBattery";
+import GetsPage from "./pages/Gets";
 import CaseForAustinEnergy from "./pages/CaseForAustinEnergy";
 import AdminChartGenerator from "./pages/AdminChartGenerator";
 import NonprofitSolarLender from "./pages/NonprofitSolarLender";
@@ -131,6 +132,7 @@ const AppRoutes = () => {
           <Route path="/course/login" element={<CourseLogin />} />
           <Route path="/load-estimator" element={<LoadEstimator />} />
           <Route path="/peaker-vs-battery" element={<PeakerVsBatteryPage />} />
+          <Route path="/gets" element={<GetsPage />} />
           <Route path="/case-for-austin-energy" element={<CaseForAustinEnergy />} />
           <Route path="/nonprofit-solar-lender" element={<NonprofitSolarLender />} />
           <Route path="/kwh-cost" element={<KwhCostPage />} />
