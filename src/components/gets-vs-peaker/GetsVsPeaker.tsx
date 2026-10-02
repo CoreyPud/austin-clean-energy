@@ -81,7 +81,7 @@ export default function GetsVsPeaker({ className = "" }: { className?: string })
       <div className="gvp-wrap">
         <div className="gvp-kicker">
           <span className="gvp-kicker-rule" />
-          Secret Vote — Documentary
+          Austin Clean Energy · Grid Planning
         </div>
         <h1 className="gvp-h1">Grid-Enhancing Technologies vs. the Peaker</h1>
         <Rich as="p" className="gvp-lede" html={LEDE_HTML} />
