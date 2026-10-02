@@ -7,6 +7,7 @@ import {
   Gauge,
   BatteryCharging,
   GraduationCap,
+  Network,
   Search,
   X,
 } from "lucide-react";
@@ -487,6 +488,24 @@ const AustinAtGlance = () => {
               </div>
               <span className="text-xs text-muted-foreground text-center px-6">
                 NREL Annual Technology Baseline, 2022–2050
+              </span>
+            </div>
+          ),
+        },
+        {
+          key: "gets",
+          to: "/gets",
+          title: "GETs vs. Peaker",
+          description:
+            "Can grid-enhancing technologies do the job of a new gas peaker? Compare advanced inverters, dynamic line ratings, and storage against new gas capacity.",
+          cta: "Compare",
+          preview: (
+            <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+              <div className="h-16 w-16 rounded-full bg-secondary/15 flex items-center justify-center">
+                <Network className="h-7 w-7 text-secondary" />
+              </div>
+              <span className="text-xs text-muted-foreground text-center px-6">
+                Grid software and hardware vs. new gas capacity
               </span>
             </div>
           ),
