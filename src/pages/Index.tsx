@@ -27,7 +27,7 @@ const CHOICES = [
   },
   {
     to: "/austin-at-a-glance",
-    title: "Austin at a Glance",
+    title: "Forecasts & Tools",
     description: "Track solar and EV growth, energy spending, utility decisions, and Austin's clean energy progress.",
     preview: (
       <ImagePreview
