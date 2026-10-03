@@ -99,6 +99,24 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
     save(snap);
   };
 
+  // The standalone "Save property" button next to the drawer trigger:
+  // signed in -> saves in one click; not signed in -> starts Google sign-in and
+  // the assessment is saved automatically right after the redirect back.
+  const handleSaveDirect = () => {
+    if (!session) {
+      if (!getSnapshot()) {
+        setOpen(true);
+        return toast("Run an assessment first, then save it.");
+      }
+      return signIn();
+    }
+    if (!getSnapshot()) {
+      setOpen(true);
+      return toast("Run an assessment first, then save it.");
+    }
+    handleSaveCurrent();
+  };
+
   const copyLink = async (token: string) => {
     const url = shareUrlFor(token);
     try { await navigator.clipboard.writeText(url); toast.success("Share link copied", { description: "Anyone with the link can view it — no login needed." }); }
@@ -115,76 +133,82 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
   const canSave = !!getSnapshot();
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Bookmark className="h-4 w-4" />
-          My saved properties
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Saved properties</SheetTitle>
-          <SheetDescription>
-            Save an assessment with all your settings and share a view-only link with anyone.
-          </SheetDescription>
-        </SheetHeader>
+    <div className="flex flex-wrap items-center gap-2">
+      <Button onClick={handleSaveDirect} disabled={busy && canSave} className="gap-2">
+        {busy && canSave ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {session ? "Save property" : "Save property (sign in)"}
+      </Button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <Bookmark className="h-4 w-4" />
+            My saved properties
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Saved properties</SheetTitle>
+            <SheetDescription>
+              Save an assessment with all your settings and share a view-only link with anyone.
+            </SheetDescription>
+          </SheetHeader>
 
-        {!session ? (
-          <div className="mt-6 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Sign in to save properties{canSave ? " — the current assessment will be saved right after." : "."}
-            </p>
-            <Button onClick={signIn} className="w-full">Continue with Google</Button>
-          </div>
-        ) : (
-          <div className="mt-6 space-y-5">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span className="truncate">{session.user.email}</span>
-              <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()} className="gap-1">
-                <LogOut className="h-3.5 w-3.5" /> Sign out
+          {!session ? (
+            <div className="mt-6 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Sign in to save properties{canSave ? " — the current assessment will be saved right after." : "."}
+              </p>
+              <Button onClick={signIn} className="w-full">Continue with Google</Button>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-5">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span className="truncate">{session.user.email}</span>
+                <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()} className="gap-1">
+                  <LogOut className="h-3.5 w-3.5" /> Sign out
+                </Button>
+              </div>
+              <Button onClick={handleSaveCurrent} disabled={busy || !canSave} className="w-full gap-2">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {canSave ? "Save current assessment" : "Run an assessment to save it"}
               </Button>
-            </div>
-            <Button onClick={handleSaveCurrent} disabled={busy || !canSave} className="w-full gap-2">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {canSave ? "Save current assessment" : "Run an assessment to save it"}
-            </Button>
 
-            <div className="space-y-3">
-              {loadingList && <p className="text-sm text-muted-foreground">Loading…</p>}
-              {!loadingList && rows.length === 0 && (
-                <p className="text-sm text-muted-foreground">No saved properties yet.</p>
-              )}
-              {rows.map((r) => {
-                const st = r.calculator_state as { systemKw?: number };
-                return (
-                  <div key={r.id} className="rounded-lg border border-border p-3 space-y-2">
-                    <button
-                      className="text-left w-full"
-                      onClick={() => { onOpenSaved(r); setOpen(false); }}
-                    >
-                      <div className="font-medium text-foreground hover:underline">{r.address}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.property_type}
-                        {st?.systemKw ? ` · ${st.systemKw} kW` : ""} · saved {new Date(r.updated_at).toLocaleDateString()}
+              <div className="space-y-3">
+                {loadingList && <p className="text-sm text-muted-foreground">Loading…</p>}
+                {!loadingList && rows.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No saved properties yet.</p>
+                )}
+                {rows.map((r) => {
+                  const st = r.calculator_state as { systemKw?: number };
+                  return (
+                    <div key={r.id} className="rounded-lg border border-border p-3 space-y-2">
+                      <button
+                        className="text-left w-full"
+                        onClick={() => { onOpenSaved(r); setOpen(false); }}
+                      >
+                        <div className="font-medium text-foreground hover:underline">{r.address}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {r.property_type}
+                          {st?.systemKw ? ` · ${st.systemKw} kW` : ""} · saved {new Date(r.updated_at).toLocaleDateString()}
+                        </div>
+                      </button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => copyLink(r.share_token)} className="gap-1">
+                          <LinkIcon className="h-3.5 w-3.5" /> Copy share link
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => remove(r.id)} aria-label="Delete">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
-                    </button>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => copyLink(r.share_token)} className="gap-1">
-                        <LinkIcon className="h-3.5 w-3.5" /> Copy share link
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => remove(r.id)} aria-label="Delete">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+          )}
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 };
 
