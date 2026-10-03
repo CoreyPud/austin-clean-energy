@@ -208,7 +208,7 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
                           {st?.systemKw ? ` · ${st.systemKw} kW` : ""} · saved {new Date(r.updated_at).toLocaleDateString()}
                         </div>
                       </button>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => copyLink(r.share_token)} className="gap-1">
                           <LinkIcon className="h-3.5 w-3.5" /> Copy share link
                         </Button>
