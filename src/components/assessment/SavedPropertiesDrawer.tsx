@@ -5,7 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Bookmark, Link as LinkIcon, Trash2, Loader2, LogOut, Save, Wrench } from "lucide-react";
-import { projectFromSaved } from "@/lib/shared-project";
+import { encodeProjectParam, projectFromSaved } from "@/lib/shared-project";
 import { toast } from "sonner";
 import BatchCsvUpload from "./BatchCsvUpload";
 
@@ -139,7 +139,8 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
       localStorage.setItem("ace-shared-project-v2", JSON.stringify({ ...cur, ...projectFromSaved(r) }));
     } catch { /* ignore */ }
     const paths = ["/solar-bom", "/solar-draft", "/solar-flow"];
-    const opened = paths.map((p) => window.open(`${p}?saved=${r.id}`, "_blank"));
+    const packed = encodeURIComponent(encodeProjectParam(projectFromSaved(r)));
+    const opened = paths.map((p) => window.open(`${p}?saved=${r.id}&p=${packed}`, "_blank"));
     if (opened.some((w) => !w)) toast("Your browser blocked some tabs", { description: "Allow pop-ups for this site to open all three tools." });
   };
 
