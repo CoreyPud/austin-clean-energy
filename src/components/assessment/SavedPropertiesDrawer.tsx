@@ -139,7 +139,8 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
       localStorage.setItem("ace-shared-project-v2", JSON.stringify({ ...cur, ...projectFromSaved(r) }));
     } catch { /* ignore */ }
     const paths = ["/solar-bom", "/solar-draft", "/solar-flow"];
-    const opened = paths.map((p) => window.open(`${p}?saved=${r.id}`, "_blank"));
+    const packed = encodeURIComponent(encodeProjectParam(projectFromSaved(r)));
+    const opened = paths.map((p) => window.open(`${p}?saved=${r.id}&p=${packed}`, "_blank"));
     if (opened.some((w) => !w)) toast("Your browser blocked some tabs", { description: "Allow pop-ups for this site to open all three tools." });
   };
 

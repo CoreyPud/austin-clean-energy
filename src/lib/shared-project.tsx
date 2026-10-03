@@ -76,6 +76,21 @@ export function projectFromSaved(row: SavedRow): Partial<SharedProject> {
   };
 }
 
+/** Encode project fields for a URL so a freshly opened tab can fill in without storage access. */
+export function encodeProjectParam(p: Partial<SharedProject>): string {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+}
+
+function decodeProjectParam(raw: string | null): Partial<SharedProject> | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(decodeURIComponent(escape(atob(raw)))) as Partial<SharedProject>;
+    return v && typeof v === "object" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 export function SharedProjectProvider({ children }: { children: ReactNode }) {
   const [project, setProject] = useState<SharedProject>(() => parseProject(window.localStorage.getItem(STORAGE_KEY)) ?? defaultSharedProject);
 
@@ -83,8 +98,17 @@ export function SharedProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("saved");
-    if (id) {
-      setProject((cur) => (cur.savedId === id ? cur : { ...cur, savedId: id, savedUpdatedAt: null }));
+    // ?p=<encoded details> carries the property's values directly, so the tools fill in
+    // even when this tab can't see the opener's storage or sign-in (e.g. preview iframes).
+    const packed = decodeProjectParam(params.get("p"));
+    if (packed) params.delete("p");
+    if (id || packed) {
+      setProject((cur) => ({
+        ...cur,
+        ...(packed ?? {}),
+        ...(id ? { savedId: id } : {}),
+        savedUpdatedAt: packed?.savedUpdatedAt ?? (id && cur.savedId === id ? cur.savedUpdatedAt : null),
+      }));
       params.delete("saved");
       const qs = params.toString();
       window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash);
