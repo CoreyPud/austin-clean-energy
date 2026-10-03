@@ -486,7 +486,9 @@ const PropertyAssessment = () => {
       setBillingMode(s.billingMode ?? "vos");
       setRestoreStep(2);
     } else {
+      // Batch CSV uploads save "maxFit" instead of a size: open at the most the roof fits.
       if (s.systemKw != null) setSystemKw(s.systemKw);
+      else if (s.maxFit && solarMaxKw > 0) setSystemKw(solarMaxKw);
       if (s.costPerW != null) setCostPerW(s.costPerW);
       pendingRestore.current = null;
       setRestoreStep(0);

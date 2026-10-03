@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Button } from "@/components/ui/button";
 import { Bookmark, Link as LinkIcon, Trash2, Loader2, LogOut, Save } from "lucide-react";
 import { toast } from "sonner";
+import BatchCsvUpload from "./BatchCsvUpload";
 
 export type AssessmentSnapshot = {
   address: string;
@@ -172,6 +173,9 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {canSave ? "Save current assessment" : "Run an assessment to save it"}
               </Button>
+
+              <BatchCsvUpload userId={session.user.id} onFinished={loadRows} />
+
 
               <div className="space-y-3">
                 {loadingList && <p className="text-sm text-muted-foreground">Loading…</p>}
