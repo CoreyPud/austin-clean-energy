@@ -144,7 +144,7 @@ export function SolarBomEstimator() {
   const exportCsv = () => {
     const header = ["Category", "Item", "Specification / Model", "Quantity", "Unit", "Unit Cost", "Estimated Cost"];
     const lines = estimate.rows.map((row) => [row.category, row.item, row.specification, row.quantity, row.unit, row.unitCost.toFixed(2), row.cost.toFixed(2)]);
-    const csv = [header, ...lines].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+    const csv = [header, ...lines].map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     link.download = "solar-bom.csv";
