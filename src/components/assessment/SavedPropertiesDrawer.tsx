@@ -5,7 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Bookmark, Link as LinkIcon, Trash2, Loader2, LogOut, Save, Wrench } from "lucide-react";
-import { projectFromSaved } from "@/lib/shared-project";
+import { encodeProjectParam, projectFromSaved } from "@/lib/shared-project";
 import { toast } from "sonner";
 import BatchCsvUpload from "./BatchCsvUpload";
 
