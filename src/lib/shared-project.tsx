@@ -1,17 +1,37 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+// Project details shared by the Solar Suite tools (SolarBOM Pro, SolarPlanStudio Pro, SolarFlow PM).
+// When opened from a saved property, savedId links back to saved_assessments and the
+// tools re-read that row on load and whenever the tab regains focus, so later edits show up.
+export type FinanceMode = "cash" | "finance";
 
 export type SharedProject = {
   projectName: string;
   address: string;
   systemSizeKw: number;
+  costPerW: number | null;
+  financeMode: FinanceMode;
+  loanTermYears: number | null;
+  loanRate: number | null;
+  billingMode: string | null;
+  savedId: string | null;
+  savedUpdatedAt: string | null;
 };
 
-const STORAGE_KEY = "ace-shared-project-v1";
+const STORAGE_KEY = "ace-shared-project-v2";
 
 export const defaultSharedProject: SharedProject = {
   projectName: "Austin Commercial Rooftop",
   address: "Austin, Texas",
   systemSizeKw: 250,
+  costPerW: null,
+  financeMode: "cash",
+  loanTermYears: null,
+  loanRate: null,
+  billingMode: null,
+  savedId: null,
+  savedUpdatedAt: null,
 };
 
 type SharedProjectContextValue = {
@@ -24,22 +44,51 @@ const SharedProjectContext = createContext<SharedProjectContextValue | null>(nul
 function parseProject(raw: string | null): SharedProject | null {
   if (!raw) return null;
   try {
-    const value = JSON.parse(raw) as Partial<SharedProject>;
-    if (typeof value.projectName !== "string" || typeof value.address !== "string" || typeof value.systemSizeKw !== "number") return null;
-    return { projectName: value.projectName, address: value.address, systemSizeKw: Math.max(0, value.systemSizeKw) };
+    const v = JSON.parse(raw) as Partial<SharedProject>;
+    if (typeof v.projectName !== "string" || typeof v.address !== "string" || typeof v.systemSizeKw !== "number") return null;
+    return { ...defaultSharedProject, ...v, systemSizeKw: Math.max(0, v.systemSizeKw) };
   } catch {
     return null;
   }
 }
 
-export function SharedProjectProvider({ children }: { children: ReactNode }) {
-  const [project, setProject] = useState(defaultSharedProject);
-  const [hydrated, setHydrated] = useState(false);
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
+type SavedRow = { id: string; address: string; label: string | null; calculator_state: unknown; results: unknown; updated_at: string };
+
+/** Map a saved assessment row onto the shared project fields. */
+export function projectFromSaved(row: SavedRow): Partial<SharedProject> {
+  const s = (row.calculator_state ?? {}) as Record<string, unknown>;
+  const si = ((row.results ?? {}) as { solarInsights?: { maxPanels?: number; panelCapacityWatts?: number } }).solarInsights;
+  const maxFitKw = si?.maxPanels && si?.panelCapacityWatts ? Math.round((si.maxPanels * si.panelCapacityWatts) / 100) / 10 : null;
+  const kw = num(s.systemKw) ?? (s.maxFit ? maxFitKw : null);
+  return {
+    savedId: row.id,
+    savedUpdatedAt: row.updated_at,
+    projectName: row.label || row.address.split(",")[0],
+    address: row.address,
+    ...(kw != null ? { systemSizeKw: kw } : {}),
+    costPerW: num(s.costPerW),
+    financeMode: s.financeMode === "finance" ? "finance" : "cash",
+    loanTermYears: num(s.loanTermYears),
+    loanRate: num(s.loanRate),
+    billingMode: typeof s.billingMode === "string" ? s.billingMode : null,
+  };
+}
+
+export function SharedProjectProvider({ children }: { children: ReactNode }) {
+  const [project, setProject] = useState<SharedProject>(() => parseProject(window.localStorage.getItem(STORAGE_KEY)) ?? defaultSharedProject);
+
+  // ?saved=<id> in the URL links the tools to that saved property.
   useEffect(() => {
-    const stored = parseProject(window.localStorage.getItem(STORAGE_KEY));
-    if (stored) setProject(stored);
-    setHydrated(true);
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("saved");
+    if (id) {
+      setProject((cur) => (cur.savedId === id ? cur : { ...cur, savedId: id, savedUpdatedAt: null }));
+      params.delete("saved");
+      const qs = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash);
+    }
     const sync = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY) return;
       const next = parseProject(event.newValue);
@@ -50,8 +99,38 @@ export function SharedProjectProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (hydrated) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
-  }, [hydrated, project]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+  }, [project]);
+
+  const savedId = project.savedId;
+  const savedUpdatedAt = project.savedUpdatedAt;
+
+  // Pull the latest values from the saved property; only overwrite when it changed since last sync.
+  useEffect(() => {
+    if (!savedId) return;
+    let cancelled = false;
+    const refresh = async () => {
+      const { data, error } = await supabase
+        .from("saved_assessments")
+        .select("id, address, label, calculator_state, results, updated_at")
+        .eq("id", savedId)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      if (data.updated_at === savedUpdatedAt) return;
+      setProject((cur) => ({ ...cur, ...projectFromSaved(data as SavedRow) }));
+    };
+    refresh();
+    const onFocus = () => { if (document.visibilityState === "visible") refresh(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    const { data: sub } = supabase.auth.onAuthStateChange((e) => { if (e === "SIGNED_IN") refresh(); });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      sub.subscription.unsubscribe();
+    };
+  }, [savedId, savedUpdatedAt]);
 
   const updateProject = useCallback((updates: Partial<SharedProject>) => {
     setProject((current) => ({ ...current, ...updates }));
