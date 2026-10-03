@@ -173,6 +173,9 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
                 {canSave ? "Save current assessment" : "Run an assessment to save it"}
               </Button>
 
+              <BatchCsvUpload userId={session.user.id} onFinished={loadRows} />
+
+
               <div className="space-y-3">
                 {loadingList && <p className="text-sm text-muted-foreground">Loading…</p>}
                 {!loadingList && rows.length === 0 && (
