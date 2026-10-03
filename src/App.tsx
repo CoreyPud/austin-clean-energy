@@ -68,6 +68,7 @@ import AdminChartGenerator from "./pages/AdminChartGenerator";
 import NonprofitSolarLender from "./pages/NonprofitSolarLender";
 import KwhCostPage from "./pages/KwhCost";
 import AtbOptions from "./pages/AtbOptions";
+import { SolarBomPage, SolarDraftPage, SolarFlowPage } from "./pages/SolarSuite";
 
 const queryClient = new QueryClient();
 
@@ -144,6 +145,9 @@ const AppRoutes = () => {
         <Route path="/property/:pid/:slug?" element={<PropertyPage />} />
         <Route path="/explore" element={<Explore />} />
         <Route path="/embed/area-analysis" element={<EmbedAreaAnalysis />} />
+        <Route path="/solar-bom" element={<SolarBomPage />} />
+        <Route path="/solar-draft" element={<SolarDraftPage />} />
+        <Route path="/solar-flow" element={<SolarFlowPage />} />
         <Route path="/import-solar-data" element={<ImportSolarData />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />

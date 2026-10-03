@@ -1,1 +1,2 @@
 - Public share links for saved assessments read through the security-definer RPC get_shared_assessment(token), never an anon table policy — keeps other users' saves unlistable.
+- Solar Suite tools (/solar-bom, /solar-draft, /solar-flow) share project details through src/lib/shared-project.tsx; a ?saved=<id> link ties them to a saved_assessments row that is re-read on load and tab focus — so later edits to the saved property flow through.
