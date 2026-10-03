@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Link as LinkIcon, Trash2, Loader2, LogOut, Save } from "lucide-react";
+import { Bookmark, Link as LinkIcon, Trash2, Loader2, LogOut, Save, Wrench } from "lucide-react";
+import { projectFromSaved } from "@/lib/shared-project";
 import { toast } from "sonner";
 import BatchCsvUpload from "./BatchCsvUpload";
 
@@ -131,6 +132,17 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
     setRows((r) => r.filter((x) => x.id !== id));
   };
 
+  // Opens all three Solar Suite tools linked to this saved property; each tool re-reads it on focus.
+  const openInSuite = (r: SavedRow) => {
+    try {
+      const cur = JSON.parse(localStorage.getItem("ace-shared-project-v2") || "{}");
+      localStorage.setItem("ace-shared-project-v2", JSON.stringify({ ...cur, ...projectFromSaved(r) }));
+    } catch { /* ignore */ }
+    const paths = ["/solar-bom", "/solar-draft", "/solar-flow"];
+    const opened = paths.map((p) => window.open(`${p}?saved=${r.id}`, "_blank"));
+    if (opened.some((w) => !w)) toast("Your browser blocked some tabs", { description: "Allow pop-ups for this site to open all three tools." });
+  };
+
   const canSave = !!getSnapshot();
 
   return (
@@ -199,6 +211,9 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline" onClick={() => copyLink(r.share_token)} className="gap-1">
                           <LinkIcon className="h-3.5 w-3.5" /> Copy share link
+                        </Button>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => openInSuite(r)}>
+                          <Wrench className="h-3.5 w-3.5" /> Open in Solar Suite
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => remove(r.id)} aria-label="Delete">
                           <Trash2 className="h-3.5 w-3.5" />

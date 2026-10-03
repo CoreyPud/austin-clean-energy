@@ -1088,6 +1088,57 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_bom_snapshots: {
+        Row: {
+          created_at: string
+          grid_voltage: string
+          id: string
+          line_items: Json
+          membrane: string
+          panel_watts: number
+          pricing: Json
+          project_address: string
+          project_name: string
+          system_kw: number
+          total_cost: number
+          total_weight: number
+          user_id: string
+          wind_zone: string
+        }
+        Insert: {
+          created_at?: string
+          grid_voltage: string
+          id?: string
+          line_items: Json
+          membrane: string
+          panel_watts: number
+          pricing: Json
+          project_address: string
+          project_name: string
+          system_kw: number
+          total_cost: number
+          total_weight: number
+          user_id: string
+          wind_zone: string
+        }
+        Update: {
+          created_at?: string
+          grid_voltage?: string
+          id?: string
+          line_items?: Json
+          membrane?: string
+          panel_watts?: number
+          pricing?: Json
+          project_address?: string
+          project_name?: string
+          system_kw?: number
+          total_cost?: number
+          total_weight?: number
+          user_id?: string
+          wind_zone?: string
+        }
+        Relationships: []
+      }
       solar_help_requests: {
         Row: {
           created_at: string
