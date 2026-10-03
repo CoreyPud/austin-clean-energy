@@ -22,6 +22,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { useSharedProject } from "@/lib/shared-project";
 
 type WindZone = "Low" | "Moderate" | "High";
@@ -181,6 +182,11 @@ export function SolarBomEstimator() {
     setSaving(false);
     if (error) { toast.error("Could not save this BOM"); return; }
     toast.success("BOM generated and saved", { description: jobAddress.trim() });
+  }
+
+  async function signIn() {
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.href });
+    if (result.error) toast.error("Sign-in failed");
   }
 
   async function signOut() {
