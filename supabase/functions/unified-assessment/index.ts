@@ -105,16 +105,73 @@ serve(async (req) => {
     // string parsing. The plain Geocoding API this replaced was observed landing 200m+ off for
     // real Austin addresses (e.g. "600 Congress Ave" resolving to a different building blocks
     // away).
-    const findPlaceUrl =
-      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
-      `?input=${encodeURIComponent(address)}&inputtype=textquery&fields=formatted_address,geometry&key=${GOOGLE_KEY}`;
-    const findPlaceResp = await fetch(findPlaceUrl);
-    const findPlaceData = await findPlaceResp.json();
-    const candidate = findPlaceData.status === "OK" ? findPlaceData.candidates?.[0] : null;
-    if (!candidate?.geometry?.location) {
+    //
+    // Bias results to the Austin area and prefer a candidate inside it. Without this, a street
+    // address typed with no city ("1100 Congress Ave") could resolve to a same-named street in
+    // another city, which the bounds check below then rejected as "not in Austin" -- and which
+    // candidate Google ranked first varied between calls, so it failed intermittently.
+    const AUSTIN_BOUNDS = { swLat: 29.90, swLng: -98.15, neLat: 30.75, neLng: -97.35 };
+    const isInAustinArea = (lat: number, lng: number) =>
+      lat >= AUSTIN_BOUNDS.swLat && lat <= AUSTIN_BOUNDS.neLat &&
+      lng >= AUSTIN_BOUNDS.swLng && lng <= AUSTIN_BOUNDS.neLng;
+    type Candidate = { formatted_address?: string; geometry: { location: { lat: number; lng: number } } };
+    let lookupFailed = false;
+    const pickBest = (candidates: any[]): Candidate | null =>
+      candidates.find((c) => c.geometry?.location && isInAustinArea(c.geometry.location.lat, c.geometry.location.lng)) ??
+      candidates.find((c) => c.geometry?.location) ??
+      null;
+    // Never throws: a failed or empty lookup just returns null so the caller can try the next
+    // source. ZERO_RESULTS is a genuine miss; any other status (quota, timeout, bad key, 5xx)
+    // is a failure, retried once and remembered in lookupFailed.
+    const fetchCandidates = async (url: string, listKey: "candidates" | "results"): Promise<Candidate | null> => {
+      let data: any = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          data = await (await fetch(url)).json();
+        } catch (_e) {
+          data = null;
+        }
+        if (data && (data.status === "OK" || data.status === "ZERO_RESULTS")) break;
+        console.warn("Address lookup failed", data?.status, data?.error_message);
+      }
+      if (!data || (data.status !== "OK" && data.status !== "ZERO_RESULTS")) {
+        lookupFailed = true;
+        return null;
+      }
+      return pickBest(data.status === "OK" ? (data[listKey] ?? []) : []);
+    };
+    const findPlace = (input: string) =>
+      fetchCandidates(
+        `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
+          `?input=${encodeURIComponent(input)}&inputtype=textquery&fields=formatted_address,geometry` +
+          `&locationbias=rectangle:${AUSTIN_BOUNDS.swLat},${AUSTIN_BOUNDS.swLng}|${AUSTIN_BOUNDS.neLat},${AUSTIN_BOUNDS.neLng}` +
+          `&key=${GOOGLE_KEY}`,
+        "candidates",
+      );
+    // Second source if Places comes up empty or fails: the plain Geocoding API, also biased to Austin.
+    const geocode = (input: string) =>
+      fetchCandidates(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(input)}` +
+          `&bounds=${AUSTIN_BOUNDS.swLat},${AUSTIN_BOUNDS.swLng}|${AUSTIN_BOUNDS.neLat},${AUSTIN_BOUNDS.neLng}` +
+          `&components=country:US&key=${GOOGLE_KEY}`,
+        "results",
+      );
+    const inArea = (c: Candidate | null) => !!c && isInAustinArea(c.geometry.location.lat, c.geometry.location.lng);
+    const withAustin = /austin/i.test(address) ? address : `${address}, Austin, TX`;
+    let candidate = await findPlace(address);
+    if (!inArea(candidate)) candidate = (await findPlace(withAustin)) ?? candidate;
+    if (!candidate) candidate = await geocode(withAustin);
+    if (!candidate) candidate = await geocode(address);
+    if (!candidate) {
+      // lookupFailed means Google was unreachable/erroring rather than saying the address
+      // doesn't exist, so don't blame the address.
       return new Response(
-        JSON.stringify({ error: "Address not found. Please enter a valid Austin, TX address." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({
+          error: lookupFailed
+            ? "We couldn't look up that address right now. Please try again in a moment."
+            : "Address not found. Please check the street address and try again.",
+        }),
+        { status: lookupFailed ? 503 : 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
     const lat = candidate.geometry.location.lat;
@@ -123,24 +180,25 @@ serve(async (req) => {
     const zipMatch = standardizedAddress.match(/\b(\d{5})\b/);
     const zipCode = zipMatch ? zipMatch[1] : null;
 
-    // Reject only once we have a real geocoded location to check, rather than pattern-matching
-    // the raw user input (which rejected plenty of valid Austin addresses that just didn't
-    // happen to include the word "Austin" or a 787xx zip in what the user typed). Deliberately
-    // generous -- padded well past city limits to cover greater Travis County and immediate
-    // neighbors (Round Rock, Pflugerville, Cedar Park, Buda, Kyle, Manor, Del Valle, Lakeway).
-    // A false positive here just means a non-Austin address sees an assessment that may not be
-    // fully accurate for their utility; a false negative blocks a real user outright, which is worse.
-    const AUSTIN_BOUNDS = { swLat: 29.90, swLng: -98.15, neLat: 30.75, neLng: -97.35 };
-    const inAustinArea =
-      lat >= AUSTIN_BOUNDS.swLat && lat <= AUSTIN_BOUNDS.neLat &&
-      lng >= AUSTIN_BOUNDS.swLng && lng <= AUSTIN_BOUNDS.neLng;
-    if (!inAustinArea) {
+    // Validate, but err heavily toward accepting: an off-target address seeing an assessment
+    // that may not fit their utility is a much smaller problem than blocking a real Austin
+    // user. So only reject when the geocoded point is clearly nowhere near Austin (roughly 70
+    // miles out -- Dallas, Houston, San Antonio, etc.), well past the Austin-area box used for
+    // ranking candidates above.
+    const ACCEPT_BOUNDS = { swLat: 29.30, swLng: -98.90, neLat: 31.30, neLng: -96.70 };
+    const withinAcceptRegion =
+      lat >= ACCEPT_BOUNDS.swLat && lat <= ACCEPT_BOUNDS.neLat &&
+      lng >= ACCEPT_BOUNDS.swLng && lng <= ACCEPT_BOUNDS.neLng;
+    if (Number.isFinite(lat) && Number.isFinite(lng) && !withinAcceptRegion) {
       return new Response(
         JSON.stringify({
           error: `This tool is for Austin, TX properties. "${standardizedAddress}" is too far outside the Austin area.`,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+    if (!isInAustinArea(lat, lng)) {
+      console.warn(`Address outside core Austin area but accepted: ${standardizedAddress} (${lat}, ${lng})`);
     }
 
     // Load admin-editable knowledge files (council-members may have been edited)
