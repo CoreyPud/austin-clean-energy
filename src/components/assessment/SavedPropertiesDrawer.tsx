@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Button } from "@/components/ui/button";
 import { Bookmark, Link as LinkIcon, Trash2, Loader2, LogOut, Save } from "lucide-react";
 import { toast } from "sonner";
+import BatchCsvUpload from "./BatchCsvUpload";
 
 export type AssessmentSnapshot = {
   address: string;
