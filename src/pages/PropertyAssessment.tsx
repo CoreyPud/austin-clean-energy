@@ -48,6 +48,7 @@ import {
 import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, isSsoEligible, buildSolarSummary, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
+import SavedPropertiesDrawer, { type AssessmentSnapshot } from "@/components/assessment/SavedPropertiesDrawer";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-plan";
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
@@ -434,6 +435,80 @@ const PropertyAssessment = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ---- Saved / shared assessments ----
+  const getSnapshot = (): AssessmentSnapshot | null =>
+    results
+      ? {
+          address: results.address || address.trim(),
+          property_type: propertyType,
+          results: { ...results, __quizCompleted: quizCompleted, __councilOutreachScript: councilOutreachScript },
+          calculator_state: {
+            monthlyBill, uploadedKwh, uploadedBillData, billParseSummary, billViewMode,
+            costPerW, systemKw, billingMode, financeMode, loanTermYears, loanRate,
+          },
+        }
+      : null;
+
+  const pendingRestore = useRef<Record<string, any> | null>(null);
+  const [restoreStep, setRestoreStep] = useState(0);
+  const [sharedView, setSharedView] = useState<string | null>(null);
+
+  const openSaved = (row: AssessmentSnapshot) => {
+    const r: any = row.results;
+    const { __quizCompleted, __councilOutreachScript, ...rest } = r || {};
+    setAddress(row.address);
+    setPropertyType(row.property_type);
+    setResults(rest);
+    setQuizCompleted(!!__quizCompleted);
+    setCouncilOutreachScript(__councilOutreachScript ?? null);
+    setShowLifestyleForm(false);
+    setAssessmentRun((n) => n + 1);
+    pendingRestore.current = row.calculator_state as Record<string, any>;
+    setRestoreStep(1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Apply saved settings after the default-reset effects have run, in two passes so the
+  // billing-mode effect doesn't overwrite the saved system size.
+  useEffect(() => {
+    const s = pendingRestore.current;
+    if (!s || restoreStep === 0 || needsResize) return;
+    if (restoreStep === 1) {
+      setMonthlyBill(s.monthlyBill ?? 150);
+      setUploadedKwh(s.uploadedKwh ?? null);
+      setUploadedBillData(s.uploadedBillData ?? null);
+      setBillParseSummary(s.billParseSummary ?? null);
+      if (s.uploadedKwh) setBillParseState("done");
+      setBillViewMode(s.billViewMode ?? "estimate");
+      setFinanceMode(s.financeMode ?? "cash");
+      setLoanTermYears(s.loanTermYears ?? 20);
+      setLoanRate(s.loanRate ?? 6);
+      setBillingMode(s.billingMode ?? "vos");
+      setRestoreStep(2);
+    } else {
+      if (s.systemKw != null) setSystemKw(s.systemKw);
+      if (s.costPerW != null) setCostPerW(s.costPerW);
+      pendingRestore.current = null;
+      setRestoreStep(0);
+    }
+  }, [restoreStep, needsResize]);
+
+  const shareToken = searchParams.get("share");
+  useEffect(() => {
+    if (!shareToken) return;
+    (async () => {
+      const { data, error } = await supabase.rpc("get_shared_assessment", { _token: shareToken });
+      const row = Array.isArray(data) ? data[0] : null;
+      if (error || !row) {
+        toast({ title: "Shared link not found", description: "It may have been deleted.", variant: "destructive" });
+        return;
+      }
+      setSharedView(row.address);
+      openSaved(row as AssessmentSnapshot);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shareToken]);
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
@@ -442,6 +517,13 @@ const PropertyAssessment = () => {
       />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="text-sm text-muted-foreground">
+              {sharedView && <>Viewing a shared assessment for <span className="font-medium text-foreground">{sharedView}</span>. Change anything to explore your own options.</>}
+            </div>
+            <SavedPropertiesDrawer getSnapshot={getSnapshot} onOpenSaved={openSaved} />
+          </div>
+
 
           {/* Address Form */}
           <Card className="mb-8 shadow-lg border-2">

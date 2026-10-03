@@ -1046,6 +1046,48 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_assessments: {
+        Row: {
+          address: string
+          calculator_state: Json
+          created_at: string
+          id: string
+          is_public: boolean
+          label: string | null
+          property_type: string
+          results: Json
+          share_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          calculator_state?: Json
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          label?: string | null
+          property_type: string
+          results: Json
+          share_token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          calculator_state?: Json
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          label?: string | null
+          property_type?: string
+          results?: Json
+          share_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       solar_help_requests: {
         Row: {
           created_at: string
@@ -2006,6 +2048,17 @@ export type Database = {
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       get_council_cron_secret: { Args: never; Returns: string }
+      get_shared_assessment: {
+        Args: { _token: string }
+        Returns: {
+          address: string
+          calculator_state: Json
+          label: string
+          property_type: string
+          results: Json
+          updated_at: string
+        }[]
+      }
       get_sync_solar_cron_secret: { Args: never; Returns: string }
       gettransactionid: { Args: never; Returns: unknown }
       has_role: {

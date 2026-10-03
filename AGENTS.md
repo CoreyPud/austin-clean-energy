@@ -1,0 +1,1 @@
+- Public share links for saved assessments read through the security-definer RPC get_shared_assessment(token), never an anon table policy — keeps other users' saves unlistable.
