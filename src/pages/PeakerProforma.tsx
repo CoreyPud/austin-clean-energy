@@ -91,7 +91,7 @@ function model(i: Inputs) {
   const dep = capex / L;
   const debt = capex * (i.debtShare / 100);
   const equity = capex - debt;
-  const payment = debt > 0 ? pmt(ir, LOAN_TERM, debt) : 0;
+  const payment = debt > 0 ? pmt(ir, i.loanTerm, debt) : 0;
   let bal = debt;
   const rows = [];
   for (let y = 1; y <= L; y++) {
@@ -105,8 +105,8 @@ function model(i: Inputs) {
     const varOm = mwh * i.vom;
     const om = fixedOm + varOm;
     const ebitda = revenue - fuel - om;
-    const interest = y <= LOAN_TERM ? bal * ir : 0;
-    const principal = y <= LOAN_TERM ? payment - interest : 0;
+    const interest = y <= i.loanTerm ? bal * ir : 0;
+    const principal = y <= i.loanTerm ? payment - interest : 0;
     bal = Math.max(0, bal - principal);
     const ebt = ebitda - dep - interest;
     const taxes = Math.max(0, ebt * tax);
@@ -169,8 +169,8 @@ export default function PeakerProforma() {
   }));
 
   const copyCsv = async () => {
-    const head = ["Year", "Gen (MWh)", "Revenue ($M)", "Fuel ($M)", "O&M ($M)", "EBITDA ($M)", "Net Income ($M)", "FCFF ($M)"];
-    const lines = r.rows.map((x) => [x.year, Math.round(x.mwh), m(x.revenue), m(x.fuel), m(x.om), m(x.ebitda), m(x.netIncome), m(x.fcff)].join(","));
+    const head = ["Year", "Gen (MWh)", "Revenue ($M)", "Fuel ($M)", "O&M ($M)", "EBITDA ($M)", "Debt Service ($M)", "Net Income ($M)", "FCFF ($M)"];
+    const lines = r.rows.map((x) => [x.year, Math.round(x.mwh), m(x.revenue), m(x.fuel), m(x.om), m(x.ebitda), m(x.debtService), m(x.netIncome), m(x.fcff)].join(","));
     await navigator.clipboard.writeText([head.join(","), ...lines].join("\n"));
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -209,7 +209,7 @@ export default function PeakerProforma() {
             <Kpi label="Project NPV" value={`$${m(r.npv)}M`} icon={DollarSign} tone={r.npv >= 0 ? "good" : "bad"}
               tip={`Sum of unlevered cash flows discounted at the ${inp.wacc}% WACC.`} />
             <Kpi label="Equity IRR" value={pct(r.equityIrr)} icon={TrendingUp} tone={irrTone(r.equityIrr)}
-              tip={`Levered return on the ${100 - inp.debtShare}% equity outlay, after ${LOAN_TERM}-year debt service (PMT) and taxes.`} />
+              tip={`Levered return on the ${100 - inp.debtShare}% equity outlay, after ${inp.loanTerm}-year debt service (PMT) and taxes.`} />
             <Kpi label="Year 1 EBITDA" value={`$${m(y1.ebitda)}M`} icon={Flame} tone={y1.ebitda >= 0 ? undefined : "bad"}
               tip="Energy + ancillary revenue minus fuel, fixed O&M and variable O&M in the first operating year." />
             <Kpi label="Total CapEx" value={`$${m(r.capex)}M`} icon={Factory}
@@ -218,7 +218,7 @@ export default function PeakerProforma() {
 
           <section className="rounded-lg border border-border bg-card p-4">
             <h2 className="font-semibold">Revenue vs. cost, {inp.life} years ($M)</h2>
-            <p className="text-xs text-muted-foreground mb-3">Costs shown below zero, including {LOAN_TERM}-year loan payments (interest + principal). EBITDA is revenue minus fuel and O&M; "Cash after debt" also subtracts loan payments.</p>
+            <p className="text-xs text-muted-foreground mb-3">Costs shown below zero, including {inp.loanTerm}-year loan payments (interest + principal). EBITDA is revenue minus fuel and O&M; "Cash after debt" also subtracts loan payments.</p>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={barData} stackOffset="sign">
@@ -268,7 +268,7 @@ export default function PeakerProforma() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm tabular-nums">
                 <thead className="text-muted-foreground text-xs border-b border-border">
-                  <tr>{["Year", "Gen (MWh)", "Revenue ($M)", "Fuel ($M)", "O&M ($M)", "EBITDA ($M)", "Net Income ($M)", "FCFF ($M)"].map((h) => <th key={h} className="py-2 px-2 text-right first:text-left font-medium">{h}</th>)}</tr>
+                  <tr>{["Year", "Gen (MWh)", "Revenue ($M)", "Fuel ($M)", "O&M ($M)", "EBITDA ($M)", "Debt Service ($M)", "Net Income ($M)", "FCFF ($M)"].map((h) => <th key={h} className="py-2 px-2 text-right first:text-left font-medium">{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {r.rows.map((x) => (
@@ -279,6 +279,7 @@ export default function PeakerProforma() {
                       <td className="px-2 text-right">{m(x.fuel)}</td>
                       <td className="px-2 text-right">{m(x.om)}</td>
                       <td className="px-2 text-right">{m(x.ebitda)}</td>
+                      <td className={`px-2 text-right ${x.debtService > 0 ? "" : "text-muted-foreground"}`}>{m(x.debtService)}</td>
                       <td className={`px-2 text-right ${x.netIncome < 0 ? "text-destructive" : ""}`}>{m(x.netIncome)}</td>
                       <td className="px-2 text-right">{m(x.fcff)}</td>
                     </tr>
