@@ -13,12 +13,12 @@ import { Button } from "@/components/ui/button";
 type Inputs = {
   mw: number; capexKw: number; cf: number; heatRate: number; fuel: number; fuelEsc: number;
   price: number; priceEsc: number; ancillary: number; fom: number; vom: number; debtShare: number;
-  interest: number; wacc: number; life: number; decom: number; tax: number;
+  interest: number; wacc: number; life: number; decom: number; tax: number; loanTerm: number;
 };
 
 const DEFAULTS: Inputs = {
   mw: 200, capexKw: 1350, cf: 12, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 135, priceEsc: 2,
-  ancillary: 35, fom: 22, vom: 5.5, debtShare: 60, interest: 7, wacc: 8.5, life: 40, decom: 15_000_000, tax: 21,
+  ancillary: 35, fom: 22, vom: 5.5, debtShare: 60, interest: 7, wacc: 8.5, life: 40, decom: 15_000_000, tax: 21, loanTerm: 15,
 };
 
 type Ctl = { key: keyof Inputs; label: string; min: number; max: number; step: number; fmt: (v: number) => string };
@@ -45,15 +45,13 @@ const GROUPS: { title: string; ctls: Ctl[] }[] = [
   ]},
   { title: "Financing & tax", ctls: [
     { key: "debtShare", label: "Debt share", min: 0, max: 90, step: 1, fmt: (v) => `${v}% debt / ${100 - v}% equity` },
-    { key: "interest", label: "Interest rate (15-yr)", min: 2, max: 14, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "interest", label: "Interest rate", min: 2, max: 14, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "loanTerm", label: "Loan term", min: 5, max: 40, step: 1, fmt: (v) => `${v} yrs` },
     { key: "wacc", label: "WACC / discount rate", min: 3, max: 15, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
     { key: "tax", label: "Corporate tax rate", min: 0, max: 40, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
   ]},
 ];
 
-const LOAN_TERM = 15;
-
-function npv(rate: number, cfs: number[]) {
   return cfs.reduce((s, cf, t) => s + cf / Math.pow(1 + rate, t), 0);
 }
 function dnpv(rate: number, cfs: number[]) {
