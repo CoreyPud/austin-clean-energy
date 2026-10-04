@@ -51,7 +51,7 @@ const GROUPS: { title: string; ctls: Ctl[] }[] = [
     { key: "tax", label: "Corporate tax rate", min: 0, max: 40, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
   ]},
 ];
-
+function npv(rate: number, cfs: number[]) {
   return cfs.reduce((s, cf, t) => s + cf / Math.pow(1 + rate, t), 0);
 }
 function dnpv(rate: number, cfs: number[]) {
