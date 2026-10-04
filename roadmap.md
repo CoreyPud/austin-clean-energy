@@ -13,3 +13,4 @@
 - [x] Add home-page tiles for Case for Austin Energy, Pricing Pressure, Load Estimator, and Peaker vs. Battery
 - [x] Streamline the four new research pages and collapse supporting detail
 - [x] Unify new research and course pages with the Austin's Solar Progress layout
+- [x] Peaker proforma: extend horizon/plant life to 40 years (was 20)
