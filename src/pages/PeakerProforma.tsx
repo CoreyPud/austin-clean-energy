@@ -26,7 +26,7 @@ const fmtUsd = (v: number, d = 2) => `$${v.toLocaleString("en-US", { minimumFrac
 const GROUPS: { title: string; ctls: Ctl[] }[] = [
   { title: "Plant", ctls: [
     { key: "mw", label: "Plant capacity", min: 50, max: 500, step: 10, fmt: (v) => `${v} MW` },
-    { key: "capexKw", label: "CapEx", min: 800, max: 2000, step: 10, fmt: (v) => `${fmtUsd(v, 0)} /kW` },
+    { key: "capexKw", label: "CapEx", min: 800, max: 4000, step: 10, fmt: (v) => `${fmtUsd(v, 0)} /kW` },
     { key: "cf", label: "Capacity factor", min: 2, max: 30, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
     { key: "heatRate", label: "Heat rate", min: 8000, max: 12000, step: 100, fmt: (v) => `${v.toLocaleString()} BTU/kWh` },
     { key: "life", label: "Plant life", min: 10, max: 30, step: 1, fmt: (v) => `${v} yrs` },
