@@ -18,7 +18,7 @@ type Inputs = {
 
 const DEFAULTS: Inputs = {
   mw: 200, capexKw: 1350, cf: 12, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 135, priceEsc: 2,
-  ancillary: 35, fom: 22, vom: 5.5, debtShare: 60, interest: 7, wacc: 8.5, life: 20, decom: 15_000_000, tax: 21,
+  ancillary: 35, fom: 22, vom: 5.5, debtShare: 60, interest: 7, wacc: 8.5, life: 40, decom: 15_000_000, tax: 21,
 };
 
 type Ctl = { key: keyof Inputs; label: string; min: number; max: number; step: number; fmt: (v: number) => string };
@@ -29,7 +29,7 @@ const GROUPS: { title: string; ctls: Ctl[] }[] = [
     { key: "capexKw", label: "CapEx", min: 800, max: 4000, step: 10, fmt: (v) => `${fmtUsd(v, 0)} /kW` },
     { key: "cf", label: "Capacity factor", min: 2, max: 30, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
     { key: "heatRate", label: "Heat rate", min: 8000, max: 12000, step: 100, fmt: (v) => `${v.toLocaleString()} BTU/kWh` },
-    { key: "life", label: "Plant life", min: 10, max: 30, step: 1, fmt: (v) => `${v} yrs` },
+    { key: "life", label: "Plant life", min: 10, max: 60, step: 1, fmt: (v) => `${v} yrs` },
     { key: "decom", label: "Decommissioning cost", min: 0, max: 50_000_000, step: 500_000, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` },
   ]},
   { title: "Fuel & market", ctls: [
@@ -157,7 +157,7 @@ function Kpi({ label, value, tip, icon: Icon, tone }: { label: string; value: st
 export default function PeakerProforma() {
   useSeo({
     title: "Gas Peaker Proforma: ERCOT South / Austin",
-    description: "Interactive 20-year financial model for a natural gas peaker plant in ERCOT South: IRR, NPV, equity IRR, EBITDA and payback.",
+    description: "Interactive 40-year financial model for a natural gas peaker plant in ERCOT South: IRR, NPV, equity IRR, EBITDA and payback.",
   });
   const [inp, setInp] = useState<Inputs>(DEFAULTS);
   const [copied, setCopied] = useState(false);
@@ -179,7 +179,7 @@ export default function PeakerProforma() {
 
   return (
     <div className="dark bg-background text-foreground min-h-screen">
-      <PageHeader title="Gas Peaker Proforma" subtitle="A 20-year financial model for a new natural gas peaker in ERCOT South / Austin. Move the sliders to test the assumptions." />
+      <PageHeader title="Gas Peaker Proforma" subtitle="A 40-year financial model for a new natural gas peaker in ERCOT South / Austin. Move the sliders to test the assumptions." />
       <div className="max-w-7xl mx-auto px-4 pb-16 grid gap-6 lg:grid-cols-[320px_1fr]">
         <aside className="space-y-5 rounded-lg border border-border bg-card p-4 h-fit lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           <div className="flex items-center justify-between">
