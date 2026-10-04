@@ -88,6 +88,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/peaker-proforma",
+    title: "Gas Peaker Proforma",
+    description: "Interactive 20-year financial model for a natural gas peaker in ERCOT South.",
+    icon: Gauge,
+  },
+  {
     path: "/gets",
     title: "GETs vs. Peaker",
     description: "How grid-enhancing technologies compare with a gas peaker for adding grid capacity.",

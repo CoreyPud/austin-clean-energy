@@ -511,6 +511,24 @@ const AustinAtGlance = () => {
           ),
         },
         {
+          key: "peaker-proforma",
+          to: "/peaker-proforma",
+          title: "Gas Peaker Proforma",
+          description:
+            "Interactive 20-year financial model for a new natural gas peaker in ERCOT South: IRR, NPV, equity returns, and payback from adjustable assumptions.",
+          cta: "Model it",
+          preview: (
+            <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+              <div className="h-16 w-16 rounded-full bg-primary/15 flex items-center justify-center">
+                <TrendingUp className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground text-center px-6">
+                Peaker plant IRR, NPV and cash flow
+              </span>
+            </div>
+          ),
+        },
+        {
           key: "decarb-dashboard",
           to: "/decarb-dashboard",
           title: "Path to Zero Emissions by 2035",
