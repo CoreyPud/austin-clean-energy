@@ -166,7 +166,8 @@ export default function PeakerProforma() {
   const irrTone = (v: number | null) => (v === null ? "bad" : v > 0.1 ? "good" : undefined);
 
   const barData = r.rows.map((x) => ({
-    year: x.year, Revenue: +m(x.revenue), Fuel: -+m(x.fuel), "O&M": -+m(x.om), EBITDA: +m(x.ebitda),
+    year: x.year, Revenue: +m(x.revenue), Fuel: -+m(x.fuel), "O&M": -+m(x.om), "Debt service": -+m(x.debtService),
+    EBITDA: +m(x.ebitda), "Cash after debt": +m(x.ebitda - x.debtService),
   }));
 
   const copyCsv = async () => {
@@ -219,7 +220,7 @@ export default function PeakerProforma() {
 
           <section className="rounded-lg border border-border bg-card p-4">
             <h2 className="font-semibold">Revenue vs. cost, {inp.life} years ($M)</h2>
-            <p className="text-xs text-muted-foreground mb-3">Costs shown below zero; EBITDA line is revenue minus fuel and O&M.</p>
+            <p className="text-xs text-muted-foreground mb-3">Costs shown below zero, including {LOAN_TERM}-year loan payments (interest + principal). EBITDA is revenue minus fuel and O&M; "Cash after debt" also subtracts loan payments.</p>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={barData} stackOffset="sign">
@@ -231,7 +232,9 @@ export default function PeakerProforma() {
                   <Bar dataKey="Revenue" stackId="a" fill="hsl(var(--primary))" />
                   <Bar dataKey="Fuel" stackId="a" fill="hsl(var(--destructive))" />
                   <Bar dataKey="O&M" stackId="a" fill="hsl(var(--muted-foreground))" />
+                  <Bar dataKey="Debt service" stackId="a" fill="hsl(var(--accent))" />
                   <Line dataKey="EBITDA" stroke="hsl(var(--secondary))" strokeWidth={2} dot={false} />
+                  <Line dataKey="Cash after debt" stroke="hsl(var(--foreground))" strokeWidth={2} strokeDasharray="4 4" dot={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
