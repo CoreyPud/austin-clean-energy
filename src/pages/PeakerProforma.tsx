@@ -11,13 +11,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Button } from "@/components/ui/button";
 
 type Inputs = {
-  mw: number; capexKw: number; cf: number; heatRate: number; fuel: number; fuelEsc: number;
+  mw: number; capexKw: number; cf: number; deg: number; heatRate: number; fuel: number; fuelEsc: number;
   price: number; priceEsc: number; ancillary: number; fom: number; vom: number; debtShare: number;
   interest: number; wacc: number; life: number; decom: number; tax: number; loanTerm: number;
 };
 
 const DEFAULTS: Inputs = {
-  mw: 200, capexKw: 1350, cf: 12, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 135, priceEsc: 2,
+  mw: 200, capexKw: 1350, cf: 12, deg: 0.5, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 135, priceEsc: 2,
   ancillary: 35, fom: 22, vom: 5.5, debtShare: 60, interest: 7, wacc: 8.5, life: 40, decom: 15_000_000, tax: 21, loanTerm: 15,
 };
 
@@ -28,6 +28,7 @@ const GROUPS: { title: string; ctls: Ctl[] }[] = [
     { key: "mw", label: "Plant capacity", min: 50, max: 500, step: 10, fmt: (v) => `${v} MW` },
     { key: "capexKw", label: "CapEx", min: 800, max: 4000, step: 10, fmt: (v) => `${fmtUsd(v, 0)} /kW` },
     { key: "cf", label: "Capacity factor", min: 2, max: 30, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "deg", label: "Output degradation", min: 0, max: 2, step: 0.05, fmt: (v) => `${v.toFixed(2)}% /yr` },
     { key: "heatRate", label: "Heat rate", min: 8000, max: 12000, step: 100, fmt: (v) => `${v.toLocaleString()} BTU/kWh` },
     { key: "life", label: "Plant life", min: 10, max: 60, step: 1, fmt: (v) => `${v} yrs` },
     { key: "decom", label: "Decommissioning cost", min: 0, max: 50_000_000, step: 500_000, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` },
@@ -87,16 +88,19 @@ function pmt(rate: number, n: number, pv: number) {
 function model(i: Inputs) {
   const L = i.life, tax = i.tax / 100, wacc = i.wacc / 100, ir = i.interest / 100;
   const capex = i.mw * 1000 * i.capexKw;
-  const mwh = i.mw * 8760 * (i.cf / 100);
+  const mwhBase = i.mw * 8760 * (i.cf / 100);
   const dep = capex / L;
   const debt = capex * (i.debtShare / 100);
   const equity = capex - debt;
   const payment = debt > 0 ? pmt(ir, i.loanTerm, debt) : 0;
   let bal = debt;
   const rows = [];
+  let totalFuel = 0, totalOm = 0, totalInterest = 0, totalTaxes = 0, totalMwh = 0;
+  let pvFuel = 0, pvOm = 0, pvInterest = 0, pvTaxes = 0;
   for (let y = 1; y <= L; y++) {
     const pE = Math.pow(1 + i.priceEsc / 100, y - 1);
     const fE = Math.pow(1 + i.fuelEsc / 100, y - 1);
+    const mwh = mwhBase * Math.pow(1 - i.deg / 100, y - 1);
     const energyRev = mwh * i.price * pE;
     const ancRev = i.mw * 1000 * i.ancillary * pE;
     const revenue = energyRev + ancRev;
@@ -115,6 +119,9 @@ function model(i: Inputs) {
     const decom = y === L ? i.decom : 0;
     const projectCf = fcff - decom;
     const leveredCf = ebitda - interest - principal - taxes - decom;
+    const df = Math.pow(1 + wacc, y);
+    totalFuel += fuel; totalOm += om; totalInterest += interest; totalTaxes += taxes; totalMwh += mwh;
+    pvFuel += fuel / df; pvOm += om / df; pvInterest += interest / df; pvTaxes += taxes / df;
     rows.push({ year: y, mwh, energyRev, ancRev, revenue, fuel, fixedOm, varOm, om, ebitda, dep, interest, principal, debtService: interest + principal, ebt, taxes, netIncome, fcff, projectCf, leveredCf });
   }
   const cf0 = -capex - i.decom / Math.pow(1 + wacc, L);
@@ -128,9 +135,12 @@ function model(i: Inputs) {
     if (payback === null && prev < 0 && cum >= 0) payback = r.year - 1 + -prev / r.projectCf;
     cumulative.push({ year: r.year, cumulative: cum / 1e6 });
   });
+  const totalCostNominal = capex + totalFuel + totalOm + totalInterest + totalTaxes + i.decom;
+  const totalCostPv = capex + pvFuel + pvOm + pvInterest + pvTaxes + i.decom / Math.pow(1 + wacc, L);
   return {
     capex, rows, cumulative, payback,
     npv: npv(wacc, projectCfs), projectIrr: irr(projectCfs), equityIrr: debt >= capex ? null : irr(equityCfs),
+    totalCostNominal, totalCostPv, costPerMwh: totalMwh > 0 ? totalCostNominal / totalMwh : null,
   };
 }
 
@@ -149,6 +159,38 @@ function Kpi({ label, value, tip, icon: Icon, tone }: { label: string; value: st
       </div>
       <div className={`mt-2 text-2xl font-bold tabular-nums ${tone === "good" ? "text-primary" : tone === "bad" ? "text-destructive" : "text-foreground"}`}>{value}</div>
     </div>
+  );
+}
+
+function CostStrip({ nominal, pv, perMwh, life, wacc, deg }: { nominal: number; pv: number; perMwh: number | null; life: number; wacc: number; deg: number }) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5"><Factory className="h-3.5 w-3.5" />Total cost of ownership, {life} years</span>
+        <Tooltip>
+          <TooltipTrigger aria-label="About total cost of ownership"><Info className="h-3.5 w-3.5" /></TooltipTrigger>
+          <TooltipContent className="max-w-xs text-xs">
+            Every dollar the plant costs over its life: build cost, fuel, fixed and variable O&amp;M, loan interest, income taxes,
+            and one decommissioning charge. Loan principal is left out because the build cost is already counted in full.
+            Fuel and variable O&amp;M fall as output declines at {deg.toFixed(2)}% per year.
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      <div className="mt-3 grid gap-4 sm:grid-cols-3">
+        <div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-foreground">${m(nominal)}M</div>
+          <div className="mt-1 text-xs text-muted-foreground">As paid, in the dollars of each year</div>
+        </div>
+        <div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-foreground">${m(pv)}M</div>
+          <div className="mt-1 text-xs text-muted-foreground">In today's dollars, discounted at {wacc}% WACC</div>
+        </div>
+        <div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-foreground">{perMwh === null ? "n/a" : `$${perMwh.toFixed(2)}`} /MWh</div>
+          <div className="mt-1 text-xs text-muted-foreground">All-in cost per MWh delivered over the plant life</div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -179,7 +221,7 @@ export default function PeakerProforma() {
   return (
     <div className="dark bg-background text-foreground min-h-screen">
       <PageHeader title="Gas Peaker Proforma" subtitle="A 40-year financial model for a new natural gas peaker in ERCOT South / Austin. Move the sliders to test the assumptions." />
-      <div className="max-w-7xl mx-auto px-4 pb-16 grid gap-6 lg:grid-cols-[320px_1fr]">
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-16 grid gap-6 lg:grid-cols-[320px_1fr]">
         <aside className="space-y-5 rounded-lg border border-border bg-card p-4 h-fit lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Assumptions</h2>
@@ -203,6 +245,8 @@ export default function PeakerProforma() {
         </aside>
 
         <main className="space-y-6 min-w-0">
+          <CostStrip nominal={r.totalCostNominal} pv={r.totalCostPv} perMwh={r.costPerMwh} life={inp.life} wacc={inp.wacc} deg={inp.deg} />
+
           <div className="grid gap-3 grid-cols-2 xl:grid-cols-5">
             <Kpi label="Project IRR" value={pct(r.projectIrr)} icon={Percent} tone={irrTone(r.projectIrr)}
               tip="Unlevered IRR on Year 0 CapEx (plus discounted decommissioning) and after-tax FCFF. Green when above 10%." />
@@ -293,6 +337,9 @@ export default function PeakerProforma() {
             Illustrative model, not investment advice. Default assumptions are user-supplied planning values, not Austin Energy figures.
             Energy and ancillary revenue escalate with the price escalator; fuel escalates with the fuel escalator; O&M is held flat.
             Final-year cash flow subtracts decommissioning cost; Year 0 also includes its present value, as specified.
+            Annual generation declines at the output-degradation rate you set, applied to energy only: fixed O&M and ancillary
+            services stay charged on nameplate capacity. The total cost of ownership counts the build cost once and
+            decommissioning once, and excludes loan principal so the same plant is not paid for twice.
           </p>
         </main>
       </div>
