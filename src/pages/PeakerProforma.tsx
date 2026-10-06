@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Info, Copy, Check, Flame, DollarSign, TrendingUp, Percent, Factory } from "lucide-react";
+import { Info, Copy, Check, Flame, DollarSign, Percent, Factory } from "lucide-react";
 import {
   ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as RTooltip, Legend,
   CartesianGrid, AreaChart, Area, ReferenceLine,
@@ -17,7 +17,7 @@ type Inputs = {
 };
 
 const DEFAULTS: Inputs = {
-  mw: 200, capexKw: 1350, cf: 12, deg: 0.5, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 60, priceEsc: 2,
+  mw: 400, capexKw: 2500, cf: 12, deg: 0.5, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 60, priceEsc: 2,
   ancillary: 35, fom: 22, vom: 5.5, debtShare: 60, interest: 7, wacc: 8.5, life: 40, decom: 15_000_000, tax: 21, loanTerm: 15,
 };
 
@@ -45,8 +45,8 @@ const GROUPS: { title: string; ctls: Ctl[] }[] = [
     { key: "vom", label: "Variable O&M", tip: "Cost per MWh generated — consumables, start-up wear, and maintenance that scale with runtime.", min: 0, max: 20, step: 0.25, fmt: (v) => `${fmtUsd(v)} /MWh` },
   ]},
   { title: "Financing & tax", ctls: [
-    { key: "debtShare", label: "Debt share", tip: "Share of CapEx financed with debt. The remainder is equity, and the Equity IRR is computed on that slice. Zero debt means a fully equity-funded plant.", min: 0, max: 90, step: 1, fmt: (v) => `${v}% debt / ${100 - v}% equity` },
-    { key: "interest", label: "Interest rate", tip: "Interest rate on the project debt. Drives annual debt service and the levered equity return.", min: 2, max: 14, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "debtShare", label: "Debt share", tip: "Share of CapEx financed with debt. The remainder is funded with equity. Zero debt means a fully equity-funded plant.", min: 0, max: 90, step: 1, fmt: (v) => `${v}% debt / ${100 - v}% equity` },
+    { key: "interest", label: "Interest rate", tip: "Interest rate on the project debt. Drives annual debt service.", min: 2, max: 14, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
     { key: "loanTerm", label: "Loan term", tip: "Amortization period of the loan. Payments (interest + principal) stop after this many years.", min: 5, max: 40, step: 1, fmt: (v) => `${v} yrs` },
     { key: "wacc", label: "WACC / discount rate", tip: "Weighted average cost of capital — the discount rate used for NPV and the present-value cost totals.", min: 3, max: 15, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
     { key: "tax", label: "Corporate tax rate", tip: "Federal corporate income tax rate, applied to positive taxable income only. Loss years pay no tax.", min: 0, max: 40, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
@@ -91,7 +91,6 @@ function model(i: Inputs) {
   const mwhBase = i.mw * 8760 * (i.cf / 100);
   const dep = capex / L;
   const debt = capex * (i.debtShare / 100);
-  const equity = capex - debt;
   const payment = debt > 0 ? pmt(ir, i.loanTerm, debt) : 0;
   let bal = debt;
   const rows = [];
@@ -126,7 +125,6 @@ function model(i: Inputs) {
   }
   const cf0 = -capex - i.decom / Math.pow(1 + wacc, L);
   const projectCfs = [cf0, ...rows.map((r) => r.projectCf)];
-  const equityCfs = [-equity, ...rows.map((r) => r.leveredCf)];
   let cum = cf0, payback: number | null = null;
   const cumulative = [{ year: 0, cumulative: cf0 / 1e6 }];
   rows.forEach((r) => {
@@ -139,7 +137,7 @@ function model(i: Inputs) {
   const totalCostPv = capex + pvFuel + pvOm + pvInterest + pvTaxes + i.decom / Math.pow(1 + wacc, L);
   return {
     capex, rows, cumulative, payback,
-    npv: npv(wacc, projectCfs), projectIrr: irr(projectCfs), equityIrr: debt >= capex ? null : irr(equityCfs),
+    npv: npv(wacc, projectCfs), projectIrr: irr(projectCfs),
     totalCostNominal, totalCostPv, costPerMwh: totalMwh > 0 ? totalCostNominal / totalMwh : null,
   };
 }
@@ -197,7 +195,7 @@ function CostStrip({ nominal, pv, perMwh, life, wacc, deg }: { nominal: number; 
 export default function PeakerProforma() {
   useSeo({
     title: "Gas Peaker Proforma: ERCOT South / Austin",
-    description: "Interactive 40-year financial model for a natural gas peaker plant in ERCOT South: IRR, NPV, equity IRR, EBITDA and payback.",
+    description: "Interactive financial model for a natural gas peaker plant in ERCOT South: IRR, NPV, EBITDA, lifetime cost and payback.",
   });
   const [rawInp, setInp] = useState<Inputs>(DEFAULTS);
   // Fill any missing keys (e.g. state kept from before a new slider was added) with defaults.
@@ -264,13 +262,11 @@ export default function PeakerProforma() {
         <main className="space-y-6 min-w-0">
           <CostStrip nominal={r.totalCostNominal} pv={r.totalCostPv} perMwh={r.costPerMwh} life={inp.life} wacc={inp.wacc} deg={inp.deg} />
 
-          <div className="grid gap-3 grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
             <Kpi label="Project IRR" value={pct(r.projectIrr)} icon={Percent} tone={irrTone(r.projectIrr)}
               tip="Unlevered IRR on Year 0 CapEx (plus discounted decommissioning) and after-tax FCFF. Green when above 10%." />
             <Kpi label="Project NPV" value={`$${m(r.npv)}M`} icon={DollarSign} tone={r.npv >= 0 ? "good" : "bad"}
               tip={`Sum of unlevered cash flows discounted at the ${inp.wacc}% WACC.`} />
-            <Kpi label="Equity IRR" value={pct(r.equityIrr)} icon={TrendingUp} tone={irrTone(r.equityIrr)}
-              tip={`Levered return on the ${100 - inp.debtShare}% equity outlay, after ${inp.loanTerm}-year debt service (PMT) and taxes.`} />
             <Kpi label="Year 1 EBITDA" value={`$${m(y1.ebitda)}M`} icon={Flame} tone={y1.ebitda >= 0 ? undefined : "bad"}
               tip="Energy + ancillary revenue minus fuel, fixed O&M and variable O&M in the first operating year." />
             <Kpi label="Total CapEx" value={`$${m(r.capex)}M`} icon={Factory}
