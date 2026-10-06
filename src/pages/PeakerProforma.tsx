@@ -17,39 +17,39 @@ type Inputs = {
 };
 
 const DEFAULTS: Inputs = {
-  mw: 200, capexKw: 1350, cf: 12, deg: 0.5, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 135, priceEsc: 2,
+  mw: 200, capexKw: 1350, cf: 12, deg: 0.5, heatRate: 9500, fuel: 3.25, fuelEsc: 2.5, price: 60, priceEsc: 2,
   ancillary: 35, fom: 22, vom: 5.5, debtShare: 60, interest: 7, wacc: 8.5, life: 40, decom: 15_000_000, tax: 21, loanTerm: 15,
 };
 
-type Ctl = { key: keyof Inputs; label: string; min: number; max: number; step: number; fmt: (v: number) => string };
+type Ctl = { key: keyof Inputs; label: string; tip: string; min: number; max: number; step: number; fmt: (v: number) => string };
 const fmtUsd = (v: number, d = 2) => `$${v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d })}`;
 const GROUPS: { title: string; ctls: Ctl[] }[] = [
   { title: "Plant", ctls: [
-    { key: "mw", label: "Plant capacity", min: 50, max: 500, step: 10, fmt: (v) => `${v} MW` },
-    { key: "capexKw", label: "CapEx", min: 800, max: 4000, step: 10, fmt: (v) => `${fmtUsd(v, 0)} /kW` },
-    { key: "cf", label: "Capacity factor", min: 2, max: 30, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
-    { key: "deg", label: "Output degradation", min: 0, max: 2, step: 0.05, fmt: (v) => `${v.toFixed(2)}% /yr` },
-    { key: "heatRate", label: "Heat rate", min: 8000, max: 12000, step: 100, fmt: (v) => `${v.toLocaleString()} BTU/kWh` },
-    { key: "life", label: "Plant life", min: 10, max: 60, step: 1, fmt: (v) => `${v} yrs` },
-    { key: "decom", label: "Decommissioning cost", min: 0, max: 50_000_000, step: 500_000, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` },
+    { key: "mw", label: "Plant capacity", tip: "Nameplate generation capacity. Sets both how much energy the plant can sell and its total build cost.", min: 50, max: 500, step: 10, fmt: (v) => `${v} MW` },
+    { key: "capexKw", label: "CapEx", tip: "Construction cost per kilowatt of capacity. Recent US gas peaker builds commonly land near $900–$1,500/kW.", min: 800, max: 4000, step: 10, fmt: (v) => `${fmtUsd(v, 0)} /kW` },
+    { key: "cf", label: "Capacity factor", tip: "Share of the year the plant actually runs. Peakers typically run 2–15%. This is the single biggest driver of revenue — and of fuel spend.", min: 2, max: 30, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "deg", label: "Output degradation", tip: "Annual decline in energy output, applied to energy only. Fixed O&M and ancillary payments stay charged on full nameplate capacity.", min: 0, max: 2, step: 0.05, fmt: (v) => `${v.toFixed(2)}% /yr` },
+    { key: "heatRate", tip: "Fuel burned per kWh generated — lower is more efficient. Simple-cycle peakers typically run about 9,000–11,000 BTU/kWh.", key: "heatRate", label: "Heat rate", min: 8000, max: 12000, step: 100, fmt: (v) => `${v.toLocaleString()} BTU/kWh` },
+    { key: "life", label: "Plant life", tip: "Operating life used for the model horizon, straight-line depreciation, and timing of decommissioning.", min: 10, max: 60, step: 1, fmt: (v) => `${v} yrs` },
+    { key: "decom", label: "Decommissioning cost", tip: "One-time end-of-life teardown cost. Counted once in the lifetime totals; Year 0 also carries its present value, per the original spec.", min: 0, max: 50_000_000, step: 500_000, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` },
   ]},
   { title: "Fuel & market", ctls: [
-    { key: "fuel", label: "Base fuel price", min: 1.5, max: 10, step: 0.05, fmt: (v) => `${fmtUsd(v)} /MMBtu` },
-    { key: "fuelEsc", label: "Fuel escalator", min: 0, max: 8, step: 0.1, fmt: (v) => `${v.toFixed(1)}% /yr` },
-    { key: "price", label: "Realized energy price", min: 40, max: 300, step: 1, fmt: (v) => `${fmtUsd(v)} /MWh` },
-    { key: "priceEsc", label: "Price escalator", min: 0, max: 5, step: 0.1, fmt: (v) => `${v.toFixed(1)}% /yr` },
-    { key: "ancillary", label: "Ancillary services", min: 0, max: 100, step: 1, fmt: (v) => `${fmtUsd(v)} /kW-yr` },
+    { key: "fuel", label: "Base fuel price", tip: "Starting natural gas price. Check EIA for current Henry Hub pricing plus Texas pipeline basis. At a 9,500 BTU/kWh heat rate, every $1/MMBtu adds roughly $9.50 to the cost of a MWh.", min: 1.5, max: 10, step: 0.05, fmt: (v) => `${fmtUsd(v)} /MMBtu` },
+    { key: "fuelEsc", label: "Fuel escalator", tip: "Assumed annual increase in the gas price over the plant life.", min: 0, max: 8, step: 0.1, fmt: (v) => `${v.toFixed(1)}% /yr` },
+    { key: "price", label: "Realized energy price", tip: "Average revenue per MWh sold into the wholesale market (or under a contract). This is what makes or breaks the project — $60/MWh is near ERCOT's long-run average.", min: 40, max: 300, step: 1, fmt: (v) => `${fmtUsd(v)} /MWh` },
+    { key: "priceEsc", label: "Price escalator", tip: "Assumed annual increase in the realized energy price.", min: 0, max: 5, step: 0.1, fmt: (v) => `${v.toFixed(1)}% /yr` },
+    { key: "ancillary", label: "Ancillary services", tip: "Capacity-based payments such as ERCOT ancillary services, charged per kW of nameplate and escalating with the energy price.", min: 0, max: 100, step: 1, fmt: (v) => `${fmtUsd(v)} /kW-yr` },
   ]},
   { title: "Operating costs", ctls: [
-    { key: "fom", label: "Fixed O&M", min: 5, max: 60, step: 0.5, fmt: (v) => `${fmtUsd(v)} /kW-yr` },
-    { key: "vom", label: "Variable O&M", min: 0, max: 20, step: 0.25, fmt: (v) => `${fmtUsd(v)} /MWh` },
+    { key: "fom", label: "Fixed O&M", tip: "Annual fixed operations and maintenance, charged on nameplate capacity whether or not the plant runs.", min: 5, max: 60, step: 0.5, fmt: (v) => `${fmtUsd(v)} /kW-yr` },
+    { key: "vom", label: "Variable O&M", tip: "Cost per MWh generated — consumables, start-up wear, and maintenance that scale with runtime.", min: 0, max: 20, step: 0.25, fmt: (v) => `${fmtUsd(v)} /MWh` },
   ]},
   { title: "Financing & tax", ctls: [
-    { key: "debtShare", label: "Debt share", min: 0, max: 90, step: 1, fmt: (v) => `${v}% debt / ${100 - v}% equity` },
-    { key: "interest", label: "Interest rate", min: 2, max: 14, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
-    { key: "loanTerm", label: "Loan term", min: 5, max: 40, step: 1, fmt: (v) => `${v} yrs` },
-    { key: "wacc", label: "WACC / discount rate", min: 3, max: 15, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
-    { key: "tax", label: "Corporate tax rate", min: 0, max: 40, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "debtShare", label: "Debt share", tip: "Share of CapEx financed with debt. The remainder is equity, and the Equity IRR is computed on that slice. Zero debt means a fully equity-funded plant.", min: 0, max: 90, step: 1, fmt: (v) => `${v}% debt / ${100 - v}% equity` },
+    { key: "interest", label: "Interest rate", tip: "Interest rate on the project debt. Drives annual debt service and the levered equity return.", min: 2, max: 14, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "loanTerm", label: "Loan term", tip: "Amortization period of the loan. Payments (interest + principal) stop after this many years.", min: 5, max: 40, step: 1, fmt: (v) => `${v} yrs` },
+    { key: "wacc", label: "WACC / discount rate", tip: "Weighted average cost of capital — the discount rate used for NPV and the present-value cost totals.", min: 3, max: 15, step: 0.1, fmt: (v) => `${v.toFixed(1)}%` },
+    { key: "tax", label: "Corporate tax rate", tip: "Federal corporate income tax rate, applied to positive taxable income only. Loss years pay no tax.", min: 0, max: 40, step: 0.5, fmt: (v) => `${v.toFixed(1)}%` },
   ]},
 ];
 function npv(rate: number, cfs: number[]) {
