@@ -69,6 +69,7 @@ import NonprofitSolarLender from "./pages/NonprofitSolarLender";
 import KwhCostPage from "./pages/KwhCost";
 import AtbOptions from "./pages/AtbOptions";
 import PeakerProforma from "./pages/PeakerProforma";
+import PeakShavePage from "./pages/PeakShave";
 import { SolarBomPage, SolarDraftPage, SolarFlowPage } from "./pages/SolarSuite";
 
 const queryClient = new QueryClient();
@@ -140,6 +141,7 @@ const AppRoutes = () => {
           <Route path="/kwh-cost" element={<KwhCostPage />} />
           <Route path="/atb-options" element={<AtbOptions />} />
           <Route path="/peaker-proforma" element={<PeakerProforma />} />
+          <Route path="/peak-shave" element={<PeakShavePage />} />
         </Route>
 
         {/* Pages without footer */}

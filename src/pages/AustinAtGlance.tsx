@@ -493,6 +493,20 @@ const AustinAtGlance = () => {
           ),
         },
         {
+          key: "peak-shave",
+          to: "/peak-shave",
+          title: "Peak Shave Calculator",
+          description: "Estimate how a battery can shave building peak demand and cut demand charges.",
+          cta: "Calculate",
+          preview: (
+            <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+              <div className="h-16 w-16 rounded-full bg-secondary/15 flex items-center justify-center">
+                <Network className="h-7 w-7 text-secondary" />
+              </div>
+            </div>
+          ),
+        },
+        {
           key: "gets",
           to: "/gets",
           title: "GETs vs. Peaker",
