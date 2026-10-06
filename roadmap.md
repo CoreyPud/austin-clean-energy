@@ -15,3 +15,4 @@
 - [x] Unify new research and course pages with the Austin's Solar Progress layout
 - [x] Peaker proforma: extend horizon/plant life to 40 years (was 20)
 - [x] Peaker proforma: lifetime total cost strip, output-degradation control, header spacing
+- [x] Peaker proforma: drop Equity IRR tile, default 400 MW and $2,500/kW CapEx
