@@ -94,6 +94,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/peak-shave",
+    title: "Peak Shave Calculator",
+    description: "Estimate how a battery can shave peak demand and cut demand charges.",
+    icon: Gauge,
+  },
+  {
     path: "/gets",
     title: "GETs vs. Peaker",
     description: "How grid-enhancing technologies compare with a gas peaker for adding grid capacity.",

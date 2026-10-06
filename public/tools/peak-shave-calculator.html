@@ -1,0 +1,1631 @@
+<title>Peak Shave Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  /* Layout: a narrow rail of inputs on the left, a wide results column on the right, a readout strip above both. */
+  --bg:#EDF0F3; --surface:#FFFFFF; --surface-2:#E4E9EE; --ink:#0F1B26; --ink-2:#47586A; --ink-3:#74879A;
+  --line:#D2DAE2; --line-2:#B9C5D1;
+  --accent:#0B5DA8; --accent-ink:#FFFFFF; --accent-soft:#D9E9F7;
+  --good:#12754A; --good-soft:#D6EFE1; --bad:#B23A24; --bad-soft:#F6DCD5; --amber:#B06A06; --amber-soft:#F6E5C3;
+  --font-head:'Barlow Condensed','Arial Narrow','Helvetica Neue',sans-serif;
+  --font-body:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C131A; --surface:#131D27; --surface-2:#1A2733; --ink:#E7EDF3; --ink-2:#9FB1C1; --ink-3:#6F8394;
+  --line:#25364A; --line-2:#364B61; --accent:#5DAAF2; --accent-ink:#06131F; --accent-soft:#16293D;
+  --good:#4CC38A; --good-soft:#12301F; --bad:#F28870; --bad-soft:#3A1E17; --amber:#E4A43C; --amber-soft:#3A2B10; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C131A; --surface:#131D27; --surface-2:#1A2733; --ink:#E7EDF3; --ink-2:#9FB1C1; --ink-3:#6F8394;
+  --line:#25364A; --line-2:#364B61; --accent:#5DAAF2; --accent-ink:#06131F; --accent-soft:#16293D;
+  --good:#4CC38A; --good-soft:#12301F; --bad:#F28870; --bad-soft:#3A1E17; --amber:#E4A43C; --amber-soft:#3A2B10; color-scheme:dark}
+
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-body);-webkit-text-size-adjust:100%}
+h1,h2,h3,h4{font-family:var(--font-head);font-weight:600;letter-spacing:.01em;margin:0;text-wrap:balance}
+p{margin:0}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1320px;margin-inline:auto;padding-inline:16px}
+.num,.mono{font-variant-numeric:tabular-nums}
+
+/* masthead */
+.mast{padding-block:18px 14px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+.mast h1{font-size:30px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.mast p{color:var(--ink-2);max-width:60ch}
+
+/* readout strip */
+.readout{background:var(--surface);border:1px solid var(--line);border-radius:6px;position:sticky;top:env(safe-area-inset-top,0px);z-index:6;margin-bottom:18px}
+.ro-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.ro{padding:10px 14px;min-width:0;border-left:1px solid var(--line)}
+.ro:first-child{border-left:0}
+.ro .k{font:600 11px/1.2 var(--font-head);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.ro .v{font:600 26px/1.15 var(--font-head);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ro .s{font-size:12.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ro.good .v{color:var(--good)} .ro.bad .v{color:var(--bad)}
+.readout.busy .ro .v{opacity:.35}
+.busybar{height:2px;background:transparent;overflow:hidden}
+.readout.busy .busybar{background:linear-gradient(90deg,transparent,var(--accent),transparent);background-size:40% 100%;background-repeat:no-repeat;animation:slide 1s linear infinite}
+@keyframes slide{from{background-position:-40% 0}to{background-position:140% 0}}
+@media (prefers-reduced-motion:reduce){.readout.busy .busybar{animation:none;background:var(--accent);opacity:.4}}
+
+/* stacked flow: inputs, recommendation, then two collapsed drawers */
+.rail{min-width:0}
+.out{min-width:0;display:flex;flex-direction:column;gap:0}
+.start{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;margin-bottom:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.card h2{font-size:22px;text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:8px}
+.card .lead{font-size:14px;color:var(--ink-2);max-width:56ch}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px}
+.or{font-size:13px;color:var(--ink-3)}
+.row.alt{align-items:center}
+h2.sh{font-size:22px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px}
+#verdict{margin-bottom:6px}
+.dd{border:1px solid var(--line);border-radius:6px;background:var(--surface);margin-top:14px}
+.dd>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:12px;padding:14px 16px;font:600 19px var(--font-head);letter-spacing:.06em;text-transform:uppercase}
+.dd>summary::-webkit-details-marker{display:none}
+.dd>summary small{font:400 13px var(--font-body);letter-spacing:0;text-transform:none;color:var(--ink-3);flex:1;min-width:0}
+.dd>summary::after{content:'+';font:500 22px var(--font-mono);color:var(--ink-3);margin-left:auto}
+.dd[open]>summary::after{content:'\2212'}
+.dd[open]>summary{border-bottom:1px solid var(--line)}
+.ddbody{padding:8px 16px 18px}
+.dd .out .blk{border:0;border-radius:0;background:transparent;padding:18px 0;border-top:1px solid var(--line)}
+.dd .out .blk:first-child{border-top:0}
+.dd .rail .sec:first-child{border-top:0}
+
+/* tooltips */
+.fl{display:flex;align-items:center;gap:6px}
+.tip{flex:none;width:16px;height:16px;padding:0;border:1px solid var(--line-2);border-radius:50%;background:var(--surface);color:var(--ink-3);font:italic 700 10.5px/1 var(--font-body);cursor:help;display:inline-grid;place-items:center;vertical-align:middle;margin-left:5px}
+.fl .tip{margin-left:0}
+.tip:hover,.tip:focus-visible{border-color:var(--accent);color:var(--accent)}
+.ro .k{display:flex;align-items:center;gap:4px}
+.ro .k .tip{margin-left:2px}
+th .tip{margin-left:4px}
+#tipbox{position:fixed;z-index:50;max-width:min(280px,calc(100vw - 16px));background:var(--ink);color:var(--bg);font:400 13px/1.4 var(--font-body);padding:8px 10px;border-radius:5px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+#tipbox[hidden]{display:none}
+
+/* rail sections */
+.sec{border-top:2px solid var(--ink);padding-block:4px 6px;margin-bottom:6px}
+.sec>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;padding-block:8px;font:600 17px var(--font-head);letter-spacing:.1em;text-transform:uppercase}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary small{font:500 12px var(--font-body);letter-spacing:0;text-transform:none;color:var(--ink-3)}
+.sec>summary::after{content:'+';font:500 20px var(--font-mono);color:var(--ink-3);margin-left:8px}
+.sec[open]>summary::after{content:'\2212'}
+.sec .body{display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fl{font-size:13px;color:var(--ink-2)}
+.fi{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);min-width:0}
+.fi:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.fi input,.fi select{border:0;background:transparent;padding:7px 8px;min-width:0;width:100%;font-family:var(--font-mono);font-size:14px;outline:0}
+.fi em{font:normal 12px var(--font-body);color:var(--ink-3);padding-right:8px;white-space:nowrap}
+.fi b{font:500 13px var(--font-mono);color:var(--ink-3);padding-left:8px}
+.f small{font-size:12px;color:var(--ink-3)}
+select.plain{width:100%;padding:8px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);font-size:14px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.chk input{margin-top:4px;accent-color:var(--accent)}
+.chk small{display:block;color:var(--ink-3);font-size:12px}
+.sum{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink-2);border-top:1px dotted var(--line-2);padding-top:6px}
+.sum b{font-family:var(--font-mono);color:var(--ink);font-weight:500}
+.note{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:4px;padding:8px 10px}
+.note.warn{background:var(--amber-soft);color:var(--ink)}
+.note.ok{background:var(--good-soft);color:var(--ink)}
+.note.err{background:var(--bad-soft);color:var(--ink)}
+.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:4px;padding:8px 12px;cursor:pointer;font-weight:500;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.sm{padding:4px 8px;font-size:12.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+
+.drop{border:1.5px dashed var(--line-2);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop p{font-size:13.5px;color:var(--ink-2)}
+
+table.months{width:100%;border-collapse:collapse;font-size:13px}
+table.months th{font:600 11px var(--font-head);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:2px 4px 4px}
+table.months td{padding:2px 4px}
+table.months td:first-child{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+table.months input{width:100%;border:1px solid var(--line);border-radius:3px;padding:4px 6px;background:var(--surface);font:13px var(--font-mono);min-width:0}
+table.months input.auto{color:var(--ink-3)}
+table.months input:disabled{background:var(--surface-2)}
+
+.win{border:1px solid var(--line);border-radius:5px;padding:10px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.win.off .wf{opacity:.45}
+.win h4{font:600 15px var(--font-head);letter-spacing:.06em;text-transform:uppercase}
+
+/* results */
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+.blk h3{font-size:20px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px}
+.blk .sub{font-size:13.5px;color:var(--ink-2);margin:-4px 0 12px;max-width:70ch}
+.verdict p{font-size:17px;line-height:1.5;max-width:68ch}
+.verdict p+p{margin-top:8px;font-size:14px;color:var(--ink-2)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.chart{width:100%;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.cx-axis{stroke:var(--line-2);stroke-width:1;fill:none}
+.cx-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+.cx-t{fill:var(--ink-2);font:11px var(--font-mono)}
+.cx-t.h{fill:var(--ink-3);font:600 10.5px var(--font-head);letter-spacing:.1em;text-transform:uppercase}
+.cx-before{fill:var(--ink-3)} .cx-after{fill:var(--accent)}
+.cx-lbefore{stroke:var(--ink-3);fill:none;stroke-width:1.6}
+.cx-lafter{stroke:var(--accent);fill:none;stroke-width:2}
+.cx-thr{stroke:var(--amber);stroke-dasharray:5 4;stroke-width:1.4;fill:none}
+.cx-shave{fill:var(--amber);opacity:.28}
+.cx-charge{fill:var(--accent);opacity:.18}
+.cx-soc{stroke:var(--good);fill:none;stroke-width:2;stroke-dasharray:2 3}
+.runbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+.cx-zero{stroke:var(--ink);stroke-width:1.2}
+.cx-pos{fill:var(--good);opacity:.14}
+.cx-line{stroke:var(--good);fill:none;stroke-width:2.2}
+.cx-dot{fill:var(--surface);stroke:var(--good);stroke-width:2.2}
+
+/* bill with dot leaders */
+.bill{font-family:var(--font-head);font-size:19px;max-width:620px}
+.bill .r{display:flex;align-items:baseline;gap:8px;padding:3px 0}
+.bill .r i{flex:1;border-bottom:2px dotted var(--line-2);min-width:12px;transform:translateY(-4px)}
+.bill .r span{white-space:nowrap}
+.bill .r .l{flex:0 1 auto;white-space:normal}
+.bill .r .a,.bill .r .b{font-family:var(--font-mono);font-size:14px;min-width:78px;text-align:right}
+.bill .r .d{font-family:var(--font-mono);font-size:14px;min-width:78px;text-align:right}
+.bill .hd{font:600 11px var(--font-head);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.bill .hd .l{flex:1}
+.bill .tot{border-top:2px solid var(--ink);margin-top:6px;padding-top:6px;font-weight:700}
+.bill .sv{color:var(--good)} .bill .sv.neg{color:var(--bad)}
+.scroll{overflow-x:auto;max-width:100%}
+
+/* heat map */
+.hm{border-collapse:separate;border-spacing:3px;font-family:var(--font-mono);font-size:12.5px}
+.hm th{font:600 11px var(--font-head);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:2px 4px;text-align:center;white-space:nowrap}
+.hm th.rh{text-align:right}
+.hm td{padding:0}
+.hm button{width:100%;min-width:62px;padding:8px 6px;border:1px solid transparent;border-radius:3px;background:var(--surface-2);color:var(--ink);cursor:pointer;font:inherit}
+.hm button.pos{background:color-mix(in srgb,var(--good) calc(var(--t)*45%),var(--surface-2))}
+.hm button.neg{background:color-mix(in srgb,var(--bad) calc(var(--t)*30%),var(--surface-2))}
+.hm button.best{outline:2px solid var(--ink);outline-offset:1px}
+.hm button.sel{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.hm button:hover{border-color:var(--ink-2)}
+.hm-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.hm-top select{padding:6px 8px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface)}
+.hm-key{font-size:12.5px;color:var(--ink-3)}
+
+table.cf{border-collapse:collapse;width:100%;font:12.5px var(--font-mono)}
+table.cf th{font:600 11px var(--font-head);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:right;padding:4px 8px;border-bottom:1px solid var(--line-2)}
+table.cf td{text-align:right;padding:3px 8px;border-bottom:1px solid var(--line)}
+table.cf th:first-child,table.cf td:first-child{text-align:left}
+details.more{margin-top:10px}
+details.more>summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.method li{margin-bottom:6px;color:var(--ink-2);max-width:78ch}
+.method{margin:8px 0 0;padding-left:18px}
+.range{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.range div{background:var(--surface-2);border-radius:4px;padding:8px 10px;min-width:0}
+.range b{display:block;font:600 20px var(--font-head)}
+.range span{font-size:12.5px;color:var(--ink-2)}
+
+@media (max-width:979px){.readout{position:static}}
+@media (max-width:820px){.start{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){
+  .ro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ro{border-left:0;border-top:1px solid var(--line)}
+  .ro:nth-child(-n+2){border-top:0}
+  .ro:nth-child(even){border-left:1px solid var(--line)}
+  .ro:last-child{grid-column:1/-1;border-left:0}
+  .mast h1{font-size:26px}
+  .grid3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dd>summary{flex-wrap:wrap}
+  .dd>summary small{flex-basis:100%;order:3}
+  .grid2.keep{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bill{font-size:17px}
+  .bill .r .a,.bill .r .b,.bill .r .d{min-width:62px;font-size:12.5px}
+  .bill .r .d{display:none}.bill .hd .d{display:none}
+  .range{grid-template-columns:1fr}
+}
+
+.sub-h{font:600 15px var(--font-head);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 0;color:var(--ink-2)}
+#itemized[hidden],#price-box[hidden]{display:none}
+
+</style>
+<div class="wrap">
+  <header class="mast">
+    <h1>Peak Shave</h1>
+    <p>How big a battery should be, and whether it pays back, when demand charges drive your bill.</p>
+  </header>
+  <section class="start" aria-label="Your inputs">
+    <div class="card" id="start-bill"></div>
+    <div class="card" id="start-cost"></div>
+  </section>
+  <h2 class="sh">Recommendation</h2>
+  <section class="readout" id="readout" aria-live="polite" aria-label="Summary of the selected battery">
+    <div class="busybar"></div>
+    <div class="ro-grid"></div>
+    <div class="runbar"><span id="runstat" role="status">Updating…</span><button class="btn sm" type="button" id="btn-run">Recalculate now</button></div>
+  </section>
+  <div id="verdict"></div>
+  <details class="dd" id="dd-detail">
+    <summary>Charts and bill breakdown <small>monthly peaks, peak day, annual bill, size grid, cash flow</small></summary>
+    <div class="ddbody"><div class="out" id="out"></div></div>
+  </details>
+  <details class="dd" id="dd-config">
+    <summary>Adjust other assumptions <small>monthly load, rates, time of use, efficiency, incentives</small></summary>
+    <div class="ddbody"><div class="rail" id="rail"></div></div>
+  </details>
+</div>
+<script>
+/* Peak Shave engine: load generation, battery dispatch, billing, finance. Pure functions, no DOM. */
+(function (root) {
+'use strict';
+
+const DT = 0.25;      // hours per 15-minute interval
+const SPD = 96;       // intervals per day
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ---------- utilities ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(rnd) {
+  let u = 0, v = 0;
+  while (!u) u = rnd();
+  while (!v) v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function num(v, d) { v = +v; return isFinite(v) ? v : (d || 0); }
+
+/* ---------- calendar ---------- */
+function monthsEndingAt(endY, endM, n) {
+  const out = [];
+  for (let k = n - 1; k >= 0; k--) {
+    let y = endY, m = endM - k;
+    while (m < 0) { m += 12; y--; }
+    out.push({ y, m, days: new Date(y, m + 1, 0).getDate(), dow0: new Date(y, m, 1).getDay(), label: MN[m] + ' ' + String(y).slice(2) });
+  }
+  return out;
+}
+
+/* ---------- synthetic load shapes (hourly, relative) ---------- */
+const flat = (v) => new Array(24).fill(v);
+const PROFILES = {
+  office: { label: 'Office or professional services',
+    wd: [.30,.30,.30,.30,.30,.32,.45,.70,.90,1,1,1,.95,1,1,1,.95,.80,.60,.45,.38,.34,.32,.30],
+    we: [.30,.30,.30,.30,.30,.30,.30,.32,.34,.36,.36,.36,.36,.36,.36,.35,.34,.33,.32,.31,.30,.30,.30,.30] },
+  retail: { label: 'Retail, seven days',
+    wd: [.30,.28,.28,.28,.28,.30,.35,.50,.70,.90,1,1,1,1,1,1,1,1,1,.95,.85,.65,.45,.35],
+    we: [.30,.28,.28,.28,.28,.30,.35,.50,.70,.90,1,1,1,1,1,1,1,1,1,.95,.85,.65,.45,.35] },
+  restaurant: { label: 'Restaurant or bar',
+    wd: [.25,.22,.20,.20,.20,.22,.30,.40,.50,.65,.80,.95,1,.95,.80,.70,.75,.90,1,1,.95,.85,.60,.40],
+    we: [.25,.22,.20,.20,.20,.22,.30,.45,.65,.85,1,1,1,.95,.85,.75,.80,.95,1,1,.95,.85,.65,.40] },
+  venue: { label: 'Evening venue or assembly hall',
+    wd: [.20,.20,.20,.20,.20,.20,.20,.25,.30,.35,.40,.40,.40,.40,.45,.50,.60,.75,.95,1,1,.90,.60,.35],
+    we: [.20,.20,.20,.20,.20,.20,.20,.25,.40,.60,.90,1,.90,.70,.60,.60,.60,.70,.85,.95,.90,.80,.50,.30] },
+  warehouse: { label: 'Warehouse or light industrial, one shift',
+    wd: [.35,.35,.35,.35,.35,.45,.80,1,1,1,1,.95,.90,1,1,1,.95,.70,.45,.38,.35,.35,.35,.35],
+    we: flat(.33) },
+  continuous: { label: 'Around the clock (healthcare, cold storage)',
+    wd: [.80,.78,.78,.78,.78,.80,.85,.92,.97,1,1,1,1,1,1,1,.98,.96,.94,.90,.86,.84,.82,.80],
+    we: [.76,.74,.74,.74,.74,.76,.80,.86,.92,.96,.97,.97,.97,.97,.97,.96,.94,.92,.90,.86,.82,.80,.78,.76] }
+};
+
+/* Build one month of 15-minute kW values that honours the monthly kWh and monthly peak kW. */
+function genMonthLoad(mon, kwh, peak, profKey, sigma, seed) {
+  const N = mon.days * SPD, P = PROFILES[profKey] || PROFILES.office, rnd = mulberry32(seed);
+  const r = new Float64Array(N);
+  let ar = 0;
+  const eps = 0.5 * sigma;
+  for (let d = 0; d < mon.days; d++) {
+    const dow = (mon.dow0 + d) % 7, arr = (dow === 0 || dow === 6) ? P.we : P.wd;
+    const df = Math.max(0.45, 1 + sigma * gauss(rnd));
+    for (let s = 0; s < SPD; s++) {
+      const h = s / 4, h0 = Math.floor(h), f = h - h0;
+      const base = arr[h0] * (1 - f) + arr[(h0 + 1) % 24] * f;
+      ar = 0.8 * ar + 0.6 * gauss(rnd);
+      r[d * SPD + s] = Math.max(0.05, base * df * (1 + eps * ar));
+    }
+  }
+  let mx = 0;
+  for (let i = 0; i < N; i++) if (r[i] > mx) mx = r[i];
+  for (let i = 0; i < N; i++) r[i] /= mx;
+  const meanKw = kwh / (mon.days * 24);
+  const R = Math.max(1.02, peak / Math.max(meanKw, 1e-6));
+  const meanPow = (g) => { let s = 0; for (let i = 0; i < N; i++) s += Math.pow(r[i], g); return s / N; };
+  let lo = 0.01, hi = 10;
+  for (let it = 0; it < 36; it++) { const g = (lo + hi) / 2; if (meanPow(g) > 1 / R) lo = g; else hi = g; }
+  const g = (lo + hi) / 2;
+  let sum = 0;
+  const out = new Float64Array(N);
+  for (let i = 0; i < N; i++) { out[i] = Math.pow(r[i], g); sum += out[i]; }
+  const c = kwh / (DT * sum);
+  for (let i = 0; i < N; i++) out[i] *= c;
+  return out;
+}
+
+/* ---------- time windows ---------- */
+function winMask(w, mon) {
+  const N = mon.days * SPD, out = new Uint8Array(N);
+  if (!w || !w.on) return out;
+  const m1 = mon.m + 1;
+  const inM = w.mStart <= w.mEnd ? (m1 >= w.mStart && m1 <= w.mEnd) : (m1 >= w.mStart || m1 <= w.mEnd);
+  if (!inM) return out;
+  for (let d = 0; d < mon.days; d++) {
+    const dow = (mon.dow0 + d) % 7, we = dow === 0 || dow === 6;
+    if (w.days === 'weekdays' && we) continue;
+    if (w.days === 'weekends' && !we) continue;
+    for (let s = 0; s < SPD; s++) {
+      const h = s / 4;
+      const inH = w.start === w.end ? true : (w.start < w.end ? (h >= w.start && h < w.end) : (h >= w.start || h < w.end));
+      if (inH) out[d * SPD + s] = 1;
+    }
+  }
+  return out;
+}
+
+/* ---------- rates ---------- */
+function normRates(r) {
+  const win = (w) => ({ on: !!w.on, rate: num(w.rate), start: num(w.start, 0), end: num(w.end, 24), days: w.days || 'weekdays', mStart: num(w.mStart, 1), mEnd: num(w.mEnd, 12) });
+  return {
+    fixed: num(r.fixed), demand: num(r.demand), rider: num(r.rider),
+    pfOn: !!r.pfOn, pfThr: num(r.pfThr, 0.9), pfValue: num(r.pfValue, 0.9), pfCorrect: !!r.pfCorrect,
+    energyBase: num(r.eEnergy) + num(r.eCommunity) + num(r.ePsa) + num(r.ePsaAdmin),
+    mid: win(r.mid || {}), peak: win(r.peak || {}), pkDemand: win(r.pkDemand || {}),
+    tax: num(r.tax) / 100, ratchet: num(r.ratchet) / 100
+  };
+}
+
+/* ---------- scenario: baseline facts per month ---------- */
+function buildScenario(months, loads, rates) {
+  return months.map((mon, i) => {
+    const load = loads[i], N = load.length, days = mon.days;
+    const maskPk = winMask(rates.pkDemand, mon);
+    const price = new Float64Array(N).fill(rates.energyBase);
+    if (rates.mid.on) { const mk = winMask(rates.mid, mon); for (let k = 0; k < N; k++) if (mk[k]) price[k] = rates.mid.rate; }
+    if (rates.peak.on) { const mk = winMask(rates.peak, mon); for (let k = 0; k < N; k++) if (mk[k]) price[k] = rates.peak.rate; }
+    let peakAll = 0, peakPk = 0, kwh = 0, energyCost = 0, anyPk = false;
+    for (let k = 0; k < N; k++) {
+      const L = load[k];
+      if (L > peakAll) peakAll = L;
+      if (maskPk[k]) { anyPk = true; if (L > peakPk) peakPk = L; }
+      kwh += L * DT; energyCost += L * DT * price[k];
+    }
+    const dayMin = new Float64Array(days), dayMax = new Float64Array(days);
+    let arbPossible = false;
+    for (let d = 0; d < days; d++) {
+      let mn = Infinity, mx = -Infinity;
+      for (let s = 0; s < SPD; s++) { const p = price[d * SPD + s]; if (p < mn) mn = p; if (p > mx) mx = p; }
+      dayMin[d] = mn; dayMax[d] = mx;
+      if (mx > mn * 1.05 + 1e-9) arbPossible = true;
+    }
+    return { mon, load, N, maskPk, price, peakAll, peakPk, kwh, energyCost, dayMin, dayMax, hasPk: anyPk && rates.pkDemand.rate > 0, arbPossible };
+  });
+}
+
+/* ---------- battery dispatch ---------- */
+function feasible(sm, Tall, Tpk, P, E, ed, ec) {
+  const load = sm.load, mask = sm.maskPk, N = sm.N;
+  let S = E;
+  for (let i = 0; i < N; i++) {
+    const L = load[i], T = mask[i] ? Tpk : Tall;
+    if (L > T) {
+      const need = L - T;
+      if (need > P + 1e-9) return false;
+      if (need > S * ed / DT + 1e-9) return false;
+      S -= need * DT / ed;
+    } else {
+      let c = T - L; if (c > P) c = P;
+      const cap = (E - S) / (ec * DT); if (c > cap) c = cap;
+      if (c > 0) S += c * ec * DT;
+    }
+  }
+  return true;
+}
+
+function minTall(sm, Tpk, P, E, ed, ec, lo, hi) {
+  if (feasible(sm, lo, Tpk, P, E, ed, ec)) return lo;
+  for (let k = 0; k < 16; k++) {
+    const mid = (lo + hi) / 2;
+    if (feasible(sm, mid, Tpk, P, E, ed, ec)) hi = mid; else lo = mid;
+  }
+  return hi;
+}
+
+function findThresholds(sm, P, E, ed, ec, wA, wP) {
+  if (!sm.hasPk) {
+    const Ta = minTall(sm, Infinity, P, E, ed, ec, Math.max(0, sm.peakAll - P), sm.peakAll);
+    return { Tall: Ta, Tpk: Infinity };
+  }
+  const pkLo = Math.max(0, sm.peakPk - P), pkHi = sm.peakPk;
+  let best = null, bestC = Infinity;
+  for (let k = 0; k <= 10; k++) {
+    const Tp = pkLo + (pkHi - pkLo) * k / 10;
+    if (!feasible(sm, sm.peakAll, Tp, P, E, ed, ec)) continue;
+    const Ta = minTall(sm, Tp, P, E, ed, ec, Math.max(Tp, sm.peakAll - P), sm.peakAll);
+    const c = wA * Ta + wP * Tp;
+    if (c < bestC) { bestC = c; best = { Tall: Ta, Tpk: Tp }; }
+  }
+  return best || { Tall: sm.peakAll, Tpk: sm.peakPk };
+}
+
+function dispatch(sm, Tall, Tpk, P, E, eta, ed, ec, arb, rec) {
+  const load = sm.load, mask = sm.maskPk, price = sm.price, N = sm.N;
+  let S = E, pa = 0, pp = 0, cost = 0, kwhGrid = 0;
+  const grid = rec ? new Float64Array(N) : null, soc = rec ? new Float32Array(N) : null;
+  let reserve = null;
+  if (arb) {
+    reserve = new Float64Array(N + 1);
+    const days = N / SPD;
+    for (let d = 0; d < days; d++) {
+      for (let s = SPD - 1; s >= 0; s--) {
+        const i = d * SPD + s, T = mask[i] ? Tpk : Tall;
+        const need = Math.max(0, load[i] - T) * DT / ed;
+        reserve[i] = need + (s === SPD - 1 ? 0 : reserve[i + 1]);
+      }
+    }
+  }
+  for (let i = 0; i < N; i++) {
+    const L = load[i], T = mask[i] ? Tpk : Tall;
+    let g = L, dis = 0;
+    if (L > T) {
+      dis = L - T; if (dis > P) dis = P;
+      const mx = S * ed / DT; if (dis > mx) dis = mx;
+    }
+    let d = 0;
+    if (arb) {
+      d = (i / SPD) | 0;
+      if (price[i] >= sm.dayMax[d] - 1e-12 && sm.dayMax[d] * eta > sm.dayMin[d] * 1.05) {
+        const rem = ((i + 1) % SPD === 0) ? 0 : reserve[i + 1];
+        let ex = Math.min(P - dis, L - dis, (S - rem) * ed / DT - dis);
+        if (ex > 0) dis += ex;
+      }
+    }
+    if (dis > 0) { S -= dis * DT / ed; g = L - dis; }
+    else if (L < T) {
+      let allow = true;
+      if (arb) allow = price[i] <= sm.dayMin[d] * 1.0001 + 1e-12 || S < reserve[i];
+      if (allow) {
+        let c = T - L; if (c > P) c = P;
+        const cap = (E - S) / (ec * DT); if (c > cap) c = cap;
+        if (c > 0) { S += c * ec * DT; g = L + c; }
+      }
+    }
+    if (g > pa) pa = g;
+    if (mask[i] && g > pp) pp = g;
+    cost += g * DT * price[i]; kwhGrid += g * DT;
+    if (rec) { grid[i] = g; soc[i] = S; }
+  }
+  return { peakAll: pa, peakPk: pp, energyCost: cost, kwhGrid, grid, soc };
+}
+
+function simulateMonth(sm, P, Eus, eta, rates, fA, rec) {
+  const wA = rates.demand + rates.rider, wP = sm.hasPk ? rates.pkDemand.rate : 0;
+  const base = { peakAll: sm.peakAll, peakPk: sm.peakPk, energyCost: sm.energyCost, kwhGrid: sm.kwh, grid: rec ? sm.load : null, soc: null, Tall: sm.peakAll };
+  if (!(P > 0) || !(Eus > 0)) return base;
+  const ed = Math.sqrt(eta), ec = ed;
+  const th = findThresholds(sm, P, Eus, ed, ec, wA, wP);
+  const cost = (d) => (wA * d.peakAll + wP * d.peakPk) * fA + d.energyCost;
+  let best = dispatch(sm, th.Tall, th.Tpk, P, Eus, eta, ed, ec, false, rec);
+  let bc = cost(best);
+  if (sm.arbPossible) {
+    const d1 = dispatch(sm, th.Tall, th.Tpk, P, Eus, eta, ed, ec, true, rec);
+    const c1 = cost(d1);
+    if (c1 < bc) { best = d1; bc = c1; }
+  }
+  const b0c = cost(base);
+  if (bc > b0c) return base;   // never worse than doing nothing
+  best.Tall = th.Tall;
+  return best;
+}
+
+/* ---------- billing ---------- */
+function ratchetApply(peaks, pct) {
+  const n = peaks.length;
+  if (!(pct > 0)) return peaks.slice();
+  return peaks.map((p, m) => {
+    let mx = 0;
+    for (let k = 1; k <= Math.min(11, n - 1); k++) mx = Math.max(mx, peaks[((m - k) % n + n) % n]);
+    return Math.max(p, pct * mx);
+  });
+}
+
+function bill(peaks, pks, energy, f, rates, n) {
+  const wA = rates.demand + rates.rider, wP = rates.pkDemand.rate;
+  const billed = ratchetApply(peaks, rates.ratchet);
+  let dem = 0, pf = 0, pk = 0, en = 0;
+  for (let m = 0; m < n; m++) {
+    dem += wA * billed[m]; pf += wA * billed[m] * (f - 1);
+    pk += wP * pks[m] * f; en += energy[m];
+  }
+  const ann = 12 / n, cust = rates.fixed * n;
+  const sub = cust + dem + pf + pk + en;
+  const tax = sub * rates.tax;
+  return { customer: cust * ann, demand: dem * ann, pf: pf * ann, peakDemand: pk * ann, energy: en * ann, tax: tax * ann, total: (sub + tax) * ann };
+}
+
+function evalYear(scn, rates, batt, capFactor, rec) {
+  const n = scn.length;
+  const P = batt.P, Eus = batt.E * batt.usable * capFactor, eta = batt.eta;
+  const fB = (rates.pfOn && rates.pfValue > 0 && rates.pfValue < rates.pfThr) ? rates.pfThr / rates.pfValue : 1;
+  const fA = rates.pfCorrect ? 1 : fB;
+  const bp = [], bpk = [], be = [], ap = [], apk = [], ae = [], sims = [];
+  for (let m = 0; m < n; m++) {
+    const sm = scn[m];
+    const r = simulateMonth(sm, P, Eus, eta, rates, fA, rec);
+    bp.push(sm.peakAll); bpk.push(sm.peakPk); be.push(sm.energyCost);
+    ap.push(r.peakAll); apk.push(r.peakPk); ae.push(r.energyCost);
+    if (rec) sims.push(r);
+  }
+  const before = bill(bp, bpk, be, fB, rates, n), after = bill(ap, apk, ae, fA, rates, n);
+  const tx = 1 + rates.tax;
+  const saveD = ((before.demand + before.pf + before.peakDemand) - (after.demand + after.pf + after.peakDemand)) * tx;
+  const saveE = (before.energy - after.energy) * tx;
+  return {
+    before, after, save: before.total - after.total, saveD, saveE, fB, fA,
+    monthly: scn.map((sm, m) => ({ label: sm.mon.label, before: bp[m], after: ap[m] })),
+    sims
+  };
+}
+
+/* ---------- finance ---------- */
+const MACRS5 = [0.20, 0.32, 0.192, 0.1152, 0.1152, 0.0576];
+
+function capexOf(batt, fin) {
+  if (fin.itemized) return fin.fixed + fin.perKw * batt.P + fin.perKwh * batt.E;
+  // One all-in $/kWh, quoted for a 2-hour system of roughly 100 kWh. Shorter and smaller systems cost more per kWh.
+  const d = batt.P > 0 ? batt.E / batt.P : 2;
+  return fin.price * batt.E * (0.65 + 0.70 / Math.max(0.25, d)) * Math.max(1, Math.pow(100 / Math.max(1, batt.E), 0.25));
+}
+
+function lifetimeAnchors(scn, rates, batt, fin) {
+  const L = fin.life;
+  const ys = Array.from(new Set([1, Math.max(1, Math.round((L + 1) / 2)), L]));
+  return ys.map((y) => { const r = evalYear(scn, rates, batt, Math.pow(1 - fin.deg, y - 1), false); return { yr: y, s: r.save, sD: r.saveD, sE: r.saveE }; });
+}
+
+function interp(anchors, y, key) {
+  key = key || 's';
+  if (y <= anchors[0].yr) return anchors[0][key];
+  for (let i = 1; i < anchors.length; i++) {
+    if (y <= anchors[i].yr) {
+      const a = anchors[i - 1], b = anchors[i];
+      return a[key] + (b[key] - a[key]) * (y - a.yr) / (b.yr - a.yr);
+    }
+  }
+  return anchors[anchors.length - 1][key];
+}
+
+function cashflow(anchors, capex, fin) {
+  const L = fin.life, t = fin.tax;
+  const net0 = capex * (1 - fin.itc) - fin.rebate;
+  const basis = capex * (1 - fin.itc / 2);
+  const cf = [-net0], rows = [];
+  let cum = -net0; const cumArr = [cum];
+  for (let k = 1; k <= L; k++) {
+    const esc = Math.pow(1 + fin.esc, k - 1), escD = Math.pow(1 + (fin.escD === undefined ? fin.esc : fin.escD), k - 1);
+    const sav = interp(anchors, k, 'sD') * escD + interp(anchors, k, 'sE') * esc, om = fin.om * capex * esc;
+    const dep = fin.macrs ? basis * (MACRS5[k - 1] || 0) : 0;
+    const c = (sav - om) * (1 - t) + t * dep;
+    cf.push(c); cum += c; cumArr.push(cum);
+    rows.push({ yr: k, sav, om, dep, cf: c, cum });
+  }
+  let npv = 0;
+  for (let k = 0; k <= L; k++) npv += cf[k] / Math.pow(1 + fin.disc, k);
+  let payback = null;
+  for (let k = 1; k <= L; k++) {
+    if (cumArr[k] >= 0 && cumArr[k - 1] < 0) { payback = (k - 1) + (-cumArr[k - 1]) / (cumArr[k] - cumArr[k - 1]); break; }
+  }
+  if (payback === null && cumArr[0] >= 0) payback = 0;
+  return { cf, cum: cumArr, rows, npv, irr: irrOf(cf), payback, net0, yr1: rows.length ? rows[0].sav - rows[0].om : 0 };
+}
+
+function irrOf(cf) {
+  const f = (r) => cf.reduce((s, c, k) => s + c / Math.pow(1 + r, k), 0);
+  let lo = -0.9, hi = 5;
+  if (f(lo) * f(hi) > 0) return null;
+  for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (f(lo) * f(mid) <= 0) hi = mid; else lo = mid; }
+  return (lo + hi) / 2;
+}
+
+function breakEvenCapex(anchors, capex, fin) {
+  const npvAt = (c) => cashflow(anchors, c, fin).npv;
+  if (npvAt(0) <= 0) return 0;
+  let lo = 0, hi = Math.max(capex, 1000) * 8;
+  if (npvAt(hi) > 0) return hi;
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (npvAt(mid) > 0) lo = mid; else hi = mid; }
+  return lo;
+}
+
+function evalCandidate(scn, rates, batt, fin) {
+  const anchors = lifetimeAnchors(scn, rates, batt, fin);
+  const capex = capexOf(batt, fin);
+  const cfw = cashflow(anchors, capex, fin);
+  const beCapex = breakEvenCapex(anchors, capex, fin);
+  return Object.assign({ P: batt.P, E: batt.E, dur: batt.P > 0 ? batt.E / batt.P : 0, capex, anchors, beCapex, bePrice: batt.E > 0 ? beCapex / batt.E : 0 }, cfw);
+}
+
+/* ---------- optimizer ---------- */
+const DURATIONS = [0.5, 1, 1.5, 2, 3, 4];
+
+function powerCandidates(scn, capKw) {
+  const maxPeak = Math.max.apply(null, scn.map((s) => s.peakAll));
+  let pmax = 0.9 * maxPeak;
+  if (capKw > 0) pmax = Math.min(pmax, capKw);
+  const step = pmax < 25 ? 1 : pmax < 100 ? 5 : pmax < 400 ? 10 : 25;
+  const set = new Set();
+  for (let k = 1; k <= 10; k++) {
+    const p = Math.max(step, Math.round(pmax * k / 10 / step) * step);
+    if (p <= Math.max(pmax, step)) set.add(p);
+  }
+  return Array.from(set).sort((a, b) => a - b);
+}
+
+function pickBest(cands, objective) {
+  let best = null;
+  if (!cands.some((c) => c.npv > 0)) {
+    // nothing pays back: report the size closest to breaking even
+    for (const c of cands) if (!best || c.beCapex / c.capex > best.beCapex / best.capex) best = c;
+    return best;
+  }
+  const score = (c) => objective === 'payback' ? (c.payback === null ? 1e9 - c.npv : c.payback)
+    : objective === 'irr' ? -(c.irr === null ? -1e9 : c.irr) : -c.npv;
+  for (const c of cands) if (!best || score(c) < score(best)) best = c;
+  return best;
+}
+
+root.Engine = {
+  DT, SPD, MN, PROFILES, DURATIONS,
+  monthsEndingAt, genMonthLoad, winMask, normRates, buildScenario,
+  simulateMonth, evalYear, capexOf, lifetimeAnchors, cashflow, evalCandidate, breakEvenCapex,
+  powerCandidates, pickBest, bill, ratchetApply, mulberry32
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = root.Engine;
+})(typeof self !== 'undefined' ? self : globalThis);
+
+</script>
+<script>
+/* Bill and interval-data parsing. Pure functions; PDF.js and canvas calls live in app.js. */
+(function (root) {
+'use strict';
+
+const MON3 = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+const n = (s) => parseFloat(String(s).replace(/,/g, ''));
+
+function allMatches(re, text) {
+  const out = [], g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+  let m;
+  while ((m = g.exec(text))) out.push(m);
+  return out;
+}
+
+/* Read rate lines and billing facts from the bill's text. Returns only what it found. */
+function parseBillText(raw) {
+  const t = raw.replace(/\s+/g, ' ');
+  const f = {}, notes = [];
+
+  const dm = /Bill Print Date.{0,80}?([A-Za-z]{3}) (\d{1,2}), (\d{4})/.exec(t);
+  if (dm) { f.billMonth = MON3.indexOf(dm[1].toLowerCase()); f.billYear = +dm[3]; }
+  const cls = /City of Austin Electric - (.*?) Customer Charge/.exec(t);
+  if (cls) f.rateClass = cls[1].trim();
+  f.isAustin = /City of Austin|Austin Energy/i.test(t);
+
+  const dem = allMatches(/Demand Charge\s+([\d.,]+)\s*kW at\s*\$\s?([\d.,]+)\s*per\s*kW/i, t);
+  if (dem.length) { f.demand = n(dem[0][2]); f.billedKw = dem.map((m) => n(m[1])); }
+  const reg = allMatches(/Regulatory Charges?\s+([\d.,]+)\s*kW at\s*\$\s?([\d.,]+)\s*per\s*kW/i, t);
+  if (reg.length) f.rider = n(reg[0][2]);
+  const en = allMatches(/Energy Charge\s+([\d.,]+)\s*kWh at\s*\$\s?([\d.,]+)\s*per\s*kWh/i, t);
+  if (en.length) { f.eEnergy = n(en[0][2]); f.energyKwh = en.reduce((s, m) => s + n(m[1]), 0); }
+  const psa = allMatches(/Power Supply Adjustment\s+([\d.,]+)\s*kWh at\s*\$\s?(-?[\d.]+)\s*per\s*kWh/i, t);
+  if (psa.length) f.ePsa = n(psa[0][2]);
+  const adm = allMatches(/Power Supply Administrative Adjustment\s+([\d.,]+)\s*kWh at\s*\$\s?(-?[\d.]+)\s*per\s*kWh/i, t);
+  if (adm.length) f.ePsaAdmin = n(adm[0][2]);
+  const cb = allMatches(/Community Benefit Charges[\s.]*\$\s?([\d.,]+)/i, t);
+  if (cb.length && f.energyKwh) f.eCommunity = Math.round(cb.reduce((s, m) => s + n(m[1]), 0) / f.energyKwh * 100000) / 100000;
+  const cu = allMatches(/Customer Charge[\s.]*\$\s?([\d,]+\.\d\d)/i, t);
+  if (cu.length) f.fixed = n(cu[0][1]);
+  const vos = /Value of Solar\s+([\d,]+)\s*PV kWh at \$(-?[\d.]+)\s*per kWh/i.exec(t);
+  if (vos) { f.solarKwh = n(vos[1]); f.solarRate = Math.abs(n(vos[2])); }
+
+  let tax = 0, taxFound = 0;
+  for (const re of [/Capital Metro Sales Tax\s*([\d.]+)%/i, /City Sales Tax\s*([\d.]+)%/i, /State Sales Tax\s*([\d.]+)%/i]) {
+    const m = re.exec(t); if (m) { tax += n(m[1]); taxFound++; }
+  }
+  if (taxFound) f.tax = Math.round(tax * 1000) / 1000;
+
+  const du = allMatches(/Demand Usage\s+([\d.]+)/i, t).map((m) => n(m[1]));
+  const pfs = allMatches(/Power Factor\s+(0?\.\d+|1\.0+)\b/i, t).map((m) => n(m[1]));
+  if (du.length) {
+    f.demandReads = du;
+    let k = 0; du.forEach((d, i) => { if (d > du[k]) k = i; });
+    f.peakKw = du[k];
+    if (pfs.length === du.length) f.pfValue = pfs[k];
+  }
+  if (f.pfValue === undefined && pfs.length) f.pfValue = pfs[0];
+  const pfa = /Power Factor Adjustment Below 90%[\s.]*\$\s?([\d.,]+)/i.exec(t);
+  if (pfa) f.pfAdjustmentFound = true;
+
+  // load factor from the full-period electric block
+  const blk = /Read Date (\d{2})\/(\d{2})\/(\d{4}) (\d{2})\/(\d{2})\/(\d{4}) Consumption\s+Read \d+ \d+ \d+\s+Reading Difference \d+\s+Meter Multiplier \d+\s+Total Consumption in KWH ([\d,]+)\s+Demand Usage ([\d.]+)/i.exec(t);
+  if (blk) {
+    const d0 = new Date(+blk[3], +blk[1] - 1, +blk[2]), d1 = new Date(+blk[6], +blk[4] - 1, +blk[5]);
+    const days = Math.round((d1 - d0) / 86400000);
+    const kwh = n(blk[7]), kw = n(blk[8]);
+    if (days > 0 && kw > 0) f.loadFactor = kwh / (days * 24 * kw);
+  }
+
+  const used = /kWh Used\s+(\d[\d,]*)/i.exec(t);
+  if (used) f.kwhUsedChart = n(used[1]);
+  const avg = /13 month avg\. consumption:\s*([\d.,]+)/i.exec(t);
+  if (avg) f.chartAvg = n(avg[1]);
+  return { found: f, notes };
+}
+
+/* Convert PDF.js text items to pixel coordinates (origin top-left). */
+function toPixelItems(tc, viewport, Util) {
+  return tc.items.filter((it) => it.str && it.str.trim()).map((it) => {
+    const tr = Util.transform(viewport.transform, it.transform);
+    return { str: it.str, x: tr[4], y: tr[5], w: (it.width || 0) * viewport.scale, h: Math.abs(tr[3]) };
+  });
+}
+
+/* Read the 13 bars of the "Your Electricity Use (KWH)" chart from page pixels. */
+function extractMonthlyKwh(o) {
+  const { gray, W, H, items, scale, avg } = o;
+  const title = items.find((it) => /Your Electricity Use/i.test(it.str));
+  if (!title) return null;
+  const x0 = Math.max(0, Math.floor(title.x - 6 * scale)), x1 = Math.min(W - 1, Math.floor(title.x + 190 * scale));
+  const y0 = Math.floor(title.y + 8 * scale), y1 = Math.min(H - 1, Math.floor(title.y + 76 * scale));
+  const dark = (x, y) => gray[y * W + x] < 110;
+  const cols = [];
+  for (let x = x0; x <= x1; x++) { let c = 0; for (let y = y0; y <= y1; y++) if (dark(x, y)) c++; cols.push(c); }
+  const thr = 4 * scale, minW = 3 * scale;
+  const cl = []; let s = -1;
+  for (let i = 0; i <= cols.length; i++) {
+    const on = i < cols.length && cols[i] > thr;
+    if (on && s < 0) s = i;
+    if (!on && s >= 0) { if (i - s >= minW) cl.push([s, i - 1]); s = -1; }
+  }
+  if (cl.length !== 13) return { error: 'Found ' + cl.length + ' bars where 13 were expected.' };
+  // dotted grid rows measured in the gaps between bars
+  const gapCols = [];
+  for (let x = cl[0][0]; x <= cl[12][1]; x++) if (!cl.some((c) => x >= c[0] && x <= c[1])) gapCols.push(x + x0);
+  // the baseline is the top row of the lowest dense row cluster inside the plot (grid dots and axis line)
+  let zero = -1, inRun = false;
+  for (let y = y0; y <= y1; y++) {
+    let c = 0; for (const x of gapCols) if (dark(x, y)) c++;
+    const flagged = c > 0.25 * gapCols.length;
+    if (flagged && !inRun) zero = y;
+    inRun = flagged;
+  }
+  if (zero < 0) return { error: 'Could not find the chart baseline.' };
+  const px = cl.map((c) => {
+    const cx = x0 + ((c[0] + c[1]) >> 1);
+    let y = zero - Math.max(2, Math.round(scale));
+    while (y - 1 >= y0 && dark(cx, y - 1)) y--;
+    return zero - y;
+  });
+  const sum = px.reduce((a, b) => a + b, 0);
+  if (!(sum > 0)) return { error: 'The bars were empty.' };
+  const k = avg ? (13 * avg) / sum : null;
+  return { px, kwh: k ? px.map((p) => p * k) : null };
+}
+
+/* ---------- interval CSV ---------- */
+function splitLine(line, delim) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') q = !q;
+    else if (ch === delim && !q) { out.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+const isTimeCell = (s) => /^\d{1,2}:\d{2}(:\d{2})?(\s*[APap][Mm])?$/.test(s);
+function parseTs(row) {
+  for (let j = 0; j < row.length; j++) {
+    const c = row[j];
+    if (!/\d/.test(c) || !/[-\/]/.test(c)) continue;
+    let str = c;
+    if (!/\d:\d{2}/.test(c) && j + 1 < row.length && isTimeCell(row[j + 1])) str = c + ' ' + row[j + 1];
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return { d, col: j, withNext: str !== c };
+  }
+  return null;
+}
+
+function parseIntervalCsv(text) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 10) return { error: 'The file has too few rows to be interval data.' };
+  const delim = [',', '\t', ';'].sort((a, b) => lines[Math.min(5, lines.length - 1)].split(b).length - lines[Math.min(5, lines.length - 1)].split(a).length)[0];
+  const rows = lines.map((l) => splitLine(l, delim));
+  let first = -1;
+  for (let i = 0; i < rows.length - 3; i++) {
+    if (parseTs(rows[i]) && parseTs(rows[i + 1]) && parseTs(rows[i + 2])) { first = i; break; }
+  }
+  if (first < 0) return { error: 'No timestamps found. Expected a date and time column.' };
+  const header = first > 0 ? rows[first - 1].map((h) => h.toLowerCase()) : [];
+  const sample = parseTs(rows[first]);
+  const skip = new Set([sample.col]); if (sample.withNext) skip.add(sample.col + 1);
+  let vcol = -1;
+  const pref = header.findIndex((h, j) => !skip.has(j) && /(kwh|kw\b|usage|demand|consumption|energy|value)/.test(h) && !/(end|start|date|time)/.test(h));
+  if (pref >= 0) vcol = pref;
+  else {
+    for (let j = rows[first].length - 1; j >= 0; j--) if (!skip.has(j) && isFinite(n(rows[first][j])) && rows[first][j] !== '') { vcol = j; break; }
+  }
+  if (vcol < 0) return { error: 'No usage column found.' };
+  const hv = header[vcol] || '';
+  const isEnergy = /kwh/.test(hv) || !/\bkw\b/.test(hv);
+  const pts = [];
+  for (let i = first; i < rows.length; i++) {
+    const ts = parseTs(rows[i]); if (!ts) continue;
+    const v = n(rows[i][vcol]); if (!isFinite(v)) continue;
+    pts.push([ts.d.getTime(), v]);
+  }
+  pts.sort((a, b) => a[0] - b[0]);
+  if (pts.length < 100) return { error: 'Only ' + pts.length + ' readings found.' };
+  const diffs = []; for (let i = 1; i < Math.min(pts.length, 500); i++) diffs.push((pts[i][0] - pts[i - 1][0]) / 60000);
+  diffs.sort((a, b) => a - b);
+  const step = diffs[diffs.length >> 1];
+  if (!(step >= 1 && step <= 60)) return { error: 'Readings are ' + Math.round(step) + ' minutes apart. Use 5, 15, 30 or 60 minute data.' };
+
+  const byMonth = new Map();
+  for (const [ms, v] of pts) {
+    const d = new Date(ms), key = d.getFullYear() * 12 + d.getMonth();
+    if (!byMonth.has(key)) {
+      const y = d.getFullYear(), m = d.getMonth(), days = new Date(y, m + 1, 0).getDate();
+      byMonth.set(key, { y, m, days, dow0: new Date(y, m, 1).getDay(), sum: new Float64Array(days * 96), cnt: new Uint16Array(days * 96) });
+    }
+    const mo = byMonth.get(key);
+    const startSlot = Math.floor((ms - new Date(mo.y, mo.m, 1).getTime()) / 900000);
+    const kw = isEnergy ? v * 60 / step : v;
+    const span = Math.max(1, Math.round(step / 15));
+    for (let k = 0; k < span; k++) {
+      const sl = startSlot + k;
+      if (sl >= 0 && sl < mo.sum.length) { mo.sum[sl] += kw; mo.cnt[sl]++; }
+    }
+  }
+  const keys = Array.from(byMonth.keys()).sort((a, b) => a - b);
+  const months = [], loads = [], warn = [];
+  for (const key of keys) {
+    const mo = byMonth.get(key);
+    let have = 0; for (let i = 0; i < mo.cnt.length; i++) if (mo.cnt[i]) have++;
+    if (have < mo.cnt.length * 0.6) { warn.push(MON3[mo.m] + ' ' + mo.y + ' skipped (' + Math.round(100 * have / mo.cnt.length) + '% covered)'); continue; }
+    const out = new Float64Array(mo.cnt.length);
+    let avg = 0; for (let i = 0; i < out.length; i++) if (mo.cnt[i]) { out[i] = mo.sum[i] / mo.cnt[i]; avg += out[i]; }
+    avg /= have;
+    for (let i = 0; i < out.length; i++) if (!mo.cnt[i]) out[i] = avg;
+    months.push({ y: mo.y, m: mo.m, days: mo.days, dow0: mo.dow0, label: MON3[mo.m][0].toUpperCase() + MON3[mo.m].slice(1) + ' ' + String(mo.y).slice(2) });
+    loads.push(out);
+  }
+  if (!months.length) return { error: 'No month had enough readings.' };
+  const keep = Math.max(0, months.length - 12);
+  return { months: months.slice(keep), loads: loads.slice(keep), step, unit: isEnergy ? 'kWh per interval' : 'kW', warn };
+}
+
+root.Parse = { parseBillText, toPixelItems, extractMonthlyKwh, parseIntervalCsv };
+if (typeof module !== 'undefined' && module.exports) module.exports = root.Parse;
+})(typeof self !== 'undefined' ? self : globalThis);
+
+</script>
+<script>
+/* Peak Shave Calculator: interface */
+(function () {
+'use strict';
+const E = window.Engine, P = window.Parse;
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFWORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ---------- defaults and presets ---------- */
+const WIN = (o) => Object.assign({ on: false, rate: 0, start: 16, end: 21, days: 'weekdays', mStart: 6, mEnd: 9 }, o || {});
+const BASE_RATES = {
+  fixed: 60.08, demand: 9.83, rider: 3.73,
+  pfOn: true, pfThr: 0.9, pfValue: 0.79, pfCorrect: false,
+  eEnergy: 0.01932, eCommunity: 0.00948, ePsa: 0.04118, ePsaAdmin: -0.00206,
+  mid: WIN({ rate: 0.11, start: 7, end: 16, mStart: 1, mEnd: 12 }),
+  peak: WIN({ rate: 0.22 }),
+  pkDemand: WIN({ rate: 14 }),
+  tax: 8.25, ratchet: 0
+};
+const PRESETS = {
+  austin_bill: { label: 'Austin Energy, Secondary 10 to 300 kW (rates on your Sep 2026 bill)', note: 'Rates as printed on the bill. Demand is the highest 15-minute reading in the month and the tariff has no ratchet. Power factor below 90% raises billed kW.', patch: {} },
+  austin_pub: { label: 'Austin Energy, Secondary 10 to 300 kW (rate page)', note: 'Customer, demand, regulatory and energy charges as listed on austinenergy.com/rates/commercial-rates. Power supply and community benefit adders are carried over from your bill. These differ from your Sep 2026 bill, so the page may show a newer rate year.', patch: { fixed: 63.08, demand: 10.32, rider: 5.03, eEnergy: 0.02029 } },
+  austin_sv3: { label: 'Austin Energy, Secondary 300 kW and up (rate page)', note: 'Charges as listed on austinenergy.com/rates/commercial-rates for the 300 kW and up class. Power supply and community benefit adders are carried over from your bill.', patch: { fixed: 315.44, demand: 13.19, rider: 5.03, eEnergy: 0.01932 } },
+  tou_demo: { label: 'Example time-of-use utility (made-up numbers)', note: 'Illustrative numbers, not a real tariff. They show how the time-of-use inputs below work: a summer on-peak energy price and a summer on-peak demand charge from 4 to 9 pm on weekdays.', patch: { fixed: 85, demand: 8, rider: 0, pfOn: false, eEnergy: 0.085, eCommunity: 0, ePsa: 0, ePsaAdmin: 0, tax: 0, peak: WIN({ on: true, rate: 0.26 }), mid: WIN({ on: true, rate: 0.13, start: 7, end: 16, mStart: 1, mEnd: 12 }), pkDemand: WIN({ on: true, rate: 16 }) } },
+  blank: { label: 'Blank: type in your utility\'s rates', note: 'Everything is zero. Enter the demand charge ($/kW), the energy rate ($/kWh) and any time-of-use windows from your tariff.', patch: { fixed: 0, demand: 0, rider: 0, pfOn: false, eEnergy: 0, eCommunity: 0, ePsa: 0, ePsaAdmin: 0, tax: 0 } },
+  uploaded: { label: 'Read from your uploaded bill', note: '', patch: null }
+};
+const KWH0 = [5300, 3390, 1910, 1530, 2200, 2580, 2580, 3250, 4640, 5210, 6170, 7703];
+
+function cloneRates(patch) {
+  const r = JSON.parse(JSON.stringify(BASE_RATES));
+  if (patch) for (const k in patch) r[k] = (patch[k] && typeof patch[k] === 'object') ? Object.assign({}, patch[k]) : patch[k];
+  return r;
+}
+const state = {
+  preset: 'austin_bill',
+  rates: cloneRates(),
+  months: E.monthsEndingAt(2026, 8, 12).map((m, i) => Object.assign({}, m, { kwh: KWH0[i], peak: 0, manual: false })),
+  lf: 39, profile: 'office', sigma: 12,
+  interval: null,
+  upload: null,
+  batt: { price: 700, itemize: false, fixed: 8000, perKw: 250, perKwh: 450, usable: 90, eta: 88, deg: 2.5, life: 15, om: 1, maxKw: 0, mode: 'auto', manualKw: 10, manualKwh: 20, objective: 'npv' },
+  fin: { disc: 8, esc: 2.5, escD: 3, itc: 30, rebate: 0, tax: 0, macrs: false },
+  metric: 'npv'
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const tick = () => new Promise((r) => setTimeout(r, 0));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function getp(o, path) { return path.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
+function setp(o, path, v) { const ks = path.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
+const usd = (v, d) => { d = d || 0; if (!isFinite(v)) return '-'; if (Math.abs(v) < 0.5 * Math.pow(10, -d)) v = 0; const s = Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); return (v < 0 ? '−$' : '$') + s; };
+const f1 = (v) => (+v).toLocaleString('en-US', { maximumFractionDigits: 1 });
+const f0 = (v) => Math.round(v).toLocaleString('en-US');
+const pct = (v) => (v * 100).toFixed(0) + '%';
+const yrs = (v) => (v === null || v === undefined) ? '-' : (v < 0.05 ? '0' : v.toFixed(1));
+const autoPeak = (m) => Math.round(m.kwh / (m.days * 24 * Math.max(0.05, state.lf / 100)) * 10) / 10;
+
+/* ---------- tooltips ---------- */
+const TIPS = {
+  upload: 'The PDF is read inside your browser to pull out rates, power factor and the 12-month usage chart. Nothing is uploaded.',
+  csv: 'Optional. A file of 15-minute, 30-minute or hourly readings from your utility (for example a Green Button export). Real daily curves make the result far more reliable.',
+  lf: 'Average load divided by peak load. Only used to guess a month\'s peak kW when you have not entered one. A low number means spiky use.',
+  profile: 'The usual shape of a day for your kind of business. The tool uses it to turn monthly totals into 15-minute load curves.',
+  sigma: 'How much your daily peaks differ from day to day. Higher means a few spiky days set the monthly peak, which helps a battery. Lower means many days sit near the peak, which hurts it. Interval data removes this guess.',
+  preset: 'Pick a stored rate schedule or start blank. Choosing one replaces the rate fields below; you can still edit them.',
+  mkwh: 'Energy the grid delivered to you in the month.',
+  mpeak: 'Highest 15-minute demand in the month. Grey numbers are estimates from the load factor. Type your own to override.',
+  'rates.fixed': 'A flat monthly charge that does not depend on how much you use. A battery does not change it.',
+  'rates.tax': 'Sales tax added to electric charges. Savings include the tax you avoid. Enter 0 if you are exempt.',
+  'rates.demand': 'Dollars per kW of your highest 15-minute demand in the month. This is the charge a battery reduces.',
+  'rates.rider': 'Other charges billed on the same kW, such as Austin Energy\'s regulatory charge. Added to the demand charge.',
+  'rates.eEnergy': 'Base price per kWh of energy used.',
+  'rates.eCommunity': 'Per-kWh community or program charge. Austin Energy prints it as a flat dollar amount; it is converted to $/kWh from your bill.',
+  'rates.ePsa': 'Power supply adjustment: a per-kWh charge that follows fuel and purchased power costs.',
+  'rates.ePsaAdmin': 'A small per-kWh adjustment to the power supply charge. Often negative.',
+  'rates.pfOn': 'When power factor is under the threshold, the utility bills more kW than it measured. Turn this on if your bill has a power factor adjustment.',
+  'rates.pfValue': 'Power factor on your bill. Below 1.00 means part of your load is reactive power that does no useful work.',
+  'rates.pfThr': 'Power factor below this triggers extra billed kW. Austin Energy uses 0.90.',
+  'rates.pfCorrect': 'Assumes the battery inverter supplies reactive power and lifts power factor above the threshold. Needs an inverter built for it.',
+  'rates.ratchet': 'Some tariffs bill at least this share of your highest demand in the prior 11 months, so one spike keeps costing you. Leave at 0 if your tariff has none.',
+  'win.on': 'Turn this on if your tariff has this window.',
+  'win.rateEnergy': 'All-in price per kWh during this window. It replaces the base energy rate for these hours.',
+  'win.rateDemand': 'Dollars per kW applied to your highest 15-minute demand inside this window, on top of the regular demand charge.',
+  'win.days': 'Which days of the week the window applies to.',
+  'win.start': 'Hour the window begins.',
+  'win.end': 'Hour the window ends. If it is earlier than the start, the window runs overnight.',
+  'win.mStart': 'First month of the season. Choose January to December for all year.',
+  'win.mEnd': 'Last month of the season.',
+  'batt.mode': 'Optimizer picks tries many sizes and chooses the best for your goal. I choose lets you type a size.',
+  'batt.objective': 'What the optimizer aims for. Net present value is savings minus cost in today\'s dollars. Payback is years to earn the cost back. IRR is the yearly rate of return.',
+  'batt.manualKw': 'Most power the battery can deliver, in kW. It limits how many kW of peak it can cut.',
+  'batt.manualKwh': 'Energy the battery stores, in kWh. It limits how long it can hold the peak down.',
+  'batt.maxKw': 'Cap on battery power the optimizer may consider, for inverter, space or interconnection limits. 0 means no cap.',
+  'batt.price': 'All-in installed price per kWh, quoted for a 2-hour system of roughly 100 kWh: battery, inverter, install, permits and interconnection. Shorter and smaller systems cost more per kWh, so the tool scales this price for the size it is testing.',
+  'batt.itemize': 'Use this if your quote splits the price into a fixed amount, a price per kW and a price per kWh. It replaces the single price.',
+  'batt.fixed': 'Costs that do not grow with size: design, permits, interconnection and basic installation.',
+  'batt.perKw': 'Cost per kW of power capacity: inverter, switchgear and wiring.',
+  'batt.perKwh': 'Cost per kWh of energy capacity: cells, racks and enclosure.',
+  'batt.om': 'Yearly maintenance and monitoring as a share of installed cost.',
+  'batt.usable': 'Share of the rated kWh the battery can actually use. The rest protects the cells.',
+  'batt.eta': 'Energy that comes out divided by energy put in. The lost share is charged at your energy rate.',
+  'batt.deg': 'How much storage capacity the battery loses each year.',
+  'batt.life': 'Years the battery is expected to work. Savings are counted over this period.',
+  'fin.itc': 'Federal investment tax credit as a share of installed cost. Check that your project qualifies.',
+  'fin.rebate': 'Utility rebates or grants in dollars, taken off the up-front cost.',
+  'fin.disc': 'The return you require. Future savings are discounted at this rate to get net present value.',
+  'fin.escD': 'How fast you expect demand charges ($ per kW) to rise each year. Higher values make a battery look better.',
+  'fin.esc': 'How fast you expect energy prices ($ per kWh) and upkeep costs to rise each year.',
+  'fin.tax': 'Your income tax rate. Leave at 0 for a before-tax result.',
+  'fin.macrs': 'Counts tax savings from depreciating the battery over five years. Only applies when an income tax rate is set.',
+  'ro.size': 'The power and storage the tool recommends. Click any cell in the size grid under Charts and bill breakdown to try another size.',
+  'ro.cost': 'Installed cost minus the tax credit and other incentives.',
+  'ro.save': 'Drop in your annual electric bill in the first year, including sales tax.',
+  'ro.pay': 'Years until cumulative savings cover the cost after incentives.',
+  'ro.npv': 'All savings over the battery\'s life, in today\'s dollars, minus the cost. Above zero means it pays for itself.'
+};
+function tipBtn(key) {
+  const t = TIPS[key];
+  return t ? '<button type="button" class="tip" aria-label="What is this?" data-tip="' + esc(t) + '">i</button>' : '';
+}
+function tipKey(path) {
+  const m = /^rates\.(peak|mid|pkDemand)\.(\w+)$/.exec(path);
+  if (!m) return path;
+  if (m[2] === 'rate') return m[1] === 'pkDemand' ? 'win.rateDemand' : 'win.rateEnergy';
+  return 'win.' + m[2];
+}
+
+/* ---------- input builders ---------- */
+const idOf = (p) => 'f-' + p.replace(/\./g, '-');
+function F(path, label, o) {
+  o = o || {};
+  let stp = o.step;
+  if (!stp) {
+    const u = o.unit || '';
+    if (/\/kWh/.test(u) && o.pre === '$' && !/per kWh/.test(u)) stp = '0.01';
+    else if (/\/kW/.test(u) && o.pre === '$') stp = '0.1';
+    else if (o.pre === '$' && /^batt\.(price|perKw|perKwh)$/.test(path)) stp = '10';
+    else if (o.pre === '$') stp = '100';
+    else if (u.indexOf('%') === 0 || u === '% of cost') stp = '1';
+    else if (u === 'kW' || u === 'kWh') stp = '1';
+    else stp = 'any';
+  }
+  return '<label class="f"><span class="fl">' + label + tipBtn(tipKey(path)) + '</span><span class="fi">' + (o.pre ? '<b>' + o.pre + '</b>' : '') +
+    '<input type="number" inputmode="decimal" step="' + stp + '" data-k="' + path + '" id="' + idOf(path) + '">' +
+    (o.unit ? '<em>' + o.unit + '</em>' : '') + '</span>' + (o.hint ? '<small>' + o.hint + '</small>' : '') + '</label>';
+}
+function SEL(path, label, opts, num) {
+  return '<label class="f"><span class="fl">' + label + tipBtn(tipKey(path)) + '</span><span class="fi"><select data-k="' + path + '"' + (num ? ' data-num="1"' : '') + ' id="' + idOf(path) + '">' +
+    opts.map((o) => '<option value="' + o[0] + '">' + esc(o[1]) + '</option>').join('') + '</select></span></label>';
+}
+function CHK(path, label, hint) {
+  return '<label class="chk"><input type="checkbox" data-k="' + path + '" id="' + idOf(path) + '"><span>' + label + tipBtn(tipKey(path)) + (hint ? '<small>' + hint + '</small>' : '') + '</span></label>';
+}
+const HOURS = Array.from({ length: 25 }, (_, h) => [h, h === 0 ? '12 am' : h < 12 ? h + ' am' : h === 12 ? '12 pm' : h < 24 ? (h - 12) + ' pm' : '12 am (end)']);
+const MONTHS = E.MN.map((m, i) => [i + 1, m]);
+const DAYS = [['weekdays', 'Weekdays'], ['all', 'Every day'], ['weekends', 'Weekends']];
+function WINDOW(path, title, rateLabel, unit, hint) {
+  return '<div class="win" data-win="' + path + '"><h4>' + title + '</h4>' + CHK(path + '.on', 'Turn on', hint) +
+    '<div class="wf"><div class="grid2">' + F(path + '.rate', rateLabel, { unit: unit, pre: '$' }) + SEL(path + '.days', 'Days', DAYS) + '</div>' +
+    '<div class="grid2" style="margin-top:10px">' + SEL(path + '.start', 'From', HOURS, 1) + SEL(path + '.end', 'To', HOURS, 1) +
+    SEL(path + '.mStart', 'First month', MONTHS, 1) + SEL(path + '.mEnd', 'Last month', MONTHS, 1) + '</div></div></div>';
+}
+
+function buildStart() {
+  $('#start-bill').innerHTML =
+    '<h2>Your bill' + tipBtn('upload') + '</h2>' +
+    '<p class="lead">Drop in a utility bill and the tool fills in your rates, power factor and 12 months of usage.</p>' +
+    '<div class="drop" id="drop"><div class="row"><button class="btn pri" type="button" id="btn-bill">Choose bill PDF</button><span class="or">or drop the file here</span></div>' +
+    '<input type="file" id="file-bill" accept="application/pdf,.pdf" hidden><input type="file" id="file-csv" accept=".csv,.txt,text/csv" hidden>' +
+    '<div id="upmsg"></div></div>' +
+    '<div class="row alt"><button class="btn sm" type="button" id="btn-csv">Add interval data (CSV)</button>' + tipBtn('csv') + '<span class="or">optional, for a more reliable result</span></div>';
+  $('#start-cost').innerHTML =
+    '<h2>Battery cost</h2>' +
+    '<p class="lead">One all-in price covers the battery, inverter, install and permits. This is a placeholder for a small commercial system, so replace it with a quote.</p>' +
+    '<div id="price-box">' + F('batt.price', 'Installed price', { pre: '$', unit: 'per kWh', step: '10' }) + '</div>' +
+    '<div id="itemized" class="grid3">' + F('batt.fixed', 'Fixed cost', { pre: '$' }) + F('batt.perKw', 'Per kW of power', { pre: '$' }) + F('batt.perKwh', 'Per kWh of energy', { pre: '$' }) + '</div>' +
+    CHK('batt.itemize', 'My quote is itemized', 'Fixed cost plus a price per kW and per kWh.') +
+    '<div class="sum"><span id="cost-eg-l">A 10 kW, 20 kWh system</span><b id="cost-eg"></b></div>';
+}
+
+function buildRail() {
+  const presetOpts = Object.keys(PRESETS).map((k) => '<option value="' + k + '">' + esc(PRESETS[k].label) + '</option>').join('');
+  const profOpts = Object.keys(E.PROFILES).map((k) => '<option value="' + k + '">' + esc(E.PROFILES[k].label) + '</option>').join('');
+  $('#rail').innerHTML =
+  '<details class="sec"><summary>Load <small>monthly kWh and peaks</small></summary><div class="body">' +
+    '<div id="ivmsg"></div>' +
+    '<table class="months"><thead><tr><th>Month</th><th>kWh' + tipBtn('mkwh') + '</th><th>Peak kW' + tipBtn('mpeak') + '</th></tr></thead><tbody id="mrows"></tbody></table>' +
+    '<div id="mnote" class="sum"><span></span></div>' +
+    '<div class="grid2">' + F('lf', 'Load factor for estimated peaks', { unit: '%' }) +
+    '<label class="f"><span class="fl">&nbsp;</span><button class="btn sm" type="button" id="btn-reest">Re-estimate all peaks</button></label></div>' +
+    '<label class="f"><span class="fl">Business type' + tipBtn('profile') + '</span><select class="plain" data-k="profile" id="f-profile">' + profOpts + '</select></label>' +
+    F('sigma', 'Day-to-day peak variation', { unit: '%' }) +
+  '</div></details>' +
+
+  '<details class="sec"><summary>Rates <small>per month</small></summary><div class="body">' +
+    '<label class="f"><span class="fl">Rate schedule' + tipBtn('preset') + '</span><select class="plain" id="f-preset" data-k="preset">' + presetOpts + '</select></label>' +
+    '<div id="pnote" class="note"></div>' +
+    '<div class="grid2">' + F('rates.fixed', 'Customer charge', { pre: '$', unit: '/mo', step: '1' }) + F('rates.tax', 'Sales tax on charges', { unit: '%' }) + '</div>' +
+    '<div class="grid2">' + F('rates.demand', 'Demand charge', { pre: '$', unit: '/kW' }) + F('rates.rider', 'Per-kW riders (regulatory)', { pre: '$', unit: '/kW' }) + '</div>' +
+    '<div class="sum"><span>Dollars per billed kW</span><b id="s-kw"></b></div>' +
+    '<div class="grid2">' + F('rates.eEnergy', 'Energy charge', { pre: '$', unit: '/kWh' }) + F('rates.eCommunity', 'Community benefit', { pre: '$', unit: '/kWh' }) +
+    F('rates.ePsa', 'Power supply adj.', { pre: '$', unit: '/kWh' }) + F('rates.ePsaAdmin', 'Supply admin adj.', { pre: '$', unit: '/kWh' }) + '</div>' +
+    '<div class="sum"><span>All-in energy rate</span><b id="s-kwh"></b></div>' +
+    CHK('rates.pfOn', 'Bill adds kW when power factor is low', 'Billed kW = metered kW × threshold ÷ power factor.') +
+    '<div class="grid2">' + F('rates.pfValue', 'Power factor on bill', { step: '0.01' }) + F('rates.pfThr', 'Threshold', { step: '0.01' }) + '</div>' +
+    CHK('rates.pfCorrect', 'Battery inverter corrects power factor', 'Capacitor banks often fix this for much less.') +
+    F('rates.ratchet', 'Demand ratchet', { unit: '%' }) +
+  '</div></details>' +
+
+  '<details class="sec"><summary>Time of use <small>optional, off for Austin Energy</small></summary><div class="body">' +
+    '<p class="note">Austin Energy has no time-of-use pricing, so these stay off for it. Turn them on for utilities that charge more for energy or demand at certain hours. The on-peak window wins where windows overlap. Results update automatically as you change anything here; the summary at the top shows when it has finished.</p>' +
+    WINDOW('rates.peak', 'On-peak energy', 'Energy rate', '/kWh', 'Higher price in this window') +
+    WINDOW('rates.mid', 'Mid-peak energy', 'Energy rate', '/kWh', 'A second price tier') +
+    WINDOW('rates.pkDemand', 'On-peak demand charge', 'Demand charge', '/kW', 'Billed on the highest reading inside this window') +
+  '</div></details>' +
+
+  '<details class="sec"><summary>Battery and money <small>size, efficiency, incentives</small></summary><div class="body">' +
+    '<div class="grid2">' + SEL('batt.mode', 'Size', [['auto', 'Optimizer picks'], ['manual', 'I choose']]) +
+    SEL('batt.objective', 'Optimize for', [['npv', 'Net present value'], ['payback', 'Shortest payback'], ['irr', 'Highest IRR']]) + '</div>' +
+    '<div class="grid2" id="manual-box">' + F('batt.manualKw', 'Power', { unit: 'kW' }) + F('batt.manualKwh', 'Energy', { unit: 'kWh' }) + '</div>' +
+    F('batt.maxKw', 'Largest power to consider', { unit: 'kW' }) +
+    '<div class="grid2">' + F('batt.usable', 'Usable share of energy', { unit: '%' }) + F('batt.eta', 'Round-trip efficiency', { unit: '%' }) +
+    F('batt.deg', 'Capacity loss per year', { unit: '%' }) + F('batt.life', 'Years of service', { step: '1' }) + F('batt.om', 'Upkeep per year', { unit: '% of cost' }) + '<span></span></div>' +
+    '<div class="grid2">' + F('fin.itc', 'Federal tax credit', { unit: '%' }) + F('fin.rebate', 'Other incentives', { pre: '$' }) +
+    F('fin.disc', 'Discount rate', { unit: '%' }) + F('fin.escD', 'Demand charge escalation', { unit: '%/yr' }) + F('fin.esc', 'Energy and upkeep escalation', { unit: '%/yr' }) + '</div>' +
+    '<div class="grid2">' + F('fin.tax', 'Income tax rate', { unit: '%' }) + '<div class="f">' + CHK('fin.macrs', 'Depreciate over 5 years') + '</div></div>' +
+  '</div></details>';
+}
+
+/* ---------- state to inputs ---------- */
+function refreshAuto() { if (state.interval) return; state.months.forEach((m) => { if (!m.manual) m.peak = autoPeak(m); }); }
+function monthRows() {
+  const body = $('#mrows');
+  const sig = (state.interval ? 'iv:' : 'est:') + currentMonths().map((m) => m.label).join('|');
+  if (body.dataset.sig !== sig) {
+    body.dataset.sig = sig;
+    body.innerHTML = currentMonths().map((m, i) => '<tr><td>' + esc(m.label) + '</td><td><input type="number" inputmode="decimal" step="any" data-k="months.' + i + '.kwh" aria-label="' + esc(m.label) + ' kWh"></td><td><input type="number" inputmode="decimal" step="any" data-k="months.' + i + '.peak" aria-label="' + esc(m.label) + ' peak kW"></td></tr>').join('');
+  }
+}
+function currentMonths() { return state.interval ? state.interval.display : state.months; }
+function syncInputs() {
+  refreshAuto();
+  monthRows();
+  $$('[data-k]').forEach((el) => {
+    const k = el.dataset.k;
+    let v = k.startsWith('months.') && state.interval ? getp({ months: state.interval.display }, k) : getp(state, k);
+    if (el.type === 'checkbox') el.checked = !!v;
+    else if (document.activeElement !== el) el.value = (v === undefined || v === null) ? '' : (typeof v === 'number' ? +v.toFixed(6) : v);
+    if (k.startsWith('months.')) {
+      el.disabled = !!state.interval;
+      if (k.endsWith('.peak')) el.classList.toggle('auto', !state.interval && !state.months[+k.split('.')[1]].manual);
+    }
+  });
+  $$('.win').forEach((w) => w.classList.toggle('off', !getp(state, w.dataset.win + '.on')));
+  const r = E.normRates(state.rates);
+  $('#s-kw').textContent = usd(r.demand + r.rider, 2) + ' per kW';
+  $('#s-kwh').textContent = '$' + r.energyBase.toFixed(5) + ' per kWh';
+  $('#pnote').textContent = PRESETS[state.preset].note || '';
+  $('#pnote').hidden = !PRESETS[state.preset].note;
+  $('#manual-box').hidden = state.batt.mode !== 'manual';
+  $('#itemized').hidden = !state.batt.itemize;
+  $('#price-box').hidden = !!state.batt.itemize;
+  updCostEg();
+  const iv = $('#ivmsg');
+  if (state.interval) {
+    iv.innerHTML = '<div class="note ok">Using your interval data: ' + state.interval.display.length + ' months of ' + state.interval.step + '-minute readings (' + esc(state.interval.fileName) + '). The table shows what the file contains. ' +
+      (state.interval.warn.length ? esc(state.interval.warn.join('; ')) + '. ' : '') + (state.interval.display.length < 12 ? 'Fewer than 12 months, so annual figures are scaled up. ' : '') +
+      '<button class="btn sm" type="button" id="btn-clear-iv">Go back to estimates</button></div>';
+  } else iv.innerHTML = '';
+  $('#mnote').hidden = !!state.interval;
+  if (!state.interval) {
+    const tot = state.months.reduce((s, m) => s + m.kwh, 0);
+    $('#mnote').innerHTML = '<span>12-month total</span><b>' + f0(tot) + ' kWh</b>';
+  }
+  $$('#btn-reest').forEach((b) => (b.disabled = !!state.interval));
+}
+
+function updCostEg() {
+  const el = $('#cost-eg'); if (!el) return;
+  el.textContent = usd(E.capexOf({ P: 10, E: 20 }, finObj()));
+}
+
+/* ---------- loading data into the model ---------- */
+const loadCache = new Map();
+function getLoads(sigmaPct) {
+  if (state.interval) return { months: state.interval.months, loads: state.interval.loads };
+  const key = JSON.stringify([state.months.map((m) => [m.kwh, m.manual ? m.peak : autoPeak(m)]), state.profile, sigmaPct]);
+  if (loadCache.has(key)) return loadCache.get(key);
+  const months = state.months, sg = sigmaPct / 100;
+  const loads = months.map((m, i) => E.genMonthLoad(m, Math.max(0, m.kwh), Math.max(0, m.manual ? m.peak : autoPeak(m)), state.profile, sg, 7000 + i * 13));
+  const out = { months, loads };
+  if (loadCache.size > 6) loadCache.clear();
+  loadCache.set(key, out);
+  return out;
+}
+function finObj() {
+  const b = state.batt, f = state.fin;
+  return { price: b.price, itemized: !!b.itemize, fixed: b.fixed, perKw: b.perKw, perKwh: b.perKwh, om: b.om / 100, life: Math.max(1, Math.round(b.life)), deg: b.deg / 100,
+    disc: f.disc / 100, esc: f.esc / 100, escD: f.escD / 100, itc: f.itc / 100, rebate: f.rebate, tax: f.tax / 100, macrs: !!f.macrs };
+}
+const battOf = (p, e) => ({ P: p, E: e, usable: Math.min(1, Math.max(0.1, state.batt.usable / 100)), eta: Math.min(1, Math.max(0.5, state.batt.eta / 100)) });
+
+function peakWidth(scn) {
+  let mi = 0; scn.forEach((sm, i) => { if (sm.peakAll > scn[mi].peakAll) mi = i; });
+  const sm = scn[mi], delta = 0.1 * sm.peakAll, T = sm.peakAll - delta;
+  let worst = 0;
+  for (let d = 0; d < sm.mon.days; d++) { let e = 0; for (let k = 0; k < 96; k++) { const L = sm.load[d * 96 + k]; if (L > T) e += (L - T) * 0.25; } if (e > worst) worst = e; }
+  return { delta, kwh: worst, perKw: delta > 0 ? worst / delta : 0, label: sm.mon.label };
+}
+
+/* ---------- the run ---------- */
+let runId = 0, timer = null, last = null;
+function setStat(t) { const e = $('#runstat'); if (e) e.textContent = t; }
+function schedule() { clearTimeout(timer); timer = setTimeout(run, 280); const ro = $('#readout'); if (ro) ro.classList.add('busy'); setStat('Updating\u2026'); }
+
+async function run() {
+  const id = ++runId;
+  const ro = $('#readout'); ro.classList.add('busy'); setStat('Updating\u2026');
+  await tick();
+  const rates = E.normRates(state.rates), fin = finObj();
+  const ld = getLoads(state.sigma);
+  const scn = E.buildScenario(ld.months, ld.loads, rates);
+  const Ps = E.powerCandidates(scn, state.batt.maxKw);
+  const grid = [];
+  for (const p of Ps) {
+    const row = [];
+    for (const d of E.DURATIONS) row.push(E.evalCandidate(scn, rates, battOf(p, p * d), fin));
+    grid.push(row);
+    await tick();
+    if (id !== runId) return;
+  }
+  const flat = [].concat.apply([], grid);
+  const best = E.pickBest(flat, state.batt.objective);
+  let sel = best;
+  if (state.batt.mode === 'manual' && state.batt.manualKw > 0 && state.batt.manualKwh > 0) sel = E.evalCandidate(scn, rates, battOf(state.batt.manualKw, state.batt.manualKwh), fin);
+  const sb = battOf(sel.P, sel.E);
+  const y1 = E.evalYear(scn, rates, sb, 1, true);
+  await tick(); if (id !== runId) return;
+  let range = null;
+  if (!state.interval) {
+    range = [];
+    for (const s of [Math.max(3, state.sigma * 0.45), state.sigma, state.sigma * 2]) {
+      const l2 = getLoads(s), sc2 = E.buildScenario(l2.months, l2.loads, rates);
+      range.push(E.evalYear(sc2, rates, sb, 1, false).save);
+      await tick(); if (id !== runId) return;
+    }
+  }
+  last = { rates, fin, scn, grid, Ps, best, sel, y1, range, sb };
+  render();
+  ro.classList.remove('busy');
+  setStat('Up to date. Results update automatically when you change an input.');
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  if (!last) return;
+  const { rates, fin, scn, grid, best, sel, y1, range } = last;
+  const L = fin.life;
+  const ro = $('#readout');
+  const save1 = y1.save;
+  const payOk = sel.payback !== null;
+  $('.ro-grid', ro).innerHTML =
+    '<div class="ro"><div class="k">Battery' + tipBtn('ro.size') + '</div><div class="v">' + f1(sel.P) + ' kW · ' + f1(sel.E) + ' kWh</div><div class="s">' + f1(sel.dur) + ' hours · ' + (state.batt.mode === 'manual' ? 'your size' : 'optimizer pick') + '</div></div>' +
+    '<div class="ro"><div class="k">Cost after incentives' + tipBtn('ro.cost') + '</div><div class="v">' + usd(sel.net0) + '</div><div class="s">' + usd(sel.capex) + ' before incentives</div></div>' +
+    '<div class="ro ' + (save1 > 0 ? 'good' : 'bad') + '"><div class="k">Savings, year one' + tipBtn('ro.save') + '</div><div class="v">' + usd(save1) + '</div><div class="s">' + (y1.before.total > 0 ? pct(save1 / y1.before.total) + ' of the modeled bill' : '') + '</div></div>' +
+    '<div class="ro ' + (payOk ? 'good' : 'bad') + '"><div class="k">Payback' + tipBtn('ro.pay') + '</div><div class="v">' + (payOk ? yrs(sel.payback) + ' years' : 'Not in ' + L + ' yrs') + '</div><div class="s">' + (sel.irr === null ? 'IRR not defined' : 'IRR ' + (sel.irr * 100).toFixed(1) + '%') + '</div></div>' +
+    '<div class="ro ' + (sel.npv > 0 ? 'good' : 'bad') + '"><div class="k">Net present value' + tipBtn('ro.npv') + '</div><div class="v">' + usd(sel.npv) + '</div><div class="s">' + L + ' years at ' + state.fin.disc + '%</div></div>';
+
+  // verdict
+  let v = '';
+  const peakMonth = y1.monthly.reduce((a, m) => (m.before > a.before ? m : a), y1.monthly[0]);
+  const sizeTxt = '<b>' + f1(sel.P) + ' kW / ' + f1(sel.E) + ' kWh</b>';
+  if (sel.npv > 0) {
+    v = '<p>A ' + sizeTxt + ' battery costs about ' + usd(sel.capex) + ' (' + usd(sel.net0) + ' after incentives). It trims your annual bills by ' + usd(save1) + ' in year one, pays itself back in ' + yrs(sel.payback) + ' years, and is worth ' + usd(sel.npv) + ' over ' + L + ' years at a ' + state.fin.disc + '% discount rate.</p>';
+  } else {
+    v = '<p>At these prices no battery size earns its cost back inside ' + L + ' years. The ' + (state.batt.mode === 'manual' ? 'size you chose' : 'closest') + ' is ' + sizeTxt + ', with a net present value of ' + usd(sel.npv) + ' and savings of ' + usd(save1) + ' in year one. ' +
+      (sel.bePrice > 0 ? 'It would break even at about ' + usd(sel.bePrice) + ' per kWh installed at that size, against ' + usd(sel.capex / sel.E) + ' now.' : 'Savings are too small to cover upkeep at any price.') + '</p>';
+  }
+  v += '<p>In ' + esc(peakMonth.label) + ', your peak month, billed demand falls from ' + f1(peakMonth.before) + ' kW to ' + f1(peakMonth.after) + ' kW.' +
+    (rates.pfOn && y1.before.pf > 1 ? ' Your modeled bill includes ' + usd(y1.before.pf * (1 + rates.tax)) + ' a year in power factor charges' + (rates.pfCorrect ? ', which the inverter removes.' : '. Turning on power factor correction under Adjust other assumptions, Rates shows what fixing that is worth; a capacitor bank usually costs far less than a battery.') : '') + '</p>';
+  const pw = peakWidth(scn), vkw = (rates.demand + rates.rider) * y1.fB * (1 + rates.tax) * 12;
+  const shaved = y1.monthly.reduce((a, m) => a + (m.before - m.after), 0) / 12;
+  v += '<p>Why the size stays small: each kW taken off every month\'s peak is worth about ' + usd(vkw) + ' a year here. ' +
+    (pw.kwh > 0 ? (pw.perKw >= 3
+      ? 'Your peaks are wide: trimming ' + esc(pw.label) + '\'s peak by ' + f1(pw.delta) + ' kW takes about ' + f0(pw.kwh) + ' kWh of storage on the worst day, roughly ' + f1(pw.perKw) + ' kWh per kW, so energy capacity is the expensive part. '
+      : 'Your peaks are short: trimming ' + esc(pw.label) + '\'s peak by ' + f1(pw.delta) + ' kW takes only about ' + f0(pw.kwh) + ' kWh of storage on the worst day, so power capacity (kW) is the expensive part, not storage. ') : '') +
+    (shaved > 0.05 ? 'This battery removes ' + f1(shaved) + ' kW on average across the year, at ' + usd(sel.net0 / shaved) + ' per kW after incentives.' : '') + '</p>';
+  let conf;
+  if (state.interval) conf = 'Based on your interval readings, so the monthly peaks and the shape of each day are real.';
+  else {
+    conf = 'Estimated from monthly kWh and peak kW, not from real daily curves. Batteries depend on how long and how sharp your peaks are, so treat this as a screen. Upload interval data for a number you can rely on.';
+  }
+  const tx = 1 + rates.tax;
+  const sDem = (y1.before.demand + y1.before.peakDemand - y1.after.demand - y1.after.peakDemand) * tx, sPf = (y1.before.pf - y1.after.pf) * tx, sEn = (y1.before.energy - y1.after.energy) * tx;
+  const touOn = rates.peak.on || rates.mid.on;
+  let srcHtml = '<h4 class="sub-h">Year-one savings by source</h4><div class="range">' +
+    '<div><b>' + usd(sDem) + '</b><span>Demand charges</span></div>' +
+    (rates.pfOn ? '<div><b>' + usd(sPf) + '</b><span>Power factor adjustment</span></div>' : '') +
+    '<div><b>' + usd(sEn) + '</b><span>' + (touOn ? 'Energy, including time-of-use shifting and battery losses' : 'Energy (battery losses cost a little here)') + '</span></div></div>' +
+    (touOn ? '' : '<p class="note" style="margin-top:8px">This rate schedule charges the same price per kWh at every hour, so charging cheap and discharging when energy is dear earns nothing. If your utility has time-of-use prices, turn them on under Adjust other assumptions, Time of use.</p>');
+  let rangeHtml = '';
+  if (range) rangeHtml = '<div class="range"><div><b>' + usd(range[0]) + '</b><span>Year-one savings if daily peaks vary less (' + f0(Math.max(3, state.sigma * 0.45)) + '%)</span></div><div><b>' + usd(range[1]) + '</b><span>As entered (' + f0(state.sigma) + '%)</span></div><div><b>' + usd(range[2]) + '</b><span>If daily peaks vary more (' + f0(state.sigma * 2) + '%)</span></div></div>';
+
+  // bill
+  const rows = [['Customer charge', 'customer'], ['Demand charges', 'demand'], ['Power factor adjustment', 'pf'], ['On-peak demand charges', 'peakDemand'], ['Energy charges', 'energy'], ['Sales tax', 'tax']];
+  let billHtml = '<div class="r hd"><span class="l">Per year</span><span class="a">Before</span><span class="b">After</span><span class="d">Change</span></div>';
+  rows.forEach(([lab, k]) => {
+    const a = y1.before[k], b = y1.after[k];
+    if (Math.abs(a) < 0.5 && Math.abs(b) < 0.5) return;
+    const d = a - b;
+    billHtml += '<div class="r"><span class="l">' + lab + '</span><i></i><span class="a">' + usd(a) + '</span><span class="b">' + usd(b) + '</span><span class="d ' + (d < -0.5 ? 'sv neg' : d > 0.5 ? 'sv' : '') + '">' + (Math.abs(d) < 0.5 ? '-' : usd(d)) + '</span></div>';
+  });
+  const dt = y1.before.total - y1.after.total;
+  billHtml += '<div class="r tot"><span class="l">Total</span><i></i><span class="a">' + usd(y1.before.total) + '</span><span class="b">' + usd(y1.after.total) + '</span><span class="d ' + (dt < 0 ? 'sv neg' : 'sv') + '">' + usd(dt) + '</span></div>';
+
+  // heat map
+  const metrics = { npv: 'Net present value', payback: 'Payback (years)', yr1: 'Year-one savings', be: 'Break-even price ($/kWh)' };
+  const maxPos = Math.max(1, ...[].concat.apply([], grid).map((c) => c.npv)), maxNeg = Math.max(1, ...[].concat.apply([], grid).map((c) => -c.npv));
+  const maxY1 = Math.max(1, ...[].concat.apply([], grid).map((c) => c.yr1));
+  let hm = '<div class="scroll"><table class="hm"><thead><tr><th class="rh">kW \\ hours</th>' + E.DURATIONS.map((d) => '<th>' + d + ' h</th>').join('') + '</tr></thead><tbody>';
+  grid.forEach((row) => {
+    hm += '<tr><th class="rh">' + f1(row[0].P) + ' kW</th>';
+    row.forEach((c) => {
+      let txt, cls = '', t = 0;
+      if (state.metric === 'npv') { txt = (c.npv < 0 ? '−' : '') + '$' + (Math.abs(c.npv) >= 10000 ? (Math.abs(c.npv) / 1000).toFixed(0) + 'k' : f0(Math.abs(c.npv))); cls = c.npv > 0 ? 'pos' : 'neg'; t = c.npv > 0 ? c.npv / maxPos : -c.npv / maxNeg; }
+      else if (state.metric === 'payback') { txt = c.payback === null ? 'none' : yrs(c.payback); if (c.payback !== null) { cls = 'pos'; t = 1 - c.payback / L; } else { cls = 'neg'; t = 0.3; } }
+      else if (state.metric === 'yr1') { txt = usd(c.yr1); cls = c.yr1 > 0 ? 'pos' : 'neg'; t = Math.abs(c.yr1) / maxY1; }
+      else { txt = '$' + f0(c.bePrice); const cur = c.capex / c.E; cls = c.bePrice >= cur ? 'pos' : 'neg'; t = Math.min(1, Math.abs(c.bePrice / cur - 1)); }
+      const isBest = c === best, isSel = Math.abs(c.P - sel.P) < 1e-6 && Math.abs(c.E - sel.E) < 1e-6;
+      hm += '<td><button type="button" data-p="' + c.P + '" data-e="' + c.E + '" class="' + cls + (isBest ? ' best' : '') + (isSel ? ' sel' : '') + '" style="--t:' + Math.min(1, Math.max(0, t)).toFixed(2) + '" title="' + f1(c.P) + ' kW, ' + f1(c.E) + ' kWh: ' + usd(c.npv) + ' NPV">' + txt + '</button></td>';
+    });
+    hm += '</tr>';
+  });
+  hm += '</tbody></table></div>';
+
+  // cash flow table
+  let cft = '<div class="scroll"><table class="cf"><thead><tr><th>Year</th><th>Savings</th><th>Upkeep</th><th>Tax effect</th><th>Cash flow</th><th>Cumulative</th></tr></thead><tbody>' +
+    '<tr><td>0</td><td></td><td></td><td></td><td>' + usd(-sel.net0) + '</td><td>' + usd(-sel.net0) + '</td></tr>' +
+    sel.rows.map((r) => '<tr><td>' + r.yr + '</td><td>' + usd(r.sav) + '</td><td>' + usd(-r.om) + '</td><td>' + usd(r.cf - (r.sav - r.om)) + '</td><td>' + usd(r.cf) + '</td><td>' + usd(r.cum) + '</td></tr>').join('') + '</tbody></table></div>';
+
+  const src = '<a href="https://austinenergy.com/rates/commercial-rates" target="_blank" rel="noopener">Austin Energy commercial rates</a>, <a href="https://austinenergy.com/rates/commercial-rates/power-factor-adjustment" target="_blank" rel="noopener">power factor adjustment</a> and the <a href="https://services.austintexas.gov/edims/document.cfm?id=343238" target="_blank" rel="noopener">City of Austin tariff package</a>';
+
+  $('#verdict').innerHTML = '<section class="blk verdict"><h3>What the numbers say</h3>' + v + '<p>' + conf + '</p>' + rangeHtml + srcHtml + '</section>';
+  $('#out').innerHTML =
+    '<section class="blk"><h3>Peak demand by month</h3><p class="sub">The highest 15-minute reading each month sets the demand charge. The battery lowers it by holding the grid draw under a monthly target.</p><div class="chart" id="ch-months" role="img" aria-label="Monthly peak demand before and after the battery"></div><div class="legend"><span><i style="background:var(--ink-3)"></i>Without battery</span><span><i style="background:var(--accent)"></i>With battery</span></div></section>' +
+    '<section class="blk"><h3>Your peak day, hour by hour</h3><p class="sub" id="day-sub"></p><div class="chart" id="ch-day" role="img" aria-label="Load on the peak day with and without the battery, with battery charge level"></div><div class="legend"><span><i style="background:var(--ink-3)"></i>Your load without a battery</span><span><i style="background:var(--accent)"></i>Grid draw with the battery</span><span><i style="background:var(--amber)"></i>Battery discharging (peak shaved)</span><span><i style="background:var(--accent);opacity:.4"></i>Battery charging</span><span><i style="background:var(--good)"></i>Battery charge level (right axis, kWh)</span></div><p class="sub">All lines are the same 24 hours. Amber is where the battery supplies the building so the grid sees less. Blue is where it recharges. The dashed line is the new peak.</p></section>' +
+    '<section class="blk"><h3>Annual bill</h3><p class="sub">Modeled from the load above and the rates you entered. Solar credits are left out because a battery does not change them.</p><div class="bill">' + billHtml + '</div></section>' +
+    '<section class="blk"><h3>Battery size</h3><p class="sub">Every size the optimizer tried. Outlined is its pick for your goal; click any cell to model that size.</p><div class="hm-top"><label class="fl" for="metric">Show</label><select id="metric">' + Object.keys(metrics).map((k) => '<option value="' + k + '"' + (k === state.metric ? ' selected' : '') + '>' + metrics[k] + '</option>').join('') + '</select><span class="hm-key">Green pays back, red does not.</span></div>' + hm + '</section>' +
+    '<section class="blk"><h3>Cash flow</h3><p class="sub">Cumulative cash for the selected size. The line crosses zero at payback.</p><div class="chart" id="ch-cum" role="img" aria-label="Cumulative cash flow"></div><details class="more"><summary>Year-by-year table</summary>' + cft + '</details></section>' +
+    '<section class="blk"><h3>How this works</h3><details class="more" open><summary>Method and limits</summary><ul class="method">' +
+    '<li><b>Billing demand.</b> The highest 15-minute reading in the month, per the City of Austin tariff for this class. Each day is simulated in 15-minute steps.</li>' +
+    '<li><b>Dispatch.</b> The battery discharges only when the load passes a monthly target and recharges when the load is below it. For each month the tool finds the lowest target the battery can hold on every day, given its power, usable energy and efficiency.</li>' +
+    '<li><b>Power factor.</b> Billed kW = metered kW × 0.90 ÷ power factor when power factor is under 0.90. That formula reproduces both power factor lines on your bill, so each kW shaved is worth more than the printed rates suggest.</li>' +
+    '<li><b>Energy.</b> Round-trip losses are charged at your energy rate. With time-of-use prices on, a simple rule moves energy from the cheapest to the dearest hours while keeping enough charge to hold the demand target. That is a screen, not an optimizer.</li>' +
+    '<li><b>Cost.</b> Your all-in price per kWh is for a 2-hour system of about 100 kWh. Shorter and smaller systems cost more per kWh, so the price is scaled for each size tested. Itemize the quote to override.</li>' +
+    '<li><b>Money.</b> Savings include sales tax. Demand and energy savings escalate at their own rates. Capacity fades each year. The tax credit is counted at year 0. Tax treatment varies; confirm eligibility with a tax advisor.</li>' +
+    '<li><b>Estimates.</b> Without interval data, the daily curve comes from the business type and the variation setting, scaled to your monthly kWh and peak kW. The range above shows how much that guess matters.</li>' +
+    '<li><b>Sources.</b> ' + src + '.</li></ul></details></section>';
+  drawCharts();
+}
+
+/* ---------- charts ---------- */
+function niceMax(v) {
+  if (!(v > 0)) return { max: 1, step: 0.25 };
+  const raw = v / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / mag;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+  return { max: Math.ceil(v / step) * step, step };
+}
+function drawCharts() {
+  if (!last) return;
+  const { y1, sel, scn, fin } = last;
+  const w1 = ($('#ch-months') || {}).clientWidth || 600;
+  // monthly bars
+  {
+    const mo = y1.monthly, h = 230, m = { l: 40, r: 6, t: 10, b: 24 }, iw = w1 - m.l - m.r, ih = h - m.t - m.b;
+    const ns = niceMax(Math.max.apply(null, mo.map((d) => d.before)));
+    const y = (v) => m.t + ih - v / ns.max * ih, bw = iw / mo.length;
+    let s = '<svg viewBox="0 0 ' + w1 + ' ' + h + '" width="' + w1 + '" height="' + h + '">';
+    for (let t = 0; t <= ns.max + 1e-9; t += ns.step) s += '<line class="cx-grid" x1="' + m.l + '" x2="' + (w1 - m.r) + '" y1="' + y(t) + '" y2="' + y(t) + '"/><text class="cx-t" x="' + (m.l - 6) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + (+t.toFixed(2)) + '</text>';
+    s += '<text class="cx-t h" x="' + m.l + '" y="' + (m.t - 1) + '"></text>';
+    mo.forEach((d, i) => {
+      const x = m.l + i * bw, g = Math.max(2, bw * 0.12), w = (bw - g * 2) / 2;
+      s += '<rect class="cx-before" x="' + (x + g) + '" y="' + y(d.before) + '" width="' + w + '" height="' + (ih + m.t - y(d.before)) + '"><title>' + esc(d.label) + ' without battery: ' + f1(d.before) + ' kW</title></rect>';
+      s += '<rect class="cx-after" x="' + (x + g + w) + '" y="' + y(d.after) + '" width="' + w + '" height="' + (ih + m.t - y(d.after)) + '"><title>' + esc(d.label) + ' with battery: ' + f1(d.after) + ' kW</title></rect>';
+      const lab = w1 < 460 ? d.label.slice(0, 1) : d.label.slice(0, 3);
+      s += '<text class="cx-t" x="' + (x + bw / 2) + '" y="' + (h - 8) + '" text-anchor="middle">' + esc(lab) + '</text>';
+    });
+    s += '<line class="cx-axis" x1="' + m.l + '" x2="' + (w1 - m.r) + '" y1="' + (m.t + ih) + '" y2="' + (m.t + ih) + '"/><text class="cx-t" x="2" y="' + (m.t + 2) + '">kW</text></svg>';
+    $('#ch-months').innerHTML = s;
+  }
+  // peak day
+  {
+    const mo = y1.monthly; let mi = 0; mo.forEach((d, i) => { if (d.before > mo[mi].before) mi = i; });
+    const sm = scn[mi], sim = y1.sims[mi], N = sm.N;
+    let di = 0, mx = -1;
+    for (let d = 0; d < sm.mon.days; d++) { let dm = 0; for (let s2 = 0; s2 < 96; s2++) dm = Math.max(dm, sm.load[d * 96 + s2]); if (dm > mx) { mx = dm; di = d; } }
+    const A = sm.load.slice(di * 96, di * 96 + 96), B = (sim.grid || sm.load).slice(di * 96, di * 96 + 96);
+    const SOC = sim.soc ? Array.prototype.slice.call(sim.soc, di * 96, di * 96 + 96) : null;
+    const dow = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][(sm.mon.dow0 + di) % 7];
+    $('#day-sub').textContent = esc(dow) + ', ' + E.MN[sm.mon.m] + ' ' + (di + 1) + ', the day that set your highest reading. Without the battery it reaches ' + f1(mx) + ' kW; with it, ' + f1(Math.max.apply(null, B)) + ' kW.';
+    const w = ($('#ch-day') || {}).clientWidth || 600, h = 240, m = { l: 40, r: SOC ? 44 : 8, t: 14, b: 40 }, iw = w - m.l - m.r, ih = h - m.t - m.b;
+    const ns = niceMax(Math.max.apply(null, A) * 1.02);
+    const X = (i) => m.l + i / 96 * iw, Y = (v) => m.t + ih - v / ns.max * ih;
+    let s = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">';
+    for (let t = 0; t <= ns.max + 1e-9; t += ns.step) s += '<line class="cx-grid" x1="' + m.l + '" x2="' + (w - m.r) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/><text class="cx-t" x="' + (m.l - 6) + '" y="' + (Y(t) + 4) + '" text-anchor="end">' + (+t.toFixed(2)) + '</text>';
+    const poly = (top, bot) => { let p = ''; for (let i = 0; i < 96; i++) p += X(i + 0.5) + ',' + Y(top[i]) + ' '; for (let i = 95; i >= 0; i--) p += X(i + 0.5) + ',' + Y(bot[i]) + ' '; return p; };
+    const lo = A.map((a, i) => Math.min(a, B[i])), hi = A.map((a, i) => Math.max(a, B[i]));
+    s += '<polygon class="cx-shave" points="' + poly(A, lo) + '"/><polygon class="cx-charge" points="' + poly(hi, A) + '"/>';
+    s += '<polyline class="cx-lbefore" points="' + A.map((v, i) => X(i + 0.5) + ',' + Y(v)).join(' ') + '"/>';
+    s += '<polyline class="cx-lafter" points="' + B.map((v, i) => X(i + 0.5) + ',' + Y(v)).join(' ') + '"/>';
+    const tgt = Math.max.apply(null, B);
+    s += '<line class="cx-thr" x1="' + m.l + '" x2="' + (w - m.r) + '" y1="' + Y(tgt) + '" y2="' + Y(tgt) + '"/>';
+    s += '<line class="cx-axis" x1="' + m.l + '" x2="' + (w - m.r) + '" y1="' + (m.t + ih) + '" y2="' + (m.t + ih) + '"/><text class="cx-t" x="2" y="' + (m.t - 3) + '">kW</text>';
+    const hrs = w < 460 ? [0, 6, 12, 18, 24] : [0, 3, 6, 9, 12, 15, 18, 21, 24];
+    hrs.forEach((hh) => { s += '<text class="cx-t" x="' + X(hh * 4) + '" y="' + (m.t + ih + 15) + '" text-anchor="' + (hh === 0 ? 'start' : hh === 24 ? 'end' : 'middle') + '">' + (hh === 0 || hh === 24 ? '12a' : hh < 12 ? hh + 'a' : hh === 12 ? '12p' : (hh - 12) + 'p') + '</text>'; });
+    s += '<text class="cx-t" x="' + (m.l + iw / 2) + '" y="' + (h - 4) + '" text-anchor="middle">Time of day</text>';
+    if (SOC) {
+      const cap = Math.max(1e-6, sel.E * last.sb.usable), Ys = (v) => m.t + ih - Math.min(1, v / cap) * ih;
+      s += '<polyline class="cx-soc" points="' + SOC.map((v, i) => X(i + 0.5) + ',' + Ys(v)).join(' ') + '"/>';
+      s += '<text class="cx-t" x="' + (w - m.r + 6) + '" y="' + (m.t + 4) + '">' + f1(cap) + '</text><text class="cx-t" x="' + (w - m.r + 6) + '" y="' + (m.t + ih + 4) + '">0</text><text class="cx-t" x="' + (w - 2) + '" y="' + (m.t - 3) + '" text-anchor="end">kWh</text>';
+    }
+    s += '</svg>';
+    $('#ch-day').innerHTML = s;
+  }
+  // cumulative cash
+  {
+    const w = ($('#ch-cum') || {}).clientWidth || 600, h = 220, m = { l: 52, r: 10, t: 10, b: 24 }, iw = w - m.l - m.r, ih = h - m.t - m.b;
+    const cum = sel.cum, L = cum.length - 1;
+    const lo = Math.min(0, Math.min.apply(null, cum)), hi = Math.max(0, Math.max.apply(null, cum));
+    const ns = niceMax(Math.max(hi, -lo, 1)); const top = hi > 0 ? Math.ceil(hi / ns.step) * ns.step : 0, bot = lo < 0 ? Math.floor(lo / ns.step) * ns.step : 0;
+    const X = (k) => m.l + k / L * iw, Y = (v) => m.t + (top - v) / Math.max(1e-9, top - bot) * ih;
+    let s = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">';
+    for (let t = bot; t <= top + 1e-9; t += ns.step) s += '<line class="cx-grid" x1="' + m.l + '" x2="' + (w - m.r) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/><text class="cx-t" x="' + (m.l - 6) + '" y="' + (Y(t) + 4) + '" text-anchor="end">' + (t < 0 ? '−' : '') + '$' + (Math.abs(t) >= 1000 ? (Math.abs(t) / 1000).toFixed(Math.abs(t) % 1000 ? 1 : 0) + 'k' : Math.abs(t)) + '</text>';
+    let ar = 'M' + X(0) + ',' + Y(0); cum.forEach((v, k) => { ar += ' L' + X(k) + ',' + Y(Math.max(0, v)); }); ar += ' L' + X(L) + ',' + Y(0) + ' Z';
+    s += '<path class="cx-pos" d="' + ar + '"/><line class="cx-zero" x1="' + m.l + '" x2="' + (w - m.r) + '" y1="' + Y(0) + '" y2="' + Y(0) + '"/>';
+    s += '<polyline class="cx-line" points="' + cum.map((v, k) => X(k) + ',' + Y(v)).join(' ') + '"/>';
+    if (sel.payback !== null && sel.payback > 0) s += '<circle class="cx-dot" cx="' + X(sel.payback) + '" cy="' + Y(0) + '" r="5"/><text class="cx-t" x="' + X(sel.payback) + '" y="' + (Y(0) - 10) + '" text-anchor="middle">' + yrs(sel.payback) + ' yr</text>';
+    const stepY = L > 12 ? 5 : L > 6 ? 2 : 1;
+    for (let k = 0; k <= L; k += stepY) s += '<text class="cx-t" x="' + X(k) + '" y="' + (h - 6) + '" text-anchor="middle">' + k + '</text>';
+    s += '<text class="cx-t" x="' + (w - m.r) + '" y="' + (m.t + 2) + '" text-anchor="end">Years</text></svg>';
+    $('#ch-cum').innerHTML = s;
+  }
+}
+
+/* ---------- uploads ---------- */
+function say(html, cls) { $('#upmsg').innerHTML = html ? '<div class="note ' + (cls || '') + '">' + html + '</div>' : ''; }
+let pdfLoading = null;
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (!pdfLoading) pdfLoading = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = PDFJS;
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWORKER; res(window.pdfjsLib); };
+    s.onerror = () => { pdfLoading = null; rej(new Error('The PDF reader did not load. Check your connection and try again.')); };
+    document.head.appendChild(s);
+  });
+  return pdfLoading;
+}
+async function readBillPdf(file) {
+  const lib = await loadPdfJs();
+  const pdf = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+  let text = '', chart = null;
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p), tc = await page.getTextContent();
+    const pt = tc.items.map((i) => i.str).join(' ');
+    text += ' ' + pt;
+    if (!chart && /Your Electricity Use/i.test(pt)) {
+      try {
+        const vp = page.getViewport({ scale: 200 / 72 }), cv = document.createElement('canvas');
+        cv.width = Math.ceil(vp.width); cv.height = Math.ceil(vp.height);
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        const px = ctx.getImageData(0, 0, cv.width, cv.height).data, gray = new Uint8Array(cv.width * cv.height);
+        for (let i = 0; i < gray.length; i++) gray[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+        const am = /13 month avg\. consumption:\s*([\d.,]+)/i.exec(pt);
+        chart = P.extractMonthlyKwh({ gray, W: cv.width, H: cv.height, items: P.toPixelItems(tc, vp, lib.Util), scale: vp.scale, avg: am ? parseFloat(am[1].replace(/,/g, '')) : null });
+      } catch (e) { chart = { error: 'The chart could not be drawn.' }; }
+    }
+  }
+  return { parsed: P.parseBillText(text).found, chart };
+}
+async function onBill(file) {
+  say('Reading ' + esc(file.name) + '…');
+  try {
+    const { parsed: f, chart } = await readBillPdf(file);
+    const got = [];
+    const R = state.rates;
+    ['fixed', 'demand', 'rider', 'eEnergy', 'eCommunity', 'ePsa', 'ePsaAdmin', 'tax'].forEach((k) => { if (f[k] !== undefined) { R[k] = f[k]; got.push(k); } });
+    if (f.pfValue) { R.pfValue = f.pfValue; if (f.pfValue < 0.9 || f.pfAdjustmentFound) R.pfOn = true; got.push('pf'); }
+    if (f.loadFactor) state.lf = Math.round(Math.min(0.9, Math.max(0.15, f.loadFactor)) * 100);
+    let kwhMsg = '';
+    if (chart && chart.kwh) {
+      const bill = f.billYear !== undefined ? { y: f.billYear, m: f.billMonth } : { y: new Date().getFullYear(), m: new Date().getMonth() };
+      const vals = chart.kwh.slice(1).map((v) => Math.round(v / 10) * 10);
+      if (f.kwhUsedChart && Math.abs(vals[11] - f.kwhUsedChart) / f.kwhUsedChart < 0.05) vals[11] = f.kwhUsedChart;
+      state.months = E.monthsEndingAt(bill.y, bill.m, 12).map((m, i) => Object.assign({}, m, { kwh: vals[i], peak: 0, manual: false }));
+      state.interval = null;
+      kwhMsg = ' 12 months of kWh from the usage chart (' + state.months[0].label + ' to ' + state.months[11].label + ').';
+    } else if (chart && chart.error) kwhMsg = ' The usage chart could not be read (' + esc(chart.error) + '), so enter monthly kWh in the table.';
+    else kwhMsg = ' No usage chart was found, so enter monthly kWh in the table.';
+    if (!got.length) { say('No rate lines were recognized in that file. Pick a rate schedule below or type your rates in.' + kwhMsg, 'warn'); }
+    else {
+      state.preset = f.isAustin && f.demand === 9.83 && f.rider === 3.73 ? 'austin_bill' : 'uploaded';
+      let m = 'Read from your bill: ' + (f.rateClass ? esc(f.rateClass) + '. ' : '') + (f.demand !== undefined ? 'Demand $' + f.demand + '/kW' : '') + (f.rider !== undefined ? ' plus $' + f.rider + '/kW regulatory' : '') + (f.eEnergy !== undefined ? ', energy $' + f.eEnergy + '/kWh' : '') + (f.pfValue ? ', power factor ' + f.pfValue : '') + (f.peakKw ? ', peak ' + f.peakKw + ' kW' : '') + '.' + kwhMsg;
+      if (f.solarKwh) m += ' This bill has solar credits ($' + f.solarRate + '/kWh). A battery does not change those, so the model leaves them out. If the usage chart predates your solar, lower the kWh to what the grid delivers now.';
+      say(m, 'ok');
+    }
+    syncInputs(); schedule();
+  } catch (e) { say('Could not read that PDF. ' + esc(e.message || '') + ' You can still type your rates and monthly kWh below.', 'err'); }
+}
+async function onCsv(file) {
+  say('Reading ' + esc(file.name) + '…');
+  try {
+    const r = P.parseIntervalCsv(await file.text());
+    if (r.error) { say(esc(r.error), 'err'); return; }
+    const display = r.months.map((m, i) => { let kwh = 0, pk = 0; const a = r.loads[i]; for (let k = 0; k < a.length; k++) { kwh += a[k] * 0.25; if (a[k] > pk) pk = a[k]; } return { label: m.label, kwh: Math.round(kwh), peak: Math.round(pk * 10) / 10 }; });
+    state.interval = { months: r.months, loads: r.loads, display, step: r.step, fileName: file.name, warn: r.warn };
+    say('Loaded ' + r.months.length + ' months from ' + esc(file.name) + '.', 'ok');
+    syncInputs(); schedule();
+  } catch (e) { say('Could not read that file.', 'err'); }
+}
+
+/* ---------- events ---------- */
+function applyPreset(k) {
+  state.preset = k;
+  if (PRESETS[k].patch) { const keep = { pfValue: state.rates.pfValue, ratchet: state.rates.ratchet }; state.rates = cloneRates(PRESETS[k].patch); if (!('pfValue' in PRESETS[k].patch)) state.rates.pfValue = keep.pfValue; }
+}
+function bind() {
+  const root = document.body;
+  root.addEventListener('input', (e) => {
+    const el = e.target.closest ? e.target.closest('[data-k]') : null; if (!el) return;
+    const k = el.dataset.k; let v;
+    if (el.type === 'checkbox') v = el.checked;
+    else if (el.type === 'number') v = el.value === '' ? 0 : parseFloat(el.value);
+    else if (el.dataset.num) v = parseFloat(el.value);
+    else v = el.value;
+    if (k === 'preset') { applyPreset(v); syncInputs(); schedule(); return; }
+    if (k.startsWith('months.')) { if (state.interval) return; if (k.endsWith('.peak')) state.months[+k.split('.')[1]].manual = true; }
+    setp(state, k, v);
+    if (el.type === 'checkbox' || el.tagName === 'SELECT') syncInputs(); else { refreshAuto(); $$('[data-k^="months."][data-k$=".peak"]').forEach((p) => { const i = +p.dataset.k.split('.')[1]; if (!state.interval && !state.months[i].manual && document.activeElement !== p) p.value = state.months[i].peak; }); const r = E.normRates(state.rates); $('#s-kw').textContent = usd(r.demand + r.rider, 2) + ' per kW'; $('#s-kwh').textContent = '$' + r.energyBase.toFixed(5) + ' per kWh'; updCostEg(); const tot = state.months.reduce((s, m) => s + m.kwh, 0); if (!state.interval) $('#mnote').innerHTML = '<span>12-month total</span><b>' + f0(tot) + ' kWh</b>'; }
+    schedule();
+  });
+  root.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t.id === 'btn-bill') $('#file-bill').click();
+    else if (t.id === 'btn-csv') $('#file-csv').click();
+    else if (t.id === 'btn-reest') { state.months.forEach((m) => (m.manual = false)); syncInputs(); schedule(); }
+    else if (t.id === 'btn-clear-iv') { state.interval = null; syncInputs(); say(''); schedule(); }
+    else if (t.closest && t.closest('.hm button')) {
+      const b = t.closest('.hm button');
+      state.batt.mode = 'manual'; state.batt.manualKw = parseFloat(b.dataset.p); state.batt.manualKwh = parseFloat(b.dataset.e);
+      syncInputs(); schedule();
+    }
+  });
+  root.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.id === 'file-bill' && t.files[0]) { onBill(t.files[0]); t.value = ''; }
+    else if (t.id === 'file-csv' && t.files[0]) { onCsv(t.files[0]); t.value = ''; }
+    else if (t.id === 'metric') { state.metric = t.value; render(); }
+  });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => {
+    const f = e.dataTransfer && e.dataTransfer.files[0]; if (!f) return;
+    if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') onBill(f); else onCsv(f);
+  });
+  let rt = null;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawCharts, 150); });
+}
+
+
+/* ---------- tooltips ---------- */
+function initTips() {
+  const box = document.createElement('div');
+  box.id = 'tipbox'; box.setAttribute('role', 'tooltip'); box.hidden = true;
+  document.body.appendChild(box);
+  let cur = null;
+  const hide = () => { box.hidden = true; cur = null; };
+  const show = (btn) => {
+    cur = btn; box.textContent = btn.dataset.tip; box.hidden = false;
+    const r = btn.getBoundingClientRect(), bw = box.offsetWidth, bh = box.offsetHeight;
+    let x = r.left + r.width / 2 - bw / 2; x = Math.max(8, Math.min(x, window.innerWidth - bw - 8));
+    let y = r.bottom + 8; if (y + bh > window.innerHeight - 8) y = Math.max(8, r.top - bh - 8);
+    box.style.left = x + 'px'; box.style.top = y + 'px';
+  };
+  const tipOf = (e) => (e.target && e.target.closest) ? e.target.closest('.tip') : null;
+  document.body.addEventListener('mouseover', (e) => { const t = tipOf(e); if (t) show(t); });
+  document.body.addEventListener('mouseout', (e) => { if (tipOf(e)) hide(); });
+  document.body.addEventListener('focusin', (e) => { const t = tipOf(e); if (t) show(t); });
+  document.body.addEventListener('focusout', (e) => { if (tipOf(e)) hide(); });
+  document.body.addEventListener('click', (e) => {
+    const t = tipOf(e);
+    if (t) { e.preventDefault(); e.stopPropagation(); if (cur === t && !box.hidden) hide(); else show(t); } else if (!box.hidden) hide();
+  }, true);
+  document.body.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+  window.addEventListener('scroll', hide, true);
+}
+
+/* ---------- start ---------- */
+buildStart();
+buildRail();
+bind();
+syncInputs();
+initTips();
+$('#dd-detail').addEventListener('toggle', drawCharts);
+{ const rb = $('#btn-run'); if (rb) rb.addEventListener('click', () => { clearTimeout(timer); run(); }); }
+$('.ro-grid').innerHTML = ['Battery', 'Cost after incentives', 'Savings, year one', 'Payback', 'Net present value'].map((k) => '<div class="ro"><div class="k">' + k + '</div><div class="v">\u2026</div><div class="s">&nbsp;</div></div>').join('');
+$('#readout').classList.add('busy');
+$('#out').innerHTML = '<section class="blk"><h3>Calculating</h3><p class="sub">Trying battery sizes against your load…</p></section>';
+run();
+})();
+
+</script>
