@@ -265,7 +265,7 @@ export default function PeakerProforma() {
           <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
             <Kpi label="Project IRR" value={pct(r.projectIrr)} icon={Percent} tone={irrTone(r.projectIrr)}
               tip="Unlevered IRR on Year 0 CapEx (plus discounted decommissioning) and after-tax FCFF. Green when above 10%." />
-            <Kpi label="Project NPV" value={`$${m(r.npv)}M`} icon={DollarSign} tone={r.npv >= 0 ? "good" : "bad"}
+            <Kpi label="Project NPV" value={`$${m(r.npv)}M`} icon={DollarSign}
               tip={`Sum of unlevered cash flows discounted at the ${inp.wacc}% WACC.`} />
             <Kpi label="Year 1 EBITDA" value={`$${m(y1.ebitda)}M`} icon={Flame} tone={y1.ebitda >= 0 ? undefined : "bad"}
               tip="Energy + ancillary revenue minus fuel, fixed O&M and variable O&M in the first operating year." />
