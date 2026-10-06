@@ -229,7 +229,7 @@ export default function PeakerProforma() {
 
   return (
     <div className="dark bg-background text-foreground min-h-screen">
-      <PageHeader title="Gas Peaker Proforma" subtitle="A 40-year financial model for a new natural gas peaker in ERCOT South / Austin. Move the sliders to test the assumptions." />
+      <PageHeader title="Gas Peaker Proforma" subtitle="A financial model for a new natural gas peaker in ERCOT South / Austin, TX. Move the sliders to test the assumptions." />
       <div className="max-w-7xl mx-auto px-4 pt-6 pb-16 grid gap-6 lg:grid-cols-[320px_1fr]">
         <aside className="space-y-5 rounded-lg border border-border bg-card p-4 h-fit lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           <div className="flex items-center justify-between">
