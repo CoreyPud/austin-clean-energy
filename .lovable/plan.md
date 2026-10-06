@@ -45,7 +45,7 @@ The calculator area gets a small top gap so the assumption panel and KPI cards n
 
 All work is in `src/pages/PeakerProforma.tsx`.
 
-- `Inputs` gains `deg: number`; `DEFAULTS.deg = 0.5`; a `GROUPS` entry under **Plant**: `{ key: "deg", label: "Output degradation", min: 0, max: 2, step: 0.05, fmt: v => `${v.toFixed(2)}% /yr` }`.
+- `Inputs` gains `deg: number`, with `DEFAULTS.deg = 0.5`, plus a new `GROUPS` control under **Plant**: key `deg`, label "Output degradation", min 0, max 2, step 0.05, displayed as a percent per year.
 - In `model()`: hoist `mwhBase = i.mw * 8760 * (i.cf / 100)` and inside the year loop compute `const mwh = mwhBase * Math.pow(1 - i.deg / 100, y - 1);` — every downstream line (energy revenue, fuel, variable O&M) already reads `mwh`, so they follow automatically.
 - Accumulate inside the loop: `totalFuel`, `totalOm`, `totalInterest`, `totalTaxes`, `totalMwh`, and a discounted counterpart using `Math.pow(1 + wacc, y)`.
 - Return `totalCostNominal = capex + totalFuel + totalOm + totalInterest + totalTaxes + i.decom`, `totalCostPv = capex + pvFuel + pvOm + pvInterest + pvTaxes + i.decom / Math.pow(1 + wacc, L)`, and `costPerMwh = totalCostNominal / totalMwh`.
