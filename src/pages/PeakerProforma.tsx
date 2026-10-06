@@ -199,7 +199,16 @@ export default function PeakerProforma() {
     title: "Gas Peaker Proforma: ERCOT South / Austin",
     description: "Interactive 40-year financial model for a natural gas peaker plant in ERCOT South: IRR, NPV, equity IRR, EBITDA and payback.",
   });
-  const [inp, setInp] = useState<Inputs>(DEFAULTS);
+  const [rawInp, setInp] = useState<Inputs>(DEFAULTS);
+  // Fill any missing keys (e.g. state kept from before a new slider was added) with defaults.
+  const inp = useMemo<Inputs>(() => {
+    const out = { ...DEFAULTS };
+    (Object.keys(DEFAULTS) as (keyof Inputs)[]).forEach((k) => {
+      const v = rawInp?.[k];
+      if (typeof v === "number" && isFinite(v)) out[k] = v;
+    });
+    return out;
+  }, [rawInp]);
   const [copied, setCopied] = useState(false);
   const r = useMemo(() => model(inp), [inp]);
   const y1 = r.rows[0];
@@ -237,7 +246,7 @@ export default function PeakerProforma() {
                     <span className="tabular-nums text-primary">{c.fmt(inp[c.key])}</span>
                   </div>
                   <Slider min={c.min} max={c.max} step={c.step} value={[inp[c.key]]}
-                    onValueChange={([v]) => setInp((s) => ({ ...s, [c.key]: v }))} aria-label={c.label} />
+                    onValueChange={([v]) => setInp((s) => ({ ...inp, ...s, [c.key]: v }))} aria-label={c.label} />
                 </div>
               ))}
             </section>
