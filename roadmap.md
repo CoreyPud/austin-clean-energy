@@ -14,3 +14,4 @@
 - [x] Streamline the four new research pages and collapse supporting detail
 - [x] Unify new research and course pages with the Austin's Solar Progress layout
 - [x] Peaker proforma: extend horizon/plant life to 40 years (was 20)
+- [x] Peaker proforma: lifetime total cost strip, output-degradation control, header spacing
