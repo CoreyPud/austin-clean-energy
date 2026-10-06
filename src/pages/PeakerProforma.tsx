@@ -242,7 +242,15 @@ export default function PeakerProforma() {
               {g.ctls.map((c) => (
                 <div key={c.key} className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>{c.label}</span>
+                    <span className="flex items-center gap-1">
+                      {c.label}
+                      <Tooltip>
+                        <TooltipTrigger asChild aria-label={`About ${c.label}`} tabIndex={0}>
+                          <Info className="h-3 w-3 text-muted-foreground shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-xs" side="right">{c.tip}</TooltipContent>
+                      </Tooltip>
+                    </span>
                     <span className="tabular-nums text-primary">{c.fmt(inp[c.key])}</span>
                   </div>
                   <Slider min={c.min} max={c.max} step={c.step} value={[inp[c.key]]}
