@@ -246,7 +246,7 @@ export default function PeakerProforma() {
                     <span className="tabular-nums text-primary">{c.fmt(inp[c.key])}</span>
                   </div>
                   <Slider min={c.min} max={c.max} step={c.step} value={[inp[c.key]]}
-                    onValueChange={([v]) => setInp((s) => ({ ...s, [c.key]: v }))} aria-label={c.label} />
+                    onValueChange={([v]) => setInp((s) => ({ ...inp, ...s, [c.key]: v }))} aria-label={c.label} />
                 </div>
               ))}
             </section>
