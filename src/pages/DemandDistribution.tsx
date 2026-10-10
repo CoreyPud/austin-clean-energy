@@ -16,7 +16,7 @@ const TYPES = [
   { key: "other", label: "Other", color: "#6b7280" },
 ];
 const CELL = 0.005; // ~500 m
-const DOT_ZOOM = 14;
+const DOT_ZOOM = 13;
 const PEAK = 3067;
 const colorExpr: any = ["match", ["get", "t"], ...TYPES.flatMap((t) => [t.key, t.color]), "#6b7280"];
 
