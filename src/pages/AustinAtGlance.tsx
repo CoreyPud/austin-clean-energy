@@ -493,6 +493,20 @@ const AustinAtGlance = () => {
           ),
         },
         {
+          key: "demand-distribution",
+          to: "/demand-distribution",
+          title: "Demand Distribution",
+          description: "Map of where Austin's electricity demand sits, by building type and size.",
+          cta: "Explore map",
+          preview: (
+            <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Zap className="h-7 w-7 text-primary" />
+              </div>
+            </div>
+          ),
+        },
+        {
           key: "peak-shave",
           to: "/peak-shave",
           title: "Peak Shave Calculator",

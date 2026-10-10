@@ -94,6 +94,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/demand-distribution",
+    title: "Demand Distribution",
+    description: "Map of estimated electricity demand by building type and size.",
+    icon: Gauge,
+  },
+  {
     path: "/peak-shave",
     title: "Peak Shave Calculator",
     description: "Estimate how a battery can shave peak demand and cut demand charges.",
