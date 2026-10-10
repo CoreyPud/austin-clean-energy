@@ -89,14 +89,14 @@ function DemandMap({ source, types, minYear, minKw, onStatus }: {
     const m = map.current; if (!m) return;
     const p = params.current;
     onStatus("Loading city view…");
-    const { data, error } = await supabase.rpc("demand_grid", {
+    const { data, error } = await supabase.rpc("demand_grid_json" as any, {
       _source: p.source, _types: p.types, _min_year: p.minYear as any, _cell: CELL,
     });
     if (error) { onStatus("Could not load the map data."); return; }
     const h = CELL / 2;
     (m.getSource("grid") as mapboxgl.GeoJSONSource).setData({
       type: "FeatureCollection",
-      features: (data ?? []).map((c: any) => ({
+      features: ((data as any[]) ?? []).map(([lat, lon, mw, n, t]: any) => ({ c: { lat, lon, mw, n, top_type: t } })).map(({ c }: any) => ({
         type: "Feature", properties: { mw: c.mw, n: c.n, t: c.top_type },
         geometry: { type: "Polygon", coordinates: [[[c.lon - h, c.lat - h], [c.lon + h, c.lat - h], [c.lon + h, c.lat + h], [c.lon - h, c.lat + h], [c.lon - h, c.lat - h]]] },
       })),
@@ -109,19 +109,19 @@ function DemandMap({ source, types, minYear, minKw, onStatus }: {
     const m = map.current; if (!m) return;
     if (m.getZoom() < DOT_ZOOM) return;
     const b = m.getBounds(); const p = params.current; const my = ++seq.current;
-    const { data, error } = await supabase.rpc("demand_points_bbox", {
+    const { data, error } = await supabase.rpc("demand_points_json" as any, {
       _source: p.source, _types: p.types, _min_year: p.minYear as any, _min_kw: p.minKw,
       _w: b.getWest(), _s: b.getSouth(), _e: b.getEast(), _n: b.getNorth(), _limit: 15000,
     });
     if (my !== seq.current || error) return;
     (m.getSource("dots") as mapboxgl.GeoJSONSource).setData({
       type: "FeatureCollection",
-      features: (data ?? []).map((d: any) => ({
-        type: "Feature", properties: { t: d.ptype, kw: d.peak_kw, y: d.yr },
-        geometry: { type: "Point", coordinates: [d.lon, d.lat] },
+      features: ((data as any[]) ?? []).map(([lat, lon, t, kw, y]: any) => ({
+        type: "Feature", properties: { t, kw, y },
+        geometry: { type: "Point", coordinates: [lon, lat] },
       })),
     });
-    onStatus((data?.length ?? 0) >= 15000 ? "Showing the 15,000 largest loads here — zoom in for more." : "");
+    onStatus(((data as any[])?.length ?? 0) >= 15000 ? "Showing the 15,000 largest loads here — zoom in for more." : "");
   }
 
   useEffect(() => { if (ready) loadGrid(); /* eslint-disable-next-line */ }, [ready, source, types.join(), minYear]);
