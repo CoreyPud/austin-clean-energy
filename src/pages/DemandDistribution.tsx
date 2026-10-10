@@ -157,12 +157,12 @@ export default function DemandDistribution() {
         subtitle="Where Austin's electricity demand sits. Zoomed out, squares add up all demand in each half-kilometer; zoom in to see each building, sized by load and colored by type." />
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-4">
         <div className="flex flex-wrap gap-2 items-center">
-          <Button size="sm" variant={source === "tcad" ? "default" : "outline"} onClick={() => setSource("tcad")}>Today's buildings</Button>
-          <Button size="sm" variant={source === "permit" ? "default" : "outline"} onClick={() => setSource("permit")}>New since 2020 (permits)</Button>
+          <Button size="sm" variant={minYear === null ? "default" : "outline"} onClick={() => setMinYear(null)}>All buildings today</Button>
+          <Button size="sm" variant={minYear === 2020 ? "default" : "outline"} onClick={() => setMinYear(2020)}>Built since 2020</Button>
           <span className="mx-2 h-6 w-px bg-border" />
           <select className="border rounded-md h-9 px-2 bg-background text-sm" aria-label="Year filter"
             value={minYear ?? ""} onChange={(e) => setMinYear(e.target.value ? Number(e.target.value) : null)}>
-            {YEAR_OPTS.map((o) => <option key={o.l} value={o.v ?? ""}>{o.l}{source === "tcad" && o.v ? " (year built)" : ""}</option>)}
+            {[...YEAR_OPTS, ...(YEAR_OPTS.some((o) => o.v === minYear) ? [] : [{ v: minYear, l: `Since ${minYear}` }])].map((o) => <option key={o.l} value={o.v ?? ""}>{o.l}{o.v ? " (year built)" : ""}</option>)}
           </select>
           <label className="text-sm flex items-center gap-2">Min load
             <select className="border rounded-md h-9 px-2 bg-background" value={minKw} onChange={(e) => setMinKw(Number(e.target.value))} aria-label="Minimum load">
@@ -218,7 +218,7 @@ export default function DemandDistribution() {
             <li>Peak kW = annual kWh ÷ 8,760 hours ÷ 0.5 load factor.</li>
             <li><b>Today's buildings</b> uses Travis Central Appraisal District parcels. Footprint is used, not floor area, so tall buildings are undercounted, while large commercial parcels may be overcounted. About 270,000 parcels with no building type are left out.</li>
             <li>The total is a sum of each building's own peak. Buildings don't all peak at the same moment, so it runs well above the actual system peak — use it to compare places, not as a system forecast.</li>
-            <li><b>New since 2020</b> uses City of Austin building permits; 16,263 of 22,177 permits were matched to a map location through the City's issued-permits dataset, the rest are not shown.</li>
+            <li><b>Built since 2020</b> uses the same county parcels, filtered by year built (about 38,600 properties).</li>
           </ul>
         </section>
       </div>
