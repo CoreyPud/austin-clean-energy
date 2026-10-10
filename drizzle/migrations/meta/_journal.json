@@ -22,6 +22,20 @@
       "when": 1791062355044,
       "tag": "0002_create_solar_bom_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791660622953,
+      "tag": "0003_create_demand_points",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791660916706,
+      "tag": "0004_demand_json_rpcs",
+      "breakpoints": true
     }
   ]
 }

@@ -469,6 +469,39 @@ export type Database = {
           },
         ]
       }
+      demand_points: {
+        Row: {
+          id: string
+          kwh: number
+          lat: number
+          lon: number
+          peak_kw: number
+          ptype: string
+          source: string
+          yr: number | null
+        }
+        Insert: {
+          id: string
+          kwh: number
+          lat: number
+          lon: number
+          peak_kw: number
+          ptype: string
+          source: string
+          yr?: number | null
+        }
+        Update: {
+          id?: string
+          kwh?: number
+          lat?: number
+          lon?: number
+          peak_kw?: number
+          ptype?: string
+          source?: string
+          yr?: number | null
+        }
+        Relationships: []
+      }
       election_calendar: {
         Row: {
           created_at: string
@@ -1953,6 +1986,72 @@ export type Database = {
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      demand_grid: {
+        Args: {
+          _cell: number
+          _min_year: number
+          _source: string
+          _types: string[]
+        }
+        Returns: {
+          lat: number
+          lon: number
+          mw: number
+          n: number
+          top_type: string
+        }[]
+      }
+      demand_grid_json: {
+        Args: {
+          _cell: number
+          _min_year: number
+          _source: string
+          _types: string[]
+        }
+        Returns: Json
+      }
+      demand_points_bbox: {
+        Args: {
+          _e: number
+          _limit: number
+          _min_kw: number
+          _min_year: number
+          _n: number
+          _s: number
+          _source: string
+          _types: string[]
+          _w: number
+        }
+        Returns: {
+          lat: number
+          lon: number
+          peak_kw: number
+          ptype: string
+          yr: number
+        }[]
+      }
+      demand_points_json: {
+        Args: {
+          _e: number
+          _limit: number
+          _min_kw: number
+          _min_year: number
+          _n: number
+          _s: number
+          _source: string
+          _types: string[]
+          _w: number
+        }
+        Returns: Json
+      }
+      demand_summary: {
+        Args: { _min_year: number; _source: string; _types: string[] }
+        Returns: {
+          mw: number
+          n: number
+          ptype: string
+        }[]
       }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
