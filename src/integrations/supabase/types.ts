@@ -2002,6 +2002,15 @@ export type Database = {
           top_type: string
         }[]
       }
+      demand_grid_json: {
+        Args: {
+          _cell: number
+          _min_year: number
+          _source: string
+          _types: string[]
+        }
+        Returns: Json
+      }
       demand_points_bbox: {
         Args: {
           _e: number
@@ -2021,6 +2030,20 @@ export type Database = {
           ptype: string
           yr: number
         }[]
+      }
+      demand_points_json: {
+        Args: {
+          _e: number
+          _limit: number
+          _min_kw: number
+          _min_year: number
+          _n: number
+          _s: number
+          _source: string
+          _types: string[]
+          _w: number
+        }
+        Returns: Json
       }
       demand_summary: {
         Args: { _min_year: number; _source: string; _types: string[] }
