@@ -403,6 +403,14 @@ const AustinAtGlance = () => {
       ],
       "grid-tools": [
         {
+          key: "innovation-gap",
+          to: "/innovation-gap",
+          title: "Innovation Gap",
+          description: "Compare Austin Energy's program milestones with peer utilities on batteries, solar, vehicle-to-grid, grid technologies, and geothermal.",
+          cta: "Explore the Gap",
+          preview: <CouncilIconPreview icon={History} className="h-[226px]" />,
+        },
+        {
           key: "load-estimator",
           to: "/load-estimator",
           title: "Austin Load Growth Estimator",

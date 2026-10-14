@@ -1,0 +1,58 @@
+.igp-page {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  color: hsl(var(--foreground));
+  line-height: 1.65;
+}
+.igp-kicker, .igp-thread-kicker {
+  color: hsl(var(--primary));
+  font-size: 12px;
+  font-weight: 700;
+}
+.igp-kicker { display: flex; align-items: center; gap: 12px; }
+.igp-kicker-rule { width: 32px; height: 2px; background: hsl(var(--primary)); }
+.igp-thread { padding: 40px 0; border-bottom: 1px solid hsl(var(--border)); min-width: 0; }
+.igp-thread h2 { margin: 8px 0 12px; font-size: 28px; line-height: 1.25; font-weight: 700; text-wrap: balance; }
+.igp-thread-dek { max-width: 850px; color: hsl(var(--muted-foreground)); }
+.igp-axis { overflow-x: auto; padding: 12px 4px; margin: 24px 0; }
+.igp-axis:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.igp-axis-track { position: relative; min-width: 640px; height: 154px; margin: 0 12px; }
+.igp-axis-line { position: absolute; top: 86px; width: 100%; height: 2px; background: hsl(var(--border)); }
+.igp-axis-tick { position: absolute; top: 82px; transform: translateX(-50%); text-align: center; }
+.igp-axis-tick-mark { display: block; width: 1px; height: 10px; background: hsl(var(--muted-foreground)); margin: auto; }
+.igp-axis-tick-label { display: block; margin-top: 8px; font-size: 12px; color: hsl(var(--muted-foreground)); }
+.igp-axis-gap { position: absolute; top: 42px; height: 28px; border-top: 2px solid hsl(var(--accent)); }
+.igp-axis-gap-label { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 13px; font-weight: 700; }
+.igp-axis-marker { position: absolute; top: 80px; transform: translateX(-50%); color: hsl(var(--primary)); }
+.igp-axis-dot { display: block; width: 14px; height: 14px; border-radius: 50%; background: currentColor; border: 2px solid hsl(var(--background)); }
+.igp-axis-marker-ae { color: hsl(var(--secondary)); }
+.igp-axis-marker-none { color: hsl(var(--destructive)); }
+.igp-axis-dot-none { background: hsl(var(--background)); border-color: currentColor; }
+.igp-axis-dot-secondary { width: 10px; height: 10px; margin-top: 2px; }
+.igp-axis-marker-tag { position: absolute; top: 46px; left: 7px; transform: translateX(-50%); width: 165px; text-align: center; font-size: 12px; line-height: 1.3; font-weight: 600; }
+.igp-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.igp-card { min-width: 0; padding: 20px; border: 1px solid hsl(var(--border)); border-top: 3px solid hsl(var(--primary)); border-radius: 6px; background: hsl(var(--card)); }
+.igp-card-ae { border-top-color: hsl(var(--secondary)); }
+.igp-card-none { border-top-color: hsl(var(--destructive)); }
+.igp-card-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: hsl(var(--muted-foreground)); font-size: 12px; }
+.igp-card-who { font-weight: 700; }
+.igp-card h4 { margin: 12px 0 8px; font-size: 19px; line-height: 1.35; font-weight: 700; }
+.igp-card p { font-size: 14px; color: hsl(var(--muted-foreground)); }
+.igp-source { display: block; margin-top: 16px; font-size: 12px; color: hsl(var(--primary)); overflow-wrap: anywhere; }
+a.igp-source:hover { text-decoration: underline; }
+.igp-source-plain { color: hsl(var(--muted-foreground)); }
+.igp-note, .igp-footnote { margin-top: 24px; font-size: 13px; color: hsl(var(--muted-foreground)); }
+.igp-trend-label { margin-top: 28px; font-size: 13px; font-weight: 600; }
+.igp-trend-svg { width: 100%; height: auto; margin: 12px 0 24px; overflow: visible; }
+.igp-trend-gridline, .igp-trend-baseline { stroke: hsl(var(--border)); }
+.igp-trend-axis-label { fill: hsl(var(--muted-foreground)); font-size: 12px; }
+.igp-trend-line { fill: none; stroke: hsl(var(--secondary)); stroke-width: 3; }
+.igp-trend-line-provisional { stroke-dasharray: 6 4; }
+.igp-trend-dot { fill: hsl(var(--secondary)); }
+.igp-trend-dot-provisional { fill: hsl(var(--background)); stroke: hsl(var(--secondary)); stroke-width: 2; }
+.igp-trend-direct-label { fill: hsl(var(--foreground)); font-size: 13px; font-weight: 700; }
+@media (max-width: 639px) {
+  .igp-cards { grid-template-columns: minmax(0, 1fr); }
+  .igp-thread h2 { font-size: 24px; }
+}

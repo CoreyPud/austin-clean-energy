@@ -100,6 +100,12 @@ const publicPages = [
     icon: Gauge,
   },
   {
+    path: "/innovation-gap",
+    title: "Innovation Gap",
+    description: "Austin Energy program milestones compared with peer utilities, with timelines and source citations.",
+    icon: Zap,
+  },
+  {
     path: "/peak-shave",
     title: "Peak Shave Calculator",
     description: "Estimate how a battery can shave peak demand and cut demand charges.",
