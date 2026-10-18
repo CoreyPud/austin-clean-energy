@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp, Activity } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp, Activity, Network } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
@@ -98,6 +98,12 @@ const publicPages = [
     title: "Demand Distribution",
     description: "Map of estimated electricity demand by building type and size.",
     icon: Gauge,
+  },
+  {
+    path: "/austin-irp-planning",
+    title: "Austin IRP Planning",
+    description: "Resource-planning inputs, system costs, resource mix, and capacity balance with source notes.",
+    icon: Network,
   },
   {
     path: "/innovation-gap",

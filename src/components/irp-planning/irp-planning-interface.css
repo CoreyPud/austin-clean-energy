@@ -1,0 +1,283 @@
+/* Austin Clean Energy — IRP Planning Interface — scoped component styles.
+   Built on this site's own design tokens (the --background/--primary/--secondary/
+   --accent/--muted/--border HSL variables already defined in index.css) rather than
+   a separate palette, so this page matches the rest of the site automatically if
+   the theme is ever retuned. Fonts assume the same Google Fonts link already used
+   site-wide: Newsreader, IBM Plex Sans, IBM Plex Mono, Work Sans.
+*/
+
+.irp-page {
+  --irp-ok: hsl(var(--primary));
+  --irp-ok-bg: hsl(var(--primary) / 0.08);
+  --irp-info: hsl(var(--secondary));
+  --irp-info-bg: hsl(var(--secondary) / 0.1);
+  --irp-warn: hsl(var(--accent));
+  --irp-warn-bg: hsl(var(--accent) / 0.14);
+  --irp-bad: hsl(var(--destructive));
+  --irp-bad-bg: hsl(var(--destructive) / 0.08);
+
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  line-height: 1.55;
+}
+.irp-page * { box-sizing: border-box; }
+.irp-page h1, .irp-page h2 { font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; text-wrap: balance; margin: 0; }
+
+.irp-header { max-width: 760px; margin-bottom: 36px; }
+.irp-kicker {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: hsl(var(--secondary));
+}
+.irp-header h1 { font-size: 2.5rem; margin-top: 10px; line-height: 1.15; }
+.irp-dek { font-size: 16px; color: hsl(var(--muted-foreground)); margin-top: 14px; }
+.irp-datanote {
+  font-size: 13px;
+  color: hsl(var(--muted-foreground));
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: hsl(var(--muted));
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+}
+
+/* --- tabs --- */
+.irp-tabs { display: flex; gap: 8px; border-bottom: 1px solid hsl(var(--border)); margin-bottom: 20px; }
+.irp-tab {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  letter-spacing: 0;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+.irp-tab:hover { color: hsl(var(--foreground)); }
+.irp-tab-active { color: hsl(var(--primary)); border-bottom-color: hsl(var(--primary)); font-weight: 600; }
+
+/* --- legend --- */
+.irp-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid hsl(var(--border)); }
+.irp-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: hsl(var(--muted-foreground)); }
+.irp-legend-desc { max-width: 220px; }
+
+/* --- tag pills --- */
+.irp-tag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: help;
+}
+.irp-tag-reported { background: var(--irp-ok-bg); color: var(--irp-ok); }
+.irp-tag-derived { background: var(--irp-info-bg); color: var(--irp-info); }
+.irp-tag-benchmarked { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+.irp-tag-invented { background: var(--irp-warn-bg); color: hsl(var(--foreground)); }
+.irp-tag-blocked { background: var(--irp-bad-bg); color: var(--irp-bad); }
+
+/* --- sections --- */
+.irp-sections { display: flex; flex-direction: column; gap: 44px; }
+.irp-section h2 { font-size: 21px; margin-bottom: 14px; }
+.irp-section-note { font-size: 13.5px; color: hsl(var(--muted-foreground)); max-width: 74ch; margin: 0 0 16px; }
+.irp-section-note-warn { color: hsl(var(--foreground)); background: var(--irp-warn-bg); border-radius: var(--radius); padding: 10px 14px; }
+
+/* --- scalar field cards --- */
+.irp-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 14px; }
+.irp-field {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: hsl(var(--card));
+}
+.irp-field-blocked { border-color: hsl(var(--destructive) / 0.4); background: var(--irp-bad-bg); }
+.irp-field-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.irp-field-label { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.irp-field-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.irp-input {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 18px;
+  font-weight: 600;
+  width: 100%;
+  min-width: 0;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: hsl(var(--foreground));
+}
+.irp-input:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+.irp-unit { font-size: 12px; color: hsl(var(--muted-foreground)); white-space: nowrap; }
+.irp-static-value { font-family: "IBM Plex Mono", monospace; font-size: 18px; font-weight: 600; }
+.irp-field-source { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin: 0; }
+.irp-field-note { font-size: 12px; color: hsl(var(--foreground)); margin: 6px 0 0; font-style: italic; }
+
+/* --- tables --- */
+.irp-table-wrap { overflow-x: auto; border: 1px solid hsl(var(--border)); border-radius: var(--radius); }
+.irp-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 760px; }
+.irp-table-compact { min-width: 600px; }
+.irp-table thead th {
+  text-align: left;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted));
+  padding: 10px 12px;
+  border-bottom: 1px solid hsl(var(--border));
+  position: sticky;
+  top: 0;
+}
+.irp-table tbody td { padding: 8px 10px; border-bottom: 1px solid hsl(var(--border)); vertical-align: middle; }
+.irp-table tbody tr:last-child td { border-bottom: none; }
+.irp-row-blocked { background: var(--irp-bad-bg); }
+.irp-row-system td, .irp-row-local td { background: hsl(var(--muted)); font-weight: 600; }
+.irp-row-fuel { font-weight: 600; min-width: 170px; }
+.irp-row-footnote { font-size: 11px; font-weight: 400; color: hsl(var(--muted-foreground)); margin: 4px 0 0; max-width: 280px; }
+.irp-row-retire { font-size: 12px; color: hsl(var(--muted-foreground)); white-space: nowrap; }
+.irp-na { font-size: 12px; color: hsl(var(--muted-foreground)); font-style: italic; }
+.irp-cell-input {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  width: 92px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 5px;
+  padding: 4px 6px;
+  margin-right: 6px;
+}
+
+/* --- facility reference tables --- */
+.irp-facility-block { margin-bottom: 24px; }
+.irp-facility-block:last-child { margin-bottom: 0; }
+.irp-facility-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 8px;
+}
+.irp-facility-total { color: hsl(var(--primary)); font-weight: 600; text-transform: none; letter-spacing: 0; }
+
+.irp-pending-callout {
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--irp-info-bg);
+  border: 1px solid hsl(var(--secondary) / 0.3);
+  color: hsl(var(--foreground) / 0.9);
+}
+
+/* --- blocked banner --- */
+.irp-blocked-banner {
+  border: 1px solid hsl(var(--destructive) / 0.45);
+  background: var(--irp-bad-bg);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.irp-blocked-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: hsl(var(--destructive));
+  margin-bottom: 8px;
+}
+.irp-blocked-dot { width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--destructive)); flex-shrink: 0; }
+.irp-blocked-body { font-size: 13px; color: hsl(var(--foreground) / 0.85); margin: 0 0 10px; }
+.irp-blocked-list { margin: 0; padding-left: 20px; font-size: 13px; color: hsl(var(--foreground)); }
+.irp-blocked-list li { margin-bottom: 4px; }
+
+/* --- layer toggle --- */
+.irp-layer-toggle { display: inline-flex; border: 1px solid hsl(var(--border)); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+.irp-layer-btn {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  padding: 9px 14px;
+  background: hsl(var(--card));
+  border: none;
+  border-right: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+.irp-layer-btn:last-child { border-right: none; }
+.irp-layer-btn-active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+
+/* --- stat tiles --- */
+.irp-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.irp-stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+}
+.irp-stat-tile-warn { background: var(--irp-warn-bg); border-color: hsl(var(--accent) / 0.4); }
+.irp-stat-value { font-family: "IBM Plex Mono", monospace; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.irp-stat-label { font-size: 12px; color: hsl(var(--muted-foreground)); }
+
+/* --- resource mix bars --- */
+.irp-mix-chart { display: flex; flex-direction: column; gap: 10px; }
+.irp-mix-row { display: grid; grid-template-columns: 160px 1fr 56px; align-items: center; gap: 10px; }
+.irp-mix-label { font-size: 13px; }
+.irp-mix-track { height: 14px; border-radius: 7px; background: hsl(var(--muted)); overflow: hidden; }
+.irp-mix-fill { height: 100%; border-radius: 7px; }
+.irp-mix-pct { font-family: "IBM Plex Mono", monospace; font-size: 12px; text-align: right; color: hsl(var(--muted-foreground)); }
+
+/* --- pressure chart --- */
+.irp-pressure-svg { width: 100%; height: auto; overflow: visible; margin-bottom: 8px; }
+.irp-gridline { stroke: hsl(var(--border)); stroke-width: 1; }
+.irp-pressure-label { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; }
+.irp-axis-label { font-family: "IBM Plex Mono", monospace; font-size: 11px; fill: hsl(var(--muted-foreground)); }
+
+@media (max-width: 640px) {
+  .irp-page { padding: 32px 16px 72px; }
+  .irp-mix-row { grid-template-columns: 110px 1fr 48px; }
+  .irp-table { min-width: 680px; }
+}
+
+/* Match the public research pages and keep long labels inside the viewport. */
+.irp-page { --irp-fuel-coal: hsl(var(--muted-foreground)); --irp-fuel-gas: hsl(var(--accent)); --irp-fuel-nuclear: hsl(var(--secondary)); --irp-fuel-wind: hsl(var(--primary)); --irp-fuel-solar: hsl(var(--accent)); --irp-fuel-biomass: hsl(var(--primary) / .65); --irp-fuel-fueloil: hsl(var(--destructive)); --irp-fuel-localsolar: hsl(var(--secondary) / .65); }
+.irp-page p { overflow-wrap: anywhere; }
+.irp-header { max-width: none; }
+.irp-dek { max-width: 850px; margin-top: 0; }
+.irp-section + .irp-section { padding-top: 32px; border-top: 1px solid hsl(var(--border)); }
+.irp-section h2 { font-size: 24px; font-weight: 700; line-height: 1.3; }
+.irp-tabs { flex-wrap: wrap; }
+.irp-tab { height: auto; white-space: normal; border-radius: 0; }
+.irp-layer-toggle { display: flex; flex-wrap: wrap; width: fit-content; }
+.irp-layer-btn { height: auto; white-space: normal; border-radius: 0; }
+.irp-layer-btn-active:hover { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.irp-facility-title { flex-wrap: wrap; gap: 8px; }
+.irp-field, .irp-stat-tile { min-width: 0; border-radius: 6px; }
+.irp-cell-input { color: hsl(var(--foreground)); }
+.irp-mix-row { grid-template-columns: 180px minmax(0, 1fr) 56px; }
+.irp-mix-label { overflow-wrap: anywhere; }
+.irp-horizon { max-width: 260px; margin-bottom: 16px; }
+.irp-pressure-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 8px 0 16px; font-size: 13px; font-weight: 600; }
+.irp-scenario-0 { color: hsl(var(--primary)); }
+.irp-scenario-1 { color: hsl(var(--secondary)); }
+.irp-scenario-2 { color: hsl(var(--foreground)); }
+.irp-pending-callout + .irp-pending-callout { margin-top: 12px; }
+.irp-blocked-banner + .irp-stat-grid { margin-top: 16px; }
+@media (max-width: 640px) { .irp-page { padding: 24px 16px 64px; } .irp-section h2 { font-size: 21px; } .irp-mix-row { grid-template-columns: 120px minmax(0, 1fr) 48px; } }
