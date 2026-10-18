@@ -403,6 +403,14 @@ const AustinAtGlance = () => {
       ],
       "grid-tools": [
         {
+          key: "austin-irp-planning",
+          to: "/austin-irp-planning",
+          title: "Austin IRP Planning",
+          description: "Explore resource-planning inputs, system costs, capacity balance, and Austin Energy's resource mix with source notes.",
+          cta: "Explore Planning",
+          preview: <CouncilIconPreview icon={Network} className="h-[226px]" />,
+        },
+        {
           key: "innovation-gap",
           to: "/innovation-gap",
           title: "Innovation Gap",

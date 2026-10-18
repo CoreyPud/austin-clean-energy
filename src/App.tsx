@@ -71,6 +71,7 @@ import AtbOptions from "./pages/AtbOptions";
 import PeakerProforma from "./pages/PeakerProforma";
 import PeakShavePage from "./pages/PeakShave";
 import DemandDistribution from "./pages/DemandDistribution";
+import AustinIRPPlanning from "./pages/AustinIRPPlanning";
 import InnovationGapPage from "./pages/InnovationGap";
 import { SolarBomPage, SolarDraftPage, SolarFlowPage } from "./pages/SolarSuite";
 
@@ -145,6 +146,7 @@ const AppRoutes = () => {
           <Route path="/peaker-proforma" element={<PeakerProforma />} />
           <Route path="/peak-shave" element={<PeakShavePage />} />
           <Route path="/demand-distribution" element={<DemandDistribution />} />
+          <Route path="/austin-irp-planning" element={<AustinIRPPlanning />} />
           <Route path="/innovation-gap" element={<InnovationGapPage />} />
         </Route>
 
