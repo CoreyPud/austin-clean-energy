@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import "./load-zone-outlook.css";
 import { texasBoundary } from "./texas-boundary";
+import SupplyDemandTable from "./SupplyDemandTable";
 import {
   projection20yr,
   projectionReadout,
@@ -457,6 +458,8 @@ export default function LoadZoneOutlook() {
       </section>
 
       {/* ---------------- 2.5 MAP: WHERE IT'S HAPPENING ---------------- */}
+      <SupplyDemandTable />
+
       <section className="lzo-section">
         <h2 className="lzo-section-title">
           Where it's happening: loads and new generation on the map <TagBadge tag="reported" />
