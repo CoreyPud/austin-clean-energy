@@ -5,3 +5,4 @@
 - Austin IRP Planning preserves supplied model data separately from its themed interface and uses a public wrapper for navigation, metadata, and model disclaimers — keeps source material independent of presentation.
 - Austin Load Zone Outlook keeps supplied data separate from its themed interface and uses a public wrapper for navigation, metadata, and source limitations — preserves source material independently of presentation.
 - Load Zone Outlook uses a sourced local Texas boundary and shared symbol details for hover and pinned views — keeps geographic context and displayed project facts consistent without an external map service.
+- ERCOT supply-demand scenarios keep tested arithmetic and source defaults separate from the table; compare peak-hour supply with peak demand, never raw nameplate or partial map totals — avoids misleading adequacy claims.
