@@ -1,5 +1,5 @@
 # Current
-- [ ] Add a sourced, adjustable ERCOT supply/demand/gap scenario table for 2027–2045 and verify calculations and controls.
+- [x] Add a sourced, adjustable ERCOT supply/demand/gap scenario table for 2027–2045 and verify calculations and controls.
 - [x] Give the Load Zone Outlook map a sourced Texas boundary and hover details for every symbol; verify hover and tap.
 - [x] Add Austin Load Zone Outlook from supplied files, match site colors, and verify chart and map controls.
 - [x] Add Austin IRP Planning from supplied files, match site styling, and verify inputs and outputs.
