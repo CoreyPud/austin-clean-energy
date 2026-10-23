@@ -1,0 +1,4503 @@
+[
+ {
+  "id": "VPP-001",
+  "category": "VPP",
+  "name": "Green Mountain Power Virtual Power Plant",
+  "operator": "Green Mountain Power",
+  "state": "VT",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "Batteries",
+   "EVs",
+   "Commercial flexible load",
+   "Utility-scale storage"
+  ],
+  "businessModel": "Lease / BYOD",
+  "scale": "110 MW total (Jul 2026), 53 MW from home batteries",
+  "mw": 110,
+  "timing": "Home battery lease program is state-approved and tariffed",
+  "summary": "Home batteries, utility-scale storage, EV chargers, commercial buildings in a flexible load program, and hydro plants dispatched together as one resource. GMP says it is the largest single power resource in Vermont by capacity.",
+  "outcomes": "GMP dispatched 90 MW during an early-July 2026 heat wave and estimates it avoided about $6M in peak costs for all customers, after about $11M the year before. Reporting says peaker plants in Vergennes and Rutland have been permanently shut down, and GMP says it plans to retire more.",
+  "modelNote": "First US utility with a state-approved tariffed home battery lease program. Customers can also buy a compatible battery under a Bring Your Own Device program for an upfront incentive. Savings flow to all customers through lower purchased power costs.",
+  "risks": [
+   "Self-reported results"
+  ],
+  "riskNote": null,
+  "confidence": "High",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "GMP release: stored energy network delivers $6M in savings",
+    "url": "https://gmpsnapshot.greenmountainpower.com/news/gmps-growing-stored-energy-network-delivers-6m-in-savings-during-july-heat-wave/"
+   },
+   {
+    "title": "Electrek: Vermont's largest energy source is now a VPP",
+    "url": "https://electrek.co/2026/07/28/vermonts-largest-energy-source-is-now-a-virtual-power-plant/"
+   },
+   {
+    "title": "The Cool Down summary (peaker closures)",
+    "url": "https://www.thecooldown.com/?p=749611"
+   }
+  ]
+ },
+ {
+  "id": "VPP-002",
+  "category": "VPP",
+  "name": "Resilient Neighborhood 2.0 Innovative Pilot",
+  "operator": "Green Mountain Power",
+  "state": "VT",
+  "utilityType": "Investor-owned",
+  "status": "Proposed",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Notice filed Jan 2026",
+  "summary": "A second-generation pilot that builds on GMP's existing Resilient Neighborhood Innovative Pilot. GMP filed notice in January 2026.",
+  "outcomes": "No results reported yet.",
+  "modelNote": "Filed as an innovative pilot with the Vermont regulator.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "SEPA / NCCETC: VPP policy developments, Q1 2026",
+    "url": "https://sepapower.org/knowledge/vpp-and-supporting-der-policy-developments-q1-2026/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-003",
+  "category": "VPP",
+  "name": "ConnectedSolutions",
+  "operator": "National Grid",
+  "state": "MA, NY",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "Thermostats",
+   "Batteries",
+   "C&I demand response"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "227 MW (RMI) to 250 MW (DOE 2025 update)",
+  "mw": 250,
+  "timing": "Launched 2016 in Massachusetts",
+  "summary": "Residential thermostats, residential batteries, and commercial and industrial demand response aggregated for peak shaving in Massachusetts and New York.",
+  "outcomes": "DOE cites it as an example of rapid utility-led deployment, saying it launched in under four months and now has 250 MW of peak shaving capacity in MA and NY. RMI puts it at 227 MW. The figures differ by source and date.",
+  "modelNote": "Customer incentive program run by the utility across several device types.",
+  "risks": [
+   "Self-reported results"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "RMI: Grid-scale virtual power plants are here",
+    "url": "https://rmi.org/resources/grid-scale-virtual-power-plants-are-here-have-utilities-noticed/"
+   },
+   {
+    "title": "DOE Liftoff: Virtual Power Plants 2025 update",
+    "url": "https://www.smartenergydecisions.com/wp-content/uploads/2025/04/liftoff_doe_virtualpowerplants2025update.pdf"
+   }
+  ]
+ },
+ {
+  "id": "VPP-004",
+  "category": "VPP",
+  "name": "CalReady (Demand Side Grid Support)",
+  "operator": "Sunrun, in the California Energy Commission DSGS program",
+  "state": "CA",
+  "utilityType": "State program / aggregator",
+  "status": "Operating",
+  "technologies": [
+   "Batteries",
+   "Solar + storage"
+  ],
+  "businessModel": "Aggregator-led",
+  "scale": "425 MW peak dispatchable (Jul 2026), 110,000+ batteries",
+  "mw": 425,
+  "timing": "2024",
+  "summary": "Sunrun-aggregated home batteries enrolled in the state's Demand Side Grid Support program, available 4 to 9 p.m. from May through October.",
+  "outcomes": "2024: 16,000+ households, 48 MW average and 54 MW peak. 2025: about 75,000 batteries and up to 375 MW expected. July 2026: 80,000+ households and 110,000+ batteries. Sunrun and Tesla report a record 580 MW from 140,000+ batteries on Sept. 9, 2026 (company-reported).",
+  "modelNote": "Customers could earn up to $150 per battery for events capped at 35 days per year between May and October, with events lasting no more than two hours (2025 terms). Sunrun customers were expected to share nearly $10M in 2025.",
+  "risks": [
+   "Funding / policy",
+   "Self-reported results",
+   "Vendor concentration"
+  ],
+  "riskNote": "RMI's affordability toolkit links to Utility Dive coverage titled 'California zeroes out funding for largest virtual power plant'. Current 2026 funding status was not verified in this pass.",
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Sunrun release: CalReady quadruples in size (May 2025)",
+    "url": "https://investors.sunrun.com/news-events/press-releases/detail/340/sunruns-distributed-power-plant-quadruples-in-size-to"
+   },
+   {
+    "title": "Energy-Storage.news: Sunrun expands to 425 MW",
+    "url": "https://www.energy-storage.news/sunrun-franklinwh-expand-bess-virtual-power-plant-capacity-in-california-texas/"
+   },
+   {
+    "title": "Stocktwits: 580 MW Sept. 9 event",
+    "url": "https://stocktwits.com/news-articles/markets/equity/tsla-run-stocks-in-focus-580-mw-heat-wave-battery-drop-lifts-tesla-and-sunrun-despite-2026-losses/cZMRFjNRBIh"
+   },
+   {
+    "title": "RMI Electricity Affordability Toolkit: VPPs",
+    "url": "https://affordability-toolkit.rmi.org/pdfs/virtual-power-plants.pdf"
+   }
+  ]
+ },
+ {
+  "id": "VPP-005",
+  "category": "VPP",
+  "name": "Battery Emergency Demand Response Program",
+  "operator": "LUMA Energy (PREPA), with Tesla and Sunrun as aggregators",
+  "state": "PR",
+  "utilityType": "Territory utility",
+  "status": "Pilot",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Emergency DR",
+  "scale": "About 48 MW from about 70,000 batteries in one reported dispatch",
+  "mw": 48,
+  "timing": "Announced 2023",
+  "summary": "A pilot that lets aggregators dispatch customer batteries during grid emergencies and peak periods, to reduce load shedding on the island.",
+  "outcomes": "LUMA reported dispatching about 70,000 batteries for around 48 MW, roughly a gas peaker's output with no fuel (reported 2025). The original pilot aimed to enroll 6,500 customers for about 26 MW. Tesla's program paid $1 per kWh supplied during events, as described at launch.",
+  "modelNote": "Customers set their own backup reserve level. The utility accepts or rejects applicants at its discretion, and customers can enroll with only one aggregator.",
+  "risks": [
+   "Customer reserve limits",
+   "Self-reported results"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Virginia Mercury: Puerto Rico customers help keep the lights on",
+    "url": "https://virginiamercury.com/2025/09/02/in-puerto-rico-customers-are-helping-to-keep-the-lights-on-could-a-virginia-program-do-the-same/"
+   },
+   {
+    "title": "Latitude Media: Puerto Rico uses home batteries to back up its grid",
+    "url": "https://www.latitudemedia.com/news/puerto-rico-is-using-residents-home-batteries-to-back-up-its-grid/"
+   },
+   {
+    "title": "Tesla: VPP in Puerto Rico (program terms)",
+    "url": "https://www.tesla.com/en_pr/support/energy/virtual-power-plant/puerto-rico"
+   }
+  ]
+ },
+ {
+  "id": "VPP-006",
+  "category": "VPP",
+  "name": "Power Partner (thermostats, EVs, EV fleets)",
+  "operator": "Austin Energy",
+  "state": "TX",
+  "utilityType": "Public power (municipal)",
+  "status": "Operating",
+  "technologies": [
+   "Thermostats",
+   "EVs",
+   "Multi-DER"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "57+ MW flexible capacity",
+  "mw": 57,
+  "timing": "Thermostat program has run several years",
+  "summary": "Multi-device VPP of smart thermostats, residential EV charging, and EV fleets, managed on the EnergyHub Edge DERMS platform.",
+  "outcomes": "About 38,000 thermostats are connected. The utility's plan targets 78 MW of demand response by 2027 and 270 MW by 2035.",
+  "modelNote": "Customers enroll through a single streamlined microsite shared with the battery pilot.",
+  "risks": [
+   "Self-reported results"
+  ],
+  "riskNote": null,
+  "confidence": "High",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "EnergyHub: Austin Energy expands multi-DER VPP",
+    "url": "https://www.energyhub.com/news/austin-energy-partners-with-energyhub-to-expand-multi-der-vpp-with-launch-of-power-partner-battery-pilot-program"
+   },
+   {
+    "title": "Community Impact (sponsored): Austin Energy home battery program",
+    "url": "https://communityimpact.com/sponsored/austin-energy-launches-home-battery-program-to-reduce-grid-stress-energy-costs/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-007",
+  "category": "VPP",
+  "name": "Power Partner Battery Pilot",
+  "operator": "Austin Energy",
+  "state": "TX",
+  "utilityType": "Public power (municipal)",
+  "status": "Pilot",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Pilot capped at 1,500 systems",
+  "mw": null,
+  "timing": "Launched Mar 24, 2026",
+  "summary": "A Bring Your Own Battery demand response pilot that pays customers to let the utility use stored energy during peak demand.",
+  "outcomes": "A sponsored article reports 100+ customers and 165 batteries enrolled by mid-2026. Austin Energy also has an agreement with local startup Base Power for up to 40 MW of distributed residential batteries (as reported by Public Power via Hoodline).",
+  "modelNote": "$500 upfront rebate for recent installations plus performance payments, averaging above $300 per year per the utility. EnergyHub cites $75 per kW-year. Tesla, FranklinWH, SolarEdge, and Enphase are the initial eligible vendors.",
+  "risks": [
+   "Scale cap",
+   "Vendor concentration"
+  ],
+  "riskNote": null,
+  "confidence": "High",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Austin Energy release: Power Partner Battery Pilot",
+    "url": "https://austinenergy.com/about/news/news-releases/2026/Austin-Energy-launches-innovative-Power-Partner-Battery-Pilot-program"
+   },
+   {
+    "title": "Solar Builder: Texas utilities tap FranklinWH",
+    "url": "https://solarbuildermag.com/energy-storage/texas-taps-franklinwh-for-two-new-vpp-programs/"
+   },
+   {
+    "title": "Hoodline: Austin batteries join the grid",
+    "url": "https://hoodline.com/2026/07/cash-for-kilowatts-austin-home-batteries-join-the-grid-lifeline/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-008",
+  "category": "VPP",
+  "name": "Battery Storage Solutions Program",
+  "operator": "Entergy Texas",
+  "state": "TX",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Vendor selection announced Jul 2026",
+  "summary": "A residential battery demand response program. FranklinWH was selected as an eligible system in July 2026, and Tesla batteries are also eligible.",
+  "outcomes": "Customers can earn up to $325 per year. No enrollment or dispatch results found.",
+  "modelNote": "Customers manage their system through the vendor app.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Solar Builder: Texas utilities tap FranklinWH",
+    "url": "https://solarbuildermag.com/energy-storage/texas-taps-franklinwh-for-two-new-vpp-programs/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-009",
+  "category": "VPP",
+  "name": "Tesla VPP in ERCOT ADER Pilot",
+  "operator": "Guadalupe Valley Electric Cooperative",
+  "state": "TX",
+  "utilityType": "Cooperative",
+  "status": "Operating",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Wholesale market",
+  "scale": "130,000+ customers served; ERCOT ADER has about 17 MW registered across all participants",
+  "mw": null,
+  "timing": "Date not shown in source",
+  "summary": "First Texas co-op to join ERCOT's Aggregated Distributed Energy Resource pilot with Tesla as a utility-scale VPP resource.",
+  "outcomes": "Members receive an upfront rebate on registering in the Peak-Time Payback program and an annual rebate each year they participate. The co-op presents it as a new revenue stream for the member-owned co-op.",
+  "modelNote": "Co-op resource aggregated by Tesla and bid into the ERCOT pilot. The co-op also runs a long-standing commercial and industrial demand response program.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Renewable Energy World: Texas co-op teams up with Tesla",
+    "url": "https://www.renewableenergyworld.com/news/texas-electric-co-op-teams-up-with-tesla-for-utility-scale-virtual-power-plant/"
+   },
+   {
+    "title": "CoBank Power Plays: How a Texas co-op is increasing reliability",
+    "url": "https://www.cobank.com/podcast/power-plays/how-a-texas-co-op-is-increasing-reliability-with-its-virtual-power-plant"
+   }
+  ]
+ },
+ {
+  "id": "VPP-010",
+  "category": "VPP",
+  "name": "Bandera Electric VPP",
+  "operator": "Bandera Electric Cooperative",
+  "state": "TX",
+  "utilityType": "Cooperative",
+  "status": "Operating",
+  "technologies": [
+   "Batteries",
+   "Thermostats",
+   "EVs"
+  ],
+  "businessModel": "Wholesale market",
+  "scale": "0.5 MW called; target up to 1 MW by year-end, up to 6 MW eventually",
+  "mw": 0.5,
+  "timing": "Qualified with ERCOT on Aug. 20 (year not shown in source)",
+  "summary": "A co-op-built platform aggregating behind-the-meter resources, qualified to sell into ERCOT's real-time wholesale market. Described as the first co-op to do so.",
+  "outcomes": "At the time of reporting, 26 participants from the residential battery lease program had joined, and the VPP had been called on for half a megawatt. The co-op expects to enroll rooftop solar, thermostats, EVs, and pool pumps.",
+  "modelNote": "ERCOT treats the VPP like a generating resource, so the co-op must be able to control load as it would a plant.",
+  "risks": [
+   "Scale cap",
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "NRECA: Texas co-op makes history as VPP enters wholesale market",
+    "url": "https://www.cooperative.com/news/Pages/Texas-Co-op-Makes-History-as-Virtual-Power-Plant-Enters-Wholesale-Power-Market.aspx"
+   }
+  ]
+ },
+ {
+  "id": "VPP-011",
+  "category": "VPP",
+  "name": "Aggregated Distributed Energy Resource (ADER) Pilot",
+  "operator": "ERCOT",
+  "state": "TX",
+  "utilityType": "Grid operator",
+  "status": "Pilot",
+  "technologies": [
+   "Batteries",
+   "Multi-DER"
+  ],
+  "businessModel": "Wholesale market",
+  "scale": "About 17 MW registered",
+  "mw": 17,
+  "timing": "Phase 1 began 2023 with two VPPs",
+  "summary": "ERCOT's pilot letting aggregations of small distributed resources participate in the wholesale market. It is the venue for the Texas co-op VPPs above.",
+  "outcomes": "About 17 MW of generation registered from companies such as Tesla using residential batteries.",
+  "modelNote": "Wholesale market participation through aggregators.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Renewable Energy World: Texas co-op teams up with Tesla",
+    "url": "https://www.renewableenergyworld.com/news/texas-electric-co-op-teams-up-with-tesla-for-utility-scale-virtual-power-plant/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-012",
+  "category": "VPP",
+  "name": "Vermont Electric Cooperative VPP",
+  "operator": "Vermont Electric Cooperative",
+  "state": "VT",
+  "utilityType": "Cooperative",
+  "status": "In development",
+  "technologies": [
+   "EVs",
+   "Batteries",
+   "Distributed solar"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "33,000 members; about 50 MW of distributed generation on system",
+  "mw": null,
+  "timing": "Date not shown in source",
+  "summary": "A co-op building a VPP across fast-growing distributed generation, EVs, and batteries, with a DERMS named as a final piece.",
+  "outcomes": "The EV flexible load program gives a bill credit to members who skip charging during demand peaks, using a co-op-provided charger that receives the signal. About 250 EVs were on the system, a number that was doubling every year.",
+  "modelNote": "Utility-run bill credits with a co-op-supplied charger.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "NRECA Tech Insights: Virtual power plant in Vermont",
+    "url": "https://www.cooperative.com/remagazine/articles/Pages/Tech-Insights-Virtual-Power-Plant-in-Vermont.aspx"
+   }
+  ]
+ },
+ {
+  "id": "VPP-013",
+  "category": "VPP",
+  "name": "Renewable Battery Connect",
+  "operator": "Xcel Energy (Public Service Co. of Colorado)",
+  "state": "CO",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "About 10 MW enrolled, about 1,000 customers (Feb 2025)",
+  "mw": 10,
+  "timing": "Expanded in 2024 to 2025",
+  "summary": "A battery program where Xcel manages customer batteries during peak demand. Itron's aggregator DERMS and Tesla Powerwall were announced as part of the build-out.",
+  "outcomes": "Xcel dispatches the batteries up to 60 times per year. About 13 MW of additional distributed battery capacity was in the interconnection queue.",
+  "modelNote": "Upfront incentive reported as more generous than comparable programs in Puerto Rico and Nova Scotia.",
+  "risks": [
+   "Schedule risk"
+  ],
+  "riskNote": "Xcel earlier expressed doubts about its ability to roll out a 50 MW VPP pilot by the October 2024 date in a regulator's recommended order.",
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Utility Dive: Enphase VPP in Colorado",
+    "url": "https://www.utilitydive.com/news/enphase-vpp-colorado-xcel-energy-battery-connect/739834/"
+   },
+   {
+    "title": "Kurrant: Xcel partners with Itron and Tesla",
+    "url": "https://kurrant.com/kurrantly-news/xcel-energy-partners-with-itron-and-tesla-for-colorado-virtual-power-plant/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-014",
+  "category": "VPP",
+  "name": "Aggregator Virtual Power Plant Program",
+  "operator": "Xcel Energy (Public Service Co. of Colorado)",
+  "state": "CO",
+  "utilityType": "Investor-owned",
+  "status": "Approved",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Aggregator-led",
+  "scale": "125 MW program size",
+  "mw": 125,
+  "timing": "Approved 2025",
+  "summary": "Approved aggregators combine distributed batteries and provide grid services. Aggregators manage enrollment, dispatch, customer compensation, and compliance.",
+  "outcomes": "Colorado regulators approved the program in 2025. Compensation varies by aggregator and customer offer, so there is no single payment level.",
+  "modelNote": "Standard-offer contract. Settlement terms reported in Q3 2025, before final approval: no methane, hydrogen, or front-of-the-meter DERs; each DER up to 750 kW; up to 2 MW per feeder and 5 MW per bank; 5 MW of the 125 MW competitively procured. Verify against the final order.",
+  "risks": [
+   "Evidence thin",
+   "Schedule risk"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "NCCETC: States, utilities advance VPP programs in 2025",
+    "url": "https://nccleantech.ncsu.edu/2026/01/29/states-utilities-advance-vpp-programs-plans-potential-in-2025-new-report/"
+   },
+   {
+    "title": "SEPA / NCCETC: VPP policy, Q3 2025",
+    "url": "https://sepapower.org/knowledge/vpp-der-policy-q3-2025/"
+   },
+   {
+    "title": "Tigo: program summary",
+    "url": "https://www.tigoenergy.com/bip/xcel-energy-aggregator-virtual-power-plant"
+   }
+  ]
+ },
+ {
+  "id": "VPP-015",
+  "category": "VPP",
+  "name": "Capacity*Connect (Phase 2)",
+  "operator": "Xcel Energy (Minnesota)",
+  "state": "MN",
+  "utilityType": "Investor-owned",
+  "status": "Approved",
+  "technologies": [
+   "Utility-scale storage",
+   "Batteries"
+  ],
+  "businessModel": "Utility-owned",
+  "scale": "Up to 200 MW by end of 2028",
+  "mw": 200,
+  "timing": "Phase 2 approved 2026",
+  "summary": "Utility-owned and operated, front-of-the-meter batteries of 1 to 3 MW each on the distribution system. This is VPP-adjacent: distributed storage rather than customer-owned devices.",
+  "outcomes": "The Minnesota commission approved Phase 2. Separately, SEPA reports Minnesota approved a $430 million distributed battery program in Q1 2026.",
+  "modelNote": "Rate-based utility ownership instead of customer incentives.",
+  "risks": [
+   "Regulatory approval",
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "SEPA / NCCETC: VPP policy developments, Q1 2026",
+    "url": "https://sepapower.org/knowledge/vpp-and-supporting-der-policy-developments-q1-2026/"
+   },
+   {
+    "title": "RMI: Grid-scale virtual power plants are here",
+    "url": "https://rmi.org/resources/grid-scale-virtual-power-plants-are-here-have-utilities-noticed/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-016",
+  "category": "VPP",
+  "name": "Dominion Virginia VPP Pilot",
+  "operator": "Dominion Energy Virginia",
+  "state": "VA",
+  "utilityType": "Investor-owned",
+  "status": "Proposed",
+  "technologies": [
+   "Batteries",
+   "Thermostats",
+   "EVs",
+   "School buses"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Up to 450 MW; pilot runs to July 1, 2028",
+  "mw": 450,
+  "timing": "Required by 2025 law (HB 2346)",
+  "summary": "A 2025 Virginia law requires Dominion to propose a pilot aggregating up to 450 MW across regions. The proposal includes incentives for at least 15 MW of residential batteries and comprises almost a dozen programs.",
+  "outcomes": "As of June 2026 reporting, State Corporation Commission approval was pending, with ramp-up planned after approval. After the pilot, the SCC is to evaluate it and develop a permanent program with procurement targets and performance metrics.",
+  "modelNote": "Mandated pilot. A related 2026 bill (SB 487) would authorize electric cooperatives to run VPP programs; it had passed the Senate as of Feb 2026.",
+  "risks": [
+   "Regulatory approval"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "pv magazine USA: Virginia mandates Dominion VPP pilot",
+    "url": "https://pv-magazine-usa.com/2025/05/16/virginia-mandates-dominion-energy-create-virtual-power-plant-pilot/"
+   },
+   {
+    "title": "WVTF: VPPs will launch soon in Virginia",
+    "url": "https://www.wvtf.org/2026-06-12/virtual-power-plants-will-launch-soon-in-virginia-heres-what-that-means"
+   },
+   {
+    "title": "BillTrack50: HB 2346",
+    "url": "https://www.billtrack50.com/billdetail/1768819/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-017",
+  "category": "VPP",
+  "name": "Solar-plus-Storage VPP Pilot and DERMS",
+  "operator": "Georgia Power",
+  "state": "GA",
+  "utilityType": "Investor-owned",
+  "status": "Approved",
+  "technologies": [
+   "Solar + storage"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "50 MW pilot (25 MW customer-directed, 25 MW utility-directed)",
+  "mw": 50,
+  "timing": "Approved Jul 2025 in the IRP",
+  "summary": "The Georgia PSC approved a customer-sited solar-plus-storage pilot for residential and small commercial customers, alongside a DERMS deployment.",
+  "outcomes": "No dispatch results found. Georgia Power later agreed to modify the pilot, widening eligibility for larger systems and multifamily and nonprofit customers.",
+  "modelNote": "One trade-site report lists $15/kW upfront plus $1.50/kWh performance for customer-directed, and $750 to $1,000/kW for utility-directed. This came from a low-quality source, so check the PSC order.",
+  "risks": [
+   "Eligibility limits",
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "NCCETC: States, utilities advance VPP programs in 2025",
+    "url": "https://nccleantech.ncsu.edu/2026/01/29/states-utilities-advance-vpp-programs-plans-potential-in-2025-new-report/"
+   },
+   {
+    "title": "SEPA / NCCETC: VPP policy, Q3 2025 (25/25 MW split)",
+    "url": "https://sepapower.org/knowledge/vpp-der-policy-q3-2025/"
+   },
+   {
+    "title": "pv magazine USA: Georgia Power modifies pilot",
+    "url": "https://pv-magazine-usa.com/2025/07/24/georgia-power-agrees-to-give-community-solar-a-path-forward"
+   },
+   {
+    "title": "Trade-site incentive figures (verify)",
+    "url": "https://mgrid.org/?p=4825"
+   }
+  ]
+ },
+ {
+  "id": "VPP-018",
+  "category": "VPP",
+  "name": "Bring Your Own Device Battery Pilot",
+  "operator": "Arizona Public Service",
+  "state": "AZ",
+  "utilityType": "Investor-owned",
+  "status": "Approved",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Approved Mar 2025",
+  "summary": "The Arizona Corporation Commission approved APS's BYOD battery pilot in March 2025.",
+  "outcomes": "No results found.",
+  "modelNote": "Customer-owned batteries enrolled for utility dispatch.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "SEPA / NCCETC: Q1 2025 VPP policy updates",
+    "url": "https://nccleantech.ncsu.edu/?p=12989"
+   }
+  ]
+ },
+ {
+  "id": "VPP-019",
+  "category": "VPP",
+  "name": "Rider SDVPP (Scheduled Dispatch VPP)",
+  "operator": "ComEd and Ameren Illinois",
+  "state": "IL",
+  "utilityType": "Investor-owned",
+  "status": "Approved",
+  "technologies": [
+   "Batteries",
+   "Thermostats"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Approved Jun 2026",
+  "summary": "The Illinois Commerce Commission approved the tariffs in June 2026 under the Clean and Reliable Grid Affordability Act (S.B. 25). The programs offer a performance-based annual incentive.",
+  "outcomes": "ComEd also proposed a Bring Your Own Device Load Reduction program in Feb 2026 for smart thermostats and thermal storage, with plans to fold it into a VPP later. That proposal was pending.",
+  "modelNote": "Performance-based annual incentive.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "SEPA / NCCETC: VPP policy developments, Q2 2026",
+    "url": "https://sepapower.org/knowledge/vpp-and-supporting-der-policy-developments-q2-2026/"
+   },
+   {
+    "title": "DSIRE Insight: Q1 2026 update",
+    "url": "https://www.dsireinsight.com/blog/2026/5/13/vpp-and-supporting-der-policy-developments-q1-2026"
+   }
+  ]
+ },
+ {
+  "id": "VPP-020",
+  "category": "VPP",
+  "name": "DRIVE Act VPP and V2G Pilots",
+  "operator": "BGE, Pepco, Delmarva Power, Potomac Edison",
+  "state": "MD",
+  "utilityType": "Investor-owned",
+  "status": "Proposed",
+  "technologies": [
+   "Batteries",
+   "EVs",
+   "Thermostats"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Up to 440 MW across four utilities (BGE up to 188 MW, Pepco up to 185 MW)",
+  "mw": 440,
+  "timing": "DRIVE Act signed May 2024",
+  "summary": "Two-year pilots mandated by the DRIVE Act that pay customers to let utilities adjust device use during peaks, including vehicle-to-grid.",
+  "outcomes": "In Oct 2025 the PSC sent the VPP and V2G pilots back, agreeing the proposals targeted a small share of the Act's peak reduction goal and saying third-party aggregators have an important role. Revised proposals were filed, with hearings on April 7 and 8, 2026. The state's Office of People's Counsel argued BGE's plan to fold existing programs into the pilot is a poor fit for the DRIVE structure.",
+  "modelNote": "Mandated pilots with utility-run incentives. BGE seeks cost recovery through a regulatory asset.",
+  "risks": [
+   "Regulatory approval",
+   "Scale below target"
+  ],
+  "riskNote": null,
+  "confidence": "High",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "Maryland PSC: orders utilities to scale up DRIVE proposals",
+    "url": "https://psc.maryland.gov/news/2025/psc-orders-utilities-to-scale-up-drive-act-proposals/"
+   },
+   {
+    "title": "Utility Dive: Maryland regulators weigh flexible load proposals",
+    "url": "https://utilitydive.com/news/maryland-regulators-weigh-investor-owned-utilities-flexible-load-proposals/817585/"
+   },
+   {
+    "title": "BGE: DRIVE Act proposal",
+    "url": "https://www.nacleanenergy.com/alternative-energies/bge-offers-solutions-to-modernize-and-strengthen-the-electric-grid"
+   }
+  ]
+ },
+ {
+  "id": "VPP-021",
+  "category": "VPP",
+  "name": "Residential Battery VPP Pilot",
+  "operator": "DTE Electric",
+  "state": "MI",
+  "utilityType": "Investor-owned",
+  "status": "Proposed",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Proposed Jun 2026",
+  "summary": "A proposed two-year pilot that would pay customers for using their existing battery systems for grid support.",
+  "outcomes": "Proposed incentive is $105 per kW-year, with a maximum annual incentive of $504 per participant.",
+  "modelNote": "Performance incentive for customer-owned batteries.",
+  "risks": [
+   "Regulatory approval"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "SEPA / NCCETC: VPP policy developments, Q2 2026",
+    "url": "https://sepapower.org/knowledge/vpp-and-supporting-der-policy-developments-q2-2026/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-022",
+  "category": "VPP",
+  "name": "Solar Battery Savings Program",
+  "operator": "San Diego Community Power",
+  "state": "CA",
+  "utilityType": "Community choice aggregator",
+  "status": "Operating",
+  "technologies": [
+   "Batteries"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Date not shown in source",
+  "summary": "Upfront, stackable incentives encourage residential battery adoption, with batteries dispatched daily.",
+  "outcomes": "DOE's 2025 Liftoff update cites about $5M of Resource Adequacy savings.",
+  "modelNote": "Upfront incentives plus daily dispatch.",
+  "risks": [
+   "Self-reported results"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "DOE Liftoff: Virtual Power Plants 2025 update",
+    "url": "https://www.smartenergydecisions.com/wp-content/uploads/2025/04/liftoff_doe_virtualpowerplants2025update.pdf"
+   }
+  ]
+ },
+ {
+  "id": "VPP-023",
+  "category": "VPP",
+  "name": "Flexible DER Portfolio",
+  "operator": "United Power",
+  "state": "CO",
+  "utilityType": "Cooperative",
+  "status": "Operating",
+  "technologies": [
+   "Multi-DER"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "95 MW flexible DER capacity",
+  "mw": 95,
+  "timing": "Date not shown in source",
+  "summary": "A cooperative using flexible distributed capacity and better grid visibility to manage its distribution system.",
+  "outcomes": "DOE's 2025 update says United Power cut transformer outages from 25,000 minutes per year to near zero.",
+  "modelNote": "Co-op operated.",
+  "risks": [
+   "Self-reported results"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "DOE Liftoff: Virtual Power Plants 2025 update",
+    "url": "https://www.smartenergydecisions.com/wp-content/uploads/2025/04/liftoff_doe_virtualpowerplants2025update.pdf"
+   }
+  ]
+ },
+ {
+  "id": "VPP-024",
+  "category": "VPP",
+  "name": "Demand Response Portfolio",
+  "operator": "Otter Tail Power",
+  "state": "MN",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "C&I demand response",
+   "Thermostats"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Can reduce system peak by 15%",
+  "mw": null,
+  "timing": "Date not shown in source",
+  "summary": "A portfolio of demand-side resources the DOE highlights as a utility case study.",
+  "outcomes": "The utility can reduce its system peak demand by 15% through the portfolio, per the DOE update.",
+  "modelNote": "Utility-run demand response.",
+  "risks": [
+   "Self-reported results"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "DOE Liftoff: Virtual Power Plants 2025 update",
+    "url": "https://www.smartenergydecisions.com/wp-content/uploads/2025/04/liftoff_doe_virtualpowerplants2025update.pdf"
+   }
+  ]
+ },
+ {
+  "id": "VPP-025",
+  "category": "VPP",
+  "name": "Richmond Virtual Power Plant",
+  "operator": "MCE (community choice aggregator)",
+  "state": "CA",
+  "utilityType": "Community choice aggregator",
+  "status": "Completed",
+  "technologies": [
+   "Batteries",
+   "Multi-DER"
+  ],
+  "businessModel": "Aggregator-led",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "CEC EPIC project, report published 2026",
+  "summary": "A community-focused VPP demonstration on rehabilitated affordable housing, funded by the California Energy Commission's EPIC program.",
+  "outcomes": "A follow-on CEC grant would scale the Richmond VPP to MCE's entire service territory.",
+  "modelNote": "Turnkey installation and financing in exchange for orchestrating the assets through a VPP.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "CEC report CEC-500-2026-013",
+    "url": "https://www.energy.ca.gov/sites/default/files/2026-05/CEC-500-2026-013.pdf"
+   }
+  ]
+ },
+ {
+  "id": "VPP-026",
+  "category": "VPP",
+  "name": "Affordability and Load Flexibility Portfolio",
+  "operator": "Delmarva Power",
+  "state": "DE",
+  "utilityType": "Investor-owned",
+  "status": "Proposed",
+  "technologies": [
+   "Multi-DER"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Proposed 2025",
+  "summary": "A proposed portfolio of load flexibility offerings.",
+  "outcomes": "No results yet.",
+  "modelNote": "Details not captured in this pass.",
+  "risks": [
+   "Evidence thin",
+   "Regulatory approval"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "NCCETC: States, utilities advance VPP programs in 2025",
+    "url": "https://nccleantech.ncsu.edu/2026/01/29/states-utilities-advance-vpp-programs-plans-potential-in-2025-new-report/"
+   }
+  ]
+ },
+ {
+  "id": "VPP-027",
+  "category": "VPP",
+  "name": "Demand Response and Battery Storage Proposals",
+  "operator": "Entergy Louisiana and Entergy New Orleans",
+  "state": "LA",
+  "utilityType": "Investor-owned",
+  "status": "Proposed",
+  "technologies": [
+   "Batteries",
+   "C&I demand response"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Proposed 2025",
+  "summary": "New demand response and battery storage programs proposed in Louisiana and New Orleans.",
+  "outcomes": "No results yet. State trackers list related utility storage and DR dockets as decided or pending.",
+  "modelNote": "Details not captured in this pass.",
+  "risks": [
+   "Evidence thin",
+   "Regulatory approval"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [],
+  "sources": [
+   {
+    "title": "NCCETC: States, utilities advance VPP programs in 2025",
+    "url": "https://nccleantech.ncsu.edu/2026/01/29/states-utilities-advance-vpp-programs-plans-potential-in-2025-new-report/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-001",
+  "category": "V2G",
+  "name": "Beverly Public Schools bus V2G (ConnectedSolutions)",
+  "operator": "National Grid, Highland Electric Fleets, Beverly Public Schools",
+  "state": "MA",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid",
+   "Peak shaving"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "1 bus",
+  "mw": null,
+  "timing": "Results reported for summers 2021 and 2022",
+  "summary": "A single electric school bus that discharges to the grid during summer peak events under National Grid's ConnectedSolutions program. It is the most-cited early school bus V2G example in Massachusetts.",
+  "outcomes": "The bus discharged about 10.8 MWh over summers 2021 and 2022 (MassCEC puts it at 10.78 MWh and $23,500 earned). Utility Dive (Sept 2026) cites nearly $12,000 per season, but Highland's CEO says about $6,000 per year is more typical in Massachusetts.",
+  "modelNote": "Paid at $200 per kW delivered during summer peak events, roughly $6,000 per vehicle per year (WRI). Few events may not cover the cost of V2G equipment.",
+  "risks": [
+   "Payments may not cover equipment",
+   "Single-bus evidence"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school bus (1)"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid"
+   },
+   {
+    "label": "Compensation",
+    "value": "$200 per kW delivered, summer peak events"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Utilities, school districts see growing value in electric buses for VPPs (Sept 16, 2026)",
+    "url": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/"
+   },
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   },
+   {
+    "title": "Utility Dive: Massachusetts V2X demonstration",
+    "url": "https://www.utilitydive.com/news/massachusetts-vehicle-to-everything-demonstration-hints-at-ev-batteries/821621/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-002",
+  "category": "V2G",
+  "name": "Massachusetts Vehicle-to-Everything Demonstration",
+  "operator": "Massachusetts Clean Energy Center (MassCEC)",
+  "state": "MA",
+  "utilityType": "State program / aggregator",
+  "status": "Pilot",
+  "technologies": [
+   "Light-duty EVs",
+   "School bus",
+   "Residential",
+   "Vehicle-to-home"
+  ],
+  "businessModel": "State-funded demonstration",
+  "scale": "About 70 to 80 chargers expected; 4 municipal, 5 school district and 45+ residential participants",
+  "mw": null,
+  "timing": "Two-year demonstration",
+  "summary": "MassCEC installs bidirectional chargers at no cost for selected municipal, school and residential customers to test backup power, self-consumption and demand response from EV batteries.",
+  "outcomes": "No kW or MW results are quantified. MassCEC says early school-district results 'show promise'. Utility Dive (Sept 2026) counts more than 20 buses in the state's V2G pilot plus other commercial and private light-duty vehicles. Counts differ by article and date.",
+  "modelNote": "Funded from part of a $50M federal American Rescue Plan award. Compensation runs through National Grid's ConnectedSolutions: about $3,000 per summer for some light-duty vehicles and up to $12,000 per year for school buses, per a MassCEC case study.",
+  "risks": [
+   "Upfront cost",
+   "Utilities still learning to dispatch",
+   "Vehicle compatibility"
+  ],
+  "riskNote": "At a MassCEC workshop one utility raised concern about balancing its need for power against the owner's use of the battery during demand response events.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicles",
+    "value": "F-150 Lightning, Nissan Leaf, Kia EV9, Volvo EX90, Polestar 3, five school bus models"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid, backup power, self-consumption"
+   },
+   {
+    "label": "Funding",
+    "value": "Federal ARPA award, through state EV coordinating council"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Massachusetts V2X demonstration hints at EV batteries",
+    "url": "https://www.utilitydive.com/news/massachusetts-vehicle-to-everything-demonstration-hints-at-ev-batteries/821621/"
+   },
+   {
+    "title": "Utility Dive: Utilities, school districts see growing value in electric buses for VPPs (Sept 16, 2026)",
+    "url": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-003",
+  "category": "V2G",
+  "name": "Emergency Load Reduction Program: Oakland Unified buses",
+  "operator": "PG&E, Zum, Oakland Unified School District",
+  "state": "CA",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid",
+   "Emergency load reduction"
+  ],
+  "businessModel": "Emergency DR",
+  "scale": "74 buses; more than 2 MW deployable",
+  "mw": 2,
+  "timing": "Not stated in sources",
+  "summary": "A large school bus fleet that discharges in response to PG&E emergency load reduction events, with an hourly flexible pricing pilot alongside.",
+  "outcomes": "74 buses with 150 kWh batteries and 30 kW chargers can deploy more than 2 MW in ELRP events (WRI). PG&E reports 2.1 GWh of annual discharge from the fleet (Utility Dive).",
+  "modelNote": "PG&E describes it as the program with the most guaranteed revenue. WRI also lists a daily dynamic export rate. Scaling required extensive utility coordination and ISO 15118 compliance for vehicles and chargers.",
+  "risks": [
+   "Self-reported results"
+  ],
+  "riskNote": "WRI's table says 74 buses and its text says 'more than 70'.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school buses, 150 kWh batteries"
+   },
+   {
+    "label": "Chargers",
+    "value": "30 kW bidirectional"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid"
+   },
+   {
+    "label": "Compensation",
+    "value": "ELRP event payments; payment rate not stated here"
+   }
+  ],
+  "sources": [
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   },
+   {
+    "title": "Utility Dive: Utilities, school districts see growing value in electric buses for VPPs (Sept 16, 2026)",
+    "url": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-004",
+  "category": "V2G",
+  "name": "Zum San Francisco bus deployment",
+  "operator": "PG&E, Zum",
+  "state": "CA",
+  "utilityType": "Investor-owned",
+  "status": "In development",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid"
+  ],
+  "businessModel": "Planned grid-support deployment",
+  "scale": "238 buses planned at three depots",
+  "mw": null,
+  "timing": "Planned over the next two school years (as of Sept 2026)",
+  "summary": "A planned deployment of Zum buses at three San Francisco depots, targeted at high-need circuits.",
+  "outcomes": "No results. The deployment is planned.",
+  "modelNote": "Payment terms not stated.",
+  "risks": [
+   "Evidence thin",
+   "Delivery unverified"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "School buses (238 planned)"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid (planned)"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Utilities, school districts see growing value in electric buses for VPPs (Sept 16, 2026)",
+    "url": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-005",
+  "category": "V2G",
+  "name": "Fremont Unified School District V2G",
+  "operator": "PG&E, The Mobility House, Fremont Unified School District",
+  "state": "CA",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid"
+  ],
+  "businessModel": "Aggregator-led",
+  "scale": "4 of 14 owned buses providing V2G; 8 more on order",
+  "mw": null,
+  "timing": "Not stated in sources",
+  "summary": "Buses discharge during PG&E's evening peak, managed by The Mobility House.",
+  "outcomes": "Buses return around 4:30 p.m. at about 60% charge and can discharge for five to six hours. No energy or revenue figures are given.",
+  "modelNote": "Aggregator-managed participation in PG&E's evening peak.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school buses (4 providing V2G)"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid, evening peak"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Utilities, school districts see growing value in electric buses for VPPs (Sept 16, 2026)",
+    "url": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-006",
+  "category": "V2G",
+  "name": "Cajon Valley bus V2G (ELRP)",
+  "operator": "San Diego Gas & Electric, Cajon Valley Union School District",
+  "state": "CA",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid",
+   "Emergency load reduction"
+  ],
+  "businessModel": "Emergency DR",
+  "scale": "6 buses, six 60 kW chargers",
+  "mw": 0.36,
+  "timing": "More than 3 years as of May 2025",
+  "summary": "Six electric school buses with bidirectional chargers take part in California's Emergency Load Reduction Program through SDG&E.",
+  "outcomes": "Events run one to five hours and occur about 10 times a year. The district says it lowers energy costs while buses keep serving students.",
+  "modelNote": "Compensation is $2 per kWh dispatched under ELRP. Buses must stay available for student transport first.",
+  "risks": [
+   "Small scale",
+   "Event-limited revenue"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school buses, about 180 kWh batteries"
+   },
+   {
+    "label": "Chargers",
+    "value": "Six 60 kW bidirectional"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid"
+   },
+   {
+    "label": "Compensation",
+    "value": "$2 per kWh dispatched"
+   }
+  ],
+  "sources": [
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   }
+  ]
+ },
+ {
+  "id": "V2G-007",
+  "category": "V2G",
+  "name": "Porterville Unified microgrid with V2G buses",
+  "operator": "Southern California Edison, Porterville Unified School District",
+  "state": "CA",
+  "utilityType": "Investor-owned",
+  "status": "In development",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid",
+   "Microgrid",
+   "Solar + storage"
+  ],
+  "businessModel": "Microgrid",
+  "scale": "2 bidirectional buses; 35 fast chargers planned",
+  "mw": null,
+  "timing": "Announced in June (year not stated in source)",
+  "summary": "A microgrid with a 763 kW solar array and a 408 kW / 1,632 kWh battery, supporting SCE's distribution grid.",
+  "outcomes": "Planned. No results.",
+  "modelNote": "Payment terms not stated.",
+  "risks": [
+   "Evidence thin",
+   "Delivery unverified"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "2 bidirectional buses"
+   },
+   {
+    "label": "Co-located assets",
+    "value": "763 kW solar, 408 kW / 1,632 kWh battery"
+   },
+   {
+    "label": "Direction",
+    "value": "Microgrid and distribution grid support"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Utilities, school districts see growing value in electric buses for VPPs (Sept 16, 2026)",
+    "url": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-008",
+  "category": "V2G",
+  "name": "Electric school bus program and EPRI V2G demonstration",
+  "operator": "Dominion Energy, with EPRI",
+  "state": "VA",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid",
+   "Managed charging"
+  ],
+  "businessModel": "Utility-owned fleet support",
+  "scale": "50 buses in first phase (16 districts); 15 feeders studied",
+  "mw": null,
+  "timing": "Announced Jan 2020",
+  "summary": "Dominion paid the price gap between electric and diesel buses for the first 50 buses and built charging, with buses to act as a grid resource at the end of the school day. A separate multi-year EPRI demonstration studied 15 feeders.",
+  "outcomes": "11 of 15 feeders could host a full electric bus fleet without upgrades. Some buses failed to dispatch because of low 12-volt battery charge. The 2020 plan was for 1,000 more buses by 2025 with legislative approval; whether that happened was not verified in this pass.",
+  "modelNote": "Dominion invested $15M in the first 50 buses, covering over $100,000 per bus in extra cost. Expansion needed state legislative approval, with a rate impact estimated under $1 per month (2020 estimate).",
+  "risks": [
+   "Plan versus delivery unverified",
+   "Dispatch failures",
+   "Ratepayer funding"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school buses"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid, managed charging"
+   },
+   {
+    "label": "Investment",
+    "value": "$15M for first 50 buses (2020)"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Next City: Virginia utility plans to use electric school buses as a power station (Jan 30, 2020)",
+    "url": "https://nextcity.org/urbanist-news/virginia-utility-plans-to-use-electric-school-buses-as-a-power-station"
+   },
+   {
+    "title": "Utility Dive: Utilities, school districts see growing value in electric buses for VPPs (Sept 16, 2026)",
+    "url": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-009",
+  "category": "V2G",
+  "name": "Flexible Load Management (South Burlington buses)",
+  "operator": "Green Mountain Power",
+  "state": "VT",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Not stated in sources",
+  "summary": "GMP's Flexible Load Management program pays for school bus battery discharge in South Burlington.",
+  "outcomes": "No energy figures are given.",
+  "modelNote": "Roughly $9,000 per vehicle per year with year-round incentives (WRI).",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school bus"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid"
+   },
+   {
+    "label": "Compensation",
+    "value": "About $9,000 per vehicle per year"
+   }
+  ],
+  "sources": [
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   }
+  ]
+ },
+ {
+  "id": "V2G-010",
+  "category": "V2G",
+  "name": "White Plains school bus V2G (VDER)",
+  "operator": "Con Edison, Lion Electric, Nuvve, National Express",
+  "state": "NY",
+  "utilityType": "Investor-owned",
+  "status": "Pilot",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "5 buses",
+  "mw": null,
+  "timing": "Project began 2018; results announced Dec 14, 2020",
+  "summary": "Five Lion C electric school buses at a North White Plains depot sent power back to the grid with Nuvve's V2G technology. Lion called it the first successful V2G deployment in New York.",
+  "outcomes": "No kW rating or total energy exported was stated in the 2020 announcement.",
+  "modelNote": "Con Edison, NYSERDA and National Express helped fund the bus purchase. WRI later describes compensation under Con Edison's Value of Distributed Energy Resources program at reported actual cost to the utility.",
+  "risks": [
+   "Vendor-reported results",
+   "Current status unclear"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Lion C electric school buses (5)"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid"
+   },
+   {
+    "label": "Platform",
+    "value": "Nuvve V2G"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Lion Electric release via STN: successful V2G deployment with Con Edison (Dec 14, 2020)",
+    "url": "https://stnonline.com/industry-releases/lion-electric-announces-successful-electric-school-bus-vehicle-to-grid-deployment-with-con-edison-in-new-york/"
+   },
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   }
+  ]
+ },
+ {
+  "id": "V2G-011",
+  "category": "V2G",
+  "name": "Wells-Ogunquit school bus V2G pilot",
+  "operator": "Wells-Ogunquit school district",
+  "state": "ME",
+  "utilityType": "School district (utility not named)",
+  "status": "On hold",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid"
+  ],
+  "businessModel": "Pilot awaiting compensation scheme",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Paused as of WRI's report",
+  "summary": "A V2G pilot paused while a compensation scheme is established with the utility and regulator.",
+  "outcomes": "No results.",
+  "modelNote": "No compensation scheme yet.",
+  "risks": [
+   "No compensation scheme",
+   "Regulatory gap"
+  ],
+  "riskNote": "WRI cites this as an example of why clear, stable compensation determines whether a project succeeds.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school buses"
+   },
+   {
+    "label": "Blocker",
+    "value": "Compensation scheme with utility and regulator"
+   }
+  ],
+  "sources": [
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   }
+  ]
+ },
+ {
+  "id": "V2G-012",
+  "category": "V2G",
+  "name": "West Linn bus V2G demonstration",
+  "operator": "Portland General Electric, First Student",
+  "state": "OR",
+  "utilityType": "Investor-owned",
+  "status": "Pilot",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "1 bus, 155 kWh, 60 kW charger",
+  "mw": 0.06,
+  "timing": "Summer 2024 events",
+  "summary": "A single bus with a 60 kW bidirectional charger used for utility dispatch tests.",
+  "outcomes": "During summer 2024 the bus delivered stable output over three-hour events. PGE is optimistic about expanding to more bus and charger combinations.",
+  "modelNote": "Utility dispatch control and pilot funding support testing.",
+  "risks": [
+   "Single-bus evidence"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school bus, 155 kWh (1)"
+   },
+   {
+    "label": "Chargers",
+    "value": "60 kW bidirectional"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid"
+   }
+  ],
+  "sources": [
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   }
+  ]
+ },
+ {
+  "id": "V2G-013",
+  "category": "V2G",
+  "name": "Durango school bus V2G",
+  "operator": "La Plata Electric Association, Durango School District 9-R",
+  "state": "CO",
+  "utilityType": "Cooperative",
+  "status": "Operating",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-grid"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "1 bus",
+  "mw": null,
+  "timing": "Not stated in sources",
+  "summary": "A cooperative uses one bidirectional bus to help manage distribution demand.",
+  "outcomes": "The utility's initial technology platform failed, so it worked with other providers to build software that gives better dispatch control.",
+  "modelNote": "Payment terms not stated.",
+  "risks": [
+   "Platform failure",
+   "Single-bus evidence"
+  ],
+  "riskNote": "WRI says a robust, generalized V2G system that works well with utilities is still needed.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school bus (1)"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid, distribution demand management"
+   }
+  ],
+  "sources": [
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   }
+  ]
+ },
+ {
+  "id": "V2G-014",
+  "category": "V2G",
+  "name": "Sunrun and BGE F-150 Lightning vehicle-to-home pilot",
+  "operator": "Baltimore Gas & Electric, Sunrun, Ford",
+  "state": "MD",
+  "utilityType": "Investor-owned",
+  "status": "Completed",
+  "technologies": [
+   "Light-duty EVs",
+   "Vehicle-to-home",
+   "Residential"
+  ],
+  "businessModel": "Aggregator-led",
+  "scale": "3 customers",
+  "mw": null,
+  "timing": "June 1 to Sept 30, 2024",
+  "summary": "Three Sunrun customers with F-150 Lightning trucks shared energy with the grid during weekday 5 to 9 p.m. windows. Sunrun called it the first operational bidirectional EV 'power plant' in the US using a cohort of customer vehicles.",
+  "outcomes": "No results were reported in the launch coverage. Sunrun's CEO called it 'a significant proof of concept'.",
+  "modelNote": "Customers were paid by energy shared, about $800 per customer over the four months (Sunrun estimate). Funded by a US Department of Energy grant to BGE.",
+  "risks": [
+   "Very small scale",
+   "Results not published"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Ford F-150 Lightning (3)"
+   },
+   {
+    "label": "Direction",
+    "value": "Export to grid via home system"
+   },
+   {
+    "label": "Compensation",
+    "value": "About $800 per customer for the season"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Sunrun, BGE launch first US vehicle-to-home EV charging program",
+    "url": "https://www.utilitydive.com/news/sunrun-bge-launch-first-us-vehicle-to-home-ev-charging-program/722367/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-015",
+  "category": "V2G",
+  "name": "Boulder V2X pilot",
+  "operator": "Xcel Energy, Fermata Energy",
+  "state": "CO",
+  "utilityType": "Investor-owned",
+  "status": "Pilot",
+  "technologies": [
+   "Light-duty EVs",
+   "Vehicle-to-building",
+   "Commercial"
+  ],
+  "businessModel": "Utility-run program",
+  "scale": "6 Nissan Leafs, four 20 kW chargers",
+  "mw": 0.08,
+  "timing": "Announced May 20, 2024",
+  "summary": "Bidirectional chargers at an affordable housing development and a beverage store, working with the City of Boulder, Colorado CarShare and Boulder Housing Partners.",
+  "outcomes": "No results reported. Xcel calls it its first pilot of this kind and has no current plans to expand. Fermata says it is open to expansion.",
+  "modelNote": "Approved under Xcel's partnerships, research and innovation portfolio within its 2021-2023 Transportation Electrification Plan. Goals: cut peak building demand and bills, study resiliency in outage-prone areas.",
+  "risks": [
+   "Not grid export",
+   "Small scale"
+  ],
+  "riskNote": "The chargers can discharge to the building but not back to the grid, so this tests vehicle-to-building, not V2G.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Nissan Leaf (6)"
+   },
+   {
+    "label": "Chargers",
+    "value": "Four 20 kW Level 2 bidirectional"
+   },
+   {
+    "label": "Direction",
+    "value": "To building only"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Fermata, Xcel launch V2X bidirectional charging pilot",
+    "url": "https://www.utilitydive.com/news/fermata-xcel-energy-launch-v2x-bidirectional-charging-pilot/717321/"
+   }
+  ]
+ },
+ {
+  "id": "V2G-016",
+  "category": "V2G",
+  "name": "MOVER school microgrid",
+  "operator": "Hood River County School District, New Buildings Institute",
+  "state": "OR",
+  "utilityType": "School district",
+  "status": "In development",
+  "technologies": [
+   "School bus",
+   "Vehicle-to-building",
+   "Microgrid",
+   "Solar + storage"
+  ],
+  "businessModel": "Microgrid",
+  "scale": "Buses integrated into one school microgrid",
+  "mw": null,
+  "timing": "Planned",
+  "summary": "Electric school buses are planned to supply power directly to Wy'East Middle School in emergencies rather than export to the grid. Components include local solar, stationary batteries, a microgrid controller and bidirectional chargers.",
+  "outcomes": "Planned. No results.",
+  "modelNote": "Resilience use case, not a utility payment model.",
+  "risks": [
+   "Not grid export",
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Vehicle",
+    "value": "Electric school buses"
+   },
+   {
+    "label": "Direction",
+    "value": "To building and microgrid"
+   }
+  ],
+  "sources": [
+   {
+    "title": "WRI: Electric school bus V2G lessons and examples",
+    "url": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples"
+   }
+  ]
+ },
+ {
+  "id": "GET-001",
+  "category": "GETs",
+  "name": "Dynamic line rating demonstration",
+  "operator": "Oncor",
+  "state": "TX",
+  "utilityType": "Investor-owned",
+  "status": "Completed",
+  "technologies": [
+   "Dynamic line rating",
+   "Sensors"
+  ],
+  "businessModel": "DOE-funded demonstration, then commercial follow-on",
+  "scale": "8 circuits, 138 to 345 kV",
+  "mw": null,
+  "timing": "Final report April 2014; Odessa-Midland follow-on June 2013",
+  "summary": "Dynamic line rating on eight central Texas circuits, feeding real-time ratings to ERCOT, which used the added capacity in its dispatch process without operator intervention.",
+  "outcomes": "DLR raised capacity by up to 14% above ambient-adjusted ratings, available 83.5 to 90.5% of the time. The report found 5% extra capacity could relieve up to 60% of congestion on the target lines and 10% could nearly eliminate it. Oncor's final report called the project 'a complete success'.",
+  "modelNote": "Part of a US DOE Smart Grid Demonstration Program (award amount not stated). Oncor later deployed more DLR in Odessa-Midland with commercial funding.",
+  "risks": [
+   "Dated evidence",
+   "Savings not monetized in source"
+  ],
+  "riskNote": "The source gives Oncor's total congestion costs (over $148M in 2011, over $197M in 2012) but no congestion cost savings from the program.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "GET type",
+    "value": "Dynamic line rating"
+   },
+   {
+    "label": "Voltage",
+    "value": "138 to 345 kV"
+   },
+   {
+    "label": "Measured capacity gain",
+    "value": "Up to 14% over ambient-adjusted ratings"
+   },
+   {
+    "label": "Result basis",
+    "value": "Measured (final DOE demonstration report)"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Renewable Energy World: Oncor DLR program increases transmission capacity, reduces congestion",
+    "url": "https://www.renewableenergyworld.com/power-grid/transmission/oncor-dlr-program-increases-transmission-capacity-reduces-congestion/"
+   }
+  ]
+ },
+ {
+  "id": "GET-002",
+  "category": "GETs",
+  "name": "LineVision dynamic line rating, Syracuse",
+  "operator": "National Grid",
+  "state": "NY",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "Dynamic line rating",
+   "Sensors"
+  ],
+  "businessModel": "Utility-run deployment",
+  "scale": "4 lines at 115 kV",
+  "mw": null,
+  "timing": "Early May 2024, after a year of pilots",
+  "summary": "Described as the largest operationalization of DLR in the US at the time. Automated ratings go straight to control room operators.",
+  "outcomes": "National Grid expects average capacity increases of 20 to 30% on these lines. These are projections, not measured outcomes. Cost gains were not reported.",
+  "modelNote": "Utility-run with LineVision sensors. Similar deployments are being considered in other parts of New York, Massachusetts and the UK, but not immediately.",
+  "risks": [
+   "Projected results",
+   "Integration effort",
+   "Operator training"
+  ],
+  "riskNote": "Integration took careful security and software work, and future deployments are 'not a simple copy and paste'.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "GET type",
+    "value": "Dynamic line rating"
+   },
+   {
+    "label": "Voltage",
+    "value": "115 kV"
+   },
+   {
+    "label": "Expected capacity gain",
+    "value": "20 to 30% average (projection)"
+   },
+   {
+    "label": "Result basis",
+    "value": "Projected"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Latitude Media: Behind the scenes of the country's largest dynamic line rating deployment",
+    "url": "https://www.latitudemedia.com/news/behind-the-scenes-of-the-countrys-largest-dynamic-line-rating-deployment/"
+   }
+  ]
+ },
+ {
+  "id": "GET-003",
+  "category": "GETs",
+  "name": "Heimdall Power dynamic line rating pilot",
+  "operator": "Ameren Transmission Co. of Illinois",
+  "state": "IL",
+  "utilityType": "Investor-owned",
+  "status": "Pilot",
+  "technologies": [
+   "Dynamic line rating",
+   "Sensors"
+  ],
+  "businessModel": "Utility-run pilot",
+  "scale": "About 30 sensors (15 installed, 15 planned)",
+  "mw": null,
+  "timing": "Install began Dec 2025; announced Mar 30, 2026",
+  "summary": "Heimdall sensors clamped onto some of the most congested lines in Ameren's MISO transmission system. Ameren also expects the data to help plan where and when new transmission is needed.",
+  "outcomes": "No results yet. Future deployment depends on what the pilot shows.",
+  "modelNote": "Utility-run pilot with the vendor.",
+  "risks": [
+   "Evidence thin",
+   "Results pending"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "GET type",
+    "value": "Dynamic line rating"
+   },
+   {
+    "label": "Footprint",
+    "value": "Unnamed congested lines in MISO"
+   },
+   {
+    "label": "Result basis",
+    "value": "None yet"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Utility Dive: Ameren tests Heimdall dynamic line rating",
+    "url": "https://www.utilitydive.com/news/ameren-dynamic-line-rating-heimdall/816090/"
+   }
+  ]
+ },
+ {
+  "id": "GET-004",
+  "category": "GETs",
+  "name": "SmartValve power flow control, Leeds-Hurley Avenue",
+  "operator": "Central Hudson Gas & Electric",
+  "state": "NY",
+  "utilityType": "Investor-owned",
+  "status": "Operating",
+  "technologies": [
+   "Advanced power flow control",
+   "Smart Wires SmartValve"
+  ],
+  "businessModel": "Utility capital project (non-wires alternative)",
+  "scale": "185 MW of transfer capacity; 15 units, about 150 MVAr",
+  "mw": 185,
+  "timing": "Installed 2023; 2019 pilot at 115 kV",
+  "summary": "Fifteen Smart Wires SmartValves (10 MVAr each) at 345 kV push power onto an underused circuit, unlocking 185 MW on the UPNY-SENY interface. A fixed series capacitor was considered first.",
+  "outcomes": "The utility reported less substation work, a 25% smaller footprint and an estimated $10M saving versus the capacitor option. The article reports expectations, not measured performance.",
+  "modelNote": "Built to meet a NYISO-identified need at lowest cost to customers, tied to New York's 70% renewables target for 2030. Devices can be expanded or relocated.",
+  "risks": [
+   "Expected, not measured, results"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "GET type",
+    "value": "Advanced power flow control"
+   },
+   {
+    "label": "Voltage",
+    "value": "345 kV (2019 pilot at 115 kV)"
+   },
+   {
+    "label": "Capacity effect",
+    "value": "185 MW transfer capacity unlocked"
+   },
+   {
+    "label": "Result basis",
+    "value": "Utility expectation"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Renewable Energy World: How a New York utility unlocked 185 MW without new transmission",
+    "url": "https://www.renewableenergyworld.com/power-grid/transmission/case-study-how-a-new-york-utility-unlocked-185-mw-of-capacity-without-building-new-transmission"
+   }
+  ]
+ },
+ {
+  "id": "GET-005",
+  "category": "GETs",
+  "name": "ACCC reconductor of two 345 kV lines",
+  "operator": "AEP",
+  "state": "TX",
+  "utilityType": "Investor-owned",
+  "status": "Completed",
+  "technologies": [
+   "Advanced conductors",
+   "Reconductoring"
+  ],
+  "businessModel": "Utility capital project",
+  "scale": "Two 120-mile lines, about 240 circuit-miles",
+  "mw": null,
+  "timing": "Completion date not stated",
+  "summary": "Two parallel 345 kV lines near the Gulf were reconductored while energized with CTC Global's ACCC Drake conductor, reusing the existing steel structures.",
+  "outcomes": "The vendor says capacity roughly doubled, line losses fell 30% and the project finished 8 months early and under budget.",
+  "modelNote": "Utility capital project; the case study is published by the conductor vendor.",
+  "risks": [
+   "Vendor case study",
+   "Internal inconsistencies"
+  ],
+  "riskNote": "The page gives $43M in one place and $50M+ in another for upfront savings, and 34 MW in one place and over 40 MW in another for freed generation. Treat figures as leads.",
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "GET type",
+    "value": "Advanced conductor"
+   },
+   {
+    "label": "Voltage",
+    "value": "345 kV"
+   },
+   {
+    "label": "Capacity effect",
+    "value": "About 2x original (vendor)"
+   },
+   {
+    "label": "Result basis",
+    "value": "Vendor-reported"
+   }
+  ],
+  "sources": [
+   {
+    "title": "CTC Global: AEP reconductor project",
+    "url": "https://ctcglobal.com/aep-reconductor-project/"
+   }
+  ]
+ },
+ {
+  "id": "GEO-001",
+  "category": "Geothermal",
+  "name": "Cape Station enhanced geothermal",
+  "operator": "Fervo Energy, with Southern California Edison and other offtakers",
+  "state": "UT, CA",
+  "utilityType": "Developer with utility offtake",
+  "status": "Operating",
+  "technologies": [
+   "Enhanced geothermal",
+   "Horizontal drilling"
+  ],
+  "businessModel": "Power purchase agreement",
+  "scale": "About 100 MW Phase I (three 33 MW blocks); about 900 MW contracted",
+  "mw": 100,
+  "timing": "First power announced Sept 24, 2026",
+  "summary": "Fervo says Cape Station is the first utility-scale enhanced geothermal development to reach first power. The first GeoBlock is ramping as the full well system comes online.",
+  "outcomes": "Output now was not stated. The first block is expected at contractual operation by Oct 1, 2026 and the other two by Jan 1, 2027, with another 400 MW under construction for 2028.",
+  "modelNote": "SCE signed two 15-year PPAs totaling 320 MW in June 2024. Other offtakers include Google (396 MW PPA with an option to expand), Shell Energy North America and Clean Power Alliance.",
+  "risks": [
+   "Company-reported milestone",
+   "Ramp-up not yet measured"
+  ],
+  "riskNote": "The 2024 SCE announcement said the first phase would be 70 MW by 2026, while the Sept 2026 report says Phase I is about 100 MW. Drilling cost and time figures were not stated.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Resource",
+    "value": "Enhanced geothermal, horizontal wells"
+   },
+   {
+    "label": "Offtake",
+    "value": "About 900 MW contracted; SCE 320 MW"
+   },
+   {
+    "label": "Phase I COD",
+    "value": "Oct 1, 2026 and Jan 1, 2027 (expected)"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Power Engineering: Fervo achieves first power at flagship Utah project (Sept 24, 2026)",
+    "url": "https://www.power-eng.com/renewables/fervo-energy-achieves-first-power-at-flagship-utah-geothermal-project"
+   },
+   {
+    "title": "Utility Dive: Fervo, Southern California Edison geothermal deal (June 2024)",
+    "url": "https://www.utilitydive.com/news/fervo-geothermal-deal-california-edison-energy/720128/"
+   }
+  ]
+ },
+ {
+  "id": "GEO-002",
+  "category": "Geothermal",
+  "name": "Advanced geothermal pilot near Nacogdoches",
+  "operator": "Austin Energy, Exceed Energy",
+  "state": "TX",
+  "utilityType": "Public power (municipal)",
+  "status": "In development",
+  "technologies": [
+   "Advanced geothermal",
+   "Supercritical CO2"
+  ],
+  "businessModel": "Utility pilot with developer",
+  "scale": "5 MW",
+  "mw": 5,
+  "timing": "Announced Nov 14, 2024",
+  "summary": "A 5 MW pilot using Exceed Energy's supercritical carbon dioxide technology, sited near Austin Energy's biomass facility in Nacogdoches.",
+  "outcomes": "The release said it would be online in 2025. Earlier research notes (Feb 2026) put it still pre-construction; this was not re-verified in this pass.",
+  "modelNote": "Cost and contract terms were not disclosed.",
+  "risks": [
+   "Schedule slip",
+   "Contract terms undisclosed"
+  ],
+  "riskNote": "The utility calls this 'advanced geothermal', which uses sCO2 as the working fluid, so it may not be enhanced geothermal in the Fervo sense.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Resource",
+    "value": "Advanced geothermal, sCO2"
+   },
+   {
+    "label": "Site",
+    "value": "Near the Nacogdoches biomass plant"
+   },
+   {
+    "label": "Announced online date",
+    "value": "2025 (not met per earlier notes)"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Austin Energy: explores potential game changer for geothermal energy in Texas (Nov 14, 2024)",
+    "url": "https://austinenergy.com/about/news/news-releases/2024/austin-energy-explores-potential-game-changer-for-geothermal-energy-in-texas"
+   },
+   {
+    "title": "ThinkGeoEnergy: Austin, Texas to pilot 5 MW geothermal power project",
+    "url": "https://www.thinkgeoenergy.com/austin-texas-to-pilot-5-mw-geothermal-power-project/"
+   }
+  ]
+ },
+ {
+  "id": "PRG-001",
+  "category": "Program",
+  "name": "Community Solar Grant Program (low-income)",
+  "operator": "Maryland Energy Administration, with Department of Human Services",
+  "state": "MD",
+  "utilityType": "State energy office",
+  "status": "Operating",
+  "technologies": [
+   "Community solar",
+   "Low-income access",
+   "Brownfield / landfill siting"
+  ],
+  "businessModel": "State grant",
+  "scale": "Up to $42.5M offered in the FY27 round; $43M awarded to 69 projects (June 2026)",
+  "mw": null,
+  "timing": "Rounds announced Oct 2025, June 2026 and Sept 2026",
+  "summary": "Grants to community solar projects that give low-income households guaranteed savings or free energy. Paid from the Strategic Energy Investment Fund. It is a state-level funding layer on top of the Public Service Commission's community solar program.",
+  "outcomes": "June 2026: $43M in grants for 69 projects, including Solar Landscape (21 rooftop projects in BGE and Pepco territories), Pippin Farms (two capped landfills) and Lightstar (12 agrivoltaic projects). MW and households served were not stated. The FY27 round opened Sept 22, 2026, with applications due Dec 15, 2026 and notices expected in spring 2027.",
+  "modelNote": "Oct 2025 round ($17M): about $12M set aside for landfill and brownfield sites; half the energy free to households designated by the Department of Human Services and half at a 25% discount; other projects direct 15% of output to low-income subscribers with at least 12% savings; awards of $50,000 to $1M, up to $6M for landfill and brownfield sites; projects funded by the earlier pilot ineligible. FY27 round: Area of Interest 1 needs 15% low-income output with 25% savings off the utility credit rate; Area of Interest 2 needs 50% free to low-income households plus 25% savings on the rest, on a landfill, rubble fill or brownfield.",
+  "risks": [
+   "Annual appropriation",
+   "Round terms change each year",
+   "Outcomes not yet reported"
+  ],
+  "riskNote": "The $17M (Oct 2025) and $43M (June 2026) figures come from different announcements and the sources do not say how the rounds relate. Do not add them.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Funder",
+    "value": "Maryland Energy Administration"
+   },
+   {
+    "label": "Fund source",
+    "value": "Strategic Energy Investment Fund"
+   },
+   {
+    "label": "Beneficiaries",
+    "value": "Low-income subscribers, renters"
+   },
+   {
+    "label": "Subscriber savings floor",
+    "value": "12% to 25% off, depending on round and project type"
+   },
+   {
+    "label": "Current window",
+    "value": "FY27 FOA, due Dec 15, 2026"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Maryland Energy Administration: Community Solar Grant Program (FY27)",
+    "url": "https://energy.maryland.gov/residential/Pages/CommunitySolarLMI-PPA.aspx/2/0100019a2bc3fc74-24c10b61-bbdb-4425-a1a8-4a21307ca327-000000/hRt5JmWUKqtQ5knAR7nZ3N9iPuDlPyEBlOEbgD-p6E4"
+   },
+   {
+    "title": "Governor Moore: $17 million for community solar projects (Oct 2025)",
+    "url": "https://governor.maryland.gov/news/press/pages/governor-moore-announces-%2417-million-for-community-solar-projects-to-cut-energy-costs-for-marylanders.aspx"
+   },
+   {
+    "title": "SamSearch: Maryland allocates $43M for community solar (June 2026)",
+    "url": "https://samsearch.co/government-contracting-news/maryland-allocates-43-million-for-community-solar-to-support-low-income-residents-112011"
+   }
+  ]
+ },
+ {
+  "id": "PRG-002",
+  "category": "Program",
+  "name": "Maryland Community Solar Program",
+  "operator": "Maryland Public Service Commission; BGE, Delmarva, Potomac Edison, Pepco",
+  "state": "MD",
+  "utilityType": "State regulator program",
+  "status": "Operating",
+  "technologies": [
+   "Community solar",
+   "Low-income access"
+  ],
+  "businessModel": "Subscription with utility bill credit",
+  "scale": "Pilot: 139 projects, 204 MW operating (to June 30, 2024)",
+  "mw": 204,
+  "timing": "Pilot began 2015; permanent program rules published Feb 4, 2025",
+  "summary": "Subscribers receive bill credits for their share of a community solar project's output. The pilot ran from 2015 to Dec 31, 2024 and a permanent program created by House Bill 908 (2023) replaced it.",
+  "outcomes": "The pilot reached 139 projects and 204 MW operating through June 30, 2024. The page gives no subscriber count. Rules for consolidated utility billing are still in development.",
+  "modelNote": "Projects up to 5 MW. Systems must send at least 40% of kWh output to low- and moderate-income subscribers unless subscribers wholly own the system, and those subscribers may not be charged more than 90% of the bill credit value, so about 10% savings. Each utility has a community solar tariff on file and does the interconnection work.",
+  "risks": [
+   "Savings floor is modest",
+   "Billing rules still in development"
+  ],
+  "riskNote": null,
+  "confidence": "High",
+  "categoryFields": [
+   {
+    "label": "Funder",
+    "value": "Subscribers via utility bill credits (no state fund)"
+   },
+   {
+    "label": "Per-project cap",
+    "value": "5 MW"
+   },
+   {
+    "label": "Low and moderate income share",
+    "value": "At least 40% of output"
+   },
+   {
+    "label": "Subscriber savings floor",
+    "value": "About 10% for LMI subscribers"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Maryland PSC: Community Solar Program",
+    "url": "https://psc.maryland.gov/regulated-utilities/electricity/renewable-energy/community-solar-program/"
+   }
+  ]
+ },
+ {
+  "id": "PRG-003",
+  "category": "Program",
+  "name": "Commercial and canopy solar grants (FY26)",
+  "operator": "Maryland Energy Administration",
+  "state": "MD",
+  "utilityType": "State energy office",
+  "status": "Approved",
+  "technologies": [
+   "Commercial solar",
+   "Solar canopy"
+  ],
+  "businessModel": "State grant",
+  "scale": "$13M pool",
+  "mw": null,
+  "timing": "Applications closed Feb 9, 2026",
+  "summary": "Incentives for Maryland businesses and nonprofits installing solar. The FY26 round added solar canopy technology as an eligible project type.",
+  "outcomes": "No award results found in this pass.",
+  "modelNote": "Paid from the Strategic Energy Investment Fund, which is supported by proceeds from greenhouse-gas emission auctions and alternative compliance payments from utilities.",
+  "risks": [
+   "Evidence thin",
+   "Awards not verified"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Funder",
+    "value": "Maryland Energy Administration"
+   },
+   {
+    "label": "Fund source",
+    "value": "Strategic Energy Investment Fund"
+   },
+   {
+    "label": "Beneficiaries",
+    "value": "Businesses and nonprofits"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Solar Power World: Maryland opens $13M in grants for commercial and canopy solar",
+    "url": "https://www.solarpowerworldonline.com/2025/11/maryland-opens-13-million-in-grants-for-commercial-and-canopy-solar-projects/"
+   }
+  ]
+ },
+ {
+  "id": "GB-022",
+  "category": "Green bank",
+  "name": "Michigan Saves",
+  "operator": "Michigan Saves (nonprofit green bank), with Consumers Energy, DTE Energy, SEMCO Energy and Traverse City Light & Power",
+  "state": "MI",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated",
+   "On-bill repayment"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "More than $675M financed across 51,986 projects",
+  "mw": null,
+  "timing": "Founded 2009 with state seed funding",
+  "summary": "The first nonprofit green bank in the US. It finances energy improvements through partner lenders and a network of more than 1,200 authorized contractors.",
+  "outcomes": "Results from Sept 2010 through Dec 2024: about 13,500 full-time jobs supported, 59% of financed households low or moderate income, and a 30-to-1 ratio of private investment to reserve dollars.",
+  "modelNote": "Residential: Home Energy Loan Program (unsecured loans), Lead Poisoning Prevention Fund (50/50 cost share with the state health department) and Septic Replacement Loan Program. Commercial: Commercial Energy Loan Program, Michigan Saves Climate Fund and Tax Credit Bridge Financing. On-bill repayment through the four utilities named above. Funded by state seed money and utility partners; the source does not mention federal green bank money.",
+  "risks": [
+   "Self-reported results",
+   "Leverage depends on reserves"
+  ],
+  "riskNote": "Figures come from Michigan Saves' May 2025 presentation to a Michigan House subcommittee. The presentation is undated beyond that and the numbers are the organization's own.",
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Funder",
+    "value": "State seed funding and utility partners"
+   },
+   {
+    "label": "Products",
+    "value": "Home loans, commercial loans, on-bill financing, tax credit bridge loans"
+   },
+   {
+    "label": "Beneficiaries",
+    "value": "59% low or moderate income households (reported)"
+   },
+   {
+    "label": "Total financed",
+    "value": "More than $675M"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Michigan Saves presentation to the Michigan House LARA subcommittee (May 8, 2025)",
+    "url": "https://house.mi.gov/HFA/PDF/LARA/LARA_DIFS_Subcmte_Testimony_Michigan_Saves_Presentation_5-8-25.pdf"
+   },
+   {
+    "title": "Michigan Saves: 0% financing for commercial building energy upgrades",
+    "url": "https://michigansaves.org/?p=10251"
+   }
+  ]
+ },
+ {
+  "id": "GB-001",
+  "category": "Green bank",
+  "name": "Spruce Root",
+  "operator": "Spruce Root",
+  "state": "AK",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2012",
+  "summary": "A nonprofit green bank in AK, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2012. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank (Spruce Roots, Inc.).",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2012"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-002",
+  "category": "Green bank",
+  "name": "Groundswell Capital",
+  "operator": "Groundswell Capital",
+  "state": "AZ",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2022",
+  "summary": "A nonprofit green bank in AZ, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2022. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2022"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-003",
+  "category": "Green bank",
+  "name": "California Infrastructure and Economic Development Bank (IBank)",
+  "operator": "California Infrastructure and Economic Development Bank (IBank)",
+  "state": "CA",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2020",
+  "summary": "A public green bank in CA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2020. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee (California Infrastructure Bank).",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2020"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-004",
+  "category": "Green bank",
+  "name": "Collective Clean Energy Fund",
+  "operator": "Collective Clean Energy Fund",
+  "state": "CO",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2018",
+  "summary": "A nonprofit green bank in CO, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2018. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source stated: USDA Rural Energy Savings Program grant. NGA lists it as Colorado Clean Energy Fund, a nonprofit founded 2018, with $30 million received in 2021 for loan projects. The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2018"
+   },
+   {
+    "label": "Capital source",
+    "value": "USDA Rural Energy Savings Program grant"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   },
+   {
+    "title": "National Governors Association: Green Banks, an overview for governors (May 2023)",
+    "url": "https://www.nga.org/wp-content/uploads/2023/05/2023May_State_Green_Banks_Issue_Brief.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-005",
+  "category": "Green bank",
+  "name": "CT Green Bank",
+  "operator": "CT Green Bank",
+  "state": "CT",
+  "utilityType": "Quasi-public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Quasi-public lender",
+  "scale": "$51M invested in 2024; $393M private capital mobilized",
+  "mw": null,
+  "timing": "Founded 2011",
+  "summary": "A quasi-public green bank in CT, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2011. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "Reported investment: $51M invested in 2024; $393M private capital mobilized.",
+  "modelNote": "Capital source stated: Green Liberty Notes (short-term bonds from individuals). NGA says it is funded by an electric bill surcharge, RGGI proceeds, federal funding and private capital, and raised $25 million through Green Liberty Bonds. The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Quasi-public"
+   },
+   {
+    "label": "Founded",
+    "value": "2011"
+   },
+   {
+    "label": "Capital source",
+    "value": "Green Liberty Notes (short-term bonds from individuals)"
+   },
+   {
+    "label": "Investment",
+    "value": "$51M invested in 2024; $393M private capital mobilized"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   },
+   {
+    "title": "National Governors Association: Green Banks, an overview for governors (May 2023)",
+    "url": "https://www.nga.org/wp-content/uploads/2023/05/2023May_State_Green_Banks_Issue_Brief.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-006",
+  "category": "Green bank",
+  "name": "Connecticut Inclusive Prosperity Capital",
+  "operator": "Connecticut Inclusive Prosperity Capital",
+  "state": "CT",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2018",
+  "summary": "A nonprofit green bank in CT, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2018. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2018"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-007",
+  "category": "Green bank",
+  "name": "Energize Delaware",
+  "operator": "Energize Delaware",
+  "state": "DE",
+  "utilityType": "Quasi-public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Quasi-public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2007",
+  "summary": "A quasi-public green bank in DE, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2007. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Quasi-public"
+   },
+   {
+    "label": "Founded",
+    "value": "2007"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-008",
+  "category": "Green bank",
+  "name": "DC Green Bank",
+  "operator": "DC Green Bank",
+  "state": "DC",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Local"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Over $300M public-private investment in 2024",
+  "mw": null,
+  "timing": "Founded 2018",
+  "summary": "A public green bank in DC, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2018. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "Reported investment: Over $300M public-private investment in 2024.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee (DC Green Finance Authority).",
+  "risks": [
+   "Evidence thin",
+   "Local, not statewide"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2018"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Over $300M public-private investment in 2024"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-009",
+  "category": "Green bank",
+  "name": "Florida Solar & Energy Loan Fund (SELF)",
+  "operator": "Florida Solar & Energy Loan Fund (SELF)",
+  "state": "FL",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "$34.2M in loans in 2023",
+  "mw": null,
+  "timing": "Founded 2009",
+  "summary": "A nonprofit green bank in FL, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2009. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "Reported investment: $34.2M in loans in 2023.",
+  "modelNote": "Capital source stated: JPMorgan Chase and JPB Foundation (program development). The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2009"
+   },
+   {
+    "label": "Capital source",
+    "value": "JPMorgan Chase and JPB Foundation (program development)"
+   },
+   {
+    "label": "Investment",
+    "value": "$34.2M in loans in 2023"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-010",
+  "category": "Green bank",
+  "name": "Hawaii Green Infrastructure Authority",
+  "operator": "Hawaii Green Infrastructure Authority",
+  "state": "HI",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2014",
+  "summary": "A public green bank in HI, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2014. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source stated: $50M state appropriation for recapitalization. NGA gives 2013 as the founding year and says it is capitalized with $150.0 million of Green Energy Market Securitization bonds. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2014"
+   },
+   {
+    "label": "Capital source",
+    "value": "$50M state appropriation for recapitalization"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   },
+   {
+    "title": "National Governors Association: Green Banks, an overview for governors (May 2023)",
+    "url": "https://www.nga.org/wp-content/uploads/2023/05/2023May_State_Green_Banks_Issue_Brief.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-011",
+  "category": "Green bank",
+  "name": "Illinois Finance Authority (Illinois Climate Bank)",
+  "operator": "Illinois Finance Authority (Illinois Climate Bank)",
+  "state": "IL",
+  "utilityType": "Quasi-public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Quasi-public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2021",
+  "summary": "A quasi-public green bank in IL, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2021. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source stated: $40M DOE GRID funding (SEFI designation). The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Quasi-public"
+   },
+   {
+    "label": "Founded",
+    "value": "2021"
+   },
+   {
+    "label": "Capital source",
+    "value": "$40M DOE GRID funding (SEFI designation)"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-012",
+  "category": "Green bank",
+  "name": "Illinois Clean Energy Jobs and Justice Fund",
+  "operator": "Illinois Clean Energy Jobs and Justice Fund",
+  "state": "IL",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2021",
+  "summary": "A nonprofit green bank in IL, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2021. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2021"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-013",
+  "category": "Green bank",
+  "name": "Indiana Energy Independence Fund",
+  "operator": "Indiana Energy Independence Fund",
+  "state": "IN",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A nonprofit green bank in IN, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-014",
+  "category": "Green bank",
+  "name": "Iowa Energy Fund",
+  "operator": "Iowa Energy Fund",
+  "state": "IA",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A nonprofit green bank in IA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-015",
+  "category": "Green bank",
+  "name": "Finance New Orleans",
+  "operator": "Finance New Orleans",
+  "state": "LA",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Local"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2017",
+  "summary": "A public green bank in LA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2017. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin",
+   "Local, not statewide"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2017"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-016",
+  "category": "Green bank",
+  "name": "Louisiana Clean Energy Fund",
+  "operator": "Louisiana Clean Energy Fund",
+  "state": "LA",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2023",
+  "summary": "A nonprofit green bank in LA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2023. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2023"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-017",
+  "category": "Green bank",
+  "name": "Efficiency Maine Trust",
+  "operator": "Efficiency Maine Trust",
+  "state": "ME",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2021",
+  "summary": "A nonprofit green bank in ME, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2021. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2021"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-018",
+  "category": "Green bank",
+  "name": "Montgomery County Green Bank",
+  "operator": "Montgomery County Green Bank",
+  "state": "MD",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Local"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2017",
+  "summary": "A nonprofit green bank in MD, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2017. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee (Montgomery County Green Bank Corporation).",
+  "risks": [
+   "Evidence thin",
+   "Local, not statewide"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2017"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-019",
+  "category": "Green bank",
+  "name": "Climate Access Fund",
+  "operator": "Climate Access Fund",
+  "state": "MD",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2017",
+  "summary": "A nonprofit green bank in MD, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2017. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2017"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-020",
+  "category": "Green bank",
+  "name": "Maryland Clean Energy Center",
+  "operator": "Maryland Clean Energy Center",
+  "state": "MD",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2022",
+  "summary": "A nonprofit green bank in MD, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2022. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. NGA says it was established in 2008, with a board appointed by the Governor.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2022"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "National Governors Association: Green Banks, an overview for governors (May 2023)",
+    "url": "https://www.nga.org/wp-content/uploads/2023/05/2023May_State_Green_Banks_Issue_Brief.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-021",
+  "category": "Green bank",
+  "name": "Massachusetts Community Climate Bank",
+  "operator": "Massachusetts Community Climate Bank",
+  "state": "MA",
+  "utilityType": "Quasi-public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Quasi-public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2023",
+  "summary": "A quasi-public green bank in MA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2023. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Quasi-public"
+   },
+   {
+    "label": "Founded",
+    "value": "2023"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-023",
+  "category": "Green bank",
+  "name": "Minnesota Climate Innovation Finance Authority",
+  "operator": "Minnesota Climate Innovation Finance Authority",
+  "state": "MN",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2023",
+  "summary": "A public green bank in MN, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2023. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2023"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-024",
+  "category": "Green bank",
+  "name": "Fund for a Green Mississippi",
+  "operator": "Fund for a Green Mississippi",
+  "state": "MS",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2023",
+  "summary": "A nonprofit green bank in MS, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2023. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2023"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-025",
+  "category": "Green bank",
+  "name": "Missouri Green Banc",
+  "operator": "Missouri Green Banc",
+  "state": "MO",
+  "utilityType": "Quasi-public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Quasi-public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2017",
+  "summary": "A quasi-public green bank in MO, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2017. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee (State Environmental Improvement and Energy Resources Authority).",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Quasi-public"
+   },
+   {
+    "label": "Founded",
+    "value": "2017"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-026",
+  "category": "Green bank",
+  "name": "Nevada Clean Energy Fund",
+  "operator": "Nevada Clean Energy Fund",
+  "state": "NV",
+  "utilityType": "Quasi-public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Quasi-public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2017",
+  "summary": "A quasi-public green bank in NV, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2017. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source stated: $1M state appropriation for operations. NGA says it was capitalized with unused American Recovery and Reinvestment Act funds through the Governor's Office of Energy. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Quasi-public"
+   },
+   {
+    "label": "Founded",
+    "value": "2017"
+   },
+   {
+    "label": "Capital source",
+    "value": "$1M state appropriation for operations"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   },
+   {
+    "title": "National Governors Association: Green Banks, an overview for governors (May 2023)",
+    "url": "https://www.nga.org/wp-content/uploads/2023/05/2023May_State_Green_Banks_Issue_Brief.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-027",
+  "category": "Green bank",
+  "name": "New Jersey Green Bank",
+  "operator": "New Jersey Green Bank",
+  "state": "NJ",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A public green bank in NJ, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-028",
+  "category": "Green bank",
+  "name": "New Mexico Climate Investment Center",
+  "operator": "New Mexico Climate Investment Center",
+  "state": "NM",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A nonprofit green bank in NM, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-029",
+  "category": "Green bank",
+  "name": "NYCEEC (New York City Energy Efficiency Corporation)",
+  "operator": "NYCEEC (New York City Energy Efficiency Corporation)",
+  "state": "NY",
+  "utilityType": "Quasi-public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Local"
+  ],
+  "businessModel": "Quasi-public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2010",
+  "summary": "A quasi-public green bank in NY, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2010. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin",
+   "Local, not statewide"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Quasi-public"
+   },
+   {
+    "label": "Founded",
+    "value": "2010"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-030",
+  "category": "Green bank",
+  "name": "NY Green Bank",
+  "operator": "NY Green Bank",
+  "state": "NY",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Public lender",
+  "scale": "$2.5B invested to date ($7.9B total capital)",
+  "mw": null,
+  "timing": "Founded 2013",
+  "summary": "A public green bank in NY, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2013. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "Reported investment: $2.5B invested to date ($7.9B total capital).",
+  "modelNote": "Capital source stated: Ratepayer and RGGI funds, per NGA. NGA describes it as a division of NYSERDA, with its mandate expanded in 2019, and notes a $314 million liquidity enhancement from a 2021 portfolio sale to Bank of America. The Coalition for Green Capital network lists it as: Subawardee.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2013"
+   },
+   {
+    "label": "Capital source",
+    "value": "Ratepayer and RGGI funds, per NGA"
+   },
+   {
+    "label": "Investment",
+    "value": "$2.5B invested to date ($7.9B total capital)"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   },
+   {
+    "title": "National Governors Association: Green Banks, an overview for governors (May 2023)",
+    "url": "https://www.nga.org/wp-content/uploads/2023/05/2023May_State_Green_Banks_Issue_Brief.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-031",
+  "category": "Green bank",
+  "name": "Freedmen Green Bank & Trust",
+  "operator": "Freedmen Green Bank & Trust",
+  "state": "NC",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2023",
+  "summary": "A nonprofit green bank in NC, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2023. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank (Freedmen Capital Foundation, listed under Georgia).",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2023"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-032",
+  "category": "Green bank",
+  "name": "North Carolina Clean Energy Fund",
+  "operator": "North Carolina Clean Energy Fund",
+  "state": "NC",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2018",
+  "summary": "A nonprofit green bank in NC, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2018. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank (covers North and South Carolina).",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2018"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-033",
+  "category": "Green bank",
+  "name": "Growth Opportunity Partners",
+  "operator": "Growth Opportunity Partners",
+  "state": "OH",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2022",
+  "summary": "A nonprofit green bank in OH, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2022. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2022"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-034",
+  "category": "Green bank",
+  "name": "Columbus Region Green Fund",
+  "operator": "Columbus Region Green Fund",
+  "state": "OH",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Local"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2020",
+  "summary": "A nonprofit green bank in OH, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2020. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin",
+   "Local, not statewide"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2020"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-035",
+  "category": "Green bank",
+  "name": "Philadelphia Green Capital Corporation",
+  "operator": "Philadelphia Green Capital Corporation",
+  "state": "PA",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Local"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2021",
+  "summary": "A nonprofit green bank in PA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2021. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin",
+   "Local, not statewide"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2021"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-036",
+  "category": "Green bank",
+  "name": "Puerto Rico Green Energy Trust",
+  "operator": "Puerto Rico Green Energy Trust",
+  "state": "PR",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2019",
+  "summary": "A nonprofit green bank in PR, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2019. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2019"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-037",
+  "category": "Green bank",
+  "name": "Rhode Island Infrastructure Bank",
+  "operator": "Rhode Island Infrastructure Bank",
+  "state": "RI",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2015",
+  "summary": "A public green bank in RI, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2015. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. NGA says it began in 1989 as the Clean Water Finance Agency and expanded in 2015, funded by state appropriations, federal grants and bond and product revenues.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2015"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "National Governors Association: Green Banks, an overview for governors (May 2023)",
+    "url": "https://www.nga.org/wp-content/uploads/2023/05/2023May_State_Green_Banks_Issue_Brief.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-038",
+  "category": "Green bank",
+  "name": "Memphis Metropolitan Green Financial Corporation",
+  "operator": "Memphis Metropolitan Green Financial Corporation",
+  "state": "TN",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Local"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A public green bank in TN, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin",
+   "Early stage",
+   "Local, not statewide"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-039",
+  "category": "Green bank",
+  "name": "Clean Energy Fund of Texas",
+  "operator": "Clean Energy Fund of Texas",
+  "state": "TX",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2022",
+  "summary": "A nonprofit green bank in TX, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2022. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank.",
+  "risks": [
+   "Evidence thin"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2022"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-040",
+  "category": "Green bank",
+  "name": "SustainEnergyFinance",
+  "operator": "SustainEnergyFinance",
+  "state": "UT",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A nonprofit green bank in UT, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated. The Coalition for Green Capital network lists it as: Emerging Green Bank (Sustain Energy Finance).",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Medium",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   },
+   {
+    "title": "Coalition for Green Capital: Our network",
+    "url": "https://coalitionforgreencapital.com/about-us/our-network-2/"
+   }
+  ]
+ },
+ {
+  "id": "GB-041",
+  "category": "Green bank",
+  "name": "Green Bank for Rural America",
+  "operator": "Green Bank for Rural America",
+  "state": "VA",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A nonprofit green bank in VA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-042",
+  "category": "Green bank",
+  "name": "Washington State Green Bank",
+  "operator": "Washington State Green Bank",
+  "state": "WA",
+  "utilityType": "Nonprofit green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Nonprofit lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A nonprofit green bank in WA, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Nonprofit"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ },
+ {
+  "id": "GB-043",
+  "category": "Green bank",
+  "name": "Wisconsin Green Innovation Fund",
+  "operator": "Wisconsin Green Innovation Fund",
+  "state": "WI",
+  "utilityType": "Public green bank",
+  "status": "Operating",
+  "technologies": [
+   "Green bank",
+   "Statewide or not stated"
+  ],
+  "businessModel": "Public lender",
+  "scale": "Not stated in sources",
+  "mw": null,
+  "timing": "Founded 2024",
+  "summary": "A public green bank in WI, listed in Brown University's 2025 appendix of US green banks (data as of Feb 2025). Founded 2024. The source does not say what it financed or how much beyond the figures shown.",
+  "outcomes": "No investment figures given in the source.",
+  "modelNote": "Capital source not stated.",
+  "risks": [
+   "Evidence thin",
+   "Early stage"
+  ],
+  "riskNote": null,
+  "confidence": "Low",
+  "categoryFields": [
+   {
+    "label": "Structure",
+    "value": "Public"
+   },
+   {
+    "label": "Founded",
+    "value": "2024"
+   },
+   {
+    "label": "Capital source",
+    "value": "Not stated"
+   },
+   {
+    "label": "Investment",
+    "value": "Not stated"
+   }
+  ],
+  "sources": [
+   {
+    "title": "Brown University Climate Solutions Lab: US Green Banks, Appendix A (Apr 2025)",
+    "url": "https://climate.watson.brown.edu/sites/default/files/papers/CSL%20White%20Paper%20on%20US%20Green%20Banks.pdf"
+   }
+  ]
+ }
+]
