@@ -1,0 +1,347 @@
+/* LOAD ZONE PRICE & INVESTMENT OUTLOOK — scoped styles
+   Built entirely on this site's own design tokens (--primary, --secondary, --accent,
+   --muted, --muted-foreground, --border, --card, --destructive, --radius) — same
+   approach as the IRP Planning Interface. No new palette introduced. */
+
+.lzo-root {
+  font-family: "Work Sans", sans-serif;
+  color: hsl(var(--foreground));
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+.lzo-h1 {
+  font-family: "Work Sans", sans-serif;
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 0 0 0.35rem;
+}
+
+.lzo-subhead {
+  color: hsl(var(--muted-foreground));
+  font-size: 1rem;
+  margin: 0 0 1.75rem;
+  max-width: 640px;
+}
+
+.lzo-section {
+  margin: 2.75rem 0;
+}
+
+.lzo-section-title {
+  font-family: "Work Sans", sans-serif;
+  font-size: 1.4rem;
+  margin: 0 0 0.6rem;
+  border-bottom: 1px solid hsl(var(--border));
+  padding-bottom: 0.5rem;
+}
+
+.lzo-section-lede {
+  font-size: 0.95rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0 0 1.1rem;
+  max-width: 720px;
+}
+
+/* ---- tag badges ---- */
+.lzo-tag {
+  display: inline-block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: calc(8px - 2px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lzo-tag-reported { background: color-mix(in srgb, hsl(var(--primary)) 14%, transparent); color: hsl(var(--primary)); }
+.lzo-tag-derived { background: color-mix(in srgb, hsl(var(--secondary)) 16%, transparent); color: hsl(var(--secondary)); }
+.lzo-tag-benchmarked { background: color-mix(in srgb, hsl(var(--accent)) 18%, transparent); color: hsl(var(--accent)); }
+.lzo-tag-scenario { background: color-mix(in srgb, hsl(var(--muted-foreground)) 16%, transparent); color: hsl(var(--muted-foreground)); }
+.lzo-tag-blocked { background: color-mix(in srgb, hsl(var(--destructive)) 14%, transparent); color: hsl(var(--destructive)); }
+
+/* ---- chart ---- */
+.lzo-chart-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 1.25rem 1rem 0.75rem;
+}
+.lzo-chart-legend {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+.lzo-readout-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.lzo-readout-tile {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  background: hsl(var(--muted));
+}
+.lzo-readout-tile .label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-readout-tile .value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- methodology / callout boxes ---- */
+.lzo-callout {
+  border: 1px solid hsl(var(--border));
+  border-left: 3px solid hsl(var(--primary));
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  background: hsl(var(--card));
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0.75rem 0;
+}
+.lzo-callout-blocked {
+  border-left-color: hsl(var(--destructive));
+  background: color-mix(in srgb, hsl(var(--destructive)) 5%, hsl(var(--card)));
+}
+.lzo-callout-title {
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ---- two-column supply/demand grid ---- */
+.lzo-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 640px) {
+  .lzo-grid-2 { grid-template-columns: 1fr; }
+  .lzo-readout-row { grid-template-columns: 1fr; }
+}
+
+.lzo-panel {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 1rem;
+  background: hsl(var(--card));
+}
+.lzo-panel-title {
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+.lzo-stat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.lzo-stat-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed hsl(var(--border));
+}
+.lzo-stat-list li:last-child { border-bottom: none; }
+.lzo-stat-list .metric { color: hsl(var(--muted-foreground)); max-width: 65%; }
+.lzo-stat-list .figure { font-family: "IBM Plex Mono", monospace; font-weight: 600; white-space: nowrap; }
+
+/* ---- tables ---- */
+.lzo-table-wrap { overflow-x: auto; }
+.lzo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.lzo-table th, .lzo-table td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid hsl(var(--border));
+  vertical-align: top;
+}
+.lzo-table th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-table tr:hover td { background: hsl(var(--muted)); }
+
+/* ---- vos components row ---- */
+.lzo-vos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+@media (max-width: 640px) {
+  .lzo-vos-grid { grid-template-columns: 1fr 1fr; }
+}
+.lzo-vos-card {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: hsl(var(--muted));
+  font-size: 0.8rem;
+}
+.lzo-vos-card .name { font-weight: 600; margin-bottom: 0.3rem; }
+
+/* ---- footer sources ---- */
+.lzo-sources {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.6;
+}
+.lzo-sources a { color: hsl(var(--primary)); }
+
+.lzo-phase-note {
+  border: 1px dashed hsl(var(--border));
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+}
+
+/* ---- map ---- */
+.lzo-map-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  font-size: 0.82rem;
+}
+.lzo-map-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  user-select: none;
+  color: hsl(var(--foreground));
+}
+.lzo-map-toggle input {
+  accent-color: hsl(var(--primary));
+  cursor: pointer;
+}
+.lzo-map-wrap {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+  background: hsl(var(--card));
+}
+.lzo-map-bg {
+  fill: hsl(var(--muted));
+}
+.lzo-map-city-dot {
+  fill: hsl(var(--muted-foreground));
+}
+.lzo-map-city-label {
+  font-size: 9px;
+  fill: hsl(var(--muted-foreground));
+  font-family: "IBM Plex Mono", monospace;
+}
+.lzo-map-point {
+  cursor: pointer;
+  fill-opacity: 0.78;
+  stroke: hsl(var(--card));
+  stroke-width: 1;
+  transition: fill-opacity 0.1s ease;
+}
+.lzo-map-point:hover {
+  fill-opacity: 1;
+  stroke: hsl(var(--foreground));
+}
+.lzo-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+.lzo-legend-swatch-square {
+  border-radius: 2px;
+}
+.lzo-legend-swatch-ring {
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background: transparent;
+}
+.lzo-legend-swatch-triangle {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid currentColor;
+  background: none;
+}
+.lzo-map-detail {
+  margin-top: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: hsl(var(--muted));
+  min-height: 2.5rem;
+  font-size: 0.85rem;
+}
+.lzo-map-detail-name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.lzo-map-detail-row {
+  color: hsl(var(--foreground));
+}
+.lzo-map-detail-precision {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-map-detail-hint {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+/* Full-width research sections use the shared page rhythm. */
+.lzo-root { line-height: 1.6; overflow-wrap: anywhere; }
+.lzo-section:first-child { margin-top: 1rem; }
+.lzo-section-title { font-weight: 700; line-height: 1.4; }
+.lzo-chart-card { border: 0; border-radius: 0; padding: 0; background: transparent; }
+.lzo-panel { min-width: 0; border: 0; border-radius: 0; padding: 0; background: transparent; }
+.lzo-readout-tile .value { font-family: "Work Sans", sans-serif; }
+.lzo-callout, .lzo-phase-note { border-top: 0; border-right: 0; border-bottom: 0; border-radius: 0; background: transparent; }
+.lzo-callout-title, .lzo-map-detail-name { flex-wrap: wrap; }
+.lzo-grid-2, .lzo-vos-grid { min-width: 0; }
+.lzo-stat-list .figure { white-space: normal; text-align: right; }
+.lzo-table { min-width: 420px; }
+.lzo-map-point:focus-visible { outline: 2px solid hsl(var(--ring)); }
+.lzo-root .recharts-default-tooltip { background: hsl(var(--popover)) !important; border-color: hsl(var(--border)) !important; color: hsl(var(--popover-foreground)); border-radius: 8px; }
+.lzo-root .recharts-cartesian-axis-tick-value, .lzo-root .recharts-label { fill: hsl(var(--muted-foreground)); }
+@media (prefers-reduced-motion: reduce) { .lzo-map-point { transition: none; } }

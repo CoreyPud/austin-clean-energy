@@ -1,4 +1,5 @@
 # Current
+- [x] Add Austin Load Zone Outlook from supplied files, match site colors, and verify chart and map controls.
 - [x] Add Austin IRP Planning from supplied files, match site styling, and verify inputs and outputs.
 - [x] Add Innovation Gap from the supplied files, link it under Grid Planning Tools, and verify the page.
 - [x] Split Progress and Resources into Austin at a Glance and What You Can Do pages; update home and sitemap links.

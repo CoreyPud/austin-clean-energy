@@ -403,6 +403,14 @@ const AustinAtGlance = () => {
       ],
       "grid-tools": [
         {
+          key: "austin-load-zone-outlook",
+          to: "/austin-load-zone-outlook",
+          title: "Austin Load Zone Outlook",
+          description: "Explore 2026–2045 wholesale price scenarios, supply investments, and large-load projects with source notes and a map.",
+          cta: "Explore the Outlook",
+          preview: <CouncilIconPreview icon={TrendingUp} className="h-[226px]" />,
+        },
+        {
           key: "austin-irp-planning",
           to: "/austin-irp-planning",
           title: "Austin IRP Planning",

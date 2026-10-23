@@ -3,3 +3,4 @@
 - Innovation Gap keeps cited content separate from its presentation in its feature directory, with a public page wrapper for shared navigation and metadata; this preserves the uploaded content independently of site styling.
 
 - Austin IRP Planning preserves supplied model data separately from its themed interface and uses a public wrapper for navigation, metadata, and model disclaimers — keeps source material independent of presentation.
+- Austin Load Zone Outlook keeps supplied data separate from its themed interface and uses a public wrapper for navigation, metadata, and source limitations — preserves source material independently of presentation.
