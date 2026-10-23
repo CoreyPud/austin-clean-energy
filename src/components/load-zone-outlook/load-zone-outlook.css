@@ -291,6 +291,17 @@
 .lzo-map-tooltip-left { transform: translate(calc(-100% - 16px), 16px); }
 .lzo-map-tooltip-above { transform: translate(16px, calc(-100% - 16px)); }
 .lzo-map-tooltip-left.lzo-map-tooltip-above { transform: translate(calc(-100% - 16px), calc(-100% - 16px)); }
+@media (max-width: 640px) {
+  .lzo-map-wrap .lzo-map-tooltip {
+    left: 8px !important;
+    right: 8px;
+    top: auto !important;
+    bottom: 8px;
+    width: auto;
+    transform: none;
+    font-size: 0.75rem;
+  }
+}
 .lzo-map-city-dot {
   fill: hsl(var(--muted-foreground));
 }
