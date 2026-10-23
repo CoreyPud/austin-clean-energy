@@ -1,0 +1,86 @@
+[
+ {
+  "title": "Every technology has a different evidence base",
+  "text": "VPPs have scale numbers and years of operation. V2G is mostly one to a few dozen buses per program. Grid-enhancing technologies lean on projections and vendor case studies. Advanced geothermal has one first-power claim. Compare within a category before across.",
+  "sourceLabel": "",
+  "sourceUrl": "",
+  "category": "All"
+ },
+ {
+  "title": "VPPs are large, but short of the target",
+  "text": "North American VPP capacity has reached about 33 GW. DOE sees 80 to 160 GW, or 10 to 20% of peak load, as the liftoff goal.",
+  "sourceLabel": "DOE Liftoff: VPPs",
+  "sourceUrl": "https://liftoff.energy.gov/vpp/",
+  "category": "VPP"
+ },
+ {
+  "title": "Most VPP programs are single-device",
+  "text": "About 80% of utility programs accept only one DER type, often limited to certain manufacturers. Programs that buy capacity from aggregators are far more multi-technology.",
+  "sourceLabel": "Wood Mackenzie",
+  "sourceUrl": "https://www.woodmac.com/news/opinion/US-does-2025-vpp-liftoff-report-update-offers-a-playbook-to-accelerate-virtual-power-plant-adoption/",
+  "category": "VPP"
+ },
+ {
+  "title": "Enrollment is the recurring VPP weak point",
+  "text": "Practitioner commentary points to enrollment, more than incentive level, as the most common reason programs miss capacity targets. Much of this comes from vendors, so treat it as a hypothesis to test against dockets.",
+  "sourceLabel": "Codibly analysis",
+  "sourceUrl": "https://codibly.com/blog/articles/virtual-power-plant-program",
+  "category": "VPP"
+ },
+ {
+  "title": "Regulators are pushing VPPs to scale",
+  "text": "Maryland's commission sent utility VPP pilots back because they covered a small share of the law's peak reduction goal. Virginia's 450 MW pilot and Illinois' tariffs came from legislation.",
+  "sourceLabel": "Maryland PSC",
+  "sourceUrl": "https://psc.maryland.gov/news/2025/psc-orders-utilities-to-scale-up-drive-act-proposals/",
+  "category": "VPP"
+ },
+ {
+  "title": "School buses dominate V2G",
+  "text": "Utility Dive (Sept 2026), citing WRI, counts at least 26 utilities in 19 states with V2G programs and more than 230 V2G-enabled school buses in US districts. Other sources cite different counts.",
+  "sourceLabel": "Utility Dive",
+  "sourceUrl": "https://www.utilitydive.com/news/utilities-school-districts-see-growing-value-in-electric-buses-for-vpp/830499/",
+  "category": "V2G"
+ },
+ {
+  "title": "V2G payments vary widely",
+  "text": "Reported compensation ranges from $2 per kWh (SDG&E emergency events) to $200 per kW (National Grid) to about $9,000 per vehicle per year (Green Mountain Power). Massachusetts experience puts a typical bus nearer $6,000 per year. Event-limited payments may not cover equipment.",
+  "sourceLabel": "WRI",
+  "sourceUrl": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples",
+  "category": "V2G"
+ },
+ {
+  "title": "Technology integration is the recurring V2G snag",
+  "text": "Dominion buses failed to dispatch on low 12-volt batteries, La Plata's first platform failed, and a Maine pilot is paused without a compensation scheme. Several pilots only discharge to a building, not the grid.",
+  "sourceLabel": "WRI",
+  "sourceUrl": "https://www.wri.org/update/electric-school-bus-v2g-lessons-examples",
+  "category": "V2G"
+ },
+ {
+  "title": "Most GETs numbers are projections or vendor-reported",
+  "text": "Oncor's 2014 report is the main measured result here: up to 14% over ambient-adjusted ratings. National Grid's 20 to 30% is expected, Central Hudson's savings are utility estimates, and the AEP figures come from the conductor vendor.",
+  "sourceLabel": "Oncor DLR report summary",
+  "sourceUrl": "https://www.renewableenergyworld.com/power-grid/transmission/oncor-dlr-program-increases-transmission-capacity-reduces-congestion/",
+  "category": "GETs"
+ },
+ {
+  "title": "GETs are limited by integration, not hardware",
+  "text": "National Grid says its DLR rollout is as much a procedural challenge as a technical one: security, control room software and operator training make each site different.",
+  "sourceLabel": "Latitude Media",
+  "sourceUrl": "https://www.latitudemedia.com/news/behind-the-scenes-of-the-countrys-largest-dynamic-line-rating-deployment/",
+  "category": "GETs"
+ },
+ {
+  "title": "Enhanced geothermal just reached utility scale",
+  "text": "Fervo reported first power at Cape Station on Sept 24, 2026, with SCE holding 320 MW of PPAs. Austin Energy's 5 MW pilot uses a different approach (sCO2) and has slipped past its 2025 target.",
+  "sourceLabel": "Power Engineering",
+  "sourceUrl": "https://www.power-eng.com/renewables/fervo-energy-achieves-first-power-at-flagship-utah-geothermal-project",
+  "category": "Geothermal"
+ },
+ {
+  "title": "States fund access, utilities pay for performance",
+  "text": "Maryland pairs a regulator-run community solar program (40% low and moderate income share, about 10% savings) with an energy office grant that raises the low-income savings floor to 12 to 25% and sometimes free energy. Funding comes from the Strategic Energy Investment Fund.",
+  "sourceLabel": "Maryland Energy Administration",
+  "sourceUrl": "https://energy.maryland.gov/residential/Pages/CommunitySolarLMI-PPA.aspx/2/0100019a2bc3fc74-24c10b61-bbdb-4425-a1a8-4a21307ca327-000000/hRt5JmWUKqtQ5knAR7nZ3N9iPuDlPyEBlOEbgD-p6E4",
+  "category": "Program"
+ }
+]

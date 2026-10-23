@@ -1,0 +1,20 @@
+.uir-mono, .uir-label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.uir-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: hsl(var(--muted-foreground)); font-weight: 500; }
+.uir-pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+.uir-swatch { background: var(--c); }
+.uir-s-operating { --c: #1C7A4B; } .uir-s-pilot { --c: #2A5FA8; } .uir-s-approved { --c: #6A4FA0; }
+.uir-s-proposed { --c: #A15F00; } .uir-s-in-development { --c: #5A6B65; } .uir-s-completed { --c: #7A6A55; }
+.uir-s-on-hold, .uir-s-repealed, .uir-s-closed { --c: #B3363A; }
+.uir-s-open { --c: #1C7A4B; } .uir-s-open-with-limits { --c: #2A5FA8; } .uir-s-waitlist-only { --c: #A15F00; } .uir-s-not-launched { --c: #5A6B65; }
+.uir-s-100-target { --c: #1C7A4B; } .uir-s-mandatory-rps { --c: #2A5FA8; } .uir-s-voluntary-goal { --c: #A15F00; } .uir-s-none-found { --c: #5A6B65; }
+.dark .uir-s-operating, .dark .uir-s-open, .dark .uir-s-100-target { --c: #5CC98F; } .dark .uir-s-pilot, .dark .uir-s-open-with-limits, .dark .uir-s-mandatory-rps { --c: #7EAEEB; }
+.dark .uir-s-approved { --c: #B39CE6; } .dark .uir-s-proposed, .dark .uir-s-waitlist-only, .dark .uir-s-voluntary-goal { --c: #E3A23F; }
+.dark .uir-s-in-development, .dark .uir-s-not-launched, .dark .uir-s-none-found { --c: #9AACA6; } .dark .uir-s-completed { --c: #C4B196; }
+.dark .uir-s-on-hold, .dark .uir-s-repealed, .dark .uir-s-closed { --c: #E87B7F; }
+.uir-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+.uir-c-high { background: hsl(var(--primary)); } .uir-c-medium { background: hsl(var(--accent)); } .uir-c-low { background: transparent; border: 1.5px solid hsl(var(--muted-foreground)); }
+.uir-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.uir-table th { text-align: left; padding: 8px; border-bottom: 1px solid hsl(var(--border)); white-space: nowrap; }
+.uir-table td { padding: 8px; border-bottom: 1px solid hsl(var(--border)); vertical-align: top; }
+.uir-table td.num, .uir-table th.num { text-align: right; font-family: ui-monospace, Menlo, monospace; }
+@media (prefers-reduced-motion: reduce) { .uir-root * { transition: none !important; } }

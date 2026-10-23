@@ -73,6 +73,8 @@ import PeakShavePage from "./pages/PeakShave";
 import DemandDistribution from "./pages/DemandDistribution";
 import AustinIRPPlanning from "./pages/AustinIRPPlanning";
 import InnovationGapPage from "./pages/InnovationGap";
+import RegistryPage from "./components/utility-registry/RegistryPage";
+import { StatesPage as UirStates, SolarPage as UirSolar, EfficiencyPage as UirEfficiency, AboutPage as UirAbout } from "./components/utility-registry/OtherPages";
 import { SolarBomPage, SolarDraftPage, SolarFlowPage } from "./pages/SolarSuite";
 
 const queryClient = new QueryClient();
@@ -148,6 +150,11 @@ const AppRoutes = () => {
           <Route path="/demand-distribution" element={<DemandDistribution />} />
           <Route path="/austin-irp-planning" element={<AustinIRPPlanning />} />
           <Route path="/innovation-gap" element={<InnovationGapPage />} />
+          <Route path="/us-utility-innovation-registry" element={<RegistryPage />} />
+          <Route path="/us-utility-innovation-registry/states" element={<UirStates />} />
+          <Route path="/us-utility-innovation-registry/solar" element={<UirSolar />} />
+          <Route path="/us-utility-innovation-registry/efficiency" element={<UirEfficiency />} />
+          <Route path="/us-utility-innovation-registry/about" element={<UirAbout />} />
         </Route>
 
         {/* Pages without footer */}

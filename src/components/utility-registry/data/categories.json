@@ -1,0 +1,26 @@
+[
+ {
+  "key": "VPP",
+  "label": "Virtual power plants"
+ },
+ {
+  "key": "V2G",
+  "label": "Vehicle-to-grid"
+ },
+ {
+  "key": "GETs",
+  "label": "Grid-enhancing tech"
+ },
+ {
+  "key": "Geothermal",
+  "label": "Advanced geothermal"
+ },
+ {
+  "key": "Program",
+  "label": "State and utility programs"
+ },
+ {
+  "key": "Green bank",
+  "label": "Green banks"
+ }
+]

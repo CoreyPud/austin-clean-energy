@@ -1,0 +1,1591 @@
+[
+ {
+  "abbr": "AL",
+  "name": "Alabama",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state tax credit",
+   "Alabama Power pays avoided-cost export, about 5 to 7 cents per kWh"
+  ],
+  "incentiveNote": "Sources disagree on tax exemptions: one says none, one lists sales and property tax exemptions.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "AK",
+  "name": "Alaska",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state income tax credit",
+   "Community grants through the Alaska Energy Authority's Renewable Energy Fund",
+   "Net metering set utility by utility; Chugach pays retail for 25 kW or less"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "AZ",
+  "name": "Arizona",
+  "kind": "Mandatory RPS",
+  "standard": "15% by 2025",
+  "standardNote": "NCSL lists 15% by 2025 as mandatory. Wikipedia lists 100% by 2070; the sources do not explain the difference and it was not verified.",
+  "incentives": [
+   "25% state income tax credit, up to $1,000",
+   "Utility rebates (APS, TEP, SRP)",
+   "Sales tax exemption; property tax exclusion on added value"
+  ],
+  "incentiveNote": "Net metering varies by utility. See APS rows in the Solar Credit Benchmark.",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "AR",
+  "name": "Arkansas",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state credit",
+   "Retail-rate net metering mandate for Entergy Arkansas and OG&E; co-ops vary",
+   "Sales tax exemption; 6-year property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "CA",
+  "name": "California",
+  "kind": "100% target",
+  "standard": "60% renewables by 2030; 100% clean by 2045",
+  "standardNote": "Counts all non-emitting sources toward the 2045 goal.",
+  "incentives": [
+   "SGIP battery rebates ($150 to $200 per kWh standard, per one source)",
+   "Net billing under NEM 3.0 with reduced export rates",
+   "Low-income rooftop solar grants; property tax exclusion for active solar",
+   "Demand Side Grid Support funds home battery dispatch (see CalReady in the registry)"
+  ],
+  "incentiveNote": "Funding status of the Demand Side Grid Support program for 2026 was not verified.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "CO",
+  "name": "Colorado",
+  "kind": "100% target",
+  "standard": "80% clean by 2030; 100% clean by 2050 (utilities over 500,000 customers)",
+  "standardNote": "Electric-sector zero-emission standard set by 2019 legislation, run through utility emissions-reduction plans.",
+  "incentives": [
+   "Xcel rebates up to $500 per kW and Solar*Rewards 10-year REC payments",
+   "Sales and use tax exemption; residential property tax exemption on added value"
+  ],
+  "incentiveNote": "Sources disagree on a state income tax credit (one says 15% up to $1,000, one says none).",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "C2ES: State electricity portfolio standards",
+    "url": "https://www.c2es.org/document/renewable-and-alternate-energy-portfolio-standards/"
+   },
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "CT",
+  "name": "Connecticut",
+  "kind": "Mandatory RPS",
+  "standard": "48% by 2030",
+  "standardNote": "Berkeley Lab says CT SB 4 weakened Class I requirements through 2030 and removed landfill gas and some biomass from eligibility.",
+  "incentives": [
+   "Residential Renewable Energy Solutions tariff replaced net metering",
+   "Residential Solar Investment Program production payment about $0.20 to $0.26 per kWh for 6 years (one source)",
+   "Property and sales tax exemptions"
+  ],
+  "incentiveNote": "One source describes ZREC and LREC auctions instead of the production payment.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "DE",
+  "name": "Delaware",
+  "kind": "Mandatory RPS",
+  "standard": "40% by 2035",
+  "standardNote": "Wikipedia lists an older 25% by 2025 figure.",
+  "incentives": [
+   "DNREC rebate $0.25 per watt, up to $2,500",
+   "SRECs about $20 to $60 per MWh",
+   "No sales tax; 9-year property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "DC",
+  "name": "District of Columbia",
+  "kind": "100% target",
+  "standard": "100% by 2032",
+  "standardNote": "Not a state; included for completeness.",
+  "incentives": [
+   "SRECs about $350 to $450 per MWh (one source)",
+   "Rebate and low-income programs; property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "FL",
+  "name": "Florida",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "Full retail-rate net metering",
+   "Sales and property tax exemptions (full residential exemption)",
+   "Utility rebates vary"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "GA",
+  "name": "Georgia",
+  "kind": "Voluntary goal",
+  "standard": "Voluntary standard only",
+  "standardNote": "Wikipedia lists Georgia among states with voluntary standards; NCSL lists none. Targets not captured.",
+  "incentives": [
+   "No state solar credit",
+   "Retail net metering up to 10 kW; avoided cost above 10 kW",
+   "Permanent property tax exemption; low-interest small business loans"
+  ],
+  "incentiveNote": "Georgia Power's 50 MW VPP is in the registry.",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "HI",
+  "name": "Hawaii",
+  "kind": "100% target",
+  "standard": "100% by 2045",
+  "standardNote": "Interim 40% by 2030 and 70% by 2040 per Wikipedia. Measured against generation, not retail sales.",
+  "incentives": [
+   "35% state income tax credit, capped at $5,000",
+   "Smart Export about $0.14 to $0.20 per kWh; traditional net metering closed",
+   "County property tax exemptions"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "ID",
+  "name": "Idaho",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state credit; low-interest State Energy Loan (one source)",
+   "Retail-rate mandate for Idaho Power and Avista with an October true-up"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "IL",
+  "name": "Illinois",
+  "kind": "100% target",
+  "standard": "50% by 2040; 100% clean by 2050 (NCSL)",
+  "standardNote": "Wikipedia lists 100% by 2045. The sources disagree and this was not resolved.",
+  "incentives": [
+   "Illinois Shines: up-front REC payment covering 15 years of production, about $75 to $90 per MWh (one source)",
+   "Utility Rider SDVPP battery programs (see registry)",
+   "Sales tax exemption; property tax assessment freeze"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "IN",
+  "name": "Indiana",
+  "kind": "Voluntary goal",
+  "standard": "10% by 2025 (voluntary)",
+  "standardNote": "NCSL lists it as voluntary.",
+  "incentives": [
+   "No state incentives",
+   "No net metering mandate; exports about $0.03 to $0.06 per kWh (AES, Duke)",
+   "$6,000 property tax deduction"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "IA",
+  "name": "Iowa",
+  "kind": "Mandatory RPS",
+  "standard": "105 MW of capacity (investor-owned utilities)",
+  "standardNote": "Capacity-based target from 1999.",
+  "incentives": [
+   "No state credit (expired 2012)",
+   "Net metering by Iowa Utilities Board mandate for MidAmerican and Alliant; co-ops vary",
+   "5-year property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "KS",
+  "name": "Kansas",
+  "kind": "Voluntary goal",
+  "standard": "20% of peak demand by 2020 (goal)",
+  "standardNote": "Binding status unclear in NCSL; Wikipedia lists it as voluntary.",
+  "incentives": [
+   "No state credit",
+   "Net metering mandate for Evergy and Liberty; co-ops not covered",
+   "Property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "KY",
+  "name": "Kentucky",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state credit",
+   "Retail net metering (LG&E, KU, Duke); TVA buyback in eastern Kentucky"
+  ],
+  "incentiveNote": "Sources disagree on property tax exemption.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "LA",
+  "name": "Louisiana",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "Berkeley Lab notes Louisiana has an executive-order target only and excludes it from its counts.",
+  "incentives": [
+   "No state credit (expired 2015)",
+   "Retail net metering (Entergy Louisiana, CLECO); co-ops vary",
+   "50% property tax exemption for 10 years",
+   "Entergy Louisiana and New Orleans proposals are in the registry"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "ME",
+  "name": "Maine",
+  "kind": "100% target",
+  "standard": "80% by 2030; 100% by 2050",
+  "standardNote": "Berkeley Lab says ME SP 738 extends Class IA targets through 2040 and creates a Class III that includes nuclear and other zero-GHG resources.",
+  "incentives": [
+   "Efficiency Maine rebate $450 per kW (up to $2,000); $800 per kW for income-qualified",
+   "Net Energy Billing at retail",
+   "Full property and sales tax exemptions"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "MD",
+  "name": "Maryland",
+  "kind": "Mandatory RPS",
+  "standard": "50% by 2030, including 14.5% solar and at least 1,200 MW offshore wind",
+  "standardNote": "Berkeley Lab says MD SB 783 adds a 150% multiplier under the solar carve-out for certain facilities under 5 MW, and excludes Maryland from its CES count (economy-wide targets only).",
+  "incentives": [
+   "Strategic Energy Investment Fund grants: low-income Community Solar Grant Program and commercial and canopy solar grants (see registry)",
+   "Community Solar Program: 40% low and moderate income share, 5 MW per project",
+   "Tier 1 SRECs about $40 to $90 per MWh; full property and sales tax exemptions",
+   "$1,000 residential rebate (listed by two aggregators; not verified at the state source)"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Medium",
+  "sources": [
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "MA",
+  "name": "Massachusetts",
+  "kind": "Mandatory RPS",
+  "standard": "35% by 2030, then +1% per year",
+  "standardNote": "Also has an alternative portfolio standard and a clean energy standard; percentages not captured.",
+  "incentives": [
+   "15% income tax credit, up to $1,000",
+   "SMART production incentive about $0.05 to $0.20 per kWh for 10 to 20 years",
+   "Full retail net metering; property tax exemption for up to 20 years",
+   "ConnectedSolutions and MassCEC V2X (see registry)"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "MI",
+  "name": "Michigan",
+  "kind": "100% target",
+  "standard": "Renewable 50% by 2030 and 60% by 2035; clean 80% by 2035 and 100% by 2040",
+  "standardNote": "Public Act 235 of 2023. Also a 2,500 MW storage target and a distributed generation cap raised from 1% to 10%.",
+  "incentives": [
+   "Utility distributed generation payments about $0.025 to $0.040 per kWh for 10 years (one source)",
+   "Retail-rate treatment under PA 342 for up to 150 kW (one source)",
+   "Property tax exemption",
+   "Michigan Saves green bank: home and commercial efficiency loans, on-bill financing (see registry)"
+  ],
+  "incentiveNote": "Pre-2023 aggregator figures may predate the new law.",
+  "standardConfidence": "High",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "Michigan PSC: 2023 energy legislation",
+    "url": "https://www.michigan.gov/mpsc/commission/workgroups/2023-energy-legislation"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "MN",
+  "name": "Minnesota",
+  "kind": "100% target",
+  "standard": "55% by 2035; 100% carbon-free by 2040",
+  "standardNote": "Wikipedia lists 80% by 2030. Berkeley Lab notes data center exemptions.",
+  "incentives": [
+   "Xcel Solar*Rewards about $0.020 to $0.035 per kWh for 10 years",
+   "Full sales tax exemption; personal property often exempt from property tax",
+   "Solar production tax applies above 1 MW"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "MS",
+  "name": "Mississippi",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state credit",
+   "Avoided-cost export about $0.03 to $0.06 per kWh (Entergy Mississippi, Mississippi Power)"
+  ],
+  "incentiveNote": "One source says net metering exists; another says avoided cost only.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "MO",
+  "name": "Missouri",
+  "kind": "Mandatory RPS",
+  "standard": "15% by 2021 (largest utilities)",
+  "standardNote": "From a 2008 ballot measure. Berkeley Lab notes changes for accelerated renewable energy buyers.",
+  "incentives": [
+   "Retail net metering protected by SB 564 (Ameren Missouri, Evergy)",
+   "Property tax exemption; utility rebates"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "MT",
+  "name": "Montana",
+  "kind": "Repealed",
+  "standard": "15% by 2015, repealed in 2021",
+  "standardNote": "NCSL.",
+  "incentives": [
+   "Retail net metering (NorthWestern Energy)",
+   "10-year property tax exemption"
+  ],
+  "incentiveNote": "Sources disagree on a state credit and loan program. Not included.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "NE",
+  "name": "Nebraska",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state credit",
+   "Retail net metering (OPPD, NPPD, LES); co-ops vary",
+   "Sales tax exemption; 6-year property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "NV",
+  "name": "Nevada",
+  "kind": "Mandatory RPS",
+  "standard": "50% by 2030; 100% carbon-free by 2050 (non-binding)",
+  "standardNote": "Berkeley Lab counts Nevada's electric-sector emission standard as a clean energy standard.",
+  "incentives": [
+   "Retail net metering with monthly rollover, protected by AB 405 (one source)",
+   "Property and sales tax exemptions"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "NH",
+  "name": "New Hampshire",
+  "kind": "Mandatory RPS",
+  "standard": "25.2% by 2025",
+  "standardNote": "NCSL.",
+  "incentives": [
+   "Retail net metering up to 1 MW",
+   "No sales tax; property tax exemption in most municipalities"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "NJ",
+  "name": "New Jersey",
+  "kind": "Mandatory RPS",
+  "standard": "50% by 2030",
+  "standardNote": "Berkeley Lab mentions a possible RPS freeze in 2025 without detail and treats New Jersey's clean standard as executive-order only.",
+  "incentives": [
+   "SREC-II about $185 to $270 per MWh",
+   "Successor Solar Incentive (SuSI) 15-year payments",
+   "Net metering with annual true-up; sales and property tax exemptions"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "NM",
+  "name": "New Mexico",
+  "kind": "100% target",
+  "standard": "40% by 2025; 80% by 2040; 100% zero-carbon by 2045",
+  "standardNote": "NCSL and Wikipedia.",
+  "incentives": [
+   "Solar Market Development Tax Credit, 10% up to $6,000",
+   "Retail net metering protected by statute (PNM, El Paso Electric)",
+   "Gross receipts tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "NY",
+  "name": "New York",
+  "kind": "100% target",
+  "standard": "70% by 2030; 100% zero-emission by 2040",
+  "standardNote": "NCSL and Wikipedia.",
+  "incentives": [
+   "25% state income tax credit, up to $5,000",
+   "NY-Sun incentives (about $400 to $1,000 per kW in one source)",
+   "Monthly credit rollovers; property tax exemption; sales tax exemption"
+  ],
+  "incentiveNote": "NY value stack credit details are in the Solar Credit Benchmark.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "NC",
+  "name": "North Carolina",
+  "kind": "100% target",
+  "standard": "Carbon neutral by 2050",
+  "standardNote": "Berkeley Lab says NC S 266 eliminated Duke Energy's interim 2030 target but kept the 2050 target.",
+  "incentives": [
+   "No state credit (phased out 2016)",
+   "Duke retail net metering under HB 589 through 2027 (one source)",
+   "80% property tax exclusion; partial sales tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "C2ES: State electricity portfolio standards",
+    "url": "https://www.c2es.org/document/renewable-and-alternate-energy-portfolio-standards/"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "ND",
+  "name": "North Dakota",
+  "kind": "Voluntary goal",
+  "standard": "10% by 2015 (objective)",
+  "standardNote": "NCSL does not state binding status; Wikipedia lists it as voluntary.",
+  "incentives": [
+   "No state credit",
+   "Net metering by commission mandate (Xcel, MDU); co-ops not covered",
+   "5-year property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "OH",
+  "name": "Ohio",
+  "kind": "Mandatory RPS",
+  "standard": "8.5% by 2026",
+  "standardNote": "Reduced by 2019 House Bill 6.",
+  "incentives": [
+   "SREC market very low, about $5 to $15 per MWh",
+   "100% property tax exemption for 15 years",
+   "Retail net metering under PUCO orders"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "OK",
+  "name": "Oklahoma",
+  "kind": "Voluntary goal",
+  "standard": "15% by 2015 (goal)",
+  "standardNote": "NCSL; Wikipedia lists it as voluntary.",
+  "incentives": [
+   "No state income tax credit",
+   "Commission net metering mandate (OG&E, PSO); co-ops not covered",
+   "State sales tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "OR",
+  "name": "Oregon",
+  "kind": "100% target",
+  "standard": "Emissions 80% below baseline by 2030, 90% by 2035, 100% by 2040",
+  "standardNote": "Electric-sector zero-emission standard from 2021 legislation, for retail electricity providers.",
+  "incentives": [
+   "Energy Trust of Oregon cash incentive (up to $2,500 in one source)",
+   "Retail net metering, statutory",
+   "Full property tax exemption"
+  ],
+  "incentiveNote": "Sources disagree on a state residential energy tax credit (30% up to $6,000 in one, none in another).",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "C2ES: State electricity portfolio standards",
+    "url": "https://www.c2es.org/document/renewable-and-alternate-energy-portfolio-standards/"
+   },
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "PA",
+  "name": "Pennsylvania",
+  "kind": "Mandatory RPS",
+  "standard": "18% by 2021, including 0.5% solar",
+  "standardNote": "NCSL and Wikipedia.",
+  "incentives": [
+   "Alternative Energy Credit market about $25 to $50 per MWh",
+   "PUC-required retail net metering",
+   "No statewide property or sales tax exemption (one source)"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "RI",
+  "name": "Rhode Island",
+  "kind": "100% target",
+  "standard": "100% by 2033 (NCSL)",
+  "standardNote": "Wikipedia lists 2030. The sources disagree.",
+  "incentives": [
+   "Renewable Energy Fund rebate $0.20 to $0.35 per watt (higher for income-qualified)",
+   "Retail net metering, protected by statute",
+   "Full property and sales tax exemptions"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "SC",
+  "name": "South Carolina",
+  "kind": "Voluntary goal",
+  "standard": "2% by 2021 (voluntary)",
+  "standardNote": "NCSL.",
+  "incentives": [
+   "25% state income tax credit, up to $3,500 per year with a 10-year carry-forward",
+   "Retail net metering for systems under 20 kW",
+   "Full property tax exemption"
+  ],
+  "incentiveNote": "Sources disagree on the credit cap.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "SD",
+  "name": "South Dakota",
+  "kind": "Voluntary goal",
+  "standard": "10% by 2015 (objective)",
+  "standardNote": "NCSL does not state binding status; Wikipedia lists it as voluntary.",
+  "incentives": [
+   "No state credit",
+   "Net metering by commission mandate (Black Hills, Xcel); co-ops set own rules",
+   "3-year property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "TN",
+  "name": "Tennessee",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state credit",
+   "TVA Green Power Providers buyback about $0.044 to $0.053 per kWh plus a monthly fee (one source)",
+   "No traditional net metering in most areas"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "TX",
+  "name": "Texas",
+  "kind": "Mandatory RPS",
+  "standard": "5,880 MW by 2015; 10,000 MW goal for 2025",
+  "standardNote": "Wikipedia says the target was reached in 2010.",
+  "incentives": [
+   "No state credit or income tax",
+   "100% property tax exemption on the value solar adds; sales tax exemption on equipment",
+   "Utility programs: Austin Energy rebate and Value of Solar, CPS Energy rebate",
+   "Retailer buyback plans pay about $0.04 to $0.08 per kWh"
+  ],
+  "incentiveNote": "See Texas rows in the Solar Credit Benchmark and Austin Energy records in the registry.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "UT",
+  "name": "Utah",
+  "kind": "Voluntary goal",
+  "standard": "20% by 2025 (goal)",
+  "standardNote": "NCSL; Wikipedia lists it as voluntary.",
+  "incentives": [
+   "25% state tax credit, capped at $1,600 per year (two sources; a third lists none)",
+   "Sales tax exemption",
+   "Rocky Mountain Power export credit"
+  ],
+  "incentiveNote": "One source says Utah pays retail rate, but the Solar Credit Benchmark found an export credit rate of about 4 cents per kWh from the Public Service Commission. Treat that source as wrong on this point.",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "JouleIO: Solar incentives by state (updated Sept 2026)",
+    "url": "https://jouleio.com/blog/solar-incentives-by-state/"
+   }
+  ]
+ },
+ {
+  "abbr": "VT",
+  "name": "Vermont",
+  "kind": "100% target",
+  "standard": "100% by 2030 for most utilities",
+  "standardNote": "Berkeley Lab says VT H 289 raised the earlier 75% by 2032 standard, raised the distributed generation carve-out and added a new-renewables requirement.",
+  "incentives": [
+   "Retail net metering for systems up to 150 kW",
+   "Property tax exemption; sales tax exemption",
+   "Green Mountain Power battery and V2G programs (see registry)"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "VA",
+  "name": "Virginia",
+  "kind": "100% target",
+  "standard": "100% clean by 2045 (Phase II utilities) or 2050 (Phase I)",
+  "standardNote": "Excludes existing nuclear per Wikipedia. Berkeley Lab notes changes to eligibility and REC banking.",
+  "incentives": [
+   "Dominion retail net metering, protected through 2028 (one source)",
+   "Local-option or 100% property tax exemption; limited residential sales tax exemption",
+   "Dominion 450 MW VPP pilot and school bus V2G (see registry)"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "WA",
+  "name": "Washington",
+  "kind": "100% target",
+  "standard": "100% renewable or zero-emitting by 2045; 80% clean by 2030",
+  "standardNote": "Excludes existing large hydropower per Wikipedia.",
+  "incentives": [
+   "Sales and use tax exemption for qualifying systems",
+   "Production incentives about $0.08 to $0.12 per kWh; program waitlisted (one source)"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   },
+   {
+    "title": "Aurora Solar: Solar incentives by state (Feb 2026)",
+    "url": "https://aurorasolar.com/home-solar/blog/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "WV",
+  "name": "West Virginia",
+  "kind": "Repealed",
+  "standard": "25% by 2025, repealed in 2015",
+  "standardNote": "NCSL.",
+  "incentives": [
+   "No state incentives",
+   "Retail net metering with annual true-up at AEP and Mon Power"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   },
+   {
+    "title": "World Population Review: Solar incentives by state (Oct 2026)",
+    "url": "https://worldpopulationreview.com/state-rankings/solar-incentives-by-state"
+   }
+  ]
+ },
+ {
+  "abbr": "WI",
+  "name": "Wisconsin",
+  "kind": "Mandatory RPS",
+  "standard": "10% by 2015",
+  "standardNote": "Wikipedia marks this entry as needing an update. Berkeley Lab treats Wisconsin's clean energy target as executive-order only.",
+  "incentives": [
+   "Focus on Energy rebate about $500 to $800 (up to $2,500 income-qualified)",
+   "Full property and sales tax exemptions",
+   "Retail net metering up to 100 kW (one source)"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Low",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "Wikipedia: Renewable portfolio standards in the United States",
+    "url": "https://en.wikipedia.org/wiki/Renewable_portfolio_standards_in_the_United_States"
+   },
+   {
+    "title": "Berkeley Lab: State Electricity Resource Standards, 2025 data update",
+    "url": "https://emp.lbl.gov/publications/us-state-electricity-resource"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ },
+ {
+  "abbr": "WY",
+  "name": "Wyoming",
+  "kind": "None found",
+  "standard": "No standard listed",
+  "standardNote": "NCSL lists no standard.",
+  "incentives": [
+   "No state income tax or solar credit",
+   "Rocky Mountain Power net metering with annual true-up at avoided cost",
+   "No property tax exemption"
+  ],
+  "incentiveNote": "",
+  "standardConfidence": "Medium",
+  "incentiveConfidence": "Low",
+  "sources": [
+   {
+    "title": "NCSL: State RPS and goals (page dated Aug 2021)",
+    "url": "https://www.ncsl.org/energy/state-renewable-portfolio-standards-and-goals"
+   },
+   {
+    "title": "SolarPriceList: Solar incentives by state (Sept 2026)",
+    "url": "https://solarpricelist.com/blog/2026-solar-incentives-by-region-complete-state-by-state-guide"
+   }
+  ]
+ }
+]
