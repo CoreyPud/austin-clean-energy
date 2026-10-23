@@ -419,6 +419,14 @@ const AustinAtGlance = () => {
           preview: <CouncilIconPreview icon={History} className="h-[226px]" />,
         },
         {
+          key: "us-utility-innovation-registry",
+          to: "/us-utility-innovation-registry",
+          title: "US Utility Innovation Registry",
+          description: "Search 96 utility pilots and programs nationwide, plus state standards, solar adoption, and efficiency funding.",
+          cta: "Open the Registry",
+          preview: <CouncilIconPreview icon={History} className="h-[226px]" />,
+        },
+        {
           key: "load-estimator",
           to: "/load-estimator",
           title: "Austin Load Growth Estimator",

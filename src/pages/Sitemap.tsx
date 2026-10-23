@@ -112,6 +112,12 @@ const publicPages = [
     icon: Zap,
   },
   {
+    path: "/us-utility-innovation-registry",
+    title: "US Utility Innovation Registry",
+    description: "Utility pilots, state profiles, solar adoption and efficiency funding across the US.",
+    icon: Zap,
+  },
+  {
     path: "/peak-shave",
     title: "Peak Shave Calculator",
     description: "Estimate how a battery can shave peak demand and cut demand charges.",
