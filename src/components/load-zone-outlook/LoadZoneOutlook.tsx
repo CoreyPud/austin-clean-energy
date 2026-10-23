@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./load-zone-outlook.css";
+import { texasBoundary } from "./texas-boundary";
 import {
   projection20yr,
   projectionReadout,
@@ -75,17 +76,19 @@ function radiusFor(mw: number | null): number {
 // supply / proposed supply) on top of color, so the two generator layers
 // that share a color (current vs. proposed) stay visually distinct, and a
 // retiring plant reads as "hollowing out" rather than just "another load".
-function MapMarker({ p, x, y, onEnter, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onClick: () => void }) {
+function MapMarker({ p, x, y, onEnter, onLeave, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onLeave: () => void; onClick: () => void }) {
   const r = radiusFor(p.mw);
   const color = CATEGORY_COLOR[p.category] ?? "hsl(var(--muted-foreground))";
   const common = {
     className: "lzo-map-point",
     onMouseEnter: onEnter,
+    onMouseLeave: onLeave,
     onClick,
     role: "button",
     tabIndex: 0,
     "aria-label": p.name,
     onFocus: onEnter,
+    onBlur: onLeave,
     onKeyDown: (event: React.KeyboardEvent<SVGElement>) => {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onClick(); }
     },
@@ -122,6 +125,7 @@ function LoadZoneMap() {
       ...combinedGenerationForMap,
       ...combinedGeneratorsForMap,
       ...REFERENCE_CITIES,
+      ...texasBoundary.map(([lon, lat]) => ({ lon, lat })),
     ];
     const lats = all.map((p) => p.lat);
     const lons = all.map((p) => p.lon);
@@ -148,6 +152,11 @@ function LoadZoneMap() {
   }
 
   const active = hoverPoint ?? pinnedPoint;
+  const hoverPosition = hoverPoint ? project(hoverPoint.lat, hoverPoint.lon) : null;
+  const texasPath = texasBoundary.map(([lon, lat], index) => {
+    const { x, y } = project(lat, lon);
+    return `${index === 0 ? "M" : "L"}${x},${y}`;
+  }).join(" ") + " Z";
 
   const visiblePoints: MapPoint[] = [
     ...(showLoads ? combinedLoadsForMap : []),
@@ -203,6 +212,8 @@ function LoadZoneMap() {
           onMouseLeave={() => setHoverPoint(null)}
         >
           <rect x={0} y={0} width={MAP_WIDTH} height={mapHeight} className="lzo-map-bg" />
+          <path d={texasPath} className="lzo-map-texas" />
+          <text x={project(31.4, -101).x} y={project(31.4, -101).y} className="lzo-map-state-label">TEXAS</text>
           {REFERENCE_CITIES.map((c) => {
             const { x, y } = project(c.lat, c.lon);
             return (
@@ -223,34 +234,48 @@ function LoadZoneMap() {
                 x={x}
                 y={y}
                 onEnter={() => setHoverPoint(p)}
+                onLeave={() => setHoverPoint(null)}
                 onClick={() => setPinnedPoint(pinnedPoint?.name === p.name ? null : p)}
               />
             );
           })}
         </svg>
+        {hoverPoint && hoverPosition && (
+          <div
+            role="tooltip"
+            className={`lzo-map-tooltip ${hoverPosition.x > MAP_WIDTH / 2 ? "lzo-map-tooltip-left" : ""} ${hoverPosition.y > mapHeight / 2 ? "lzo-map-tooltip-above" : ""}`}
+            style={{ left: `${hoverPosition.x / MAP_WIDTH * 100}%`, top: `${hoverPosition.y / mapHeight * 100}%` }}
+          >
+            <MapPointDetails point={hoverPoint} />
+          </div>
+        )}
       </div>
 
       <div className="lzo-map-detail">
         {active ? (
-          <>
-            <div className="lzo-map-detail-name">
-              {active.name} <TagBadge tag={active.tag} />
-            </div>
-            <div className="lzo-map-detail-row">
-              {active.mw ? `${active.mw} MW · ` : ""}
-              {active.year !== "n/a" ? `${active.year} · ` : ""}
-              {active.detail}
-            </div>
-            <div className="lzo-map-detail-precision">
-              Location: {active.precision === "exact-site" ? "exact project site" : active.precision === "county-centroid" ? "county centroid (close address, not exact site)" : "city-level approximation"}
-            </div>
-          </>
+          <MapPointDetails point={active} />
         ) : (
           <div className="lzo-map-detail-hint">Hover or tap a point for details. Squares = Austin Energy's own plants · hollow rings = scheduled to retire · triangles = proposed/not yet built.</div>
         )}
       </div>
     </div>
   );
+}
+
+function MapPointDetails({ point }: { point: MapPoint }) {
+  const categoryLabels: Record<string, string> = {
+    load: "Electricity demand", solar: "Planned solar", battery: "Planned battery storage",
+    "generator-current": "Operating generator", "generator-retiring": "Generator scheduled to retire",
+    "generator-proposed": "Proposed generator",
+  };
+  return <>
+    <div className="lzo-map-detail-name">{point.name} <TagBadge tag={point.tag} /></div>
+    <div className="lzo-map-detail-row">{categoryLabels[point.category] ?? point.category}</div>
+    <div className="lzo-map-detail-row"><strong>Size:</strong> {point.mw == null ? "Not reported" : `${point.mw.toLocaleString()} MW`}</div>
+    <div className="lzo-map-detail-row"><strong>Timing:</strong> {point.year === "n/a" ? "Not reported" : point.year}</div>
+    <div className="lzo-map-detail-row">{point.detail}</div>
+    <div className="lzo-map-detail-precision">Location: {point.precision === "exact-site" ? "reported site coordinates" : point.precision === "county-centroid" ? "county centroid, not the exact site" : "city-level approximation"}</div>
+  </>;
 }
 
 function TagBadge({ tag }: { tag: Tag }) {
