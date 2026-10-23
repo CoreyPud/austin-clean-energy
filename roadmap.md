@@ -1,4 +1,5 @@
 # Current
+- [x] Give the Load Zone Outlook map a sourced Texas boundary and hover details for every symbol; verify hover and tap.
 - [x] Add Austin Load Zone Outlook from supplied files, match site colors, and verify chart and map controls.
 - [x] Add Austin IRP Planning from supplied files, match site styling, and verify inputs and outputs.
 - [x] Add Innovation Gap from the supplied files, link it under Grid Planning Tools, and verify the page.

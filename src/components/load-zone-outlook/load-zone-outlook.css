@@ -250,6 +250,7 @@
   cursor: pointer;
 }
 .lzo-map-wrap {
+  position: relative;
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
   overflow: hidden;
@@ -257,6 +258,49 @@
 }
 .lzo-map-bg {
   fill: hsl(var(--muted));
+}
+.lzo-map-texas {
+  fill: hsl(var(--card));
+  stroke: hsl(var(--muted-foreground));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.lzo-map-state-label {
+  fill: hsl(var(--muted-foreground));
+  font-family: "Work Sans", sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.lzo-map-wrap svg { display: block; }
+.lzo-map-tooltip {
+  position: absolute;
+  z-index: 2;
+  width: min(310px, 70%);
+  padding: 0.8rem;
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  transform: translate(16px, 16px);
+}
+.lzo-map-tooltip-left { transform: translate(calc(-100% - 16px), 16px); }
+.lzo-map-tooltip-above { transform: translate(16px, calc(-100% - 16px)); }
+.lzo-map-tooltip-left.lzo-map-tooltip-above { transform: translate(calc(-100% - 16px), calc(-100% - 16px)); }
+@media (max-width: 640px) {
+  .lzo-map-wrap .lzo-map-tooltip {
+    left: 8px !important;
+    right: 8px;
+    top: auto !important;
+    bottom: 8px;
+    width: auto;
+    transform: none;
+    font-size: 0.75rem;
+  }
 }
 .lzo-map-city-dot {
   fill: hsl(var(--muted-foreground));
