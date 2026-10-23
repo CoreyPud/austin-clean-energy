@@ -106,6 +106,12 @@ const publicPages = [
     icon: Network,
   },
   {
+    path: "/austin-load-zone-outlook",
+    title: "Austin Load Zone Outlook",
+    description: "Wholesale price scenarios, supply investments, and large-load projects with a map and source notes.",
+    icon: TrendingUp,
+  },
+  {
     path: "/innovation-gap",
     title: "Innovation Gap",
     description: "Austin Energy program milestones compared with peer utilities, with timelines and source citations.",

@@ -72,6 +72,7 @@ import PeakerProforma from "./pages/PeakerProforma";
 import PeakShavePage from "./pages/PeakShave";
 import DemandDistribution from "./pages/DemandDistribution";
 import AustinIRPPlanning from "./pages/AustinIRPPlanning";
+import AustinLoadZoneOutlook from "./pages/AustinLoadZoneOutlook";
 import InnovationGapPage from "./pages/InnovationGap";
 import RegistryPage from "./components/utility-registry/RegistryPage";
 import { StatesPage as UirStates, SolarPage as UirSolar, EfficiencyPage as UirEfficiency, AboutPage as UirAbout } from "./components/utility-registry/OtherPages";
@@ -149,6 +150,7 @@ const AppRoutes = () => {
           <Route path="/peak-shave" element={<PeakShavePage />} />
           <Route path="/demand-distribution" element={<DemandDistribution />} />
           <Route path="/austin-irp-planning" element={<AustinIRPPlanning />} />
+          <Route path="/austin-load-zone-outlook" element={<AustinLoadZoneOutlook />} />
           <Route path="/innovation-gap" element={<InnovationGapPage />} />
           <Route path="/us-utility-innovation-registry" element={<RegistryPage />} />
           <Route path="/us-utility-innovation-registry/states" element={<UirStates />} />
