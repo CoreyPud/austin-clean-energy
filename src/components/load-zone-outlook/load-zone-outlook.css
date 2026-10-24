@@ -513,4 +513,7 @@
 .lzo-gantt { border: 0; border-radius: 0; padding: 0; background: transparent; }
 .lzo-gantt-axis-track, .lzo-gantt-row-track { min-width: 0; margin-right: 1rem; }
 .lzo-gantt-bar:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.lzo-gantt-axis-tick { white-space: nowrap; overflow-wrap: normal; }
+.lzo-gantt-bar-end { overflow: hidden; text-overflow: clip; }
+.lzo-gantt-bar { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .lzo-gantt-bar { transition: none; } }
