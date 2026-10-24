@@ -10,7 +10,6 @@ import {
 } from "recharts";
 import "./load-zone-outlook.css";
 import { texasBoundary } from "./texas-boundary";
-import SupplyDemandTable from "./SupplyDemandTable";
 import {
   projection20yr,
   projectionReadout,
@@ -42,6 +41,13 @@ import {
   ercotProposedFuelMix,
   combinedGeneratorsForMap,
   mapDataNote,
+  supplyDemandGapTable,
+  supplyDemandGapMethodology,
+  ganttItems,
+  ganttNote,
+  GANTT_YEAR_MIN,
+  GANTT_YEAR_MAX,
+  GanttItem,
   MapPoint,
   Tag,
 } from "./load-zone-outlook-data";
@@ -294,6 +300,111 @@ function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
+const GANTT_LANE_COLOR: Record<string, string> = {
+  "New loads": "hsl(var(--destructive))",
+  "New generation": "hsl(var(--primary))",
+  "Retiring assets": "hsl(var(--accent))",
+};
+
+const GANTT_LANES: string[] = ["New loads", "New generation", "Retiring assets"];
+
+function GanttChart() {
+  const [hoverItem, setHoverItem] = useState<GanttItem | null>(null);
+  const totalYears = GANTT_YEAR_MAX - GANTT_YEAR_MIN;
+
+  const ticks: number[] = [];
+  for (let y = GANTT_YEAR_MIN; y <= GANTT_YEAR_MAX; y += 2) ticks.push(y);
+  if (ticks[ticks.length - 1] !== GANTT_YEAR_MAX) ticks.push(GANTT_YEAR_MAX);
+
+  function pct(year: number) {
+    return ((year - GANTT_YEAR_MIN) / totalYears) * 100;
+  }
+
+  return (
+    <div className="lzo-gantt">
+      <div className="lzo-gantt-legend">
+        {GANTT_LANES.map((lane) => (
+          <span key={lane} className="lzo-gantt-legend-item">
+            <span className="lzo-legend-swatch" style={{ background: GANTT_LANE_COLOR[lane] }} />
+            {lane} ({ganttItems.filter((i) => i.lane === lane).length})
+          </span>
+        ))}
+      </div>
+
+      <div className="lzo-gantt-axis">
+        <div className="lzo-gantt-axis-label-col" />
+        <div className="lzo-gantt-axis-track">
+          {ticks.map((t) => (
+            <span key={t} className="lzo-gantt-axis-tick" style={{ left: `${pct(t)}%` }}>
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {GANTT_LANES.map((lane) => (
+        <div key={lane} className="lzo-gantt-lane">
+          <div className="lzo-gantt-lane-title" style={{ color: GANTT_LANE_COLOR[lane] }}>
+            {lane}
+          </div>
+          {ganttItems
+            .filter((item) => item.lane === lane)
+            .sort((a, b) => a.endYear - b.endYear)
+            .map((item) => {
+              const left = pct(item.startYear);
+              const width = Math.max(pct(item.endYear) - left, 1.2);
+              const isHover = hoverItem === item;
+              return (
+                <div className="lzo-gantt-row" key={item.name}>
+                  <div className="lzo-gantt-row-label" title={item.name}>
+                    {item.name}
+                  </div>
+                  <div className="lzo-gantt-row-track">
+                    <div
+                      className="lzo-gantt-bar"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={item.name}
+                      onFocus={() => setHoverItem(item)}
+                      onBlur={() => setHoverItem(null)}
+                      onClick={() => setHoverItem(item)}
+                      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setHoverItem(item); } }}
+                      style={{
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        background: GANTT_LANE_COLOR[lane],
+                        opacity: isHover ? 1 : 0.82,
+                      }}
+                      onMouseEnter={() => setHoverItem(item)}
+                      onMouseLeave={() => setHoverItem(null)}
+                    >
+                      <span className="lzo-gantt-bar-end">
+                        {item.endYear}
+                        {item.yearIsEstimate ? "*" : ""}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      ))}
+
+      <div className="lzo-gantt-detail">
+        {hoverItem ? (
+          <>
+            <span className="lzo-gantt-detail-name">{hoverItem.name}</span>
+            {hoverItem.mw != null ? <span className="lzo-gantt-detail-mw">{fmt(hoverItem.mw)} MW</span> : null}
+            <span className="lzo-gantt-detail-text">{hoverItem.detail}</span>
+          </>
+        ) : (
+          <span className="lzo-map-detail-hint">Hover a bar for project detail.</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function LoadZoneOutlook() {
   const chartData = useMemo(
     () =>
@@ -458,8 +569,6 @@ export default function LoadZoneOutlook() {
       </section>
 
       {/* ---------------- 2.5 MAP: WHERE IT'S HAPPENING ---------------- */}
-      <SupplyDemandTable />
-
       <section className="lzo-section">
         <h2 className="lzo-section-title">
           Where it's happening: loads and new generation on the map <TagBadge tag="reported" />
@@ -522,6 +631,63 @@ export default function LoadZoneOutlook() {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* ---------------- 2.6 SUPPLY / DEMAND / GAP TABLE ---------------- */}
+      <section className="lzo-section">
+        <h2 className="lzo-section-title">
+          Austin Energy contracted capacity vs. demand, 2027–2045 <TagBadge tag="scenario" />
+        </h2>
+        <p className="lzo-section-lede">
+          {supplyDemandGapMethodology.supplyNote} {supplyDemandGapMethodology.demandNote}
+        </p>
+
+        <p className="lzo-section-lede">Contracted/nameplate capacity is not dependable peak-hour supply. This arithmetic gap is not a reserve margin, reliability forecast, or prediction of a shortage; wind, solar and storage contributions at peak are not adjusted here.</p>
+        <div className="lzo-table-wrap">
+          <table className="lzo-table" aria-label="Austin Energy contracted capacity and demand scenario">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Supply (MW)</th>
+                <th>Demand (MW)</th>
+                <th>Gap (MW)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {supplyDemandGapTable.map((r) => (
+                <tr key={r.year}>
+                  <td>{r.year}</td>
+                  <td>{fmt(r.supplyMw)}</td>
+                  <td>{fmt(r.demandMw)}</td>
+                  <td
+                    style={{
+                      fontWeight: 600,
+                      color: r.gapMw < 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))",
+                    }}
+                  >
+                    {r.gapMw > 0 ? "+" : ""}
+                    {fmt(r.gapMw)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="lzo-callout" style={{ marginTop: "0.75rem" }}>
+          <div className="lzo-callout-title">Data-quality note on the Supply figure <TagBadge tag="derived" /></div>
+          <p style={{ margin: 0 }}>{supplyDemandGapMethodology.dataQualityNote}</p>
+        </div>
+      </section>
+
+      {/* ---------------- 2.7 GANTT: NEW LOADS, NEW GENERATION, RETIRING ASSETS ---------------- */}
+      <section className="lzo-section">
+        <h2 className="lzo-section-title">
+          New loads, new generation, retiring assets — timeline <TagBadge tag="reported" />
+        </h2>
+        <p className="lzo-section-lede">{ganttNote.note}</p>
+
+        <GanttChart />
       </section>
 
       {/* ---------------- 4. AVOIDED COST / VALUE OF SOLAR ---------------- */}

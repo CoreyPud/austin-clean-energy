@@ -523,3 +523,164 @@ export const mapDataNote = {
   note:
     "LOADS layer = this project's named large-load research (exact/city-level coordinates) + Cleanview's free Data Center tracker (exact site coordinates, Texas rows only). NEW SOLAR/BATTERY layer = Cleanview's free Planned Solar + Planned Batteries trackers (county-centroid coordinates — the free tier doesn't expose site-level lat/long for these two trackers). GENERATOR layers (new) = EIA-860 2025, cross-referenced against Austin Energy's own contract-stack table, plus ERCOT's 7 EIA-reported planned-retirement plants and its largest proposed gas/nuclear builds — a curated subset of EIA-860's 2,185 operable + 627 proposed + 326 retired ERCOT generator records, not the complete fleet. Both Cleanview layers are capped at whatever alphabetically-early slice of the national queue fits in Cleanview's free 100-row-per-table limit, pulled 2026-10-23.",
 };
+
+// ---------------------------------------------------------------------------
+// 8. SUPPLY / DEMAND / GAP TABLE, 2027-2045 (added 2026-10-23)
+// ---------------------------------------------------------------------------
+// SUPPLY is held FLAT at the sum of the individual contractStack entries
+// (595 + 400 + 600 + 432 + 1894.64 + 804 + 300 + 105 = 5,130.64 MW), consistent
+// with this project's own replacementAssumption (section 2): expiring contracts
+// are modeled as replaced 1:1 by the same technology, so total contracted/owned
+// MW doesn't mechanically decline even as individual contracts roll off and get
+// re-signed. This is a SCENARIO modeling choice, not a reported AE capacity plan.
+//
+// A DATA-QUALITY NOTE, surfaced while building this table and not introduced by
+// it: contractStackTotals.totalActiveMw (5,528.64) and .expiringInWindowMw
+// (4,255.64) do NOT match what you get by summing the individual contractStack
+// entries (5,130.64 and, for entries flagged expiresInWindow:true, 3,893.64) —
+// a ~398 MW and ~362 MW gap respectively. Separately, the Solar contracts entry
+// is flagged expiresInWindow:true but has contractEnd:2056, outside this
+// 2026-2045 window — a flag/date contradiction. This table uses the sum of the
+// granular array (5,130.64 MW) as the more auditable, traceable figure, and
+// flags rather than silently corrects the totals object above.
+//
+// DEMAND has no equivalent reported AE forecast to draw on for this specific
+// 2027-2045 shape, so as a SCENARIO proxy this table reuses the model's own
+// already-computed Base-scenario price CAGR (projectionReadout.cagr.base =
+// 3.41%/yr — itself derived substantially from load-growth assumptions) as a
+// stand-in demand-growth rate, anchored to AE's own reported ~3,100 MW 2026
+// system peak (aggregateLoadPipeline). Demand(year) = 3,100 x 1.0341^(year-2026).
+// This is explicitly a rough, self-referential proxy — not a load forecast AE
+// or ERCOT has published — and is labeled as such everywhere it's shown.
+
+export interface SupplyDemandGapRow {
+  year: number;
+  supplyMw: number;
+  demandMw: number;
+  gapMw: number;
+}
+
+export const supplyDemandGapTable: SupplyDemandGapRow[] = [
+  { year: 2027, supplyMw: 5130.64, demandMw: 3205.7, gapMw: 1924.9 },
+  { year: 2028, supplyMw: 5130.64, demandMw: 3315.0, gapMw: 1815.6 },
+  { year: 2029, supplyMw: 5130.64, demandMw: 3428.1, gapMw: 1702.6 },
+  { year: 2030, supplyMw: 5130.64, demandMw: 3545.0, gapMw: 1585.7 },
+  { year: 2031, supplyMw: 5130.64, demandMw: 3665.8, gapMw: 1464.8 },
+  { year: 2032, supplyMw: 5130.64, demandMw: 3790.9, gapMw: 1339.8 },
+  { year: 2033, supplyMw: 5130.64, demandMw: 3920.1, gapMw: 1210.5 },
+  { year: 2034, supplyMw: 5130.64, demandMw: 4053.8, gapMw: 1076.8 },
+  { year: 2035, supplyMw: 5130.64, demandMw: 4192.0, gapMw: 938.6 },
+  { year: 2036, supplyMw: 5130.64, demandMw: 4335.0, gapMw: 795.7 },
+  { year: 2037, supplyMw: 5130.64, demandMw: 4482.8, gapMw: 647.8 },
+  { year: 2038, supplyMw: 5130.64, demandMw: 4635.7, gapMw: 495.0 },
+  { year: 2039, supplyMw: 5130.64, demandMw: 4793.7, gapMw: 336.9 },
+  { year: 2040, supplyMw: 5130.64, demandMw: 4957.2, gapMw: 173.4 },
+  { year: 2041, supplyMw: 5130.64, demandMw: 5126.2, gapMw: 4.4 },
+  { year: 2042, supplyMw: 5130.64, demandMw: 5301.1, gapMw: -170.4 },
+  { year: 2043, supplyMw: 5130.64, demandMw: 5481.8, gapMw: -351.2 },
+  { year: 2044, supplyMw: 5130.64, demandMw: 5668.8, gapMw: -538.1 },
+  { year: 2045, supplyMw: 5130.64, demandMw: 5862.1, gapMw: -731.4 },
+];
+
+export const supplyDemandGapMethodology = {
+  tag: "scenario" as Tag,
+  supplyNote:
+    "Supply held flat at 5,130.64 MW for the whole window — the sum of this project's own contractStack entries (section 2), not AE's contractStackTotals figure (see data-quality note below). Flat because this model's own replacementAssumption treats expiring contracts as replaced 1:1 by the same technology, so capacity itself doesn't mechanically shrink over the window — only its cost and ownership terms change.",
+  demandNote:
+    "Demand is a rough scenario proxy, not a published AE or ERCOT load forecast: AE's reported ~3.1 GW 2026 system peak (aggregateLoadPipeline), grown at this same model's own Base-scenario price CAGR (3.41%/yr) as a stand-in for load growth. Treat the crossover point (between 2041 and 2042) as illustrative of the shape of the problem — new large loads outpacing flat contracted supply — not a forecast of the exact year it happens.",
+  dataQualityNote:
+    "contractStackTotals.totalActiveMw (5,528.64 MW) and .expiringInWindowMw (4,255.64 MW) do not match the sum of the individual contractStack entries (5,130.64 MW total; 3,893.64 MW of entries flagged expiresInWindow:true) — gaps of about 398 MW and 362 MW. The Solar contracts entry is also flagged expiresInWindow:true despite a contractEnd of 2056, outside this window. Flagged here rather than silently reconciled; this table uses the granular, auditable sum.",
+};
+
+// ---------------------------------------------------------------------------
+// 9. GANTT-STYLE TIMELINE — new loads, new generation, retiring assets
+// (added 2026-10-23)
+// ---------------------------------------------------------------------------
+// Three lanes, each item spanning from "now" (2026) to its target/completion/
+// retirement year, over a fixed 2026-2045 axis:
+//   - "New loads": combinedLoadsForMap (section 7), excluding items whose
+//     year is already in the past (Aligned Dallas DFW-01/-02, operating since
+//     2015/2025) — 20 items.
+//   - "New generation": the 10 of 11 ercotProposedLargeGasNuclear entries with
+//     a year still ahead (excluding NRG THW GT, EIA-reported year 2024), plus
+//     Austin Energy's own 3 announced 2026 additions (the 400 MW gas peaker,
+//     ~299 MW of new wind, 300 MW of new battery — AE's own reported total for
+//     these three is ~999 MW, Community Impact/KUT) — 13 items.
+//   - "Retiring assets": the 3 contractStack entries with expiresInWindow:true
+//     AND a numeric contractEnd within this window (Sand Hill 2035, Fayette
+//     2035, Wind contracts 2041 — Solar's contracts excluded per the
+//     contractEnd:2056-outside-window note above), plus all 7
+//     ercotRetiringSoon entries — 10 items.
+
+export type GanttLane = "New loads" | "New generation" | "Retiring assets";
+
+export interface GanttItem {
+  name: string;
+  lane: GanttLane;
+  startYear: number;
+  endYear: number;
+  mw: number | null;
+  detail: string;
+  tag: Tag;
+  yearIsEstimate?: boolean;
+}
+
+export const GANTT_YEAR_MIN = 2026;
+export const GANTT_YEAR_MAX = 2045;
+
+export const ganttItems: GanttItem[] = [
+  // --- New loads (20) ---
+  { name: "Tesla Gigafactory Texas expansion", lane: "New loads", startYear: 2026, endYear: 2026, mw: null, detail: "Travis County · targeted complete end of 2026", tag: "reported" },
+  { name: "Samsung Taylor semiconductor fab(s)", lane: "New loads", startYear: 2026, endYear: 2026, mw: null, detail: "Taylor · first fab targeting 2026 risk production", tag: "reported" },
+  { name: "Blue Origin — Constellation Park", lane: "New loads", startYear: 2026, endYear: 2028, mw: null, detail: "Hutto · construction timeline not disclosed as of mid-2026; end year estimated", tag: "reported", yearIsEstimate: true },
+  { name: "CloudBurst San Marcos data center", lane: "New loads", startYear: 2026, endYear: 2026, mw: null, detail: "Hays County · targeting Q3 2026 ops; runs on gas via pipeline, not ERCOT grid power", tag: "reported" },
+  { name: "5MW Temple Data Center", lane: "New loads", startYear: 2026, endYear: 2026, mw: 5, detail: "Oppidan · Bell County · Planned", tag: "reported" },
+  { name: "ACS Fort Worth - Building 1", lane: "New loads", startYear: 2026, endYear: 2030, mw: 70, detail: "ACS · Tarrant County · Planned", tag: "reported" },
+  { name: "ACS Fort Worth - Building 2", lane: "New loads", startYear: 2026, endYear: 2031, mw: 70, detail: "ACS · Tarrant County · Planned", tag: "reported" },
+  { name: "ACS Fort Worth - Building 3", lane: "New loads", startYear: 2026, endYear: 2033, mw: 70, detail: "ACS · Tarrant County · Planned", tag: "reported" },
+  { name: "ACS Fort Worth - Building 4", lane: "New loads", startYear: 2026, endYear: 2034, mw: 70, detail: "ACS · Tarrant County · Planned", tag: "reported" },
+  { name: "ACS Fort Worth - Building 5", lane: "New loads", startYear: 2026, endYear: 2035, mw: 70, detail: "ACS · Tarrant County · Planned", tag: "reported" },
+  { name: "AIB DFW-A - Expansion", lane: "New loads", startYear: 2026, endYear: 2028, mw: 40, detail: "AIB Data Centers · Mitchell County · Planned", tag: "reported" },
+  { name: "AIB DFW-A - Phase I", lane: "New loads", startYear: 2026, endYear: 2028, mw: 15, detail: "AIB Data Centers · Mitchell County · Planned", tag: "reported" },
+  { name: "Aligned DFW-04 North Star Road", lane: "New loads", startYear: 2026, endYear: 2026, mw: 86, detail: "Aligned · Collin County · Under Construction · tenant Lambda", tag: "reported" },
+  { name: "Aligned DFW03 Mansfield", lane: "New loads", startYear: 2026, endYear: 2026, mw: 86, detail: "Aligned · Tarrant County · Under Construction", tag: "reported" },
+  { name: "Aligned Project Caprock - LBB-01", lane: "New loads", startYear: 2026, endYear: 2027, mw: 108, detail: "Aligned · Hale County · Under Construction", tag: "reported" },
+  { name: "Aligned Project Caprock - LBB-02", lane: "New loads", startYear: 2026, endYear: 2028, mw: 108, detail: "Aligned · Hale County · Planned", tag: "reported" },
+  { name: "Aligned Project Caprock - LBB-03", lane: "New loads", startYear: 2026, endYear: 2029, mw: 108, detail: "Aligned · Hale County · Planned", tag: "reported" },
+  { name: "Aligned Project Caprock - LBB-04", lane: "New loads", startYear: 2026, endYear: 2030, mw: 108, detail: "Aligned · Hale County · Planned", tag: "reported" },
+  { name: "Aligned Project Caprock - LBB-05", lane: "New loads", startYear: 2026, endYear: 2031, mw: 108, detail: "Aligned · Hale County · Planned", tag: "reported" },
+  { name: "Aligned Project Caprock - LBB-06", lane: "New loads", startYear: 2026, endYear: 2032, mw: 108, detail: "Aligned · Hale County · Planned", tag: "reported" },
+
+  // --- New generation (13) ---
+  { name: "Project Matador Gas Plant (PMG)", lane: "New generation", startYear: 2026, endYear: 2026, mw: 11679.3, detail: "Carson County · largest proposed ERCOT gas plant in EIA-860's queue", tag: "reported" },
+  { name: "New 2026 Gas Peaker", lane: "New generation", startYear: 2026, endYear: 2026, mw: 400, detail: "Austin Energy · approved May 2026 · inside AE's own zone", tag: "reported" },
+  { name: "New 2026 wind additions (Mills & Dickens)", lane: "New generation", startYear: 2026, endYear: 2026, mw: 299, detail: "Austin Energy · Invenergy PPA, approved May 2026 · part of AE's ~999 MW 2026 local-generation response", tag: "reported" },
+  { name: "Battery contracts (OCI + Jupiter Power II)", lane: "New generation", startYear: 2026, endYear: 2026, mw: 300, detail: "Austin Energy · approved May/Jul 2026, 20-yr terms", tag: "reported" },
+  { name: "Pin Oak Creek Energy Center", lane: "New generation", startYear: 2026, endYear: 2026, mw: 444.0, detail: "Freestone County · gas", tag: "reported" },
+  { name: "Timmerman Power Plant", lane: "New generation", startYear: 2026, endYear: 2026, mw: 188.0, detail: "Caldwell County · gas · ~30 mi from Austin", tag: "reported" },
+  { name: "Vast Sands Power", lane: "New generation", startYear: 2026, endYear: 2027, mw: 880.0, detail: "Ward County · gas", tag: "reported" },
+  { name: "Sandow Lakes Energy Station", lane: "New generation", startYear: 2026, endYear: 2028, mw: 1290.0, detail: "Lee County · gas · ~1hr from Austin", tag: "reported" },
+  { name: "Legend Power Station", lane: "New generation", startYear: 2026, endYear: 2028, mw: 754.0, detail: "Jefferson County · gas", tag: "reported" },
+  { name: "Cedar Bayou 5", lane: "New generation", startYear: 2026, endYear: 2028, mw: 721.0, detail: "Chambers County · gas", tag: "reported" },
+  { name: "Greens Bayou 6", lane: "New generation", startYear: 2026, endYear: 2028, mw: 447.0, detail: "Harris County · gas", tag: "reported" },
+  { name: "CPV Basin Ranch Energy Center", lane: "New generation", startYear: 2026, endYear: 2029, mw: 1445.0, detail: "Ward County · gas", tag: "reported" },
+  { name: "Project Matador Nuclear", lane: "New generation", startYear: 2026, endYear: 2031, mw: 4468.0, detail: "Carson County · same site as Project Matador Gas Plant", tag: "reported" },
+
+  // --- Retiring assets (10) ---
+  { name: "O W Sommers", lane: "Retiring assets", startYear: 2026, endYear: 2027, mw: 892.0, detail: "CPS Energy (San Antonio) · gas · Bexar County", tag: "reported" },
+  { name: "Works 4", lane: "Retiring assets", startYear: 2026, endYear: 2027, mw: 4.9, detail: "Distillate-oil-fired unit · Wichita County", tag: "reported" },
+  { name: "J K Spruce", lane: "Retiring assets", startYear: 2026, endYear: 2028, mw: 1488.5, detail: "CPS Energy (San Antonio) · coal · Bexar County · ERCOT's largest announced coal retirement in this filing", tag: "reported" },
+  { name: "Hal C Weaver Power Plant", lane: "Retiring assets", startYear: 2026, endYear: 2028, mw: 152.5, detail: "UT Austin (not Austin Energy) · gas combined-cycle · Travis County", tag: "reported" },
+  { name: "Sand Hill Energy Center", lane: "Retiring assets", startYear: 2026, endYear: 2035, mw: 595, detail: "Austin Energy · gas · AE 2020 Resource Plan requires retirement by 2035 or sooner", tag: "reported" },
+  { name: "Fayette Power Project (AE 50% share)", lane: "Retiring assets", startYear: 2026, endYear: 2035, mw: 600, detail: "Austin Energy · coal · folded into 2035 carbon-free goal, no firm date", tag: "reported" },
+  { name: "Flower Valley I", lane: "Retiring assets", startYear: 2026, endYear: 2032, mw: 9.9, detail: "Battery storage · Reeves County", tag: "reported" },
+  { name: "Wind contracts (9 PPAs, 2007–2026)", lane: "Retiring assets", startYear: 2026, endYear: 2041, mw: 1894.64, detail: "Austin Energy · 9 PPAs incl. Whirlwind, Hackberry, Los Vientos II/III/IV, Whitetail, Jumbo Road, Karankawa, Raymond, Gulf Wind, Mills & Dickens", tag: "reported" },
+  { name: "Madero Grid", lane: "Retiring assets", startYear: 2026, endYear: 2042, mw: 100.0, detail: "Battery storage · Hidalgo County · likely an end-of-contract-life placeholder", tag: "reported" },
+  { name: "Ignacio Grid Energy Storage System", lane: "Retiring assets", startYear: 2026, endYear: 2042, mw: 100.0, detail: "Battery storage · Hidalgo County · same note as Madero Grid", tag: "reported" },
+];
+
+export const ganttNote = {
+  tag: "derived" as Tag,
+  note:
+    "All bars are drawn from 2026 (\"now\") to each item's own target/completion/retirement year — this is a timeline of when things land, not a duration-of-construction Gantt chart. \"New loads\" reuses the map's combined load list (section 7), minus the two Cleanview data centers already operating since 2015/2025. \"New generation\" reuses EIA-860's largest proposed ERCOT gas/nuclear builds (minus one, NRG THW GT, whose EIA-reported year of 2024 is already past) plus Austin Energy's own 3 announced 2026 additions. \"Retiring assets\" combines this project's own contract-stack entries that expire within the window (excluding the Solar contracts entry, flagged elsewhere as a data-quality contradiction — its contractEnd of 2056 falls outside this 2026-2045 window despite being flagged expiresInWindow:true) with all 7 of ERCOT's EIA-reported planned-retirement plants.",
+};

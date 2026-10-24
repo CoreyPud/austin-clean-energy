@@ -389,3 +389,128 @@
 .lzo-root .recharts-default-tooltip { background: hsl(var(--popover)) !important; border-color: hsl(var(--border)) !important; color: hsl(var(--popover-foreground)); border-radius: 8px; }
 .lzo-root .recharts-cartesian-axis-tick-value, .lzo-root .recharts-label { fill: hsl(var(--muted-foreground)); }
 @media (prefers-reduced-motion: reduce) { .lzo-map-point { transition: none; } }
+
+/* ---- gantt timeline ---- */
+.lzo-gantt {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--card));
+  padding: 1rem;
+}
+.lzo-gantt-legend {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  margin-bottom: 0.9rem;
+  color: hsl(var(--foreground));
+}
+.lzo-gantt-legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+.lzo-gantt-axis {
+  display: flex;
+  margin-bottom: 0.3rem;
+}
+.lzo-gantt-axis-label-col {
+  width: 220px;
+  flex-shrink: 0;
+}
+.lzo-gantt-axis-track {
+  position: relative;
+  flex: 1;
+  height: 1.1rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.lzo-gantt-axis-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  font-family: "IBM Plex Mono", monospace;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-gantt-lane {
+  margin: 0.9rem 0 0.4rem;
+}
+.lzo-gantt-lane-title {
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  margin-bottom: 0.35rem;
+}
+.lzo-gantt-row {
+  display: flex;
+  align-items: center;
+  min-height: 1.6rem;
+}
+.lzo-gantt-row-label {
+  width: 220px;
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  color: hsl(var(--foreground));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 0.6rem;
+}
+.lzo-gantt-row-track {
+  position: relative;
+  flex: 1;
+  height: 1.2rem;
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+.lzo-gantt-bar {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  transition: opacity 0.1s ease;
+}
+.lzo-gantt-bar:hover {
+  opacity: 1;
+}
+.lzo-gantt-bar-end {
+  font-size: 0.62rem;
+  font-family: "IBM Plex Mono", monospace;
+  color: hsl(var(--primary-foreground));
+  padding-right: 0.3rem;
+  white-space: nowrap;
+}
+.lzo-gantt-detail {
+  margin-top: 0.9rem;
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 0.7rem;
+  font-size: 0.82rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.lzo-gantt-detail-name {
+  font-weight: 600;
+}
+.lzo-gantt-detail-mw {
+  font-family: "IBM Plex Mono", monospace;
+  color: hsl(var(--primary));
+}
+.lzo-gantt-detail-text {
+  color: hsl(var(--muted-foreground));
+}
+@media (max-width: 640px) {
+  .lzo-gantt-axis-label-col,
+  .lzo-gantt-row-label {
+    width: 110px;
+  }
+}
+
+.lzo-gantt { border: 0; border-radius: 0; padding: 0; background: transparent; }
+.lzo-gantt-axis-track, .lzo-gantt-row-track { min-width: 0; margin-right: 1rem; }
+.lzo-gantt-bar:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .lzo-gantt-bar { transition: none; } }
