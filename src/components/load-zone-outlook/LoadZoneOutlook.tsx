@@ -104,6 +104,30 @@ function inBounds(lat: number, lon: number, b: { latMin: number; latMax: number;
   return lat >= b.latMin && lat <= b.latMax && lon >= b.lonMin && lon <= b.lonMax;
 }
 
+// Simplified Austin-metro highways and waterways, drawn only in the zoomed
+// view so the local transmission projects have recognizable geographic
+// context. Coordinates are hand-approximated from public road/river maps —
+// orientation aids, not surveyed geometry. Stored as [lat, lon] pairs.
+const AUSTIN_CONTEXT_ROADS: { name: string; pts: [number, number][]; labelAt?: [number, number] }[] = [
+  { name: "I-35", pts: [[30.58, -97.689], [30.5, -97.695], [30.42, -97.7], [30.35, -97.715], [30.3, -97.725], [30.267, -97.735], [30.22, -97.745], [30.15, -97.755], [30.08, -97.775], [29.98, -97.795]], labelAt: [30.46, -97.688] },
+  { name: "US-183", pts: [[30.55, -97.88], [30.45, -97.8], [30.38, -97.725], [30.32, -97.7], [30.27, -97.685], [30.22, -97.65], [30.15, -97.61], [30.1, -97.585]], labelAt: [30.42, -97.775] },
+  { name: "US-290", pts: [[30.28, -97.97], [30.275, -97.88], [30.28, -97.8], [30.3, -97.735], [30.305, -97.66], [30.31, -97.57], [30.32, -97.45]], labelAt: [30.318, -97.53] },
+  { name: "SH-71", pts: [[30.23, -97.97], [30.21, -97.87], [30.195, -97.78], [30.19, -97.7], [30.195, -97.64], [30.19, -97.55], [30.2, -97.45]], labelAt: [30.175, -97.6] },
+  { name: "Loop 360", pts: [[30.5, -97.85], [30.42, -97.835], [30.35, -97.82], [30.3, -97.81], [30.26, -97.8], [30.2, -97.825], [30.15, -97.85]], labelAt: [30.36, -97.828] },
+  { name: "MoPac", pts: [[30.58, -97.76], [30.48, -97.765], [30.4, -97.755], [30.32, -97.755], [30.27, -97.76], [30.22, -97.775], [30.14, -97.795], [30.05, -97.83]], labelAt: [30.43, -97.762] },
+  { name: "SH-130", pts: [[30.58, -97.52], [30.48, -97.555], [30.38, -97.585], [30.28, -97.6], [30.18, -97.615], [30.08, -97.6], [29.98, -97.575]], labelAt: [30.4, -97.578] },
+  { name: "SH-45", pts: [[30.53, -97.9], [30.52, -97.82], [30.51, -97.72], [30.5, -97.62], [30.52, -97.55]], labelAt: [30.525, -97.7] },
+];
+
+const AUSTIN_CONTEXT_WATER: { name: string; pts: [number, number][]; labelAt?: [number, number] }[] = [
+  // Colorado River: Lake Austin -> Lady Bird Lake -> southeast toward Bastrop
+  { name: "Colorado River", pts: [[30.45, -97.97], [30.4, -97.93], [30.36, -97.88], [30.33, -97.83], [30.3, -97.8], [30.275, -97.77], [30.26, -97.74], [30.25, -97.71], [30.22, -97.68], [30.18, -97.64], [30.13, -97.59], [30.08, -97.54], [30.02, -97.48]], labelAt: [30.205, -97.66] },
+  { name: "Lake Travis", pts: [[30.58, -97.94], [30.53, -97.945], [30.49, -97.965]], labelAt: [30.55, -97.93] },
+  { name: "Barton Creek", pts: [[30.3, -97.95], [30.28, -97.9], [30.265, -97.85], [30.26, -97.795]] },
+  { name: "Onion Creek", pts: [[30.18, -97.8], [30.14, -97.74], [30.11, -97.68], [30.1, -97.61]], labelAt: [30.12, -97.72] },
+  { name: "Walnut Creek", pts: [[30.42, -97.7], [30.38, -97.68], [30.35, -97.66]] },
+];
+
 const CATEGORY_COLOR: Record<string, string> = {
   load: "hsl(var(--destructive))",
   solar: "hsl(var(--accent))",
