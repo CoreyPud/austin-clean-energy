@@ -250,10 +250,55 @@
   cursor: pointer;
 }
 .lzo-map-wrap {
+  position: relative;
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius, 8px);
   overflow: hidden;
   background: hsl(var(--card));
+}
+.lzo-map-tooltip {
+  position: absolute;
+  z-index: 5;
+  max-width: 260px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius, 8px);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+.lzo-map-tooltip-title {
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+.lzo-map-tooltip-row {
+  color: hsl(var(--muted-foreground));
+}
+.lzo-map-highway {
+  fill: none;
+  stroke: hsl(var(--muted-foreground));
+  stroke-width: 1.2;
+  opacity: 0.55;
+}
+.lzo-map-highway-label {
+  font-size: 8px;
+  fill: hsl(var(--muted-foreground));
+  font-family: "IBM Plex Mono", monospace;
+}
+.lzo-map-river {
+  fill: none;
+  stroke: hsl(var(--secondary));
+  stroke-width: 2;
+  opacity: 0.6;
+  stroke-linecap: round;
+}
+.lzo-map-river-label {
+  font-size: 8px;
+  font-style: italic;
+  fill: hsl(var(--secondary));
+  font-family: "IBM Plex Mono", monospace;
 }
 .lzo-map-bg {
   fill: hsl(var(--muted));
