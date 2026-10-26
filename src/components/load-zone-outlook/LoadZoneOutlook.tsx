@@ -7,9 +7,11 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
 } from "recharts";
 import "./load-zone-outlook.css";
-import { texasBoundary } from "./texas-boundary";
 import {
   projection20yr,
   projectionReadout,
@@ -24,6 +26,9 @@ import {
   valueOfSolarRate,
   vosComponents,
   vosDataGap,
+  vosAnnualHistory,
+  vosHistoricalTrendFinding,
+  vosMethodologyChangeFinding,
   gasEnablesRenewablesClaim,
   liveTrackerPlan,
   combinedLoadsForMap,
@@ -43,14 +48,35 @@ import {
   mapDataNote,
   supplyDemandGapTable,
   supplyDemandGapMethodology,
+  contractStackCapacityFactors,
   ganttItems,
   ganttNote,
+  ganttScopeCounts,
   GANTT_YEAR_MIN,
   GANTT_YEAR_MAX,
-  GanttItem,
+  tollRoadDiagram,
+  tollMoneyFlowFinding,
+  proximityPoints,
+  proximityRadarNote,
+  transmissionInvestments,
+  transmissionInvestmentFinding,
+  transmissionLinesForMap,
+  transmissionLinesNote,
+  transmissionPointsForMap,
+  namedAeTransmissionProjectsNote,
+  vosTransmissionMechanismFinding,
+  transmissionRateImpactFinding,
+  pricingNodes,
+  pricingNodesFinding,
   MapPoint,
+  GanttItem,
+  ProximityPoint,
+  TransmissionLine,
+  TransmissionPoint,
+  PricingNode,
   Tag,
 } from "./load-zone-outlook-data";
+import { texasBoundary } from "./texas-boundary";
 
 // Six well-known Texas cities, included only as geographic reference points
 // on the map below — not part of the loads/generation dataset.
@@ -64,6 +90,19 @@ const REFERENCE_CITIES: { name: string; lat: number; lon: number }[] = [
 ];
 
 const MAP_WIDTH = 720;
+
+// A tight bounding box around the Austin metro, used by the "Zoom to Austin
+// area" toggle below. At the full statewide map scale, AE's own two local
+// transmission-line projects (a few miles each) are literally invisible next
+// to 177- and 400-mile statewide 765kV lines — zooming in is the only way to
+// actually see them. Sized to contain Austin, Dunlap, Decker Creek, McNeil,
+// and Justin Lane (all within ~0.2° of downtown) with some surrounding
+// context (Sand Hill, Tesla, Dog's Head).
+const AUSTIN_ZOOM_BOUNDS = { latMin: 29.98, latMax: 30.58, lonMin: -97.97, lonMax: -97.43 };
+
+function inBounds(lat: number, lon: number, b: { latMin: number; latMax: number; lonMin: number; lonMax: number }) {
+  return lat >= b.latMin && lat <= b.latMax && lon >= b.lonMin && lon <= b.lonMax;
+}
 
 const CATEGORY_COLOR: Record<string, string> = {
   load: "hsl(var(--destructive))",
@@ -83,26 +122,17 @@ function radiusFor(mw: number | null): number {
 // supply / proposed supply) on top of color, so the two generator layers
 // that share a color (current vs. proposed) stay visually distinct, and a
 // retiring plant reads as "hollowing out" rather than just "another load".
-function MapMarker({ p, x, y, onEnter, onLeave, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onLeave: () => void; onClick: () => void }) {
+function MapMarker({ p, x, y, onEnter, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onClick: () => void }) {
   const r = radiusFor(p.mw);
   const color = CATEGORY_COLOR[p.category] ?? "hsl(var(--muted-foreground))";
   const common = {
     className: "lzo-map-point",
     onMouseEnter: onEnter,
-    onMouseLeave: onLeave,
     onClick,
-    role: "button",
-    tabIndex: 0,
-    "aria-label": p.name,
-    onFocus: onEnter,
-    onBlur: onLeave,
-    onKeyDown: (event: React.KeyboardEvent<SVGElement>) => {
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onClick(); }
-    },
   };
   if (p.category === "generator-retiring") {
     // hollow ring = existing capacity that is scheduled to go away
-    return <circle cx={x} cy={y} r={r} fill="none" stroke={color} strokeWidth={2.25} {...common} style={{ stroke: color, strokeWidth: 2.25 }}><title>{p.name}</title></circle>;
+    return <circle cx={x} cy={y} r={r} fill="none" stroke={color} strokeWidth={2.25} {...common}><title>{p.name}</title></circle>;
   }
   if (p.category === "generator-current") {
     // filled square = Austin Energy's own currently-operating plants
@@ -123,8 +153,17 @@ function LoadZoneMap() {
   const [showGenCurrent, setShowGenCurrent] = useState(true);
   const [showGenRetiring, setShowGenRetiring] = useState(true);
   const [showGenProposed, setShowGenProposed] = useState(true);
+  const [showLines, setShowLines] = useState(true);
+  const [showPricing, setShowPricing] = useState(true);
+  const [zoomAustin, setZoomAustin] = useState(false);
   const [hoverPoint, setHoverPoint] = useState<MapPoint | null>(null);
   const [pinnedPoint, setPinnedPoint] = useState<MapPoint | null>(null);
+  const [hoverLine, setHoverLine] = useState<TransmissionLine | null>(null);
+  const [pinnedLine, setPinnedLine] = useState<TransmissionLine | null>(null);
+  const [hoverNode, setHoverNode] = useState<PricingNode | null>(null);
+  const [pinnedNode, setPinnedNode] = useState<PricingNode | null>(null);
+  const [hoverSubstation, setHoverSubstation] = useState<TransmissionPoint | null>(null);
+  const [pinnedSubstation, setPinnedSubstation] = useState<TransmissionPoint | null>(null);
 
   const bounds = useMemo(() => {
     const all = [
@@ -132,7 +171,12 @@ function LoadZoneMap() {
       ...combinedGenerationForMap,
       ...combinedGeneratorsForMap,
       ...REFERENCE_CITIES,
-      ...texasBoundary.map(([lon, lat]) => ({ lon, lat })),
+      ...transmissionLinesForMap.flatMap((l) => l.points),
+      ...transmissionPointsForMap,
+      ...pricingNodes,
+      // Include the full Texas outline so the statewide view always shows the
+      // whole state, not just the bounding box of the data points.
+      ...texasBoundary.map(([lon, lat]) => ({ lat, lon })),
     ];
     const lats = all.map((p) => p.lat);
     const lons = all.map((p) => p.lon);
@@ -145,27 +189,41 @@ function LoadZoneMap() {
     };
   }, []);
 
+  const effectiveBounds = zoomAustin ? AUSTIN_ZOOM_BOUNDS : bounds;
+
   const mapHeight = useMemo(() => {
-    const midLatRad = ((bounds.latMin + bounds.latMax) / 2) * (Math.PI / 180);
-    const lonSpan = (bounds.lonMax - bounds.lonMin) * Math.cos(midLatRad);
-    const latSpan = bounds.latMax - bounds.latMin;
+    const midLatRad = ((effectiveBounds.latMin + effectiveBounds.latMax) / 2) * (Math.PI / 180);
+    const lonSpan = (effectiveBounds.lonMax - effectiveBounds.lonMin) * Math.cos(midLatRad);
+    const latSpan = effectiveBounds.latMax - effectiveBounds.latMin;
     return Math.round(MAP_WIDTH * (latSpan / lonSpan));
-  }, [bounds]);
+  }, [effectiveBounds]);
 
   function project(lat: number, lon: number) {
-    const x = ((lon - bounds.lonMin) / (bounds.lonMax - bounds.lonMin)) * MAP_WIDTH;
-    const y = ((bounds.latMax - lat) / (bounds.latMax - bounds.latMin)) * mapHeight;
+    const x = ((lon - effectiveBounds.lonMin) / (effectiveBounds.lonMax - effectiveBounds.lonMin)) * MAP_WIDTH;
+    const y = ((effectiveBounds.latMax - lat) / (effectiveBounds.latMax - effectiveBounds.latMin)) * mapHeight;
     return { x, y };
   }
 
-  const active = hoverPoint ?? pinnedPoint;
-  const hoverPosition = hoverPoint ? project(hoverPoint.lat, hoverPoint.lon) : null;
-  const texasPath = texasBoundary.map(([lon, lat], index) => {
-    const { x, y } = project(lat, lon);
-    return `${index === 0 ? "M" : "L"}${x},${y}`;
-  }).join(" ") + " Z";
+  // Texas state outline, projected with the same transform as the data points
+  // so it stays aligned in both the statewide and zoomed-to-Austin views.
+  const texasPath = useMemo(
+    () =>
+      texasBoundary
+        .map(([lon, lat], i) => {
+          const { x, y } = project(lat, lon);
+          return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+        })
+        .join(" ") + " Z",
+    [effectiveBounds, mapHeight]
+  );
+  const texasLabel = project(31.2, -99.6);
 
-  const visiblePoints: MapPoint[] = [
+  const active = hoverPoint ?? pinnedPoint;
+  const activeLine = hoverLine ?? pinnedLine;
+  const activeNode = hoverNode ?? pinnedNode;
+  const activeSubstation = hoverSubstation ?? pinnedSubstation;
+
+  const visiblePointsAll: MapPoint[] = [
     ...(showLoads ? combinedLoadsForMap : []),
     ...(showSolar ? cleanviewPlannedSolar : []),
     ...(showBattery ? cleanviewPlannedBatteries : []),
@@ -173,6 +231,15 @@ function LoadZoneMap() {
     ...(showGenRetiring ? ercotRetiringSoon : []),
     ...(showGenProposed ? ercotProposedLargeGasNuclear : []),
   ];
+  const visiblePoints = zoomAustin ? visiblePointsAll.filter((p) => inBounds(p.lat, p.lon, AUSTIN_ZOOM_BOUNDS)) : visiblePointsAll;
+  const visibleCities = zoomAustin ? REFERENCE_CITIES.filter((c) => inBounds(c.lat, c.lon, AUSTIN_ZOOM_BOUNDS)) : REFERENCE_CITIES;
+  const visibleLines = zoomAustin
+    ? transmissionLinesForMap.filter((l) => l.points.every((pt) => inBounds(pt.lat, pt.lon, AUSTIN_ZOOM_BOUNDS)))
+    : transmissionLinesForMap;
+  const visibleNodes = zoomAustin ? pricingNodes.filter((n) => inBounds(n.lat, n.lon, AUSTIN_ZOOM_BOUNDS)) : pricingNodes;
+  const visibleSubstations = zoomAustin
+    ? transmissionPointsForMap.filter((s) => inBounds(s.lat, s.lon, AUSTIN_ZOOM_BOUNDS))
+    : transmissionPointsForMap;
 
   return (
     <div>
@@ -207,7 +274,27 @@ function LoadZoneMap() {
           <span className="lzo-legend-swatch lzo-legend-swatch-triangle" style={{ borderBottomColor: CATEGORY_COLOR["generator-proposed"] }} />
           Proposed gas/nuclear ({ercotProposedLargeGasNuclear.length})
         </label>
+        <label className="lzo-map-toggle">
+          <input type="checkbox" checked={showLines} onChange={(e) => setShowLines(e.target.checked)} />
+          <span className="lzo-legend-swatch lzo-legend-swatch-line" />
+          Transmission lines & substations ({transmissionLinesForMap.length + transmissionPointsForMap.length})
+        </label>
+        <label className="lzo-map-toggle">
+          <input type="checkbox" checked={showPricing} onChange={(e) => setShowPricing(e.target.checked)} />
+          <span className="lzo-legend-swatch lzo-legend-swatch-diamond" />
+          Zonal + AE pricing ({pricingNodes.length})
+        </label>
+        <button type="button" className={`lzo-map-zoom-btn ${zoomAustin ? "lzo-map-zoom-btn-active" : ""}`} onClick={() => setZoomAustin(!zoomAustin)}>
+          {zoomAustin ? "← Back to statewide view" : "Zoom to Austin area →"}
+        </button>
       </div>
+      {zoomAustin && (
+        <p className="lzo-map-zoom-note">
+          Zoomed to the Austin metro. At the statewide scale, AE's own local transmission projects (lines of a few
+          miles each, plus one substation) are invisible next to 177- and 400-mile statewide 765kV lines — that gap
+          is itself the point (see transmissionLinesNote below).
+        </p>
+      )}
 
       <div className="lzo-map-wrap">
         <svg
@@ -215,13 +302,22 @@ function LoadZoneMap() {
           width="100%"
           height="auto"
           role="img"
-          aria-label="Map of Texas loads, new planned solar and battery generation, and EIA-reported current/retiring/proposed generators"
-          onMouseLeave={() => setHoverPoint(null)}
+          aria-label="Map of Texas loads, new planned solar and battery generation, EIA-reported current/retiring/proposed generators, five transmission-line projects and one substation drawn at their real sourced endpoints, and five pricing points (four real ERCOT zonal averages plus this project's own Austin Energy model)"
+          onMouseLeave={() => {
+            setHoverPoint(null);
+            setHoverLine(null);
+            setHoverNode(null);
+            setHoverSubstation(null);
+          }}
         >
           <rect x={0} y={0} width={MAP_WIDTH} height={mapHeight} className="lzo-map-bg" />
           <path d={texasPath} className="lzo-map-texas" />
-          <text x={project(31.4, -101).x} y={project(31.4, -101).y} className="lzo-map-state-label">TEXAS</text>
-          {REFERENCE_CITIES.map((c) => {
+          {!zoomAustin && (
+            <text x={texasLabel.x} y={texasLabel.y} textAnchor="middle" className="lzo-map-state-label">
+              TEXAS
+            </text>
+          )}
+          {visibleCities.map((c) => {
             const { x, y } = project(c.lat, c.lon);
             return (
               <g key={c.name}>
@@ -232,6 +328,69 @@ function LoadZoneMap() {
               </g>
             );
           })}
+          {showLines &&
+            visibleLines.map((line) => {
+              const p0 = project(line.points[0].lat, line.points[0].lon);
+              const p1 = project(line.points[1].lat, line.points[1].lon);
+              const isHigh = line.voltageKv >= 345;
+              const notYetApproved = /not yet approved|under regulatory review/i.test(line.status);
+              return (
+                <g
+                  key={line.name}
+                  className="lzo-map-line-group"
+                  onMouseEnter={() => setHoverLine(line)}
+                  onClick={() => setPinnedLine(pinnedLine?.name === line.name ? null : line)}
+                >
+                  <line
+                    x1={p0.x}
+                    y1={p0.y}
+                    x2={p1.x}
+                    y2={p1.y}
+                    className={`lzo-map-line ${isHigh ? "lzo-map-line-765" : "lzo-map-line-138"} ${notYetApproved ? "lzo-map-line-proposed" : ""}`}
+                  >
+                    <title>{`${line.name} — ${line.voltageKv}kV`}</title>
+                  </line>
+                  {line.points.map((pt, i) => {
+                    const { x, y } = project(pt.lat, pt.lon);
+                    return (
+                      <g key={i}>
+                        <circle cx={x} cy={y} r={2.75} className="lzo-map-line-endpoint">
+                          <title>{pt.label}</title>
+                        </circle>
+                        {zoomAustin && (
+                          <text x={x + 6} y={y - 5} className="lzo-map-line-endpoint-label">
+                            {pt.label.split(" (")[0]}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              );
+            })}
+          {showLines &&
+            visibleSubstations.map((s) => {
+              const { x, y } = project(s.lat, s.lon);
+              const r = 5;
+              const pts = `${x - r},${y - r} ${x + r},${y - r} ${x + r},${y + r} ${x - r},${y + r}`;
+              return (
+                <g
+                  key={s.name}
+                  className="lzo-map-substation-group"
+                  onMouseEnter={() => setHoverSubstation(s)}
+                  onClick={() => setPinnedSubstation(pinnedSubstation?.name === s.name ? null : s)}
+                >
+                  <polygon points={pts} className="lzo-map-substation">
+                    <title>{s.name}</title>
+                  </polygon>
+                  {zoomAustin && (
+                    <text x={x + 8} y={y - 6} className="lzo-map-line-endpoint-label">
+                      {s.name.split(" (")[0]}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
           {visiblePoints.map((p, i) => {
             const { x, y } = project(p.lat, p.lon);
             return (
@@ -241,48 +400,108 @@ function LoadZoneMap() {
                 x={x}
                 y={y}
                 onEnter={() => setHoverPoint(p)}
-                onLeave={() => setHoverPoint(null)}
                 onClick={() => setPinnedPoint(pinnedPoint?.name === p.name ? null : p)}
               />
             );
           })}
+          {showPricing &&
+            visibleNodes.map((node) => {
+              const { x, y } = project(node.lat, node.lon);
+              const d = 7;
+              const pts = `${x},${y - d} ${x + d},${y} ${x},${y + d} ${x - d},${y}`;
+              const priceText = node.daPrice != null ? `$${node.daPrice.toFixed(2)}` : "model";
+              return (
+                <g
+                  key={node.name}
+                  className="lzo-map-price-group"
+                  onMouseEnter={() => setHoverNode(node)}
+                  onClick={() => setPinnedNode(pinnedNode?.name === node.name ? null : node)}
+                >
+                  <polygon
+                    points={pts}
+                    className={`lzo-map-price-node ${node.kind === "ae-own-model" ? "lzo-map-price-node-model" : "lzo-map-price-node-actual"}`}
+                  >
+                    <title>{node.name}</title>
+                  </polygon>
+                  <text x={x} y={y - d - 4} textAnchor="middle" className="lzo-map-price-label">
+                    {priceText}/MWh{node.kind === "ae-own-model" ? "*" : ""}
+                  </text>
+                </g>
+              );
+            })}
         </svg>
-        {hoverPoint && hoverPosition && (
-          <div
-            role="tooltip"
-            className={`lzo-map-tooltip ${hoverPosition.x > MAP_WIDTH / 2 ? "lzo-map-tooltip-left" : ""} ${hoverPosition.y > mapHeight / 2 ? "lzo-map-tooltip-above" : ""}`}
-            style={{ left: `${hoverPosition.x / MAP_WIDTH * 100}%`, top: `${hoverPosition.y / mapHeight * 100}%` }}
-          >
-            <MapPointDetails point={hoverPoint} />
-          </div>
-        )}
       </div>
 
       <div className="lzo-map-detail">
         {active ? (
-          <MapPointDetails point={active} />
+          <>
+            <div className="lzo-map-detail-name">
+              {active.name} <TagBadge tag={active.tag} />
+            </div>
+            <div className="lzo-map-detail-row">
+              {active.mw ? `${active.mw} MW · ` : ""}
+              {active.year !== "n/a" ? `${active.year} · ` : ""}
+              {active.detail}
+            </div>
+            <div className="lzo-map-detail-precision">
+              Location: {active.precision === "exact-site" ? "exact project site" : active.precision === "county-centroid" ? "county centroid (close address, not exact site)" : "city-level approximation"}
+            </div>
+          </>
+        ) : activeLine ? (
+          <>
+            <div className="lzo-map-detail-name">
+              {activeLine.name} <TagBadge tag={activeLine.tag} />
+            </div>
+            <div className="lzo-map-detail-row">
+              {activeLine.voltageKv}kV · {activeLine.scope === "AE" ? "Austin Energy's own" : "Statewide"} · {activeLine.status}
+            </div>
+            <div className="lzo-map-detail-row">{activeLine.detail}</div>
+            <div className="lzo-map-detail-precision">
+              Endpoints: {activeLine.points.map((p) => p.label).join("  ↔  ")}
+            </div>
+          </>
+        ) : activeNode ? (
+          <>
+            <div className="lzo-map-detail-name">
+              {activeNode.name} <TagBadge tag={activeNode.tag} />
+            </div>
+            <div className="lzo-map-detail-row">
+              {activeNode.kind === "ae-own-model"
+                ? `Modeled, not published: $${activeNode.daPrice?.toFixed(2)}/MWh`
+                : `Day-ahead avg $${activeNode.daPrice?.toFixed(2)}/MWh · Real-time avg $${activeNode.rtPrice?.toFixed(2)}/MWh`}
+              {" · "}
+              {activeNode.vintage}
+            </div>
+            <div className="lzo-map-detail-row">{activeNode.detail}</div>
+          </>
+        ) : activeSubstation ? (
+          <>
+            <div className="lzo-map-detail-name">
+              {activeSubstation.name} <TagBadge tag={activeSubstation.tag} />
+            </div>
+            <div className="lzo-map-detail-row">
+              {activeSubstation.scope === "AE" ? "Austin Energy's own" : "Statewide"} · {activeSubstation.status}
+            </div>
+            <div className="lzo-map-detail-row">{activeSubstation.detail}</div>
+            <div className="lzo-map-detail-precision">
+              Location: {activeSubstation.precision === "exact-site" ? "exact project site" : activeSubstation.precision === "county-centroid" ? "county centroid (close address, not exact site)" : "city-level approximation"}
+            </div>
+          </>
         ) : (
-          <div className="lzo-map-detail-hint">Hover or tap a point for details. Squares = Austin Energy's own plants · hollow rings = scheduled to retire · triangles = proposed/not yet built.</div>
+          <div className="lzo-map-detail-hint">
+            Hover or tap a point, line, substation, or price marker for details. Squares = Austin Energy's own plants · hollow rings = scheduled to retire · triangles = proposed/not yet built · thick lines = 765kV · thin lines = 138kV · dashed lines = not yet approved · small squares on a line = named endpoints · larger square = a standalone substation project (Kramer) · diamonds = pricing (hollow = real ERCOT zonal average, filled = this project's own AE model).
+          </div>
         )}
       </div>
+      {(showLines || showPricing) && (
+        <div className="lzo-map-footnotes">
+          {showLines && <p className="lzo-map-footnote">{transmissionLinesNote.note}</p>}
+          {showLines && <p className="lzo-map-footnote">{namedAeTransmissionProjectsNote.note}</p>}
+          {showPricing && <p className="lzo-map-footnote">{pricingNodesFinding.finding}</p>}
+        </div>
+      )}
     </div>
   );
-}
-
-function MapPointDetails({ point }: { point: MapPoint }) {
-  const categoryLabels: Record<string, string> = {
-    load: "Electricity demand", solar: "Planned solar", battery: "Planned battery storage",
-    "generator-current": "Operating generator", "generator-retiring": "Generator scheduled to retire",
-    "generator-proposed": "Proposed generator",
-  };
-  return <>
-    <div className="lzo-map-detail-name">{point.name} <TagBadge tag={point.tag} /></div>
-    <div className="lzo-map-detail-row">{categoryLabels[point.category] ?? point.category}</div>
-    <div className="lzo-map-detail-row"><strong>Size:</strong> {point.mw == null ? "Not reported" : `${point.mw.toLocaleString()} MW`}</div>
-    <div className="lzo-map-detail-row"><strong>Timing:</strong> {point.year === "n/a" ? "Not reported" : point.year}</div>
-    <div className="lzo-map-detail-row">{point.detail}</div>
-    <div className="lzo-map-detail-precision">Location: {point.precision === "exact-site" ? "reported site coordinates" : point.precision === "county-centroid" ? "county centroid, not the exact site" : "city-level approximation"}</div>
-  </>;
 }
 
 function TagBadge({ tag }: { tag: Tag }) {
@@ -308,6 +527,16 @@ const GANTT_LANE_COLOR: Record<string, string> = {
 
 const GANTT_LANES: string[] = ["New loads", "New generation", "Retiring assets"];
 
+// Bar THICKNESS encodes MW on a sqrt scale (so an 11,679 MW plant doesn't
+// draw literally 100x taller than a 5 MW data center — it draws about 10x,
+// matching how a map marker's radius is scaled elsewhere on this page).
+// Items with no disclosed MW (Tesla, Samsung, Blue Origin) get the thin
+// floor thickness rather than being hidden.
+function barThickness(mw: number | null): number {
+  if (mw == null) return 5;
+  return Math.min(26, Math.max(5, Math.sqrt(mw) * 0.52));
+}
+
 function GanttChart() {
   const [hoverItem, setHoverItem] = useState<GanttItem | null>(null);
   const totalYears = GANTT_YEAR_MAX - GANTT_YEAR_MIN;
@@ -329,7 +558,20 @@ function GanttChart() {
             {lane} ({ganttItems.filter((i) => i.lane === lane).length})
           </span>
         ))}
+        <span className="lzo-gantt-legend-item lzo-gantt-legend-scope">
+          <span className="lzo-gantt-scope-badge lzo-gantt-scope-ae">AE</span>
+          Austin Energy's own ({ganttScopeCounts.AE})
+          <span className="lzo-gantt-scope-badge lzo-gantt-scope-statewide">Statewide</span>
+          ERCOT-wide context ({ganttScopeCounts.Statewide})
+        </span>
       </div>
+      <p className="lzo-gantt-scope-lede">
+        Bar thickness is each item's MW (sqrt scale). Every row is tagged <strong>AE</strong> (Austin
+        Energy's own contracted/owned assets — the same universe as the supply/demand/gap table above)
+        or <strong>Statewide</strong> (ERCOT-wide or other-utility context, shown for scale — not AE's own
+        supply or load). Most of this chart is Statewide by design: AE's own 6 items sit inside a much
+        bigger surrounding picture.
+      </p>
 
       <div className="lzo-gantt-axis">
         <div className="lzo-gantt-axis-label-col" />
@@ -354,24 +596,26 @@ function GanttChart() {
               const left = pct(item.startYear);
               const width = Math.max(pct(item.endYear) - left, 1.2);
               const isHover = hoverItem === item;
+              const thickness = barThickness(item.mw);
               return (
                 <div className="lzo-gantt-row" key={item.name}>
                   <div className="lzo-gantt-row-label" title={item.name}>
+                    <span
+                      className={`lzo-gantt-scope-badge ${
+                        item.scope === "AE" ? "lzo-gantt-scope-ae" : "lzo-gantt-scope-statewide"
+                      }`}
+                    >
+                      {item.scope === "AE" ? "AE" : "SW"}
+                    </span>
                     {item.name}
                   </div>
                   <div className="lzo-gantt-row-track">
                     <div
-                      className="lzo-gantt-bar"
-                      role="button"
-                      tabIndex={0}
-                      aria-label={item.name}
-                      onFocus={() => setHoverItem(item)}
-                      onBlur={() => setHoverItem(null)}
-                      onClick={() => setHoverItem(item)}
-                      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setHoverItem(item); } }}
+                      className={`lzo-gantt-bar ${item.scope === "Statewide" ? "lzo-gantt-bar-statewide" : ""}`}
                       style={{
                         left: `${left}%`,
                         width: `${width}%`,
+                        height: `${thickness}px`,
                         background: GANTT_LANE_COLOR[lane],
                         opacity: isHover ? 1 : 0.82,
                       }}
@@ -379,6 +623,7 @@ function GanttChart() {
                       onMouseLeave={() => setHoverItem(null)}
                     >
                       <span className="lzo-gantt-bar-end">
+                        {item.mw != null ? `${fmt(item.mw)} MW · ` : ""}
                         {item.endYear}
                         {item.yearIsEstimate ? "*" : ""}
                       </span>
@@ -393,6 +638,13 @@ function GanttChart() {
       <div className="lzo-gantt-detail">
         {hoverItem ? (
           <>
+            <span
+              className={`lzo-gantt-scope-badge ${
+                hoverItem.scope === "AE" ? "lzo-gantt-scope-ae" : "lzo-gantt-scope-statewide"
+              }`}
+            >
+              {hoverItem.scope === "AE" ? "AE" : "Statewide"}
+            </span>
             <span className="lzo-gantt-detail-name">{hoverItem.name}</span>
             {hoverItem.mw != null ? <span className="lzo-gantt-detail-mw">{fmt(hoverItem.mw)} MW</span> : null}
             <span className="lzo-gantt-detail-text">{hoverItem.detail}</span>
@@ -402,6 +654,372 @@ function GanttChart() {
         )}
       </div>
     </div>
+  );
+}
+
+// "Why geography matters" — a schematic (not GIS-accurate) toll-road diagram.
+// See tollRoadDiagram.scopeNote for what this simplifies and doesn't claim.
+const TOLLROAD_ONRAMPS: { x: number; name: string }[] = [
+  { x: 255, name: "Tesla" },
+  { x: 345, name: "Samsung" },
+  { x: 425, name: "Blue Origin" },
+  { x: 590, name: "CloudBurst" },
+];
+
+function TollRoadDiagram() {
+  return (
+    <figure className="lzo-tr-figure">
+      <svg
+        viewBox="0 0 1000 400"
+        role="img"
+        aria-label="Schematic: cheap wind, solar, gas and nuclear generation sits far away in West and Panhandle Texas. A transmission corridor with limited capacity carries that power toward Austin. Several large loads that are not Austin Energy customers — Tesla, Samsung, Blue Origin, CloudBurst — merge onto that same constrained corridor. Austin Energy's own local generation bypasses the constraint entirely. At the Austin end, the price paid is the far-away hub price plus a local congestion toll that grows with how crowded the corridor is."
+        className="lzo-tr-svg"
+      >
+        <defs>
+          <marker id="lzo-tr-arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="hsl(var(--destructive))" />
+          </marker>
+        </defs>
+
+        {/* generation zone */}
+        <text x="130" y="26" textAnchor="middle" className="lzo-tr-zone-label">Generation-rich West &amp; Panhandle Texas</text>
+        <text x="130" y="41" textAnchor="middle" className="lzo-tr-zone-sub">cheap power, far from Austin</text>
+
+        <g transform="translate(60,100)">
+          <line x1="0" y1="0" x2="0" y2="46" stroke="hsl(var(--primary))" strokeWidth="3" />
+          <polygon points="0,0 -16,10 -2,14" fill="hsl(var(--primary))" />
+          <polygon points="0,0 16,6 4,16" fill="hsl(var(--primary))" />
+          <polygon points="0,0 -2,-18 10,-4" fill="hsl(var(--primary))" />
+        </g>
+        <text x="60" y="165" textAnchor="middle" className="lzo-tr-icon-label">Wind + solar buildout</text>
+        <text x="60" y="179" textAnchor="middle" className="lzo-tr-icon-sub">34,546 MW solar</text>
+        <text x="60" y="191" textAnchor="middle" className="lzo-tr-icon-sub">5,286 MW wind</text>
+
+        <g transform="translate(205,112)">
+          <rect x="-18" y="0" width="36" height="28" fill="hsl(var(--primary))" opacity="0.85" />
+          <rect x="-6" y="-20" width="8" height="20" fill="hsl(var(--primary))" opacity="0.85" />
+        </g>
+        <text x="205" y="165" textAnchor="middle" className="lzo-tr-icon-label">Project Matador</text>
+        <text x="205" y="179" textAnchor="middle" className="lzo-tr-icon-sub">11,679 MW gas</text>
+        <text x="205" y="191" textAnchor="middle" className="lzo-tr-icon-sub">4,468 MW nuclear</text>
+
+        {/* corridor */}
+        <rect x="230" y="245" width="450" height="30" rx="4" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.45" />
+        <line x1="230" y1="260" x2="680" y2="260" stroke="currentColor" strokeWidth="1" strokeDasharray="10 8" opacity="0.3" />
+
+        {/* toll gate */}
+        <g transform="translate(460,260)">
+          <line x1="-40" y1="-42" x2="-40" y2="42" stroke="hsl(var(--accent))" strokeWidth="4" />
+          <line x1="40" y1="-42" x2="40" y2="42" stroke="hsl(var(--accent))" strokeWidth="4" />
+          <rect x="-40" y="-42" width="80" height="8" fill="hsl(var(--accent))" />
+        </g>
+        <text x="460" y="325" textAnchor="middle" className="lzo-tr-zone-label" style={{ fill: "hsl(var(--accent))" }}>
+          Central Texas import constraint
+        </text>
+        <text x="460" y="339" textAnchor="middle" className="lzo-tr-zone-sub">a fixed number of transmission "lanes" into Austin</text>
+
+        {/* on-ramps: nearby non-AE loads merging onto the same corridor */}
+        {TOLLROAD_ONRAMPS.map((l) => (
+          <g key={l.name}>
+            <line
+              x1={l.x - 10}
+              y1={160}
+              x2={Math.min(l.x + 25, 670)}
+              y2={244}
+              stroke="hsl(var(--destructive))"
+              strokeWidth="2.5"
+              markerEnd="url(#lzo-tr-arrow)"
+            />
+            <rect x={l.x - 22} y="140" width="24" height="18" fill="hsl(var(--destructive))" opacity="0.85" />
+            <text x={l.x - 10} y="132" textAnchor="middle" className="lzo-tr-onramp-label">
+              {l.name}
+            </text>
+          </g>
+        ))}
+        <text x="430" y="104" textAnchor="middle" className="lzo-tr-zone-sub" style={{ fill: "hsl(var(--destructive))" }}>
+          not AE customers — but in the same Central Texas transmission region
+        </text>
+
+        {/* AE's own local generation bypasses the constraint */}
+        <path d="M 400 272 Q 500 345 675 272" fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" strokeDasharray="6 5" />
+        <text x="540" y="368" textAnchor="middle" className="lzo-tr-zone-sub" style={{ fill: "hsl(var(--primary))" }}>
+          AE's own 2026 peaker + wind + battery — bypasses the toll
+        </text>
+
+        {/* Austin / load zone */}
+        <g transform="translate(830,255)">
+          <rect x="-20" y="-20" width="12" height="40" fill="currentColor" opacity="0.5" />
+          <rect x="-2" y="-32" width="12" height="52" fill="currentColor" opacity="0.5" />
+          <rect x="16" y="-12" width="12" height="32" fill="currentColor" opacity="0.5" />
+        </g>
+        <text x="830" y="195" textAnchor="middle" className="lzo-tr-zone-label">Austin / LZ_AEN</text>
+        <text x="830" y="209" textAnchor="middle" className="lzo-tr-zone-sub">end of the constrained corridor</text>
+      </svg>
+
+      <div className="lzo-tr-price-row">
+        <div className="lzo-tr-price-box">
+          <span className="lzo-tr-price-label">Hub price (statewide)</span>
+          <span className="lzo-tr-price-value">$31.04 → $57.68</span>
+        </div>
+        <span className="lzo-tr-price-op">+</span>
+        <div className="lzo-tr-price-box" style={{ borderColor: "hsl(var(--accent))" }}>
+          <span className="lzo-tr-price-label">Austin's local toll</span>
+          <span className="lzo-tr-price-value" style={{ color: "hsl(var(--accent))" }}>
+            $5.99 → $12.38
+          </span>
+        </div>
+        <span className="lzo-tr-price-op">=</span>
+        <div className="lzo-tr-price-box" style={{ borderColor: "hsl(var(--destructive))" }}>
+          <span className="lzo-tr-price-label">LZ_AEN price, Base case</span>
+          <span className="lzo-tr-price-value" style={{ color: "hsl(var(--destructive))" }}>
+            $37.03 → $70.07
+          </span>
+        </div>
+      </div>
+      <p className="lzo-tr-price-caption">$/MWh, 2026 → 2045, Base scenario (projection20yr)</p>
+
+      <figcaption className="lzo-tr-caption">{tollRoadDiagram.scopeNote}</figcaption>
+    </figure>
+  );
+}
+
+function BasisOverTimeChart() {
+  const data = useMemo(
+    () =>
+      projection20yr.map((row) => ({
+        year: row.year,
+        Low: row.low.basis,
+        Base: row.base.basis,
+        High: row.high.basis,
+      })),
+    []
+  );
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <LineChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+        <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="hsl(var(--border))" />
+        <XAxis dataKey="year" tick={{ fontSize: 11 }} />
+        <YAxis
+          tick={{ fontSize: 11 }}
+          width={42}
+          label={{ value: "$/MWh", angle: -90, position: "insideLeft", fontSize: 10 }}
+        />
+        <Tooltip formatter={(v: number) => `$${v.toFixed(2)}/MWh`} labelFormatter={(l) => `Year ${l}`} />
+        <Line type="monotone" dataKey="Low" stroke="hsl(var(--muted-foreground))" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="Base" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={false} />
+        <Line type="monotone" dataKey="High" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+// Added 2026-10-25 alongside vosHistoricalTrendFinding, to show the annual
+// Value of Solar total actually falling FY21-FY25 — the opposite direction
+// from BasisOverTimeChart above, and the direct answer to "is avoided cost
+// going up, and why."
+function VosAnnualChart() {
+  const peak = Math.max(...vosAnnualHistory.map((r) => r.totalCentsPerKwhUnder1MW));
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={vosAnnualHistory} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+        <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="hsl(var(--border))" />
+        <XAxis dataKey="fiscalYear" tick={{ fontSize: 11 }} />
+        <YAxis
+          tick={{ fontSize: 11 }}
+          width={42}
+          label={{ value: "¢/kWh", angle: -90, position: "insideLeft", fontSize: 10 }}
+        />
+        <Tooltip formatter={(v: number) => `${v.toFixed(2)}¢/kWh`} labelFormatter={(l) => `${l}`} />
+        <Bar dataKey="totalCentsPerKwhUnder1MW" radius={[3, 3, 0, 0]}>
+          {vosAnnualHistory.map((row) => (
+            <Cell
+              key={row.fiscalYear}
+              fill={
+                row.totalCentsPerKwhUnder1MW === peak
+                  ? "hsl(var(--primary))"
+                  : "hsl(var(--destructive))"
+              }
+            />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PROXIMITY RADAR — real distance/bearing from downtown Austin, sqrt-scaled.
+// A second, literal-geography view of the toll-road question, added after a
+// direct request for "circles around Austin where the loads and generators
+// are and where the cost points are."
+// ---------------------------------------------------------------------------
+const RADAR_CENTER = 600;
+const RADAR_K = 23.65; // px per sqrt(mile) — 450mi ring lands near the SVG edge
+const RADAR_RINGS = [10, 30, 75, 200, 450];
+
+function radarPolar(distanceMi: number, bearingDeg: number) {
+  const r = RADAR_K * Math.sqrt(distanceMi);
+  const rad = (bearingDeg * Math.PI) / 180;
+  return { x: RADAR_CENTER + r * Math.sin(rad), y: RADAR_CENTER - r * Math.cos(rad), r };
+}
+
+// Hand-placed label anchors (dots are computed from real data above; labels
+// are fanned out by hand so the close-in cluster around Travis County stays
+// legible instead of overlapping at this scale). `lines` are generated at
+// render time from the point's own data (distance, category, MW), not
+// hand-typed, so a label can never drift out of sync with the dataset.
+const RADAR_LABELS: Record<string, { lx: number; ly: number; anchor: "start" | "end"; shortName: string; mwSuffix?: string }> = {
+  "Dog's Head (Endeavor) — East Austin": { lx: 860, ly: 520, anchor: "start", shortName: "Dog's Head" },
+  "Tesla Gigafactory Texas expansion": { lx: 860, ly: 580, anchor: "start", shortName: "Tesla Gigafactory" },
+  "Sand Hill Energy Center": { lx: 860, ly: 640, anchor: "start", shortName: "AE's Sand Hill plant" },
+  "Blue Origin — Constellation Park": { lx: 860, ly: 460, anchor: "start", shortName: "Blue Origin, Hutto" },
+  "Samsung Taylor semiconductor fab(s)": { lx: 900, ly: 380, anchor: "start", shortName: "Samsung, Taylor" },
+  "CloudBurst San Marcos data center": { lx: 560, ly: 900, anchor: "end", shortName: "CloudBurst, San Marcos" },
+  "Aligned Project Caprock - LBB-01 (Lubbock-area, representative)": {
+    lx: 160,
+    ly: 300,
+    anchor: "end",
+    shortName: "Aligned Caprock, Lubbock area",
+    mwSuffix: " (1 of 6 Caprock buildings)",
+  },
+  "Project Matador (gas + nuclear)": {
+    lx: 170,
+    ly: 150,
+    anchor: "end",
+    shortName: "Project Matador",
+    mwSuffix: " (gas + nuclear)",
+  },
+};
+
+const RADAR_CATEGORY_COLOR: Record<string, string> = {
+  load: "hsl(var(--destructive))",
+  "load-unconfirmed": "hsl(var(--accent))",
+  "generation-ae": "hsl(var(--primary))",
+  "generation-far": "hsl(var(--secondary))",
+};
+
+const RADAR_CATEGORY_LABEL: Record<string, string> = {
+  load: "Load",
+  "load-unconfirmed": "Load (AE unconfirmed)",
+  "generation-ae": "Generation (AE-owned)",
+  "generation-far": "Generation (statewide)",
+};
+
+// Dot radius encodes MW on a sqrt scale, same convention as the Gantt chart's
+// barThickness() and the map's own markers — a fixed small size stands in for
+// "no MW disclosed" rather than implying zero.
+function radarDotRadius(mw: number | null): number {
+  if (mw == null) return 6;
+  return Math.min(18, Math.max(6, Math.sqrt(mw) * 0.45));
+}
+
+function ProximityRadar() {
+  const austin = { x: RADAR_CENTER, y: RADAR_CENTER };
+  return (
+    <figure className="lzo-radar-figure">
+      <svg
+        viewBox="-220 60 1440 1100"
+        className="lzo-radar-svg"
+        role="img"
+        aria-label="A radial diagram centered on downtown Austin, with concentric rings at 10, 30, 75, 200, and 450 miles (square-root scale). Each point is labeled with its category — load, load with AE territory unconfirmed, AE-owned generation, or statewide generation — and its MW, or 'MW not disclosed' where none is published. Tesla, Dog's Head, and Austin Energy's own Sand Hill plant (595 MW) sit within 9 miles of center. Samsung, Blue Origin, and CloudBurst sit 22 to 29 miles out, all with MW not disclosed. Project Matador's 16,147 MW of combined gas and nuclear generation sits over 400 miles away in the opposite direction, near a representative 108 MW Lubbock-area data center at 346 miles."
+      >
+        {RADAR_RINGS.map((mi) => {
+          const { r } = radarPolar(mi, 0);
+          return (
+            <g key={mi}>
+              <circle cx={austin.x} cy={austin.y} r={r} fill="none" stroke="currentColor" strokeWidth={1} strokeDasharray="4 6" opacity={0.28} />
+              <text x={austin.x - r - 6} y={austin.y - 4} textAnchor="end" className="lzo-radar-ring-label">
+                {mi} mi
+              </text>
+            </g>
+          );
+        })}
+        {/* AE's own likely-affected zone, shaded */}
+        <circle cx={austin.x} cy={austin.y} r={radarPolar(30, 0).r} fill="hsl(var(--primary))" opacity={0.07} />
+
+        {proximityPoints.map((p) => {
+          const { x, y } = radarPolar(p.distanceMi, p.bearingDeg);
+          const label = RADAR_LABELS[p.name];
+          const color = RADAR_CATEGORY_COLOR[p.category];
+          const dotR = radarDotRadius(p.mw);
+          const mwText = p.mw == null ? "MW not disclosed" : `${fmt(p.mw)} MW`;
+          const lines = label
+            ? [
+                `${label.shortName} — ${p.distanceMi} mi`,
+                `${RADAR_CATEGORY_LABEL[p.category]} · ${mwText}${label.mwSuffix ?? ""}`,
+              ]
+            : [];
+          return (
+            <g key={p.name}>
+              {label && (
+                <line x1={x} y1={y} x2={label.lx} y2={label.ly} stroke={color} strokeWidth={1} opacity={0.5} />
+              )}
+              <circle
+                cx={x}
+                cy={y}
+                r={dotR}
+                fill={p.category === "load-unconfirmed" ? "none" : color}
+                stroke={color}
+                strokeWidth={p.category === "load-unconfirmed" ? 2.5 : 1}
+                strokeDasharray={p.category === "load-unconfirmed" ? "3 2" : undefined}
+              />
+              {label &&
+                lines.map((line, i) => (
+                  <text
+                    key={i}
+                    x={label.lx}
+                    y={label.ly + i * 22}
+                    textAnchor={label.anchor}
+                    className={i === 0 ? "lzo-radar-point-label" : "lzo-radar-point-sublabel"}
+                    style={{ fill: i === 0 ? color : "hsl(var(--muted-foreground))" }}
+                  >
+                    {line}
+                  </text>
+                ))}
+            </g>
+          );
+        })}
+
+        <circle cx={austin.x} cy={austin.y} r={13} fill="hsl(var(--card))" stroke="hsl(var(--foreground))" strokeWidth={2.5} />
+        <text x={austin.x} y={austin.y + 48} textAnchor="middle" className="lzo-radar-center-label">
+          Austin / LZ_AEN
+        </text>
+
+        {/* cost-point annotations, tied to ring distance — offset well clear of the ring-label row */}
+        <text x={austin.x - radarPolar(30, 0).r - 6} y={austin.y + 60} textAnchor="end" className="lzo-radar-cost-label" style={{ fill: "hsl(var(--accent))" }}>
+          Austin's toll zone: local congestion premium
+        </text>
+        <text x={austin.x - radarPolar(30, 0).r - 6} y={austin.y + 78} textAnchor="end" className="lzo-radar-cost-label" style={{ fill: "hsl(var(--accent))" }}>
+          $5.99 → $12.38/MWh, 2026→2045 Base
+        </text>
+        <text x={austin.x - radarPolar(450, 0).r - 6} y={austin.y - 70} textAnchor="end" className="lzo-radar-cost-label" style={{ fill: "hsl(var(--muted-foreground))" }}>
+          Where cheap bulk generation sits:
+        </text>
+        <text x={austin.x - radarPolar(450, 0).r - 6} y={austin.y - 52} textAnchor="end" className="lzo-radar-cost-label" style={{ fill: "hsl(var(--muted-foreground))" }}>
+          hub price $31.04 → $57.68/MWh
+        </text>
+      </svg>
+      <div className="lzo-chart-legend lzo-radar-legend">
+        <span>
+          <span className="lzo-legend-dot" style={{ background: RADAR_CATEGORY_COLOR.load }} />
+          Load
+        </span>
+        <span>
+          <span className="lzo-legend-swatch lzo-legend-swatch-ring" style={{ color: RADAR_CATEGORY_COLOR["load-unconfirmed"] }} />
+          Load (AE territory unconfirmed)
+        </span>
+        <span>
+          <span className="lzo-legend-dot" style={{ background: RADAR_CATEGORY_COLOR["generation-ae"] }} />
+          Generation (AE-owned)
+        </span>
+        <span>
+          <span className="lzo-legend-dot" style={{ background: RADAR_CATEGORY_COLOR["generation-far"] }} />
+          Generation (statewide)
+        </span>
+        <span className="lzo-radar-legend-note">Dot size ∝ √MW where disclosed; small fixed dots = MW not disclosed.</span>
+      </div>
+      <figcaption className="lzo-radar-caption">{proximityRadarNote.note}</figcaption>
+    </figure>
   );
 }
 
@@ -418,13 +1036,19 @@ export default function LoadZoneOutlook() {
   );
 
   const row2026 = projection20yr[0];
-  const row2035 = projection20yr.find((r) => r.year === 2035);
-  const row2045 = projection20yr.find((r) => r.year === 2045);
-
-  if (!row2026 || !row2035 || !row2045) return null;
+  const row2035 = projection20yr.find((r) => r.year === 2035)!;
+  const row2045 = projection20yr.find((r) => r.year === 2045)!;
 
   return (
-    <main className="lzo-root">
+    <div className="lzo-root">
+      <h1 className="lzo-h1">Load Zone Price &amp; Investment Outlook</h1>
+      <p className="lzo-subhead">
+        Austin Energy's own ERCOT load-zone (LZ_AEN) wholesale price, projected 2026–2045
+        under Low / Base / High scenarios — plus what's driving it on both the supply side
+        (new generation, replacement capital) and the demand side (large-load growth), and
+        two open questions this tool went looking for answers to and didn't find.
+      </p>
+
       {/* ---------------- 1. THE PROJECTION ---------------- */}
       <section className="lzo-section">
         <h2 className="lzo-section-title">
@@ -508,6 +1132,122 @@ export default function LoadZoneOutlook() {
         </div>
       </section>
 
+      {/* ---------------- 1.5 WHY GEOGRAPHY MATTERS: THE TOLL-ROAD MECHANISM ---------------- */}
+      <section className="lzo-section">
+        <h2 className="lzo-section-title">
+          Why geography matters: Austin's price is a toll road <TagBadge tag="derived" />
+        </h2>
+        <p className="lzo-section-lede">
+          The price chart above and the load/generation detail further down this page (the map, the
+          supply/demand table, the timeline) describe the same thing from two different angles but don't
+          visually connect — this section is that connection. There are two separate channels by which
+          loads and generation move Austin Energy's price, and they work differently.
+        </p>
+
+        <TollRoadDiagram />
+
+        <div className="lzo-grid-2" style={{ marginTop: "1rem" }}>
+          <div className="lzo-panel">
+            <div className="lzo-panel-title">{tollRoadDiagram.channelHub.label}</div>
+            <p style={{ margin: 0, fontSize: "0.88rem" }}>{tollRoadDiagram.channelHub.text}</p>
+          </div>
+          <div className="lzo-panel">
+            <div className="lzo-panel-title">{tollRoadDiagram.channelBasis.label}</div>
+            <p style={{ margin: 0, fontSize: "0.88rem" }}>{tollRoadDiagram.channelBasis.text}</p>
+          </div>
+        </div>
+
+        <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.9rem" }}>
+          <div className="lzo-callout-title">
+            What this diagram does NOT claim <TagBadge tag="blocked" />
+          </div>
+          <p style={{ margin: 0 }}>{tollRoadDiagram.samsungCaveat}</p>
+        </div>
+
+        <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.9rem" }}>
+          <div className="lzo-callout-title">
+            Who actually gets paid the "toll"? <TagBadge tag={tollMoneyFlowFinding.tag} />
+          </div>
+          <p style={{ margin: "0 0 0.6rem" }}>{tollMoneyFlowFinding.claim}</p>
+          <p style={{ margin: "0 0 0.6rem" }}>{tollMoneyFlowFinding.separateChannel}</p>
+          <p style={{ margin: 0, fontWeight: 600 }}>{tollMoneyFlowFinding.throughputTest}</p>
+        </div>
+
+        <div className="lzo-chart-card" style={{ marginTop: "0.9rem" }}>
+          <div className="lzo-panel-title">{tollRoadDiagram.tollGrowth.label}</div>
+          <BasisOverTimeChart />
+          <p style={{ margin: "0.5rem 0 0", fontSize: "0.85rem" }}>{tollRoadDiagram.tollGrowth.text}</p>
+        </div>
+
+        <div className="lzo-chart-card" style={{ marginTop: "1.1rem" }}>
+          <div className="lzo-panel-title">A second view: real distance from downtown Austin <TagBadge tag="derived" /></div>
+          <p style={{ margin: "0 0 0.6rem", fontSize: "0.88rem" }}>
+            The diagram above is a schematic. This one isn't — every point sits at its real great-circle
+            distance and compass bearing from downtown Austin, on a square-root scale so the close-in
+            cluster and the 400-mile outlier are both legible on one page.
+          </p>
+          <ProximityRadar />
+        </div>
+      </section>
+
+      {/* ---------------- 1.6 NEW TRANSMISSION INVESTMENT ---------------- */}
+      <section className="lzo-section">
+        <h2 className="lzo-section-title">
+          Does new transmission change this? <TagBadge tag="blocked" />
+        </h2>
+        <p className="lzo-section-lede">
+          Before this pass, neither the state's new 765kV backbone nor Austin Energy's own internal
+          transmission upgrades were accounted for anywhere above — the toll-road mechanism and the price
+          projection both implicitly treat Austin's import constraint and the statewide grid as fixed.
+          Here's what's actually planned, and what it does and doesn't tell us.
+        </p>
+
+        {transmissionInvestments.map((t) => (
+          <div className="lzo-panel" style={{ marginBottom: "0.75rem" }} key={t.name}>
+            <div className="lzo-panel-title">
+              {t.name}{" "}
+              <span className={`lzo-gantt-scope-badge ${t.scope === "AE" ? "lzo-gantt-scope-ae" : "lzo-gantt-scope-statewide"}`}>
+                {t.scope === "AE" ? "AE" : "SW"}
+              </span>{" "}
+              <TagBadge tag={t.tag} />
+            </div>
+            <p style={{ margin: "0 0 0.4rem", fontSize: "0.85rem" }}>
+              <strong>Status: </strong>
+              {t.status}
+            </p>
+            <p style={{ margin: "0 0 0.4rem", fontSize: "0.85rem" }}>
+              <strong>Purpose, as stated: </strong>
+              {t.purpose}
+            </p>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "hsl(var(--muted-foreground))" }}>
+              <strong>Relevance to this page: </strong>
+              {t.relevanceToThisPage}
+            </p>
+          </div>
+        ))}
+
+        <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.9rem" }}>
+          <div className="lzo-callout-title">
+            The finding <TagBadge tag={transmissionInvestmentFinding.tag} />
+          </div>
+          <p style={{ margin: 0 }}>{transmissionInvestmentFinding.finding}</p>
+        </div>
+
+        <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.6rem" }}>
+          <div className="lzo-callout-title">
+            Are these four projects actually inside the $500M? <TagBadge tag={namedAeTransmissionProjectsNote.tag} />
+          </div>
+          <p style={{ margin: 0 }}>{namedAeTransmissionProjectsNote.note}</p>
+        </div>
+
+        <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.6rem" }}>
+          <div className="lzo-callout-title">
+            Does this spending show up in customer rates yet? <TagBadge tag={transmissionRateImpactFinding.tag} />
+          </div>
+          <p style={{ margin: 0 }}>{transmissionRateImpactFinding.finding}</p>
+        </div>
+      </section>
+
       {/* ---------------- 2 & 3. SUPPLY + DEMAND ---------------- */}
       <section className="lzo-section">
         <h2 className="lzo-section-title">Both sides of the ledger are expanding</h2>
@@ -557,12 +1297,27 @@ export default function LoadZoneOutlook() {
                   {namedLoadProjects.map((p) => (
                     <tr key={p.project}>
                       <td>{p.project}<br /><span style={{ color: "hsl(var(--muted-foreground))" }}>{p.location}</span></td>
-                      <td>{p.inAeTerritory ? "Yes" : "No"}</td>
+                      <td>{p.inAeTerritory === "unconfirmed" ? "Unconfirmed" : p.inAeTerritory ? "Yes" : "No"}</td>
                       <td style={{ fontSize: "0.78rem" }}>{p.scale}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.75rem" }}>
+              <div className="lzo-callout-title">
+                Possible exception: Dog's Head (Endeavor) <TagBadge tag="blocked" />
+              </div>
+              <p style={{ margin: 0 }}>
+                A 2,614-acre mixed-use development annexed into Austin in May 2026, between US-183 and SH-130 along
+                the Colorado River, just north of the airport. Its first announced use — Amazon's robotics
+                division on 305 acres — is described as advanced manufacturing, not a data center, and no MW or
+                power-demand figure has been published for it. Unlike Tesla, Samsung, and Blue Origin above, no
+                source found names which electric utility serves this site: annexation into the city doesn't by
+                itself move electric-service (CCN) rights, which Texas utilities hold on fixed territories
+                independent of city limits. Marked "Unconfirmed" rather than folded into the map, Gantt chart, or
+                toll-road diagram elsewhere on this page, which all rely on confirmed AE / not-AE categorization.
+              </p>
             </div>
           </div>
         </div>
@@ -636,21 +1391,28 @@ export default function LoadZoneOutlook() {
       {/* ---------------- 2.6 SUPPLY / DEMAND / GAP TABLE ---------------- */}
       <section className="lzo-section">
         <h2 className="lzo-section-title">
-          Austin Energy contracted capacity vs. demand, 2027–2045 <TagBadge tag="scenario" />
+          Austin Energy's own supply vs. demand, 2027–2045 <TagBadge tag="scenario" />
         </h2>
-        <p className="lzo-section-lede">
-          {supplyDemandGapMethodology.supplyNote} {supplyDemandGapMethodology.demandNote}
-        </p>
+        <div className="lzo-callout" style={{ marginBottom: "0.9rem" }}>
+          <div className="lzo-callout-title">Scope: this is AE's own ledger, not an ERCOT-wide balance</div>
+          <p style={{ margin: 0 }}>{supplyDemandGapMethodology.scopeNote}</p>
+        </div>
+        <p className="lzo-section-lede">{supplyDemandGapMethodology.supplyNote}</p>
+        <p className="lzo-section-lede">{supplyDemandGapMethodology.demandNote}</p>
 
-        <p className="lzo-section-lede">Contracted/nameplate capacity is not dependable peak-hour supply. This arithmetic gap is not a reserve margin, reliability forecast, or prediction of a shortage; wind, solar and storage contributions at peak are not adjusted here.</p>
         <div className="lzo-table-wrap">
-          <table className="lzo-table" aria-label="Austin Energy contracted capacity and demand scenario">
+          <table className="lzo-table">
             <thead>
               <tr>
-                <th>Year</th>
-                <th>Supply (MW)</th>
-                <th>Demand (MW)</th>
-                <th>Gap (MW)</th>
+                <th rowSpan={2} style={{ verticalAlign: "bottom" }}>Year</th>
+                <th colSpan={2} style={{ textAlign: "center" }}>Nameplate MW</th>
+                <th colSpan={2} style={{ textAlign: "center" }}>Capacity-factor-adjusted (effective/dependable) MW</th>
+              </tr>
+              <tr>
+                <th>Supply</th>
+                <th>Gap</th>
+                <th>Supply</th>
+                <th>Gap</th>
               </tr>
             </thead>
             <tbody>
@@ -658,7 +1420,6 @@ export default function LoadZoneOutlook() {
                 <tr key={r.year}>
                   <td>{r.year}</td>
                   <td>{fmt(r.supplyMw)}</td>
-                  <td>{fmt(r.demandMw)}</td>
                   <td
                     style={{
                       fontWeight: 600,
@@ -668,10 +1429,36 @@ export default function LoadZoneOutlook() {
                     {r.gapMw > 0 ? "+" : ""}
                     {fmt(r.gapMw)}
                   </td>
+                  <td>{fmt(r.effectiveSupplyMw)}</td>
+                  <td
+                    style={{
+                      fontWeight: 600,
+                      color: r.effectiveGapMw < 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))",
+                    }}
+                  >
+                    {r.effectiveGapMw > 0 ? "+" : ""}
+                    {fmt(r.effectiveGapMw)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+        <p style={{ fontSize: "0.72rem", color: "hsl(var(--muted-foreground))", marginTop: "0.4rem" }}>
+          Demand (both columns) is the same scenario-proxy figure each year — only the supply side changes
+          between the two bases.
+        </p>
+
+        <div className="lzo-callout" style={{ marginTop: "0.75rem" }}>
+          <div className="lzo-callout-title">
+            Why the effective/dependable column is already negative <TagBadge tag="benchmarked" />
+          </div>
+          <p style={{ margin: "0 0 0.6rem" }}>{supplyDemandGapMethodology.effectiveSupplyNote}</p>
+          <p style={{ margin: 0, fontSize: "0.8rem" }}>
+            Capacity-factor assumptions used: Gas/Coal/Nuclear 95%, Biomass 90%, Wind ~19.9%, Solar ~23.7%,
+            Battery ~43.0% of nameplate — {contractStackCapacityFactors.source}.{" "}
+            {contractStackCapacityFactors.note}
+          </p>
         </div>
 
         <div className="lzo-callout" style={{ marginTop: "0.75rem" }}>
@@ -685,6 +1472,14 @@ export default function LoadZoneOutlook() {
         <h2 className="lzo-section-title">
           New loads, new generation, retiring assets — timeline <TagBadge tag="reported" />
         </h2>
+        <div className="lzo-callout" style={{ marginBottom: "0.9rem" }}>
+          <div className="lzo-callout-title">Scope: mostly Statewide context, a few AE items mixed in</div>
+          <p style={{ margin: 0 }}>
+            This timeline deliberately combines Austin Energy's own assets with much larger statewide ERCOT
+            context, to show scale. Each row is tagged <strong>AE</strong> or <strong>Statewide</strong> —
+            see the legend and the note below before reading it as "AE's own plan."
+          </p>
+        </div>
         <p className="lzo-section-lede">{ganttNote.note}</p>
 
         <GanttChart />
@@ -716,6 +1511,32 @@ export default function LoadZoneOutlook() {
           <div className="lzo-callout-title">The gap <TagBadge tag="blocked" /></div>
           <p style={{ margin: "0 0 0.6rem" }}>{vosDataGap.finding}</p>
           <p style={{ margin: 0, fontWeight: 600 }}>{vosDataGap.implication}</p>
+        </div>
+
+        <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.6rem" }}>
+          <div className="lzo-callout-title">
+            So does the new $500M transmission CIP change this component? <TagBadge tag={vosTransmissionMechanismFinding.tag} />
+          </div>
+          <p style={{ margin: "0 0 0.6rem" }}>{vosTransmissionMechanismFinding.mechanism}</p>
+          <p style={{ margin: 0, fontWeight: 600 }}>{vosTransmissionMechanismFinding.doesNewCapexFlowIn}</p>
+        </div>
+
+        <div className="lzo-chart-card" style={{ marginTop: "0.9rem" }}>
+          <div className="lzo-panel-title">
+            Is avoided cost going up or down? The annual total, FY21&ndash;FY25 <TagBadge tag={vosHistoricalTrendFinding.tag} />
+          </div>
+          <VosAnnualChart />
+          <p style={{ margin: "0.5rem 0 0", fontSize: "0.85rem" }}>{vosHistoricalTrendFinding.claim}</p>
+          <p style={{ margin: "0.5rem 0 0", fontSize: "0.85rem", fontWeight: 600 }}>{vosHistoricalTrendFinding.why}</p>
+        </div>
+
+        <div className="lzo-callout lzo-callout-blocked" style={{ marginTop: "0.6rem" }}>
+          <div className="lzo-callout-title">
+            Is the Value of Solar rate about to be calculated differently? <TagBadge tag={vosMethodologyChangeFinding.tag} />
+          </div>
+          <p style={{ margin: "0 0 0.6rem" }}>{vosMethodologyChangeFinding.claim}</p>
+          <p style={{ margin: "0 0 0.6rem" }}>{vosMethodologyChangeFinding.secondChange}</p>
+          <p style={{ margin: 0, fontWeight: 600 }}>{vosMethodologyChangeFinding.implication}</p>
         </div>
       </section>
 
@@ -767,6 +1588,6 @@ export default function LoadZoneOutlook() {
           workbook's own Sources tab for a source URL on every figure.
         </p>
       </section>
-    </main>
+    </div>
   );
 }
