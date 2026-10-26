@@ -336,6 +336,7 @@ function LoadZoneMap() {
             setHoverLine(null);
             setHoverNode(null);
             setHoverSubstation(null);
+            setTipPos(null);
           }}
         >
           <rect x={0} y={0} width={MAP_WIDTH} height={mapHeight} className="lzo-map-bg" />
@@ -356,6 +357,41 @@ function LoadZoneMap() {
               </g>
             );
           })}
+          {zoomAustin && (
+            <g aria-hidden="true">
+              {AUSTIN_CONTEXT_WATER.map((w) => (
+                <polyline
+                  key={w.name}
+                  points={w.pts.map(([lat, lon]) => { const { x, y } = project(lat, lon); return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(" ")}
+                  className="lzo-map-river"
+                />
+              ))}
+              {AUSTIN_CONTEXT_ROADS.map((r) => (
+                <polyline
+                  key={r.name}
+                  points={r.pts.map(([lat, lon]) => { const { x, y } = project(lat, lon); return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(" ")}
+                  className="lzo-map-highway"
+                />
+              ))}
+              {AUSTIN_CONTEXT_WATER.map((w) =>
+                w.labelAt ? (
+                  <text key={`${w.name}-label`} x={project(w.labelAt[0], w.labelAt[1]).x} y={project(w.labelAt[0], w.labelAt[1]).y} className="lzo-map-river-label">
+                    {w.name}
+                  </text>
+                ) : null
+              )}
+              {AUSTIN_CONTEXT_ROADS.map((r) =>
+                r.labelAt ? (
+                  <text key={`${r.name}-label`} x={project(r.labelAt[0], r.labelAt[1]).x} y={project(r.labelAt[0], r.labelAt[1]).y} className="lzo-map-highway-label">
+                    {r.name}
+                  </text>
+                ) : null
+              )}
+              <text x={project(30.267, -97.743).x} y={project(30.267, -97.743).y - 10} textAnchor="middle" className="lzo-map-state-label">
+                AUSTIN
+              </text>
+            </g>
+          )}
           {showLines &&
             visibleLines.map((line) => {
               const p0 = project(line.points[0].lat, line.points[0].lon);
@@ -366,7 +402,8 @@ function LoadZoneMap() {
                 <g
                   key={line.name}
                   className="lzo-map-line-group"
-                  onMouseEnter={() => setHoverLine(line)}
+                  onMouseEnter={() => { setHoverLine(line); setTipPos({ x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 }); }}
+                  onMouseLeave={() => { setHoverLine(null); setTipPos(null); }}
                   onClick={() => setPinnedLine(pinnedLine?.name === line.name ? null : line)}
                 >
                   <line
