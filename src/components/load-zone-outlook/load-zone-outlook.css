@@ -49,10 +49,10 @@
   display: inline-block;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.65rem;
-  letter-spacing: 0;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 0.15rem 0.5rem;
-  border-radius: calc(8px - 2px);
+  border-radius: calc(var(--radius, 6px) - 2px);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -66,7 +66,7 @@
 .lzo-chart-card {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 1.25rem 1rem 0.75rem;
 }
 .lzo-chart-legend {
@@ -93,14 +93,14 @@
 }
 .lzo-readout-tile {
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 0.65rem 0.75rem;
   background: hsl(var(--muted));
 }
 .lzo-readout-tile .label {
   font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   color: hsl(var(--muted-foreground));
 }
 .lzo-readout-tile .value {
@@ -114,7 +114,7 @@
 .lzo-callout {
   border: 1px solid hsl(var(--border));
   border-left: 3px solid hsl(var(--primary));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 0.9rem 1rem;
   background: hsl(var(--card));
   font-size: 0.9rem;
@@ -146,7 +146,7 @@
 
 .lzo-panel {
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 1rem;
   background: hsl(var(--card));
 }
@@ -188,7 +188,7 @@
 .lzo-table th {
   font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   color: hsl(var(--muted-foreground));
 }
 .lzo-table tr:hover td { background: hsl(var(--muted)); }
@@ -205,7 +205,7 @@
 }
 .lzo-vos-card {
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 0.75rem;
   background: hsl(var(--muted));
   font-size: 0.8rem;
@@ -222,7 +222,7 @@
 
 .lzo-phase-note {
   border: 1px dashed hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 0.85rem 1rem;
   font-size: 0.85rem;
   color: hsl(var(--muted-foreground));
@@ -250,57 +250,13 @@
   cursor: pointer;
 }
 .lzo-map-wrap {
-  position: relative;
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   overflow: hidden;
   background: hsl(var(--card));
 }
 .lzo-map-bg {
   fill: hsl(var(--muted));
-}
-.lzo-map-texas {
-  fill: hsl(var(--card));
-  stroke: hsl(var(--muted-foreground));
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-.lzo-map-state-label {
-  fill: hsl(var(--muted-foreground));
-  font-family: "Work Sans", sans-serif;
-  font-size: 17px;
-  font-weight: 600;
-  pointer-events: none;
-}
-.lzo-map-wrap svg { display: block; }
-.lzo-map-tooltip {
-  position: absolute;
-  z-index: 2;
-  width: min(310px, 70%);
-  padding: 0.8rem;
-  background: hsl(var(--popover));
-  color: hsl(var(--popover-foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: 6px;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  pointer-events: none;
-  transform: translate(16px, 16px);
-}
-.lzo-map-tooltip-left { transform: translate(calc(-100% - 16px), 16px); }
-.lzo-map-tooltip-above { transform: translate(16px, calc(-100% - 16px)); }
-.lzo-map-tooltip-left.lzo-map-tooltip-above { transform: translate(calc(-100% - 16px), calc(-100% - 16px)); }
-@media (max-width: 640px) {
-  .lzo-map-wrap .lzo-map-tooltip {
-    left: 8px !important;
-    right: 8px;
-    top: auto !important;
-    bottom: 8px;
-    width: auto;
-    transform: none;
-    font-size: 0.75rem;
-  }
 }
 .lzo-map-city-dot {
   fill: hsl(var(--muted-foreground));
@@ -347,7 +303,7 @@
 .lzo-map-detail {
   margin-top: 0.75rem;
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   padding: 0.75rem 1rem;
   background: hsl(var(--muted));
   min-height: 2.5rem;
@@ -372,28 +328,120 @@
   color: hsl(var(--muted-foreground));
   font-style: italic;
 }
-
-/* Full-width research sections use the shared page rhythm. */
-.lzo-root { line-height: 1.6; overflow-wrap: anywhere; }
-.lzo-section:first-child { margin-top: 1rem; }
-.lzo-section-title { font-weight: 700; line-height: 1.4; }
-.lzo-chart-card { border: 0; border-radius: 0; padding: 0; background: transparent; }
-.lzo-panel { min-width: 0; border: 0; border-radius: 0; padding: 0; background: transparent; }
-.lzo-readout-tile .value { font-family: "Work Sans", sans-serif; }
-.lzo-callout, .lzo-phase-note { border-top: 0; border-right: 0; border-bottom: 0; border-radius: 0; background: transparent; }
-.lzo-callout-title, .lzo-map-detail-name { flex-wrap: wrap; }
-.lzo-grid-2, .lzo-vos-grid { min-width: 0; }
-.lzo-stat-list .figure { white-space: normal; text-align: right; }
-.lzo-table { min-width: 420px; }
-.lzo-map-point:focus-visible { outline: 2px solid hsl(var(--ring)); }
-.lzo-root .recharts-default-tooltip { background: hsl(var(--popover)) !important; border-color: hsl(var(--border)) !important; color: hsl(var(--popover-foreground)); border-radius: 8px; }
-.lzo-root .recharts-cartesian-axis-tick-value, .lzo-root .recharts-label { fill: hsl(var(--muted-foreground)); }
-@media (prefers-reduced-motion: reduce) { .lzo-map-point { transition: none; } }
+.lzo-legend-swatch-line {
+  width: 14px;
+  height: 0;
+  border-top: 3px solid hsl(var(--foreground));
+  margin-top: 5px;
+}
+.lzo-legend-swatch-diamond {
+  width: 10px;
+  height: 10px;
+  background: hsl(var(--accent));
+  transform: rotate(45deg);
+}
+.lzo-map-line-group,
+.lzo-map-price-group {
+  cursor: pointer;
+}
+.lzo-map-line {
+  stroke: hsl(var(--foreground));
+  opacity: 0.55;
+  fill: none;
+  transition: opacity 0.1s ease;
+}
+.lzo-map-line-group:hover .lzo-map-line {
+  opacity: 0.95;
+}
+.lzo-map-line-765 {
+  stroke-width: 3;
+  stroke: hsl(var(--primary));
+}
+.lzo-map-line-138 {
+  stroke-width: 1.5;
+  stroke: hsl(var(--accent));
+}
+.lzo-map-line-proposed {
+  stroke-dasharray: 6 4;
+}
+.lzo-map-line-endpoint {
+  fill: hsl(var(--card));
+  stroke: hsl(var(--foreground));
+  stroke-width: 1.25;
+  opacity: 0.85;
+}
+.lzo-map-line-endpoint-label {
+  font-size: 9px;
+  fill: hsl(var(--foreground));
+  font-family: "IBM Plex Mono", monospace;
+}
+.lzo-map-zoom-btn {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius, 8px);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  color: hsl(var(--primary));
+  cursor: pointer;
+}
+.lzo-map-zoom-btn:hover {
+  background: hsl(var(--muted));
+}
+.lzo-map-zoom-btn-active {
+  background: hsl(var(--primary));
+  color: hsl(var(--card));
+  border-color: hsl(var(--primary));
+}
+.lzo-map-zoom-note {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+  margin: 0 0 0.6rem;
+}
+.lzo-map-price-node {
+  stroke-width: 1.5;
+  transition: opacity 0.1s ease;
+}
+.lzo-map-price-node-actual {
+  fill: hsl(var(--card));
+  stroke: hsl(var(--secondary));
+}
+.lzo-map-price-node-model {
+  fill: hsl(var(--accent));
+  stroke: hsl(var(--accent));
+}
+.lzo-map-price-group:hover .lzo-map-price-node {
+  opacity: 0.8;
+}
+.lzo-map-price-label {
+  font-size: 8.5px;
+  font-weight: 600;
+  fill: hsl(var(--foreground));
+  font-family: "IBM Plex Mono", monospace;
+  paint-order: stroke;
+  stroke: hsl(var(--card));
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
+.lzo-map-footnotes {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.lzo-map-footnote {
+  margin: 0;
+  font-size: 0.74rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
 
 /* ---- gantt timeline ---- */
 .lzo-gantt {
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius, 8px);
   background: hsl(var(--card));
   padding: 1rem;
 }
@@ -437,13 +485,13 @@
   font-weight: 700;
   font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   margin-bottom: 0.35rem;
 }
 .lzo-gantt-row {
   display: flex;
   align-items: center;
-  min-height: 1.6rem;
+  min-height: 2.1rem;
 }
 .lzo-gantt-row-label {
   width: 220px;
@@ -454,18 +502,21 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-right: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 .lzo-gantt-row-track {
   position: relative;
   flex: 1;
-  height: 1.2rem;
+  height: 2rem;
   background: hsl(var(--muted));
   border-radius: 3px;
 }
 .lzo-gantt-bar {
   position: absolute;
-  top: 2px;
-  bottom: 2px;
+  top: 50%;
+  transform: translateY(-50%);
   border-radius: 3px;
   cursor: pointer;
   display: flex;
@@ -476,12 +527,22 @@
 .lzo-gantt-bar:hover {
   opacity: 1;
 }
+.lzo-gantt-bar-statewide {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.35) 0,
+    rgba(255, 255, 255, 0.35) 3px,
+    transparent 3px,
+    transparent 7px
+  );
+}
 .lzo-gantt-bar-end {
   font-size: 0.62rem;
   font-family: "IBM Plex Mono", monospace;
-  color: hsl(var(--primary-foreground));
+  color: hsl(var(--card));
   padding-right: 0.3rem;
   white-space: nowrap;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
 }
 .lzo-gantt-detail {
   margin-top: 0.9rem;
@@ -503,6 +564,38 @@
 .lzo-gantt-detail-text {
   color: hsl(var(--muted-foreground));
 }
+.lzo-gantt-scope-lede {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0 0 0.9rem;
+}
+.lzo-gantt-legend-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid hsl(var(--border));
+}
+.lzo-gantt-scope-badge {
+  display: inline-block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+.lzo-gantt-scope-ae {
+  background: hsl(var(--primary));
+  color: hsl(var(--card));
+}
+.lzo-gantt-scope-statewide {
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+}
 @media (max-width: 640px) {
   .lzo-gantt-axis-label-col,
   .lzo-gantt-row-label {
@@ -510,10 +603,145 @@
   }
 }
 
-.lzo-gantt { border: 0; border-radius: 0; padding: 0; background: transparent; }
-.lzo-gantt-axis-track, .lzo-gantt-row-track { min-width: 0; margin-right: 1rem; }
-.lzo-gantt-bar:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
-.lzo-gantt-axis-tick { white-space: nowrap; overflow-wrap: normal; }
-.lzo-gantt-bar-end { overflow: hidden; text-overflow: clip; }
-.lzo-gantt-bar { overflow: hidden; }
-@media (prefers-reduced-motion: reduce) { .lzo-gantt-bar { transition: none; } }
+/* ---- toll-road mechanism diagram ---- */
+.lzo-tr-figure {
+  margin: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius, 8px);
+  background: hsl(var(--card));
+  padding: 1rem 1rem 0.5rem;
+}
+.lzo-tr-svg {
+  width: 100%;
+  height: auto;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-tr-zone-label {
+  font-size: 13px;
+  font-weight: 700;
+  fill: hsl(var(--foreground));
+}
+.lzo-tr-zone-sub {
+  font-size: 10.5px;
+  fill: hsl(var(--muted-foreground));
+}
+.lzo-tr-icon-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: hsl(var(--foreground));
+}
+.lzo-tr-icon-sub {
+  font-size: 9.5px;
+  fill: hsl(var(--muted-foreground));
+}
+.lzo-tr-onramp-label {
+  font-size: 10px;
+  font-weight: 600;
+  fill: hsl(var(--destructive));
+}
+.lzo-tr-price-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+.lzo-tr-price-box {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius, 8px);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 140px;
+  background: hsl(var(--muted));
+}
+.lzo-tr-price-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-tr-price-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.lzo-tr-price-op {
+  align-self: center;
+  font-size: 1.2rem;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-tr-price-caption {
+  text-align: center;
+  font-size: 0.72rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0.4rem 0 0.6rem;
+}
+.lzo-tr-caption {
+  font-size: 0.76rem;
+  color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 0.6rem;
+  margin: 0.4rem 0 0;
+  line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .lzo-tr-price-box {
+    min-width: 46%;
+  }
+}
+
+/* ---- proximity radar diagram ---- */
+.lzo-radar-figure {
+  margin: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius, 8px);
+  background: hsl(var(--card));
+  padding: 1rem 1rem 0.5rem;
+}
+.lzo-radar-svg {
+  width: 100%;
+  max-width: 640px;
+  display: block;
+  margin: 0 auto;
+  height: auto;
+  color: hsl(var(--muted-foreground));
+}
+.lzo-radar-ring-label {
+  font-size: 15px;
+  fill: hsl(var(--muted-foreground));
+}
+.lzo-radar-point-label {
+  font-size: 17px;
+  font-weight: 600;
+}
+.lzo-radar-point-sublabel {
+  font-size: 14px;
+  font-weight: 500;
+}
+.lzo-radar-legend {
+  margin-top: 0.6rem;
+}
+.lzo-radar-legend-note {
+  flex-basis: 100%;
+  font-style: italic;
+}
+.lzo-radar-center-label {
+  font-size: 19px;
+  font-weight: 700;
+  fill: hsl(var(--foreground));
+}
+.lzo-radar-cost-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+.lzo-radar-caption {
+  font-size: 0.76rem;
+  color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 0.6rem;
+  margin: 0.6rem 0 0;
+  line-height: 1.5;
+}
