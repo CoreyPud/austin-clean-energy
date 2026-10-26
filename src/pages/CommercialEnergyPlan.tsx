@@ -77,7 +77,7 @@ const CommercialEnergyPlan = () => {
   const blendedRate = useMemo(() => {
     if (num(ratePerKwh) > 0) return num(ratePerKwh);
     if (annualKwh > 0 && num(annualCost) > 0) return num(annualCost) / annualKwh;
-    return 0.11; // typical Austin commercial blended rate placeholder
+    return 0;
   }, [ratePerKwh, annualCost, annualKwh]);
 
   const estPeakKw = useMemo(
@@ -88,7 +88,7 @@ const CommercialEnergyPlan = () => {
   const effectiveDrKw = num(drKw) > 0 ? num(drKw) : Math.round(estPeakKw * DEFAULT_DR_CURTAIL_FRACTION);
 
   const step1Complete = QUESTIONS.every((q) => data[q.key]);
-  const step2Complete = annualKwh > 0 && num(hoursPerWeek) > 0;
+  const step2Complete = annualKwh > 0 && num(hoursPerWeek) > 0 && blendedRate > 0;
 
   const submit = () => {
     const planData: CommercialPlanData = {
@@ -148,8 +148,9 @@ const CommercialEnergyPlan = () => {
               <CardContent className="pt-6">
                 <h2 className="text-lg font-semibold mb-1">Returns by initiative</h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Based on {annualKwh.toLocaleString()} kWh/yr at {blendedRate.toFixed(3)} ¢/kWh
+                  Before improvements: {annualKwh.toLocaleString()} kWh/yr at ${(blendedRate).toFixed(3)}/kWh
                   {num(demandCharge) > 0 ? ` and $${num(demandCharge)}/kW-mo demand charges` : ""}.
+                  {" "}Annual energy charges: {$(annualKwh * blendedRate)} (excluding demand and fixed charges).
                   Estimated peak demand: {Math.round(estPeakKw)} kW.
                 </p>
                 <div className="overflow-x-auto">
@@ -159,7 +160,9 @@ const CommercialEnergyPlan = () => {
                         <TableHead>Initiative</TableHead>
                         <TableHead className="text-right">kWh saved / yr</TableHead>
                         <TableHead className="text-right">kW reduced</TableHead>
-                        <TableHead className="text-right">Savings / yr</TableHead>
+                        <TableHead className="text-right">Lower bill / yr</TableHead>
+                        <TableHead className="text-right">Program payment / yr</TableHead>
+                        <TableHead className="text-right">Total return / yr</TableHead>
                         <TableHead className="text-right">Rebate</TableHead>
                         <TableHead className="text-right">Your cost</TableHead>
                         <TableHead className="text-right">Net cost</TableHead>
@@ -174,8 +177,17 @@ const CommercialEnergyPlan = () => {
                             <div>{r.title}</div>
                             <div className="text-xs text-muted-foreground font-normal max-w-[220px]">{r.basis}</div>
                           </TableCell>
-                          <TableCell className="text-right">{r.annualKwhSaved > 0 ? r.annualKwhSaved.toLocaleString() : "—"}</TableCell>
+                          <TableCell className="text-right">
+                            {r.annualKwhSaved > 0 ? r.annualKwhSaved.toLocaleString() : "—"}
+                            <div className="text-xs text-muted-foreground whitespace-nowrap">{r.annualKwhAfter.toLocaleString()} after</div>
+                          </TableCell>
                           <TableCell className="text-right">{r.peakKwReduced > 0 ? r.peakKwReduced.toLocaleString() : "—"}</TableCell>
+                          <TableCell className="text-right">
+                            {$(r.annualEnergySavingsUsd + r.annualDemandSavingsUsd)}
+                            <div className="text-xs text-muted-foreground whitespace-nowrap">Energy: {$(r.annualEnergySavingsUsd)}</div>
+                            <div className="text-xs text-muted-foreground whitespace-nowrap">Demand: {$(r.annualDemandSavingsUsd)}</div>
+                          </TableCell>
+                          <TableCell className="text-right">{r.annualProgramPaymentUsd > 0 ? $(r.annualProgramPaymentUsd) : "—"}</TableCell>
                           <TableCell className="text-right">{$(r.annualSavingsUsd)}</TableCell>
                           <TableCell className="text-right">{r.rebateUsd > 0 ? $(r.rebateUsd) : "—"}</TableCell>
                           <TableCell className="text-right">{r.installedCostUsd > 0 ? $(r.installedCostUsd) : "—"}</TableCell>
@@ -187,9 +199,11 @@ const CommercialEnergyPlan = () => {
                         </TableRow>
                       ))}
                       <TableRow className="font-semibold border-t-2">
-                        <TableCell>Total</TableCell>
+                        <TableCell>Sum of standalone estimates</TableCell>
                         <TableCell className="text-right">{results.reduce((s, r) => s + r.annualKwhSaved, 0).toLocaleString()}</TableCell>
                         <TableCell className="text-right">{Math.round(results.reduce((s, r) => s + r.peakKwReduced, 0) * 10) / 10}</TableCell>
+                        <TableCell className="text-right">{$(results.reduce((s, r) => s + r.annualEnergySavingsUsd + r.annualDemandSavingsUsd, 0))}</TableCell>
+                        <TableCell className="text-right">{$(results.reduce((s, r) => s + r.annualProgramPaymentUsd, 0))}</TableCell>
                         <TableCell className="text-right">{$(totalAnnual)}</TableCell>
                         <TableCell className="text-right">{$(results.reduce((s, r) => s + r.rebateUsd, 0))}</TableCell>
                         <TableCell className="text-right">{$(results.reduce((s, r) => s + r.installedCostUsd, 0))}</TableCell>
@@ -205,8 +219,12 @@ const CommercialEnergyPlan = () => {
                 <p className="text-xs text-muted-foreground mt-4 flex gap-1.5">
                   <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                   <span>
-                    Planning estimates, not engineering calculations. Savings percentages are conservative
-                    midpoints of published ranges for Austin's climate (cooling ≈ 35% of commercial kWh).
+                    Each improvement is estimated independently against your current usage. Lower energy charges =
+                    kWh saved × your energy rate; estimated demand-charge savings are shown separately.
+                    Payback and 10-year net include both bill savings and any program payment, with rebates reducing upfront cost only.
+                    Savings can overlap when improvements are combined; the sum is not a combined-building forecast.
+                    Planning estimates, not engineering calculations. Cooling is assumed to be 35% of annual kWh;
+                    savings assumptions are 8% of cooling for insulation, 15% for roof coating, and 20% or 12% for windows.
                     Rebate rates from Austin Energy's commercial Property Improvements page (reviewed 02/18/2026);
                     demand response payments are custom-quoted by Austin Energy — the $/kW-yr figure above is your
                     input. Final amounts, caps, and eligibility are set by Austin Energy.
@@ -292,12 +310,14 @@ const CommercialEnergyPlan = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="annual-cost">Annual electricity cost, $ (optional)</Label>
+                      <Label htmlFor="annual-cost">Annual energy charges, $ (optional)</Label>
                       <Input id="annual-cost" type="number" min={0} value={annualCost} onChange={(e) => setAnnualCost(e.target.value)} />
+                      <p className="text-xs text-muted-foreground">Exclude demand charges, fixed fees, and taxes. Used to calculate your energy rate if not entered below.</p>
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="rate">Blended rate, $/kWh (optional)</Label>
-                      <Input id="rate" type="number" min={0} step="0.001" placeholder={blendedRate.toFixed(3)} value={ratePerKwh} onChange={(e) => setRatePerKwh(e.target.value)} />
+                      <Label htmlFor="rate">Energy rate, $/kWh</Label>
+                      <Input id="rate" type="number" min={0} step="0.001" value={ratePerKwh} onChange={(e) => setRatePerKwh(e.target.value)} />
+                      <p className="text-xs text-muted-foreground">Enter your variable electricity rate, excluding demand and fixed charges, or provide annual energy charges above.</p>
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="demand">Demand charge, $/kW-month (optional)</Label>

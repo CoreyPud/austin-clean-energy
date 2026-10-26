@@ -50,7 +50,7 @@ export const DEFAULT_DR_CURTAIL_FRACTION = 0.1;
 export interface SavingsModelInputs {
   /** Annual electricity use in kWh (from bill upload or manual entry). */
   annualKwh: number;
-  /** Blended energy rate $/kWh (annual cost / annual kWh, or user-entered). */
+  /** Energy-only rate $/kWh, excluding separately modeled demand and fixed charges. */
   ratePerKwh: number;
   /** Demand charge $/kW-month. 0 if the account has no demand charges. */
   demandChargePerKwMonth: number;
@@ -87,6 +87,14 @@ export interface InitiativeResult {
   peakKwReduced: number;
   /** Annual dollar savings or payments. */
   annualSavingsUsd: number;
+  /** Lower electricity charges from reduced kWh. */
+  annualEnergySavingsUsd: number;
+  /** Estimated reduction in demand charges, separate from energy charges. */
+  annualDemandSavingsUsd: number;
+  /** Demand-response payment, not a reduction in the electricity bill. */
+  annualProgramPaymentUsd: number;
+  /** Annual use after this initiative alone; DR does not imply annual kWh savings. */
+  annualKwhAfter: number;
   /** One-time rebate from Austin Energy. */
   rebateUsd: number;
   /** User's estimated installed cost (0 for DR). */
@@ -126,6 +134,10 @@ export function buildSavingsModel(inputs: SavingsModelInputs): InitiativeResult[
       annualKwhSaved: 0,
       peakKwReduced: inputs.drCurtailKw,
       annualSavingsUsd: annual,
+      annualEnergySavingsUsd: 0,
+      annualDemandSavingsUsd: demandSavings,
+      annualProgramPaymentUsd: payment,
+      annualKwhAfter: inputs.annualKwh,
       rebateUsd: 0,
       installedCostUsd: 0,
       netCostUsd: 0,
@@ -159,6 +171,10 @@ export function buildSavingsModel(inputs: SavingsModelInputs): InitiativeResult[
       annualKwhSaved: Math.round(kwhSaved),
       peakKwReduced: Math.round(kwReduced * 10) / 10,
       annualSavingsUsd: annual,
+      annualEnergySavingsUsd: energySavings,
+      annualDemandSavingsUsd: demandSavings,
+      annualProgramPaymentUsd: 0,
+      annualKwhAfter: inputs.annualKwh - Math.round(kwhSaved),
       rebateUsd: rebate,
       installedCostUsd: cost,
       netCostUsd: net,

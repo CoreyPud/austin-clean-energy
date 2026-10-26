@@ -77,3 +77,44 @@ test("non-applicable measures are omitted", () => {
   assert.equal(results.length, 1);
   assert.equal(results[0].id, "demand-response");
 });
+
+test("insulation reduces annual electricity use and energy charges independently of rebates", () => {
+  const result = buildSavingsModel({ ...baseInputs, demandChargePerKwMonth: 0 }).find((r) => r.id === "insulation");
+  assert.ok(result);
+  assert.equal(result.annualKwhSaved, 14_000);
+  assert.equal(result.annualKwhAfter, 486_000);
+  assert.equal(result.annualEnergySavingsUsd, 1_540);
+  assert.equal(result.annualSavingsUsd, 1_540);
+  assert.equal(result.paybackYears, 15_000 / 1_540);
+  assert.equal(result.tenYearNetUsd, 400);
+});
+
+test("roof and windows reduce energy bills without counting rebates as annual savings", () => {
+  const results = buildSavingsModel({ ...baseInputs, demandChargePerKwMonth: 0 });
+  const roof = results.find((r) => r.id === "reflective-roof");
+  const windows = results.find((r) => r.id === "windows");
+  assert.ok(roof && windows);
+  assert.equal(roof.annualKwhAfter, 473_750);
+  assert.equal(roof.annualEnergySavingsUsd, 2_887.5);
+  assert.equal(roof.annualSavingsUsd, 2_887.5);
+  assert.equal(windows.annualKwhAfter, 465_000);
+  assert.equal(windows.annualEnergySavingsUsd, 3_850);
+  assert.equal(windows.annualSavingsUsd, 3_850);
+});
+
+test("demand response separates bill relief from program payments and does not claim annual kWh savings", () => {
+  const dr = buildSavingsModel(baseInputs)[0];
+  assert.equal(dr.annualKwhAfter, 500_000);
+  assert.equal(dr.annualEnergySavingsUsd, 0);
+  assert.equal(dr.annualDemandSavingsUsd, 1_440);
+  assert.equal(dr.annualProgramPaymentUsd, 600);
+  assert.equal(dr.annualSavingsUsd, 2_040);
+});
+
+test("improvement returns include energy plus demand-charge savings", () => {
+  const insulation = buildSavingsModel(baseInputs).find((r) => r.id === "insulation");
+  assert.ok(insulation);
+  assert.equal(Math.round(insulation.annualDemandSavingsUsd * 100) / 100, 553.85);
+  assert.equal(Math.round(insulation.annualSavingsUsd * 100) / 100, 2_093.85);
+  assert.equal(insulation.annualProgramPaymentUsd, 0);
+});
