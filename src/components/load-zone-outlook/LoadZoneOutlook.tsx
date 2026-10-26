@@ -104,6 +104,30 @@ function inBounds(lat: number, lon: number, b: { latMin: number; latMax: number;
   return lat >= b.latMin && lat <= b.latMax && lon >= b.lonMin && lon <= b.lonMax;
 }
 
+// Simplified Austin-metro highways and waterways, drawn only in the zoomed
+// view so the local transmission projects have recognizable geographic
+// context. Coordinates are hand-approximated from public road/river maps —
+// orientation aids, not surveyed geometry. Stored as [lat, lon] pairs.
+const AUSTIN_CONTEXT_ROADS: { name: string; pts: [number, number][]; labelAt?: [number, number] }[] = [
+  { name: "I-35", pts: [[30.58, -97.689], [30.5, -97.695], [30.42, -97.7], [30.35, -97.715], [30.3, -97.725], [30.267, -97.735], [30.22, -97.745], [30.15, -97.755], [30.08, -97.775], [29.98, -97.795]], labelAt: [30.46, -97.688] },
+  { name: "US-183", pts: [[30.55, -97.88], [30.45, -97.8], [30.38, -97.725], [30.32, -97.7], [30.27, -97.685], [30.22, -97.65], [30.15, -97.61], [30.1, -97.585]], labelAt: [30.42, -97.775] },
+  { name: "US-290", pts: [[30.28, -97.97], [30.275, -97.88], [30.28, -97.8], [30.3, -97.735], [30.305, -97.66], [30.31, -97.57], [30.32, -97.45]], labelAt: [30.318, -97.53] },
+  { name: "SH-71", pts: [[30.23, -97.97], [30.21, -97.87], [30.195, -97.78], [30.19, -97.7], [30.195, -97.64], [30.19, -97.55], [30.2, -97.45]], labelAt: [30.175, -97.6] },
+  { name: "Loop 360", pts: [[30.5, -97.85], [30.42, -97.835], [30.35, -97.82], [30.3, -97.81], [30.26, -97.8], [30.2, -97.825], [30.15, -97.85]], labelAt: [30.36, -97.828] },
+  { name: "MoPac", pts: [[30.58, -97.76], [30.48, -97.765], [30.4, -97.755], [30.32, -97.755], [30.27, -97.76], [30.22, -97.775], [30.14, -97.795], [30.05, -97.83]], labelAt: [30.43, -97.762] },
+  { name: "SH-130", pts: [[30.58, -97.52], [30.48, -97.555], [30.38, -97.585], [30.28, -97.6], [30.18, -97.615], [30.08, -97.6], [29.98, -97.575]], labelAt: [30.4, -97.578] },
+  { name: "SH-45", pts: [[30.53, -97.9], [30.52, -97.82], [30.51, -97.72], [30.5, -97.62], [30.52, -97.55]], labelAt: [30.525, -97.7] },
+];
+
+const AUSTIN_CONTEXT_WATER: { name: string; pts: [number, number][]; labelAt?: [number, number] }[] = [
+  // Colorado River: Lake Austin -> Lady Bird Lake -> southeast toward Bastrop
+  { name: "Colorado River", pts: [[30.45, -97.97], [30.4, -97.93], [30.36, -97.88], [30.33, -97.83], [30.3, -97.8], [30.275, -97.77], [30.26, -97.74], [30.25, -97.71], [30.22, -97.68], [30.18, -97.64], [30.13, -97.59], [30.08, -97.54], [30.02, -97.48]], labelAt: [30.205, -97.66] },
+  { name: "Lake Travis", pts: [[30.58, -97.94], [30.53, -97.945], [30.49, -97.965]], labelAt: [30.55, -97.93] },
+  { name: "Barton Creek", pts: [[30.3, -97.95], [30.28, -97.9], [30.265, -97.85], [30.26, -97.795]] },
+  { name: "Onion Creek", pts: [[30.18, -97.8], [30.14, -97.74], [30.11, -97.68], [30.1, -97.61]], labelAt: [30.12, -97.72] },
+  { name: "Walnut Creek", pts: [[30.42, -97.7], [30.38, -97.68], [30.35, -97.66]] },
+];
+
 const CATEGORY_COLOR: Record<string, string> = {
   load: "hsl(var(--destructive))",
   solar: "hsl(var(--accent))",
@@ -122,12 +146,13 @@ function radiusFor(mw: number | null): number {
 // supply / proposed supply) on top of color, so the two generator layers
 // that share a color (current vs. proposed) stay visually distinct, and a
 // retiring plant reads as "hollowing out" rather than just "another load".
-function MapMarker({ p, x, y, onEnter, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onClick: () => void }) {
+function MapMarker({ p, x, y, onEnter, onLeave, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onLeave: () => void; onClick: () => void }) {
   const r = radiusFor(p.mw);
   const color = CATEGORY_COLOR[p.category] ?? "hsl(var(--muted-foreground))";
   const common = {
     className: "lzo-map-point",
     onMouseEnter: onEnter,
+    onMouseLeave: onLeave,
     onClick,
   };
   if (p.category === "generator-retiring") {
@@ -164,6 +189,9 @@ function LoadZoneMap() {
   const [pinnedNode, setPinnedNode] = useState<PricingNode | null>(null);
   const [hoverSubstation, setHoverSubstation] = useState<TransmissionPoint | null>(null);
   const [pinnedSubstation, setPinnedSubstation] = useState<TransmissionPoint | null>(null);
+  // Map-space position of the currently hovered symbol, used to anchor the
+  // floating mouseover tooltip next to it.
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
 
   const bounds = useMemo(() => {
     const all = [
@@ -292,7 +320,8 @@ function LoadZoneMap() {
         <p className="lzo-map-zoom-note">
           Zoomed to the Austin metro. At the statewide scale, AE's own local transmission projects (lines of a few
           miles each, plus one substation) are invisible next to 177- and 400-mile statewide 765kV lines — that gap
-          is itself the point (see transmissionLinesNote below).
+          is itself the point (see transmissionLinesNote below). Highways and rivers are simplified approximations
+          drawn for orientation only.
         </p>
       )}
 
@@ -308,6 +337,7 @@ function LoadZoneMap() {
             setHoverLine(null);
             setHoverNode(null);
             setHoverSubstation(null);
+            setTipPos(null);
           }}
         >
           <rect x={0} y={0} width={MAP_WIDTH} height={mapHeight} className="lzo-map-bg" />
@@ -328,6 +358,41 @@ function LoadZoneMap() {
               </g>
             );
           })}
+          {zoomAustin && (
+            <g aria-hidden="true">
+              {AUSTIN_CONTEXT_WATER.map((w) => (
+                <polyline
+                  key={w.name}
+                  points={w.pts.map(([lat, lon]) => { const { x, y } = project(lat, lon); return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(" ")}
+                  className="lzo-map-river"
+                />
+              ))}
+              {AUSTIN_CONTEXT_ROADS.map((r) => (
+                <polyline
+                  key={r.name}
+                  points={r.pts.map(([lat, lon]) => { const { x, y } = project(lat, lon); return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(" ")}
+                  className="lzo-map-highway"
+                />
+              ))}
+              {AUSTIN_CONTEXT_WATER.map((w) =>
+                w.labelAt ? (
+                  <text key={`${w.name}-label`} x={project(w.labelAt[0], w.labelAt[1]).x} y={project(w.labelAt[0], w.labelAt[1]).y} className="lzo-map-river-label">
+                    {w.name}
+                  </text>
+                ) : null
+              )}
+              {AUSTIN_CONTEXT_ROADS.map((r) =>
+                r.labelAt ? (
+                  <text key={`${r.name}-label`} x={project(r.labelAt[0], r.labelAt[1]).x} y={project(r.labelAt[0], r.labelAt[1]).y} className="lzo-map-highway-label">
+                    {r.name}
+                  </text>
+                ) : null
+              )}
+              <text x={project(30.267, -97.743).x} y={project(30.267, -97.743).y - 10} textAnchor="middle" className="lzo-map-state-label">
+                AUSTIN
+              </text>
+            </g>
+          )}
           {showLines &&
             visibleLines.map((line) => {
               const p0 = project(line.points[0].lat, line.points[0].lon);
@@ -338,7 +403,8 @@ function LoadZoneMap() {
                 <g
                   key={line.name}
                   className="lzo-map-line-group"
-                  onMouseEnter={() => setHoverLine(line)}
+                  onMouseEnter={() => { setHoverLine(line); setTipPos({ x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 }); }}
+                  onMouseLeave={() => { setHoverLine(null); setTipPos(null); }}
                   onClick={() => setPinnedLine(pinnedLine?.name === line.name ? null : line)}
                 >
                   <line
@@ -377,7 +443,8 @@ function LoadZoneMap() {
                 <g
                   key={s.name}
                   className="lzo-map-substation-group"
-                  onMouseEnter={() => setHoverSubstation(s)}
+                  onMouseEnter={() => { setHoverSubstation(s); setTipPos({ x, y }); }}
+                  onMouseLeave={() => { setHoverSubstation(null); setTipPos(null); }}
                   onClick={() => setPinnedSubstation(pinnedSubstation?.name === s.name ? null : s)}
                 >
                   <polygon points={pts} className="lzo-map-substation">
@@ -399,7 +466,8 @@ function LoadZoneMap() {
                 p={p}
                 x={x}
                 y={y}
-                onEnter={() => setHoverPoint(p)}
+                onEnter={() => { setHoverPoint(p); setTipPos({ x, y }); }}
+                onLeave={() => { setHoverPoint(null); setTipPos(null); }}
                 onClick={() => setPinnedPoint(pinnedPoint?.name === p.name ? null : p)}
               />
             );
@@ -414,7 +482,8 @@ function LoadZoneMap() {
                 <g
                   key={node.name}
                   className="lzo-map-price-group"
-                  onMouseEnter={() => setHoverNode(node)}
+                  onMouseEnter={() => { setHoverNode(node); setTipPos({ x, y }); }}
+                  onMouseLeave={() => { setHoverNode(null); setTipPos(null); }}
                   onClick={() => setPinnedNode(pinnedNode?.name === node.name ? null : node)}
                 >
                   <polygon
@@ -430,6 +499,59 @@ function LoadZoneMap() {
               );
             })}
         </svg>
+        {tipPos && (hoverPoint || hoverLine || hoverNode || hoverSubstation) && (
+          <div
+            className="lzo-map-tooltip"
+            style={{
+              left: `${(tipPos.x / MAP_WIDTH) * 100}%`,
+              top: `${(tipPos.y / mapHeight) * 100}%`,
+              transform: `translate(${tipPos.x > MAP_WIDTH * 0.55 ? "calc(-100% - 14px)" : "14px"}, ${
+                tipPos.y < mapHeight * 0.2 ? "-15%" : tipPos.y > mapHeight * 0.8 ? "-85%" : "-50%"
+              })`,
+            }}
+          >
+            {hoverPoint && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverPoint.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverPoint.mw ? `${hoverPoint.mw} MW · ` : ""}
+                  {hoverPoint.year !== "n/a" ? `${hoverPoint.year} · ` : ""}
+                  {hoverPoint.detail}
+                </div>
+              </>
+            )}
+            {hoverLine && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverLine.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverLine.voltageKv}kV · {hoverLine.scope === "AE" ? "Austin Energy's own" : "Statewide"} · {hoverLine.status}
+                </div>
+                <div className="lzo-map-tooltip-row">{hoverLine.detail}</div>
+              </>
+            )}
+            {hoverNode && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverNode.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverNode.kind === "ae-own-model"
+                    ? `Modeled, not published: $${hoverNode.daPrice?.toFixed(2)}/MWh`
+                    : `Day-ahead avg $${hoverNode.daPrice?.toFixed(2)}/MWh · Real-time avg $${hoverNode.rtPrice?.toFixed(2)}/MWh`}
+                  {" · "}
+                  {hoverNode.vintage}
+                </div>
+              </>
+            )}
+            {hoverSubstation && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverSubstation.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverSubstation.scope === "AE" ? "Austin Energy's own" : "Statewide"} · {hoverSubstation.status}
+                </div>
+                <div className="lzo-map-tooltip-row">{hoverSubstation.detail}</div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="lzo-map-detail">
