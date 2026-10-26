@@ -320,7 +320,8 @@ function LoadZoneMap() {
         <p className="lzo-map-zoom-note">
           Zoomed to the Austin metro. At the statewide scale, AE's own local transmission projects (lines of a few
           miles each, plus one substation) are invisible next to 177- and 400-mile statewide 765kV lines — that gap
-          is itself the point (see transmissionLinesNote below).
+          is itself the point (see transmissionLinesNote below). Highways and rivers are simplified approximations
+          drawn for orientation only.
         </p>
       )}
 
@@ -498,6 +499,59 @@ function LoadZoneMap() {
               );
             })}
         </svg>
+        {tipPos && (hoverPoint || hoverLine || hoverNode || hoverSubstation) && (
+          <div
+            className="lzo-map-tooltip"
+            style={{
+              left: `${(tipPos.x / MAP_WIDTH) * 100}%`,
+              top: `${(tipPos.y / mapHeight) * 100}%`,
+              transform: `translate(${tipPos.x > MAP_WIDTH * 0.55 ? "calc(-100% - 14px)" : "14px"}, ${
+                tipPos.y < mapHeight * 0.2 ? "-15%" : tipPos.y > mapHeight * 0.8 ? "-85%" : "-50%"
+              })`,
+            }}
+          >
+            {hoverPoint && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverPoint.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverPoint.mw ? `${hoverPoint.mw} MW · ` : ""}
+                  {hoverPoint.year !== "n/a" ? `${hoverPoint.year} · ` : ""}
+                  {hoverPoint.detail}
+                </div>
+              </>
+            )}
+            {hoverLine && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverLine.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverLine.voltageKv}kV · {hoverLine.scope === "AE" ? "Austin Energy's own" : "Statewide"} · {hoverLine.status}
+                </div>
+                <div className="lzo-map-tooltip-row">{hoverLine.detail}</div>
+              </>
+            )}
+            {hoverNode && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverNode.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverNode.kind === "ae-own-model"
+                    ? `Modeled, not published: $${hoverNode.daPrice?.toFixed(2)}/MWh`
+                    : `Day-ahead avg $${hoverNode.daPrice?.toFixed(2)}/MWh · Real-time avg $${hoverNode.rtPrice?.toFixed(2)}/MWh`}
+                  {" · "}
+                  {hoverNode.vintage}
+                </div>
+              </>
+            )}
+            {hoverSubstation && (
+              <>
+                <div className="lzo-map-tooltip-title">{hoverSubstation.name}</div>
+                <div className="lzo-map-tooltip-row">
+                  {hoverSubstation.scope === "AE" ? "Austin Energy's own" : "Statewide"} · {hoverSubstation.status}
+                </div>
+                <div className="lzo-map-tooltip-row">{hoverSubstation.detail}</div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="lzo-map-detail">
