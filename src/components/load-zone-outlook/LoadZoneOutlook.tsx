@@ -76,6 +76,7 @@ import {
   PricingNode,
   Tag,
 } from "./load-zone-outlook-data";
+import { texasBoundary } from "./texas-boundary";
 
 // Six well-known Texas cities, included only as geographic reference points
 // on the map below — not part of the loads/generation dataset.
@@ -173,6 +174,9 @@ function LoadZoneMap() {
       ...transmissionLinesForMap.flatMap((l) => l.points),
       ...transmissionPointsForMap,
       ...pricingNodes,
+      // Include the full Texas outline so the statewide view always shows the
+      // whole state, not just the bounding box of the data points.
+      ...texasBoundary.map(([lon, lat]) => ({ lat, lon })),
     ];
     const lats = all.map((p) => p.lat);
     const lons = all.map((p) => p.lon);
