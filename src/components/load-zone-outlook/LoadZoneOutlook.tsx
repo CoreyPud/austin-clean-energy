@@ -189,6 +189,9 @@ function LoadZoneMap() {
   const [pinnedNode, setPinnedNode] = useState<PricingNode | null>(null);
   const [hoverSubstation, setHoverSubstation] = useState<TransmissionPoint | null>(null);
   const [pinnedSubstation, setPinnedSubstation] = useState<TransmissionPoint | null>(null);
+  // Map-space position of the currently hovered symbol, used to anchor the
+  // floating mouseover tooltip next to it.
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
 
   const bounds = useMemo(() => {
     const all = [
