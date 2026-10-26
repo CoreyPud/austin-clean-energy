@@ -146,12 +146,13 @@ function radiusFor(mw: number | null): number {
 // supply / proposed supply) on top of color, so the two generator layers
 // that share a color (current vs. proposed) stay visually distinct, and a
 // retiring plant reads as "hollowing out" rather than just "another load".
-function MapMarker({ p, x, y, onEnter, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onClick: () => void }) {
+function MapMarker({ p, x, y, onEnter, onLeave, onClick }: { p: MapPoint; x: number; y: number; onEnter: () => void; onLeave: () => void; onClick: () => void }) {
   const r = radiusFor(p.mw);
   const color = CATEGORY_COLOR[p.category] ?? "hsl(var(--muted-foreground))";
   const common = {
     className: "lzo-map-point",
     onMouseEnter: onEnter,
+    onMouseLeave: onLeave,
     onClick,
   };
   if (p.category === "generator-retiring") {
