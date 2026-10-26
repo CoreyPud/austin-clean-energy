@@ -54,6 +54,14 @@ const WhatYouCanDo = () => {
               cta="Build My Plan"
               preview={<PlanCategoriesPreview />}
             />
+
+            <FeatureCard
+              to="/commercial-energy-plan"
+              title="Commercial Clean Energy Plan"
+              description="Answer a few questions about your commercial building to find Austin Energy rebates for insulation, reflective roofs, and windows."
+              cta="Build Building Plan"
+              preview={<PlanCategoriesPreview />}
+            />
           </div>
         </div>
       </section>

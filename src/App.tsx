@@ -39,6 +39,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import EVComparison from "./pages/EVComparison";
 import EVProgress from "./pages/EVProgress";
 import CleanEnergyPlan from "./pages/CleanEnergyPlan";
+import CommercialEnergyPlan from "./pages/CommercialEnergyPlan";
 import PropertyViewer from "./pages/PropertyViewer";
 import PropertyPage from "./pages/PropertyPage";
 import Explore from "./pages/Explore";
@@ -114,6 +115,7 @@ const AppRoutes = () => {
           <Route path="/ev-comparison" element={<EVComparison />} />
           <Route path="/ev-progress" element={<EVProgress />} />
           <Route path="/clean-energy-plan" element={<CleanEnergyPlan />} />
+          <Route path="/commercial-energy-plan" element={<CommercialEnergyPlan />} />
           <Route path="/council" element={<CouncilOverview />} />
           <Route path="/council-members" element={<CouncilMembers />} />
           <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
