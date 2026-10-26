@@ -154,7 +154,7 @@ const CommercialEnergyPlan = () => {
                   Estimated peak demand: {Math.round(estPeakKw)} kW.
                 </p>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[1400px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Initiative</TableHead>
@@ -173,7 +173,7 @@ const CommercialEnergyPlan = () => {
                     <TableBody>
                       {results.map((r) => (
                         <TableRow key={r.id}>
-                          <TableCell className="font-medium">
+                          <TableCell className="font-medium min-w-[240px]">
                             <div>{r.title}</div>
                             <div className="text-xs text-muted-foreground font-normal max-w-[220px]">{r.basis}</div>
                           </TableCell>

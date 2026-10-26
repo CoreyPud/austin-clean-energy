@@ -1,5 +1,5 @@
 # Current
-- [ ] Clarify and verify commercial improvement returns include lower electricity usage and bill savings, separate from rebates and program payments.
+- [x] Clarify and verify commercial improvement returns include lower electricity usage and bill savings, separate from rebates and program payments.
 - [x] Update Load Zone Outlook from the revised supplied files, preserve Texas map, and verify new table and timeline.
 - [x] Add a sourced, adjustable ERCOT supply/demand/gap scenario table for 2027–2045 and verify calculations and controls.
 - [x] Give the Load Zone Outlook map a sourced Texas boundary and hover details for every symbol; verify hover and tap.
