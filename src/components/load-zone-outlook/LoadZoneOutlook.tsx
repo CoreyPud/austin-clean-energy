@@ -442,7 +442,8 @@ function LoadZoneMap() {
                 <g
                   key={s.name}
                   className="lzo-map-substation-group"
-                  onMouseEnter={() => setHoverSubstation(s)}
+                  onMouseEnter={() => { setHoverSubstation(s); setTipPos({ x, y }); }}
+                  onMouseLeave={() => { setHoverSubstation(null); setTipPos(null); }}
                   onClick={() => setPinnedSubstation(pinnedSubstation?.name === s.name ? null : s)}
                 >
                   <polygon points={pts} className="lzo-map-substation">
@@ -464,7 +465,8 @@ function LoadZoneMap() {
                 p={p}
                 x={x}
                 y={y}
-                onEnter={() => setHoverPoint(p)}
+                onEnter={() => { setHoverPoint(p); setTipPos({ x, y }); }}
+                onLeave={() => { setHoverPoint(null); setTipPos(null); }}
                 onClick={() => setPinnedPoint(pinnedPoint?.name === p.name ? null : p)}
               />
             );
@@ -479,7 +481,8 @@ function LoadZoneMap() {
                 <g
                   key={node.name}
                   className="lzo-map-price-group"
-                  onMouseEnter={() => setHoverNode(node)}
+                  onMouseEnter={() => { setHoverNode(node); setTipPos({ x, y }); }}
+                  onMouseLeave={() => { setHoverNode(null); setTipPos(null); }}
                   onClick={() => setPinnedNode(pinnedNode?.name === node.name ? null : node)}
                 >
                   <polygon
