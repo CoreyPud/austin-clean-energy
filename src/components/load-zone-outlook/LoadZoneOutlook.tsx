@@ -204,6 +204,20 @@ function LoadZoneMap() {
     return { x, y };
   }
 
+  // Texas state outline, projected with the same transform as the data points
+  // so it stays aligned in both the statewide and zoomed-to-Austin views.
+  const texasPath = useMemo(
+    () =>
+      texasBoundary
+        .map(([lon, lat], i) => {
+          const { x, y } = project(lat, lon);
+          return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+        })
+        .join(" ") + " Z",
+    [effectiveBounds, mapHeight]
+  );
+  const texasLabel = project(31.2, -99.6);
+
   const active = hoverPoint ?? pinnedPoint;
   const activeLine = hoverLine ?? pinnedLine;
   const activeNode = hoverNode ?? pinnedNode;
@@ -297,6 +311,12 @@ function LoadZoneMap() {
           }}
         >
           <rect x={0} y={0} width={MAP_WIDTH} height={mapHeight} className="lzo-map-bg" />
+          <path d={texasPath} className="lzo-map-texas" />
+          {!zoomAustin && (
+            <text x={texasLabel.x} y={texasLabel.y} textAnchor="middle" className="lzo-map-state-label">
+              TEXAS
+            </text>
+          )}
           {visibleCities.map((c) => {
             const { x, y } = project(c.lat, c.lon);
             return (
