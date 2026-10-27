@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { lovable } from "@/integrations/lovable/index";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -148,7 +149,7 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
       if (readError || !latest) throw new Error("Couldn't read the property");
       const calculator_state = withSavedLowIncome(latest.calculator_state as Record<string, unknown>, checked);
       const { data: updated, error } = await supabase.from("saved_assessments")
-        .update({ calculator_state, updated_at: new Date().toISOString() })
+        .update({ calculator_state: calculator_state as Json, updated_at: new Date().toISOString() })
         .eq("id", row.id).eq("user_id", userId)
         .select("id, share_token, label, address, property_type, calculator_state, results, updated_at").single();
       if (error || !updated) throw new Error("Couldn't save the low-income selection");
