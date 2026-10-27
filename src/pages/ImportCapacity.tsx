@@ -21,7 +21,11 @@ const DEFAULT_TIE_LINES = [
   { name: "Round Mountain – Austin (138 kV)", mva: 239, pf: 0.95, kind: "138 kV" },
   { name: "Lockhart – Austin (138 kV)", mva: 239, pf: 0.95, kind: "138 kV" },
   { name: "Elgin – Austin (138 kV)", mva: 239, pf: 0.95, kind: "138 kV" },
-];
+  // Planned upgrades (from Load Zone Outlook research). Off by default.
+  { name: "Dunlap – Decker corridor, Phase II (345 kV)", mva: 6000, pf: 0.95, kind: "345 kV", planned: true, status: "Planned ~2030 · ERCOT RPG 26RPG022 · up to 6,000 MVA corridor capability", enabled: false },
+  { name: "North Lamar 69 → 138 kV conversion", mva: 239, pf: 0.95, kind: "138 kV", planned: true, status: "Planned · AE Transmission CIP · rating assumed (typical 138 kV)", enabled: false },
+  { name: "Timber Creek new 138 kV line", mva: 239, pf: 0.95, kind: "138 kV", planned: true, status: "Planned · AE Transmission CIP · rating assumed (typical 138 kV)", enabled: false },
+].map((l) => ({ planned: false, status: "In service", enabled: true, ...l }));
 
 const fmtMW = (n: number) => `${Math.round(n).toLocaleString()} MW`;
 
@@ -39,7 +43,7 @@ export default function ImportCapacity() {
 
   // 1. Thermal boundary = Σ (MVA × PF)
   const thermalBoundary = useMemo(
-    () => lines.reduce((s, l) => s + l.mva * l.pf, 0),
+    () => lines.reduce((s, l) => s + (l.enabled ? l.mva * l.pf : 0), 0),
     [lines]
   );
 
@@ -112,6 +116,7 @@ export default function ImportCapacity() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left">
+                    <th className="py-2 pr-4">Include</th>
                     <th className="py-2 pr-4">Tie-line</th>
                     <th className="py-2 pr-4">Voltage</th>
                     <th className="py-2 pr-4">MVA rating</th>
@@ -122,7 +127,21 @@ export default function ImportCapacity() {
                 <tbody>
                   {lines.map((l, i) => (
                     <tr key={l.name} className="border-b last:border-0">
-                      <td className="py-2 pr-4">{l.name}</td>
+                      <td className="py-2 pr-4">
+                        <input
+                          type="checkbox"
+                          aria-label={`Include ${l.name}`}
+                          checked={l.enabled}
+                          onChange={(e) => updateLine(i, { enabled: e.target.checked })}
+                        />
+                      </td>
+                      <td className="py-2 pr-4">
+                        <div>{l.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {l.planned && <Badge variant="outline" className="mr-1">Planned</Badge>}
+                          {l.status}
+                        </div>
+                      </td>
                       <td className="py-2 pr-4">
                         <Badge variant="secondary">{l.kind}</Badge>
                       </td>
@@ -148,12 +167,12 @@ export default function ImportCapacity() {
                         />
                       </td>
                       <td className="py-2 font-mono">
-                        {fmtMW(l.mva * l.pf)}
+                        {l.enabled ? fmtMW(l.mva * l.pf) : "—"}
                       </td>
                     </tr>
                   ))}
                   <tr className="font-semibold">
-                    <td colSpan={4} className="py-3 pr-4 text-right">
+                    <td colSpan={5} className="py-3 pr-4 text-right">
                       Thermal boundary
                     </td>
                     <td className="py-3 font-mono text-primary">
@@ -426,7 +445,7 @@ export default function ImportCapacity() {
 {`Thermal_boundary (MW) = Σᵢ ( MVAᵢ × PFᵢ )
 
 Current values:
-${lines.map((l) => `  ${l.name}: ${l.mva} MVA × ${l.pf} = ${(l.mva * l.pf).toFixed(0)} MW`).join("\n")}
+${lines.filter((l) => l.enabled).map((l) => `  ${l.name}: ${l.mva} MVA × ${l.pf} = ${(l.mva * l.pf).toFixed(0)} MW`).join("\n")}
   ────────────────────────────
   Σ = ${thermalBoundary.toFixed(0)} MW`}
                   </pre>
