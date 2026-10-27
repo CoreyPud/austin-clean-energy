@@ -1,4 +1,5 @@
 import { ssoEscalatedRate } from "./solar-model";
+import { calculateFederalSolarIncentive, type FederalSolarOptions } from "./solar-federal-incentives";
 // Austin Energy Standard Offer pro forma — third-party owner (TPO) economics.
 // Ported from Standard_offer_financial_model_stand_alone.xlsx
 // ("Standard Offer Ground" tab = under 1,300 kWdc; "Standard Offer Large" tab = 1,300 kWdc and above).
@@ -53,7 +54,7 @@ export function pickSsoScenario(systemKw: number): SsoScenario {
   return systemKw >= SSO_SCENARIO_BREAK_KW ? SSO_SCENARIOS.large : SSO_SCENARIOS.ground;
 }
 
-/** Standard Offer rate: flat for years 1-10, then rises 0.05% per year. */
+/** Standard Offer planning rate: flat for years 1-10, then rises 0.5% per year. */
 export function ssoRateForYear(baseRate: number, year: number): number {
   return ssoEscalatedRate(baseRate, year);
 }
@@ -78,6 +79,7 @@ export interface SsoProFormaRow {
 }
 
 export interface SsoProForma {
+  itcRate: number;
   scenario: SsoScenario;
   systemKw: number;
   panels: number;
@@ -121,14 +123,16 @@ export function irr(cashFlows: number[]): number | null {
   return (lo + hi) / 2;
 }
 
-export function buildSsoProForma(systemKwInput: number): SsoProForma {
+export function buildSsoProForma(systemKwInput: number, federalOptions?: FederalSolarOptions): SsoProForma {
   const systemKw = Math.max(0, systemKwInput);
   const scenario = pickSsoScenario(systemKw);
 
   const panels = Math.ceil((systemKw * 1000) / scenario.wattsPerPanel);
   const systemCost = systemKw * 1000 * scenario.costPerWatt;
-  const itcUsd = systemCost * SSO_ITC_RATE;
-  const depreciationCreditUsd = (systemCost - itcUsd) * SSO_DEPRECIATION_CREDIT_RATE;
+  const federal = calculateFederalSolarIncentive({ propertyType: "commercial", systemKw, grossCost: systemCost, aeRebate: 0, options: federalOptions });
+  const itcUsd = federal.creditUsd;
+  // §50(c)(3): depreciable basis falls by half the investment credit, not all of it.
+  const depreciationCreditUsd = (systemCost - itcUsd / 2) * SSO_DEPRECIATION_CREDIT_RATE;
   const netCostUsd = systemCost - (itcUsd + depreciationCreditUsd);
   const inverterReplacementUsd = ssoInverterReplacementCost(systemKw);
 
@@ -173,6 +177,7 @@ export function buildSsoProForma(systemKwInput: number): SsoProForma {
   }
 
   return {
+    itcRate: federal.rate,
     scenario,
     systemKw,
     panels,

@@ -20,6 +20,7 @@ import {
 } from "@/lib/solar-model";
 import { pickSsoScenario } from "@/lib/sso-proforma";
 import type { SolarSummary } from "@/lib/clean-energy-plan";
+import { calculateFederalSolarIncentive, addFederalReceipt, type FederalSolarOptions } from "./solar-federal-incentives";
 
 export function slugifyAddress(address: string): string {
   return address
@@ -132,6 +133,9 @@ export function fromGoogleSolarInsights(
 }
 
 export interface SolarRecommendation {
+  federal?: ReturnType<typeof calculateFederalSolarIncentive>;
+  federalOptions?: FederalSolarOptions;
+  federalPropertyType?: string;
   recommendedKw: number;
   maxKw: number;
   annualProductionKwh: number;
@@ -174,6 +178,7 @@ export function computeRecommendation(
     /** User-supplied installer quote ($/W), overriding the default tiered/flat rate below.
      *  A manual override, not a data-derived default. Omit for the data-driven figure. */
     costPerWOverride?: number | null;
+    federalOptions?: FederalSolarOptions;
   } = {},
 ): SolarRecommendation | null {
   if (!input) return null;
@@ -228,6 +233,10 @@ export function computeRecommendation(
   const aeRebate = Math.round(austinEnergyRebate(recommendedKw, aePropertyType));
 
   const netCost = Math.max(0, grossCost - aeRebate);
+  const federal = calculateFederalSolarIncentive({
+    propertyType: aePropertyType, systemKw: recommendedKw, grossCost,
+    aeRebate: billingMode === "sso" ? 0 : aeRebate, options: opts.federalOptions,
+  });
   const annualSavings = Math.round(annualProductionKwh * VOS_RATE);
   const paybackYears =
     annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
@@ -239,6 +248,7 @@ export function computeRecommendation(
   const pbiAnnualCredit = pbiEligible ? Math.round(buildPbiModel(recommendedKw, productionPerKw).annualCredit) : 0;
 
   return {
+    federal, federalOptions: opts.federalOptions, federalPropertyType: aePropertyType,
     recommendedKw,
     maxKw: Math.round(maxKw * 10) / 10,
     annualProductionKwh,
@@ -297,11 +307,14 @@ export function buildProgramFinancials(
   // rec.netCost already reflects CBI/PBI-threshold-aware rebate eligibility (see
   // computeRecommendation above); PBI itself is a separate on-bill credit stream layered
   // on top, not baked into netCost.
-  const thirtyYear = rec.pbiEligible
+  const thirtyYearWithPbi = rec.pbiEligible
     ? mergePbiIntoThirtyYear(thirtyYearBase, buildPbiModel(rec.recommendedKw, opts.productionPerKw))
     : thirtyYearBase;
+  const vosFederal = calculateFederalSolarIncentive({ propertyType: rec.federalPropertyType ?? "single-family", systemKw: rec.recommendedKw, grossCost: rec.grossCost, aeRebate: rec.aeRebate, options: rec.federalOptions });
+  const thirtyYear = addFederalReceipt(thirtyYearWithPbi, vosFederal.creditUsd);
   // Gross cost, not netCost: Standard Offer systems don't qualify for the AE capacity rebate.
-  const sso = buildSsoModel(rec.recommendedKw, opts.productionPerKw, rec.grossCost);
+  const ssoFederal = calculateFederalSolarIncentive({ propertyType: rec.federalPropertyType ?? "single-family", systemKw: rec.recommendedKw, grossCost: rec.grossCost, aeRebate: 0, options: rec.federalOptions });
+  const sso = addFederalReceipt(buildSsoModel(rec.recommendedKw, opts.productionPerKw, rec.grossCost), ssoFederal.creditUsd);
 
   const cumulativeSource = opts.isSSO ? sso.cumulativeByYear : thirtyYear.cumulativeByYear;
   const net25 = cumulativeSource[24]?.cumulative ?? 0;
@@ -333,7 +346,7 @@ export function buildSolarSummary(
     tenantCreditsUsd: isMultifamily ? Math.round(f.yearOne.solarTotal * VOS_RATE) : null,
     grossSystemCostUsd: rec.grossCost,
     austinEnergyRebateUsd: opts.isSSO ? 0 : rec.aeRebate,
-    netSystemCostUsd: opts.isSSO ? rec.grossCost : rec.netCost,
+    netSystemCostUsd: Math.max(0, (opts.isSSO ? rec.grossCost : rec.netCost) - (rec.federal?.creditUsd ?? 0)),
     paybackYears: isMultifamily ? null : f.paybackYear,
     lifetimeNetSavingsUsd: isMultifamily ? null : cumulative[cumulative.length - 1]?.cumulative ?? null,
     horizonYears: FINANCIAL_HORIZON_YEARS,
