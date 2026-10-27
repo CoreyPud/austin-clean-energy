@@ -42,18 +42,25 @@ export default function FederalSolarIncentives({ options, onChange, result, syst
           <p className="text-xs text-muted-foreground">Default: AE rebate treated as taxable business income, so eligible basis stays at gross cost. If excluded or a purchase-price adjustment, the rebate reduces basis. Confirm your payment's tax treatment.</p>
         </div>
       )}
+      {isNonprofit && systemKw >= 1000 && (
+        <div className="space-y-1">
+          {field("electivePayException", "Documented exception to direct-pay domestic-content reduction", options.electivePayException === true)}
+          <p className="text-xs text-muted-foreground">For this large-project, new-construction scenario, no direct pay is modeled without domestic-content compliance or this documented exception. An exception does not add the 10-point bonus. If your inverter capacity is below 1 MW AC, that is also an exception.</p>
+        </div>
+      )}
       <dl className="grid grid-cols-2 gap-3 text-xs">
         <div><dt className="text-muted-foreground">Federal eligible basis</dt><dd className="font-medium tabular-nums">${Math.round(result.eligibleBasis).toLocaleString()}</dd></div>
         <div><dt className="text-muted-foreground">Estimated cost after AE rebate and federal benefit</dt><dd className="font-medium tabular-nums">${Math.round(result.netCostUsd).toLocaleString()}</dd></div>
       </dl>
       {isNonprofit && <p className="text-xs text-muted-foreground">Restricted tax-exempt funding, including the modeled AE rebate, does not automatically reduce basis. Direct pay is capped so that restricted funding plus the credit never exceeds project cost.{result.excessBenefitReductionUsd > 0 ? ` Estimated cap reduction: $${result.excessBenefitReductionUsd.toLocaleString()}.` : ""} Other restricted grants are not included.</p>}
       <p className="text-xs text-muted-foreground">Conditional planning estimate, not an award or tax advice. Receipt is modeled in year 2; initial cash and loan principal are not reduced by a future credit. The 30% base assumes the under-1-MW-AC exception or prevailing-wage/apprenticeship compliance. Solar must generally be in service by December 31, 2027 unless construction began before July 5, 2026 under IRS rules. Other statutory restrictions apply.</p>
-      {isNonprofit && <p className="text-xs text-muted-foreground">For construction starting in 2026, elective pay may be reduced to zero without domestic-content compliance or an applicable exception. The base-credit selection assumes those requirements are satisfied; a domestic-content exception alone does not earn the bonus. Nonprofit depreciation is not modeled.</p>}
+      {isNonprofit && <p className="text-xs text-muted-foreground">Facilities below 1 MW AC are exempt from the direct-pay domestic-content reduction. Larger facilities beginning construction in 2026 need compliance or an applicable exception; a domestic-content exception alone does not earn the bonus. Nonprofit depreciation is not modeled.{result.electivePayBlocked ? " Direct pay currently modeled as $0 pending compliance or exception." : ""}</p>}
       <p className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
         <a className="underline" href="https://www.irs.gov/credits-deductions/clean-electricity-investment-credit" target="_blank" rel="noreferrer">IRS §48E</a>
         <a className="underline" href="https://www.irs.gov/credits-deductions/elective-pay-and-transferability-frequently-asked-questions-elective-pay" target="_blank" rel="noreferrer">IRS direct-pay funding rules</a>
         <a className="underline" href="https://www.irs.gov/credits-deductions/clean-electricity-low-income-communities-bonus-credit-amount-program" target="_blank" rel="noreferrer">IRS low-income allocation</a>
         <a className="underline" href="https://www.irs.gov/credits-deductions/domestic-content-bonus-credit" target="_blank" rel="noreferrer">IRS domestic content</a>
+        <a className="underline" href="https://betterbuildingssolutioncenter.energy.gov/sites/default/files/attachments/Federal-Solar-Tax-Credits-for-Businesses.pdf" target="_blank" rel="noreferrer">DOE business rebate tax treatment</a>
       </p>
     </section>
   );

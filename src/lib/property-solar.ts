@@ -312,6 +312,7 @@ export function buildProgramFinancials(
     : thirtyYearBase;
   const vosFederal = calculateFederalSolarIncentive({ propertyType: rec.federalPropertyType ?? "single-family", systemKw: rec.recommendedKw, grossCost: rec.grossCost, aeRebate: rec.aeRebate, options: rec.federalOptions });
   const thirtyYear = addFederalReceipt(thirtyYearWithPbi, vosFederal.creditUsd);
+  thirtyYear.totalSavings = thirtyYearWithPbi.totalSavings + vosFederal.creditUsd;
   // Gross cost, not netCost: Standard Offer systems don't qualify for the AE capacity rebate.
   const ssoFederal = calculateFederalSolarIncentive({ propertyType: rec.federalPropertyType ?? "single-family", systemKw: rec.recommendedKw, grossCost: rec.grossCost, aeRebate: 0, options: rec.federalOptions });
   const sso = addFederalReceipt(buildSsoModel(rec.recommendedKw, opts.productionPerKw, rec.grossCost), ssoFederal.creditUsd);

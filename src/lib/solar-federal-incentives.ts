@@ -5,6 +5,7 @@ export interface FederalSolarOptions {
   domesticContent?: boolean;
   /** Treat a commercial utility payment as excluded from income / purchase-price adjustment. */
   rebateReducesBasis?: boolean;
+  electivePayException?: boolean;
 }
 
 export const FEDERAL_SOLAR_RECEIPT_YEAR = 2;
@@ -33,13 +34,18 @@ export function calculateFederalSolarIncentive(input: {
   const domesticContentApplied = eligible && options.domesticContent === true;
   const rate = eligible ? 0.30 + (lowIncomeApplied ? 0.10 : 0) + (domesticContentApplied ? 0.10 : 0) : 0;
   const uncappedCredit = eligibleBasis * rate;
-  const credit = isNonprofit
+  const grantCappedCredit = isNonprofit
     ? Math.min(uncappedCredit, Math.max(0, grossCost - rebate))
     : uncappedCredit;
+  // Conservative current-construction scenario: below 1 MW DC also below 1 MW AC.
+  // Larger nonprofit projects need domestic compliance or a documented exception.
+  const electivePayBlocked = isNonprofit && input.systemKw >= 1000 && !domesticContentApplied && !options.electivePayException;
+  const credit = electivePayBlocked ? 0 : grantCappedCredit;
   return {
     eligible, rate, eligibleBasis, basisReduction, lowIncomeApplied, domesticContentApplied,
     creditUsd: Math.round(credit),
-    excessBenefitReductionUsd: Math.round(uncappedCredit - credit),
+    excessBenefitReductionUsd: Math.round(uncappedCredit - grantCappedCredit),
+    electivePayBlocked,
     netCostUsd: Math.max(0, grossCost - rebate - Math.round(credit)),
     kind: isNonprofit ? "Direct pay" : "Commercial ITC",
   };
