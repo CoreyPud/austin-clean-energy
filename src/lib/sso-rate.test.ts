@@ -10,7 +10,7 @@ test("Standard Offer holds 11 cents flat for years 1-10", () => {
   assert.equal(ssoRate(100, 10), 0.11);
 });
 
-test("Standard Offer rises 0.05% per year after year 10", () => {
-  close(ssoRate(100, 11), 0.11 * 1.0005);
-  close(ssoRateForYear(0.11, 20), 0.11 * Math.pow(1.0005, 10));
+test("Standard Offer rises 0.5% per year after year 10", () => {
+  close(ssoRate(100, 11), 0.11055);
+  close(ssoRateForYear(0.11, 25), 0.11 * Math.pow(1.005, 15));
 });

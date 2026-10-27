@@ -53,6 +53,7 @@ import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-plan";
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
 import { tcadAddressMatch } from "../../supabase/functions/_shared/tcad-address";
+import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 
 const DEFAULT_COST_PER_W = AUSTIN_INSTALL_COST_PER_KW / 1000;
 
@@ -78,6 +79,7 @@ const PropertyAssessment = () => {
   const [billParseError, setBillParseError] = useState<string | null>(null);
   const [billViewMode, setBillViewMode] = useState<"estimate" | "bill">("estimate");
   const [costPerW, setCostPerW] = useState<number>(DEFAULT_COST_PER_W);
+  const [federalOptions, setFederalOptions] = useState<FederalSolarOptions>({ eligible: true, lowIncome: false, domesticContent: false, rebateReducesBasis: false });
 
   // Derived solar values, recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
@@ -165,6 +167,9 @@ const PropertyAssessment = () => {
   const [needsResize, setNeedsResize] = useState(false);
   useEffect(() => setNeedsResize(true), [assessmentRun, propertyType]);
   useEffect(() => {
+    setFederalOptions({ eligible: true, lowIncome: false, domesticContent: false, rebateReducesBasis: false });
+  }, [assessmentRun, propertyType]);
+  useEffect(() => {
     if (!needsResize || !recVos || !recSso) return;
     setNeedsResize(false);
     const eligible = isSsoEligible(recSso, classifyProperty(propertyType), propertyType === "non-profit");
@@ -198,7 +203,7 @@ const PropertyAssessment = () => {
   // SolarProgramView derives all summary numbers (KPI strip, environmental impact) from this
   // directly, so no separate liveSummary calc is needed here.
   const rec = computeRecommendation(siteInput, {
-    annualUsageKwh, systemKwOverride: systemKw, billingMode, costPerWOverride: costPerW,
+    annualUsageKwh, systemKwOverride: systemKw, billingMode, costPerWOverride: costPerW, federalOptions,
   });
 
   useSeo({
@@ -444,7 +449,7 @@ const PropertyAssessment = () => {
           results: { ...results, __quizCompleted: quizCompleted, __councilOutreachScript: councilOutreachScript },
           calculator_state: {
             monthlyBill, uploadedKwh, uploadedBillData, billParseSummary, billViewMode,
-            costPerW, systemKw, billingMode, financeMode, loanTermYears, loanRate,
+            costPerW, systemKw, billingMode, financeMode, loanTermYears, loanRate, federalOptions,
           },
         }
       : null;
@@ -483,6 +488,7 @@ const PropertyAssessment = () => {
       setFinanceMode(s.financeMode ?? "cash");
       setLoanTermYears(s.loanTermYears ?? 20);
       setLoanRate(s.loanRate ?? 6);
+      setFederalOptions(s.federalOptions ?? { eligible: true, lowIncome: false, domesticContent: false, rebateReducesBasis: false });
       setBillingMode(s.billingMode ?? "vos");
       setRestoreStep(2);
     } else {
@@ -792,6 +798,8 @@ const PropertyAssessment = () => {
                         imageryQuality={si.imageryQuality}
                         imageryDate={imageryDateStr}
                         onCostPerWChange={setCostPerW}
+                        federalOptions={federalOptions}
+                        onFederalOptionsChange={setFederalOptions}
                         financingSlot={billingMode === "vos" && !isMultifamily && (
                           <div className="rounded-lg border border-border bg-card p-4">
                             <Tabs value={financeMode} onValueChange={(v) => setFinanceMode(v as "cash" | "finance")}>

@@ -371,9 +371,9 @@ export const SSO_MIN_KW         = 50;       // program minimum -- also the thres
 // Rate escalation, O&M, and inverter replacement, backed out of a TPO pro forma for a
 // sub-1MW commercial system. The pro forma prices third-party ownership (lease payment
 // out, tax benefits kept by the TPO); we instead assume the property owner installs and
-// owns the system outright, so no lease payment and no ITC/depreciation modeled here —
-// the federal ITC's commissioning-deadline status is not something to hardcode as a
-// live constant.
+// owns the system outright, so no lease payment is modeled here. Eligibility-gated
+// federal receipts are layered on by property-solar; depreciation remains confined
+// to the separate taxable-investor pro forma.
 //
 // The rate-step schedule below is the pro forma author's own projection, not Austin
 // Energy policy — confirmed against AE's actual Solar Standard Offer Rider tariff
@@ -384,9 +384,9 @@ export const SSO_MIN_KW         = 50;       // program minimum -- also the thres
 // as a simplifying stand-in so the SSO model isn't flat forever, not because we
 // believe the rate is contractually guaranteed to rise on this schedule.
 export const SSO_RATE_FLAT_YEARS = 10;          // rate holds flat for years 1-10
-export const SSO_RATE_ESCALATION = 0.0005;      // then rises 0.05% per year (compounding)
+export const SSO_RATE_ESCALATION = 0.005;       // then rises 0.5% per year (compounding)
 
-/** Standard Offer rate: flat for the first 10 years, then +0.05%/yr. */
+/** Standard Offer planning rate: flat for the first 10 years, then +0.5%/yr. */
 export function ssoEscalatedRate(base: number, year: number): number {
   return base * Math.pow(1 + SSO_RATE_ESCALATION, Math.max(0, year - SSO_RATE_FLAT_YEARS));
 }

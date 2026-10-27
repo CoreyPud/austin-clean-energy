@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import SsoProForma from "@/components/assessment/SsoProForma";
 import PbiBreakdown from "@/components/assessment/PbiBreakdown";
+import FederalSolarIncentives from "./FederalSolarIncentives";
+import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 import {
   SSO_RATE_UNDER_1MW,
   SSO_RATE_OVER_1MW,
@@ -96,6 +98,8 @@ interface SolarProgramViewProps {
   /** Calculator-only financing controls (cash/finance tabs, loan sliders), rendered between
    *  the cost breakdown and the charts -- a page-specific control this view doesn't own. */
   financingSlot?: React.ReactNode;
+  federalOptions?: FederalSolarOptions;
+  onFederalOptionsChange?: (options: FederalSolarOptions) => void;
 }
 
 export default function SolarProgramView({
@@ -120,6 +124,8 @@ export default function SolarProgramView({
   imageryDate,
   onCostPerWChange,
   financingSlot,
+  federalOptions,
+  onFederalOptionsChange,
 }: SolarProgramViewProps) {
   const [showCalcDetails, setShowCalcDetails] = useState(false);
   // Sliders commit on every drag tick so every number updates live; the model is cheap enough
@@ -148,7 +154,7 @@ export default function SolarProgramView({
   });
   const { yearOne, sso, net25, paybackYear, annualAmount } = financials;
 
-  const installCost = isSSO ? rec.grossCost : rec.netCost;
+  const installCost = rec.federal?.netCostUsd ?? (isSSO ? rec.grossCost : rec.netCost);
   const billOffsetPct = yearOne.billWithoutSolar > 0
     ? Math.round((yearOne.savings / yearOne.billWithoutSolar) * 100)
     : 0;
@@ -308,7 +314,7 @@ export default function SolarProgramView({
           {!isMultifamily && (
             <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
               <div className="text-lg font-bold tabular-nums leading-tight text-primary">{fmt$(installCost)}</div>
-              <div className="text-xs text-muted-foreground leading-snug">Net cost after rebate</div>
+              <div className="text-xs text-muted-foreground leading-snug">Estimated net cost after incentives</div>
             </div>
           )}
         </div>
@@ -318,6 +324,11 @@ export default function SolarProgramView({
           </p>
         )}
 
+        {isCommercial && rec.federal && (
+          <FederalSolarIncentives options={federalOptions ?? rec.federalOptions ?? {}}
+            onChange={onFederalOptionsChange} result={rec.federal} systemKw={liveSystemKw}
+            isNonprofit={isNonProfit} aeRebate={isSSO ? 0 : rec.aeRebate} />
+        )}
       </div>
 
       {financingSlot}
@@ -478,7 +489,7 @@ export default function SolarProgramView({
 
       {/* Third-party-owner pro forma -- same reasoning: kept inside the sticky scope. */}
       {isCommercial && isSSO && (
-        <SsoProForma systemKw={rec.recommendedKw} />
+        <SsoProForma systemKw={rec.recommendedKw} federalOptions={federalOptions ?? rec.federalOptions} />
       )}
 
       {/* Solar potential */}
@@ -572,7 +583,7 @@ export default function SolarProgramView({
                   <p className="font-medium text-foreground mb-1">Standard Offer revenue</p>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>
-                      Rate: {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh for years 1–10, then rising 0.05% per year. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same schedule. This escalation is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
+                      Rate: {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh for years 1–10, then rising 0.5% per year. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same schedule. This escalation is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
                     </li>
                     <li>Ongoing operations and maintenance: ${SSO_OM_PER_KW_YEAR} per kilowatt per year, increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually (covers insurance, monitoring, and maintenance)</li>
                     <li>Inverter replacement: about ${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)} per kilowatt, a one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
