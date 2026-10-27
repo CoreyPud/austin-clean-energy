@@ -10,11 +10,11 @@ import {
   SSO_OM_PER_KW_YEAR,
   SSO_OM_ESCALATION,
   SSO_DEGRADATION_RATE,
-  SSO_ITC_RATE,
   SSO_DEPRECIATION_CREDIT_RATE,
   SSO_INVERTER_REPLACEMENT_YEAR,
   SSO_INCENTIVE_YEAR,
 } from "@/lib/sso-proforma";
+import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 
 const fmt$ = (n: number) =>
   n < 0
@@ -25,10 +25,11 @@ const fmtK = (n: number) => `${Math.round(n).toLocaleString()}`;
 
 interface Props {
   systemKw: number;
+  federalOptions?: FederalSolarOptions;
 }
 
-const SsoProForma = ({ systemKw }: Props) => {
-  const model = useMemo(() => buildSsoProForma(systemKw), [systemKw]);
+const SsoProForma = ({ systemKw, federalOptions }: Props) => {
+  const model = useMemo(() => buildSsoProForma(systemKw, federalOptions), [systemKw, federalOptions]);
   const [showTable, setShowTable] = useState(false);
   const [showAssumptions, setShowAssumptions] = useState(false);
 
@@ -95,7 +96,7 @@ const SsoProForma = ({ systemKw }: Props) => {
         </div>
 
         <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5 mb-2">
-          The {(SSO_ITC_RATE * 100).toFixed(0)}% federal Investment Tax Credit modeled above only applies if the system is commissioned (placed in service) by December 31, 2027, a deadline moved up significantly by 2025 federal tax law changes. Projects that hadn't already begun construction by July 4, 2026 don't get the longer runway older projects had. Confirm your project's construction-start and in-service dates against current IRS guidance before relying on the net cost or IRR figures above.
+          The {(model.itcRate * 100).toFixed(0)}% commercial federal credit shown is a conditional investor estimate, not a homeowner credit. It assumes base-credit eligibility and any selected bonus requirements are met by the third-party owner. Solar must generally be placed in service by December 31, 2027 unless construction began before July 5, 2026 under IRS rules. Confirm ownership, construction dates and qualification before relying on these figures. The investor's federal benefit is separate from your roof lease payment, not an additional property-owner benefit.
         </p>
 
         {/* Cash flow table */}
@@ -129,7 +130,7 @@ const SsoProForma = ({ systemKw }: Props) => {
                   <tr key={r.year} className="border-b border-border/50">
                     <Td>{r.year}</Td>
                     <Td right>{fmtK(r.productionKwh)}</Td>
-                    <Td right>${r.rate.toFixed(2)}</Td>
+                    <Td right>{(r.rate * 100).toFixed(3)}¢</Td>
                     <Td right>{fmt$(r.revenue)}</Td>
                     <Td right>{fmt$(r.lease)}</Td>
                     <Td right>{fmt$(r.om)}</Td>
@@ -164,13 +165,13 @@ const SsoProForma = ({ systemKw }: Props) => {
             </p>
             <Row k="System cost" v={`$${model.scenario.costPerWatt.toFixed(2)} per Wdc`} />
             <Row k="Production" v={`${model.scenario.yieldKwhPerKw.toLocaleString()} kWh-ac per kWdc-year, ${(SSO_DEGRADATION_RATE * 100).toFixed(1)}% annual degradation`} />
-            <Row k="Standard Offer rate" v={`$${model.scenario.baseRate.toFixed(2)}/kWh for years 1–10, then rising 0.05% per year`} />
+            <Row k="Standard Offer rate" v={`$${model.scenario.baseRate.toFixed(2)}/kWh for years 1–10, then rising 0.5% per year (planning assumption, not a guaranteed tariff)`} />
             <Row k="Lease payment" v={`${fmt$(model.annualLeaseUsd)} per year to the property owner, 20% of year-1 solar revenue, held flat for all ${SSO_PROFORMA_TERM_YEARS} years`} />
             <Row k="O&M" v={`$${SSO_OM_PER_KW_YEAR}/kWdc-year for insurance, monitoring and maintenance, escalating ${(SSO_OM_ESCALATION * 100).toFixed(0)}% per year`} />
             <Row k="Inverter replacement" v={`${fmt$(model.inverterReplacementUsd)} in year ${SSO_INVERTER_REPLACEMENT_YEAR} ($8,000 per 125 kW block)`} />
             <Row k="Property taxes" v="Modeled as $0. Treatment for third-party-owned solar is unresolved, so this is a known omission" />
-            <Row k="Investment Tax Credit" v={`${(SSO_ITC_RATE * 100).toFixed(0)}% of system cost, only if commissioned before 12/31/2027. This is the commercial/business ITC, it does not apply to homeowners.`} />
-            <Row k="Depreciation" v={`Simplified credit of ${(SSO_DEPRECIATION_CREDIT_RATE * 100).toFixed(0)}% of cost net of the ITC, taken in year ${SSO_INCENTIVE_YEAR}, a stand-in for the present value of MACRS depreciation, not a year-by-year schedule`} />
+            <Row k="Investment Tax Credit" v={`${(model.itcRate * 100).toFixed(0)}% of eligible system cost, subject to qualification, deadlines and selected bonuses. Commercial investor only; no AE capacity rebate under Standard Offer.`} />
+            <Row k="Depreciation" v={`Simplified tax benefit of ${(SSO_DEPRECIATION_CREDIT_RATE * 100).toFixed(0)}% of depreciable basis (cost less HALF the ITC, per IRC §50(c)(3)), taken in year ${SSO_INCENTIVE_YEAR}; not a year-by-year MACRS schedule or an additional federal credit`} />
             <Row k="IRR" v={`Computed on the ${SSO_PROFORMA_TERM_YEARS} annual net cash flows, with year 1 treated as time zero (matching Excel's IRR function)`} />
             <p className="pt-2 border-t text-muted-foreground">
               Source: Austin Clean Energy Standard Offer stand-alone financial model (Standard_offer_financial_model_stand_alone.xlsx),
