@@ -38,7 +38,7 @@ export function savedPropertyMetrics(row: SavedPropertyData) {
   };
 }
 
-export function withSavedLowIncome(state: Record<string, unknown>, lowIncome: boolean) {
+export function withSavedLowIncome<T extends Record<string, unknown>>(state: T, lowIncome: boolean) {
   return { ...state, federalOptions: { ...(state.federalOptions as FederalSolarOptions | undefined), lowIncome } };
 }
 
