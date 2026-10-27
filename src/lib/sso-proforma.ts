@@ -1,3 +1,4 @@
+import { ssoEscalatedRate } from "./solar-model";
 // Austin Energy Standard Offer pro forma — third-party owner (TPO) economics.
 // Ported from Standard_offer_financial_model_stand_alone.xlsx
 // ("Standard Offer Ground" tab = under 1,300 kWdc; "Standard Offer Large" tab = 1,300 kWdc and above).
@@ -52,12 +53,9 @@ export function pickSsoScenario(systemKw: number): SsoScenario {
   return systemKw >= SSO_SCENARIO_BREAK_KW ? SSO_SCENARIOS.large : SSO_SCENARIOS.ground;
 }
 
-/** Standard Offer rate steps up $0.02 in year 6, $0.04 in year 11, $0.06 in year 16. */
+/** Standard Offer rate: flat for years 1-10, then rises 0.05% per year. */
 export function ssoRateForYear(baseRate: number, year: number): number {
-  if (year >= 16) return baseRate + 0.06;
-  if (year >= 11) return baseRate + 0.04;
-  if (year >= 6) return baseRate + 0.02;
-  return baseRate;
+  return ssoEscalatedRate(baseRate, year);
 }
 
 export function ssoInverterReplacementCost(systemKw: number): number {
