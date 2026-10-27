@@ -371,9 +371,9 @@ export const SSO_MIN_KW         = 50;       // program minimum -- also the thres
 // Rate escalation, O&M, and inverter replacement, backed out of a TPO pro forma for a
 // sub-1MW commercial system. The pro forma prices third-party ownership (lease payment
 // out, tax benefits kept by the TPO); we instead assume the property owner installs and
-// owns the system outright, so no lease payment and no ITC/depreciation modeled here —
-// the federal ITC's commissioning-deadline status is not something to hardcode as a
-// live constant.
+// owns the system outright, so no lease payment is modeled here. Eligibility-gated
+// federal receipts are layered on by property-solar; depreciation remains confined
+// to the separate taxable-investor pro forma.
 //
 // The rate-step schedule below is the pro forma author's own projection, not Austin
 // Energy policy — confirmed against AE's actual Solar Standard Offer Rider tariff

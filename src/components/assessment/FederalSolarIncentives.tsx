@@ -39,7 +39,7 @@ export default function FederalSolarIncentives({ options, onChange, result, syst
       {!isNonprofit && aeRebate > 0 && (
         <div className="space-y-1">
           {field("rebateReducesBasis", "AE rebate is excluded from taxable income / reduces purchase price", options.rebateReducesBasis === true)}
-          <p className="text-xs text-muted-foreground">Default: AE rebate treated as taxable business income, so eligible basis stays at gross cost. If excluded or a purchase-price adjustment, the rebate reduces basis. Confirm your payment's tax treatment.</p>
+          <p className="text-xs text-muted-foreground">Default: AE rebate treated as taxable business income, so eligible basis stays at gross cost. If excluded or a purchase-price adjustment, the rebate reduces basis. Confirm your payment's tax treatment; income tax on the rebate is not modeled.</p>
         </div>
       )}
       {isNonprofit && systemKw >= 1000 && (
