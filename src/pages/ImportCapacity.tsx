@@ -145,26 +145,12 @@ export default function ImportCapacity() {
                       <td className="py-2 pr-4">
                         <Badge variant="secondary">{l.kind}</Badge>
                       </td>
-                      <td className="py-2 pr-4">
-                        <Input
-                          type="number"
-                          className="w-24 h-8"
-                          value={l.mva}
-                          onChange={(e) =>
-                            updateLine(i, { mva: Number(e.target.value) || 0 })
-                          }
-                        />
+                      <td className="py-2 pr-4 font-mono">
+                        {l.mva.toLocaleString()} MVA
+                        {l.planned && <span className="text-xs text-muted-foreground"> (assumed)</span>}
                       </td>
-                      <td className="py-2 pr-4">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          className="w-20 h-8"
-                          value={l.pf}
-                          onChange={(e) =>
-                            updateLine(i, { pf: Number(e.target.value) || 0 })
-                          }
-                        />
+                      <td className="py-2 pr-4 font-mono">
+                        {l.pf.toFixed(2)}
                       </td>
                       <td className="py-2 font-mono">
                         {l.enabled ? fmtMW(l.mva * l.pf) : "—"}
