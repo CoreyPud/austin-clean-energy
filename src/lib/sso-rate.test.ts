@@ -1,14 +1,16 @@
-import { describe, it, expect } from "vitest";
-import { ssoRate } from "./solar-model";
-import { ssoRateForYear } from "./sso-proforma";
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { ssoRate } from "./solar-model.ts";
+import { ssoRateForYear } from "./sso-proforma.ts";
 
-describe("Standard Offer rate schedule", () => {
-  it("holds 11 cents flat for years 1-10", () => {
-    expect(ssoRate(100, 1)).toBe(0.11);
-    expect(ssoRate(100, 10)).toBe(0.11);
-  });
-  it("rises 0.05% per year after year 10", () => {
-    expect(ssoRate(100, 11)).toBeCloseTo(0.11 * 1.0005, 10);
-    expect(ssoRateForYear(0.11, 20)).toBeCloseTo(0.11 * Math.pow(1.0005, 10), 10);
-  });
+const close = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-10, `${a} != ${b}`);
+
+test("Standard Offer holds 11 cents flat for years 1-10", () => {
+  assert.equal(ssoRate(100, 1), 0.11);
+  assert.equal(ssoRate(100, 10), 0.11);
+});
+
+test("Standard Offer rises 0.05% per year after year 10", () => {
+  close(ssoRate(100, 11), 0.11 * 1.0005);
+  close(ssoRateForYear(0.11, 20), 0.11 * Math.pow(1.0005, 10));
 });
