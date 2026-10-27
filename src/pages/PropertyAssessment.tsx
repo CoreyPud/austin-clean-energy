@@ -43,7 +43,6 @@ import {
   billToMonthlyKwh,
   AUSTIN_INSTALL_COST_PER_KW,
   calculateAustinEnergyUsageBill,
-  SSO_MIN_KW,
 } from "@/lib/solar-model";
 import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, isSsoEligible, buildSolarSummary, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
@@ -52,7 +51,7 @@ import SavedPropertiesDrawer, { type AssessmentSnapshot } from "@/components/ass
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
 import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-plan";
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
-import { tcadAddressMatch } from "../../supabase/functions/_shared/tcad-address";
+import { ASSESSMENT_PROPERTY_TYPES, detectAssessmentPropertyType } from "@/lib/assessment-property-type";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 
 const DEFAULT_COST_PER_W = AUSTIN_INSTALL_COST_PER_KW / 1000;
@@ -62,13 +61,17 @@ const PropertyAssessment = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const sharedAddress = searchParams.get("address") || "";
   const requestedType = searchParams.get("type") || searchParams.get("propertyType") || "";
-  const VALID_TYPES = ["single-family", "multi-family", "condo", "commercial", "non-profit"];
+  const VALID_TYPES = ASSESSMENT_PROPERTY_TYPES;
   const { toast } = useToast();
   const [address, setAddress] = useState(sharedAddress);
   const [propertyType, setPropertyType] = useState(
     VALID_TYPES.includes(requestedType) ? requestedType : "single-family",
   );
   const [loading, setLoading] = useState(false);
+  const manualPropertyType = useRef(VALID_TYPES.includes(requestedType));
+  const currentAddress = useRef(address);
+  currentAddress.current = address;
+  const [typeLookupStatus, setTypeLookupStatus] = useState<"idle" | "checking" | "matched" | "unmatched">("idle");
   const [results, setResults] = useState<any>(null);
   const [monthlyBill, setMonthlyBill] = useState(150);
   const [uploadedKwh, setUploadedKwh] = useState<number[] | null>(null);
@@ -151,7 +154,7 @@ const PropertyAssessment = () => {
   // Multifamily has no owner bill savings to finance against (credits go to tenants), so the
   // financing tabs are hidden there and any earlier Finance selection is ignored.
   const effectiveLoanTerm = financeMode === "cash" || isMultifamily ? 0 : loanTermYears;
-  const ssoEligible = propertyType === "commercial" && solarMaxKw >= SSO_MIN_KW;
+  const ssoEligible = isSsoEligible({ maxKw: solarMaxKw }, classifyProperty(propertyType), propertyType === "non-profit");
 
   // Reset size, billing mode, and $/W to the recommendation when a fresh result loads or the
   // property type changes. Deferred through a flag rather than done inside those triggers
@@ -313,9 +316,9 @@ const PropertyAssessment = () => {
     return null;
   };
 
-  const callUnified = async (lifestyleData?: LifestyleData, solarSummary?: SolarSummary | null) => {
+  const callUnified = async (lifestyleData?: LifestyleData, solarSummary?: SolarSummary | null, assessedType = propertyType) => {
     const { data, error } = await supabase.functions.invoke("unified-assessment", {
-      body: { address: address.trim(), propertyType, lifestyleData, solarSummary },
+      body: { address: address.trim(), propertyType: assessedType, lifestyleData, solarSummary },
     });
     if (error) throw new Error(await edgeFunctionErrorMessage(error));
     if (data?.error) throw new Error(data.error);
@@ -340,7 +343,17 @@ const PropertyAssessment = () => {
       setSearchParams(next, { replace: true });
     }
     try {
-      const data = await callUnified();
+      let assessedType = propertyType;
+      if (!manualPropertyType.current) {
+        const detected = await lookupPropertyType(trimmed);
+        if (currentAddress.current.trim() !== trimmed) return;
+        if (detected && !manualPropertyType.current) {
+          assessedType = detected;
+          setPropertyType(detected);
+        }
+      }
+      const data = await callUnified(undefined, undefined, assessedType);
+      if (currentAddress.current.trim() !== trimmed) return;
       setResults(data);
       setAssessmentRun((n) => n + 1);
       
@@ -361,8 +374,7 @@ const PropertyAssessment = () => {
     }
   };
 
-  // Arriving via link (?address=...) only prefills the address; the visitor confirms the
-  // property type and other options, then starts the assessment themselves.
+  // Address links prefill the address and check TCAD; solar data is fetched on submit.
 
   const handleGetPersonalizedPlan = () => {
     setShowLifestyleForm(true);
@@ -401,28 +413,36 @@ const PropertyAssessment = () => {
     }
   };
 
-  const DB_TYPE_MAP: Record<string, string> = {
-    single_family:  "single-family",
-    multifamily:    "multi-family",
-    condo:          "condo",
-    commercial:     "commercial",
-    non_profit:     "non-profit",
+  const lookupPropertyType = async (fullAddress: string) => {
+    try {
+      return await detectAssessmentPropertyType(fullAddress, async (match) => {
+        let query = supabase.from("tcad_properties").select("property_type").ilike("situs_address", match.pattern);
+        if (match.zip) query = query.eq("situs_zip", match.zip);
+        const { data, error } = await query.limit(2);
+        return error ? null : data;
+      });
+    } catch {
+      return null;
+    }
   };
 
-  const handlePlaceSelected = async (fullAddress: string) => {
-    // Same matcher the edge function uses to find the cached solar row.
-    const match = tcadAddressMatch(fullAddress);
-    if (!match) return;
-    let query = supabase
-      .from("tcad_properties")
-      .select("property_type")
-      .ilike("situs_address", match.pattern);
-    if (match.zip) query = query.eq("situs_zip", match.zip);
-    const { data } = await query.limit(2);
-    if (data?.length === 1 && data[0].property_type) {
-      const mapped = DB_TYPE_MAP[data[0].property_type];
-      if (mapped) setPropertyType(mapped);
-    }
+  useEffect(() => {
+    if (!address.trim() || manualPropertyType.current || searchParams.get("share")) return;
+    let cancelled = false;
+    setTypeLookupStatus("checking");
+    const timer = setTimeout(async () => {
+      const detected = await lookupPropertyType(address);
+      if (cancelled || manualPropertyType.current) return;
+      if (detected) setPropertyType(detected);
+      setTypeLookupStatus(detected ? "matched" : "unmatched");
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [address]);
+
+  const handleAddressChange = (value: string) => {
+    manualPropertyType.current = false;
+    setTypeLookupStatus("idle");
+    setAddress(value);
   };
 
   const handleStartOver = () => {
@@ -431,6 +451,8 @@ const PropertyAssessment = () => {
     setCouncilOutreachScript(null);
     setShowLifestyleForm(false);
     setAddress("");
+    manualPropertyType.current = false;
+    setTypeLookupStatus("idle");
     setPropertyType("single-family");
     if (searchParams.get("address")) {
       const next = new URLSearchParams(searchParams);
@@ -459,6 +481,8 @@ const PropertyAssessment = () => {
   const [sharedView, setSharedView] = useState<string | null>(null);
 
   const openSaved = (row: AssessmentSnapshot) => {
+    manualPropertyType.current = true;
+    setTypeLookupStatus("idle");
     const r: any = row.results;
     const { __quizCompleted, __councilOutreachScript, ...rest } = r || {};
     setAddress(row.address);
@@ -542,8 +566,7 @@ const PropertyAssessment = () => {
                 <AddressAutocomplete
                   id="address"
                   value={address}
-                  onChange={setAddress}
-                  onPlaceSelected={handlePlaceSelected}
+                  onChange={handleAddressChange}
                   onKeyDown={(e) => e.key === "Enter" && !loading && handleAssess()}
                 />
               </div>
@@ -552,7 +575,11 @@ const PropertyAssessment = () => {
               <div className="grid md:grid-cols-2 gap-4 items-start">
                 <div>
                   <Label htmlFor="propertyType" className="text-xs text-muted-foreground mb-1.5 block">Property type</Label>
-                  <Select value={propertyType} onValueChange={setPropertyType}>
+                  <Select value={propertyType} onValueChange={(value) => {
+                    manualPropertyType.current = true;
+                    setTypeLookupStatus("idle");
+                    setPropertyType(value);
+                  }}>
                     <SelectTrigger id="propertyType" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -564,6 +591,9 @@ const PropertyAssessment = () => {
                       <SelectItem value="non-profit">Non-profit</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground mt-1.5" role="status">
+                    {typeLookupStatus === "checking" ? "Checking TCAD property type…" : typeLookupStatus === "matched" ? "Property type matched from TCAD. Nonprofit ownership must be selected manually." : typeLookupStatus === "unmatched" ? "No unique TCAD type found. Confirm the property type above." : null}
+                  </p>
                 </div>
 
                 {isMultifamily ? null : (propertyType === "commercial" || propertyType === "non-profit") ? (

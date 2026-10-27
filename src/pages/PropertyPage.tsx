@@ -17,10 +17,11 @@ import {
   estimateProductionPerKw,
   getCtaCopy,
   DEFAULT_MONTHLY_BILL,
+  isSsoEligible,
 } from "@/lib/property-solar";
 import SolarProgramView, { SolarBillingToggle } from "@/components/assessment/SolarProgramView";
 import { formatAssessorAddress } from "@/lib/address-utils";
-import { billToMonthlyKwh, SSO_MIN_KW } from "@/lib/solar-model";
+import { billToMonthlyKwh } from "@/lib/solar-model";
 import { Slider } from "@/components/ui/slider";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -242,7 +243,7 @@ export default function PropertyPage() {
   const rec = computeRecommendation(siteInput, {
     annualUsageKwh: isResidential ? residentialAnnualUsage : isCommercial ? commercialAnnualUsage : null,
     systemKwOverride,
-    billingMode: isCommercial && billingMode === "sso" ? "sso" : "vos",
+    billingMode: !isResidential && billingMode === "sso" ? "sso" : "vos",
     costPerWOverride,
   });
   // The natural default size (no manual override) for the current billing mode -- used only
@@ -250,7 +251,7 @@ export default function PropertyPage() {
   // as `rec` but without systemKwOverride.
   const recNatural = computeRecommendation(siteInput, {
     annualUsageKwh: isResidential ? residentialAnnualUsage : isCommercial ? commercialAnnualUsage : null,
-    billingMode: isCommercial && billingMode === "sso" ? "sso" : "vos",
+    billingMode: !isResidential && billingMode === "sso" ? "sso" : "vos",
   });
   const hasSolar = !!property.solar_fetched_at && property.solar_max_panels != null;
   const address  = formatAssessorAddress(property.situs_address) || `Property ${property.pid}`;
@@ -269,7 +270,7 @@ export default function PropertyPage() {
 
   // Matches SolarProgramView's own internal ssoEligible formula exactly -- this page's
   // surrounding copy (bill input gating, CTA) needs to agree with what the shared view decides.
-  const ssoEligible    = isCommercial && (rec?.maxKw ?? 0) >= SSO_MIN_KW;
+  const ssoEligible = rec ? isSsoEligible(rec, cls, false) : false;
 
   const productionPerKw = estimateProductionPerKw(property.solar_sunshine_hrs);
 
