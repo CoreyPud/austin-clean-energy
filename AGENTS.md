@@ -9,3 +9,4 @@
 - Commercial savings calculations expose energy savings, demand-charge savings, and program payments separately in the shared model; the page uses energy-only rates so demand charges are not counted twice.
 - Solar federal incentives use one eligibility-gated model shared by property recommendations and the SSO investor pro forma; utility rebate basis treatment and nonprofit excess-benefit caps stay separate, and owner federal receipts enter cash flow in year 2 without shrinking initial loan principal.
 - Assessment address entry and direct links share a unique-match TCAD type detector; manual, URL, and saved type selections take precedence to avoid overwriting owner-provided classifications.
+- Saved-property table projections reuse assessment solar models and store incentive selections in calculator_state; preserve other saved inputs so reopening and public sharing use the same financial assumptions.

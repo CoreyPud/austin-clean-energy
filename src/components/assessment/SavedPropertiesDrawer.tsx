@@ -1,13 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { lovable } from "@/integrations/lovable/index";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Link as LinkIcon, Trash2, Loader2, LogOut, Save, Wrench } from "lucide-react";
+import { Bookmark, Loader2, LogOut, Save } from "lucide-react";
 import { encodeProjectParam, projectFromSaved } from "@/lib/shared-project";
 import { toast } from "sonner";
 import BatchCsvUpload from "./BatchCsvUpload";
+import SavedPropertiesTable from "./SavedPropertiesTable";
+import { savedPropertyMetrics, withSavedLowIncome } from "@/lib/saved-property-table";
 
 export type AssessmentSnapshot = {
   address: string;
@@ -39,6 +42,7 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
   const [rows, setRows] = useState<SavedRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
@@ -51,16 +55,26 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
   const loadRows = useCallback(async () => {
     if (!userId) return setRows([]);
     setLoadingList(true);
-    const { data, error } = await supabase
-      .from("saved_assessments")
-      .select("id, share_token, label, address, property_type, calculator_state, results, updated_at")
-      .order("updated_at", { ascending: false });
+    const allRows: SavedRow[] = [];
+    let failed = false;
+    for (let offset = 0; ; offset += 500) {
+      const { data, error } = await supabase
+        .from("saved_assessments")
+        .select("id, share_token, label, address, property_type, calculator_state, results, updated_at")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false }).order("id")
+        .range(offset, offset + 499);
+      if (error) { failed = true; break; }
+      allRows.push(...(data ?? []) as SavedRow[]);
+      if ((data?.length ?? 0) < 500) break;
+    }
     setLoadingList(false);
-    if (error) return toast.error("Couldn't load saved properties");
-    setRows((data ?? []) as SavedRow[]);
+    if (failed) return toast.error("Couldn't load saved properties");
+    setRows(allRows);
   }, [userId]);
 
   useEffect(() => { loadRows(); }, [loadRows]);
+  useEffect(() => { if (open) loadRows(); }, [open, loadRows]);
 
   const save = useCallback(async (snap: AssessmentSnapshot) => {
     if (!userId) return;
@@ -125,6 +139,29 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
     catch { window.prompt("Copy this link:", url); }
   };
 
+  const updateLowIncome = async (row: SavedRow, checked: boolean) => {
+    if (!userId || updatingIds.has(row.id) || !savedPropertyMetrics(row).canSetLowIncome) return;
+    setUpdatingIds(prev => new Set(prev).add(row.id));
+    try {
+      // Read the latest inputs before changing just this property's low-income choice.
+      const { data: latest, error: readError } = await supabase.from("saved_assessments")
+        .select("calculator_state").eq("id", row.id).eq("user_id", userId).single();
+      if (readError || !latest) throw new Error("Couldn't read the property");
+      const calculator_state = withSavedLowIncome(latest.calculator_state as Record<string, unknown>, checked);
+      const { data: updated, error } = await supabase.from("saved_assessments")
+        .update({ calculator_state: calculator_state as Json, updated_at: new Date().toISOString() })
+        .eq("id", row.id).eq("user_id", userId)
+        .select("id, share_token, label, address, property_type, calculator_state, results, updated_at").single();
+      if (error || !updated) throw new Error("Couldn't save the low-income selection");
+      setRows(prev => prev.map(r => r.id === row.id ? updated as SavedRow : r));
+      toast.success("Low-income selection saved");
+    } catch {
+      toast.error("Couldn't save the low-income selection. Please try again.");
+    } finally {
+      setUpdatingIds(prev => { const next = new Set(prev); next.delete(row.id); return next; });
+    }
+  };
+
   const remove = async (id: string) => {
     if (!confirm("Delete this saved property?")) return;
     const { error } = await supabase.from("saved_assessments").delete().eq("id", id);
@@ -159,7 +196,7 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
             My saved properties
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-[min(1400px,95vw)] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Saved properties</SheetTitle>
             <SheetDescription>
@@ -190,40 +227,10 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
               <BatchCsvUpload userId={session.user.id} onFinished={loadRows} />
 
 
-              <div className="space-y-3">
-                {loadingList && <p className="text-sm text-muted-foreground">Loading…</p>}
-                {!loadingList && rows.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No saved properties yet.</p>
-                )}
-                {rows.map((r) => {
-                  const st = r.calculator_state as { systemKw?: number };
-                  return (
-                    <div key={r.id} className="rounded-lg border border-border p-3 space-y-2">
-                      <button
-                        className="text-left w-full"
-                        onClick={() => { onOpenSaved(r); setOpen(false); }}
-                      >
-                        <div className="font-medium text-foreground hover:underline">{r.address}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {r.property_type}
-                          {st?.systemKw ? ` · ${st.systemKw} kW` : ""} · saved {new Date(r.updated_at).toLocaleDateString()}
-                        </div>
-                      </button>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline" onClick={() => copyLink(r.share_token)} className="gap-1">
-                          <LinkIcon className="h-3.5 w-3.5" /> Copy share link
-                        </Button>
-                        <Button size="sm" variant="outline" className="gap-1" onClick={() => openInSuite(r)}>
-                          <Wrench className="h-3.5 w-3.5" /> Open in Solar Suite
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => remove(r.id)} aria-label="Delete">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {loadingList ? <p className="text-sm text-muted-foreground">Loading…</p> :
+                <SavedPropertiesTable rows={rows} updatingIds={updatingIds}
+                  onOpen={r => { onOpenSaved(r); setOpen(false); }}
+                  onLowIncome={updateLowIncome} onShare={copyLink} onSuite={openInSuite} onDelete={remove} />}
             </div>
           )}
         </SheetContent>
