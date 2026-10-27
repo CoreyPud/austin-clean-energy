@@ -155,10 +155,10 @@ export interface SolarRecommendation {
 
 /** Single source for whether the SSO/VoS billing choice is even worth showing -- both pages
  *  and SolarProgramView's two exports (the toggle and the main view) need to agree on this
- *  exactly, or one can show a toggle the other doesn't expect. Non-profits are excluded (the
- *  Standard Offer program is for-profit commercial only). */
-export function isSsoEligible(rec: SolarRecommendation, propertyClass: PropertyClass, isNonProfit: boolean): boolean {
-  return propertyClass === "commercial" && !isNonProfit && rec.maxKw >= SSO_MIN_KW;
+ *  exactly, or one can show a toggle the other doesn't expect. Commercial, nonprofit, and
+ *  multifamily properties may use Standard Offer once the roof meets the size minimum. */
+export function isSsoEligible(rec: Pick<SolarRecommendation, "maxKw">, propertyClass: PropertyClass, _isNonProfit: boolean): boolean {
+  return (propertyClass === "commercial" || propertyClass === "multifamily") && rec.maxKw >= SSO_MIN_KW;
 }
 
 export function computeRecommendation(
@@ -339,7 +339,7 @@ export function buildSolarSummary(
   opts: { annualUsageKwh: number; productionPerKw: number; isSSO: boolean; monthlyUsageKwh?: number[] },
 ): SolarSummary {
   const f = buildProgramFinancials(rec, opts);
-  const isMultifamily = cls === "multifamily";
+  const isMultifamily = cls === "multifamily" && !opts.isSSO;
   const cumulative = opts.isSSO ? f.sso.cumulativeByYear : f.thirtyYear.cumulativeByYear;
   return {
     recommendedSystemKw: rec.recommendedKw,

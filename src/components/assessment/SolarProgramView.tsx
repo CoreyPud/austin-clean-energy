@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpactCard";
 import SsoProForma from "@/components/assessment/SsoProForma";
@@ -138,6 +139,7 @@ export default function SolarProgramView({
   const isCommercial = propertyClass === "commercial";
   const ssoEligible = isSsoEligible(rec, propertyClass, isNonProfit);
   const isSSO = ssoEligible && billingMode === "sso";
+  const tenantCreditMode = isMultifamily && !isSSO;
   // Only residential and commercial-VoS reflect a real bill/usage figure -- multifamily's
   // credits land on the tenants' meters (no single owner bill to compare against), and SSO
   // revenue doesn't depend on usage at all. Showing a "vs. consumption" chart in either case
@@ -237,7 +239,7 @@ export default function SolarProgramView({
 
             </div>
 
-            {isMultifamily ? (
+            {tenantCreditMode ? (
             <div className="border-t mt-3 pt-3 grid grid-cols-1 md:grid-cols-4 gap-1.5">
               <StickyKpi label="install cost" value={fmt$(installCost)} href="#section-install" />
               <StickyKpi label="yearly tenant credits" value={fmt$(tenantCreditsYear1)} href="#section-savings" highlight />
@@ -311,7 +313,7 @@ export default function SolarProgramView({
             </div>
           )}
           {/* Multifamily has no modeled rebate yet, so a "net" tile would just repeat gross. */}
-          {!isMultifamily && (
+          {!tenantCreditMode && (
             <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
               <div className="text-lg font-bold tabular-nums leading-tight text-primary">{fmt$(installCost)}</div>
               <div className="text-xs text-muted-foreground leading-snug">Estimated net cost after incentives</div>
@@ -378,7 +380,7 @@ export default function SolarProgramView({
           </ResponsiveContainer>
         </div>
 
-        {isMultifamily ? (
+        {tenantCreditMode ? (
           <p className="text-sm text-muted-foreground">
             Under Austin Energy's multifamily program, Value of Solar credits are split across the
             tenants' own electric accounts rather than the owner's, so this system's payoff shows
@@ -539,8 +541,9 @@ export default function SolarProgramView({
             <li>Production: Google Solar peak-sun-hours × {SYSTEM_DERATE} performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
             {isResidential && <li>Savings rate: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production)</li>}
             {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate (${AUSTIN_ENERGY_SOLAR_REBATE.toLocaleString()} for systems {AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW} kW and up) applied</li>}
-            {isMultifamily && <li>System sized to maximum roof capacity. Tenant credits: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production), split across tenants' accounts</li>}
-            {isMultifamily && <li>Austin Energy's multifamily rebate isn't included yet; see their multifamily solar page for current amounts</li>}
+            {tenantCreditMode && <li>System sized to maximum roof capacity. Tenant credits: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production), split across tenants' accounts</li>}
+            {tenantCreditMode && <li>Austin Energy's multifamily rebate isn't included yet; see their multifamily solar page for current amounts</li>}
+            {isMultifamily && isSSO && <li>Standard Offer pays the owner for generation, starting at {(ssoRate(systemKw) * 100).toFixed(2)}¢/kWh for years 1–10, then modeled at 0.5% annual escalation. No Austin Energy capacity rebate is included.</li>}
           </ul>
         </div>
       )}
@@ -567,7 +570,7 @@ export default function SolarProgramView({
                       : "from the Standard Offer pro forma's tiered rate; systems 1,300 kW and above use a slightly higher rate"}
                     . Get real quotes to verify.)
                   </li>
-                  {isNonProfit ? (
+                  {isNonProfit && !isSSO ? (
                     <li>Austin Energy non-profit solar rebate: ${NONPROFIT_CBI_PER_W.toFixed(2)}/W, on up to {NONPROFIT_CBI_CAP_KW} kW</li>
                   ) : isSSO ? (
                     <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
@@ -640,27 +643,31 @@ export function SolarBillingToggle({
     <div className="space-y-2">
       {ssoEligible && (
         <p className="text-sm text-muted-foreground">
-          This roof qualifies for two different Austin Energy commercial solar programs. Standard Offer pays a locked-in rate for every kilowatt-hour produced, as a standalone revenue stream with your electricity bill unaffected. Value of Solar instead credits production against your own bill, and (for systems {PBI_MIN_KW} kW and up) can also stack a {COMMERCIAL_PBI_YEARS}-year Performance-Based Incentive on top. Pick one below to see the numbers.
+          This roof meets the {SSO_MIN_KW} kW minimum to compare Standard Offer and Value of Solar. Standard Offer pays for generation without changing electricity bills. {isMultifamily ? "Multifamily Value of Solar credits go to tenant accounts." : "Value of Solar credits production against your electricity bill."} Final program eligibility requires Austin Energy approval.
         </p>
       )}
 
       {ssoEligible && (
         <div className="space-y-2">
           <div className="flex rounded-md border overflow-hidden text-xs font-medium w-full">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              aria-pressed={billingMode === "sso"}
               onClick={() => onBillingModeChange("sso")}
               className={`flex-1 py-1.5 transition-colors ${billingMode === "sso" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               Standard Offer
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              aria-pressed={billingMode === "vos"}
               onClick={() => onBillingModeChange("vos")}
               className={`flex-1 py-1.5 transition-colors ${billingMode === "vos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               Value of Solar
-            </button>
+            </Button>
           </div>
           <p className="text-sm text-muted-foreground">
             {isSSO ? (
@@ -673,7 +680,7 @@ export function SolarBillingToggle({
               <>
                 Austin Energy's{" "}
                 <a href="https://austinenergy.com/green-power/solar-solutions/value-of-solar-rate" target="_blank" rel="noopener noreferrer" className="underline">Value of Solar program</a>
-                {" "}credits your production at {VOS_RATE_DISPLAY} against your own bill, up to what you actually use each month; production beyond your usage isn't credited or paid out.{rec.pbiEligible ? ` This system size also qualifies for the Performance-Based Incentive, a ${COMMERCIAL_PBI_YEARS}-year credit on top of Value of Solar, see below.` : ""}
+                {" "}{isMultifamily ? `credits production at ${VOS_RATE_DISPLAY} to tenant accounts.` : `credits your production at ${VOS_RATE_DISPLAY} against your own bill, up to what you actually use each month; production beyond your usage isn't credited or paid out.`}{rec.pbiEligible ? ` This system size also qualifies for the Performance-Based Incentive, a ${COMMERCIAL_PBI_YEARS}-year credit on top of Value of Solar, see below.` : ""}
               </>
             )}
           </p>
@@ -687,7 +694,7 @@ export function SolarBillingToggle({
           {" "}credits all your production at {VOS_RATE_DISPLAY} against your bill. Once credits cover your bill, additional production doesn't improve payback, so we size to match your consumption.
         </p>
       )}
-      {isMultifamily && (
+      {isMultifamily && !isSSO && (
         <p className="text-sm text-muted-foreground">
           On multifamily properties, Austin Energy credits the system's production at {VOS_RATE_DISPLAY} to the tenants' own electric bills, and the owner can apply for an upfront rebate. See{" "}
           <a href="https://austinenergy.com/green-power/solar-solutions/for-your-multifamily" target="_blank" rel="noopener noreferrer" className="underline">AE's multifamily solar page</a>

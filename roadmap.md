@@ -1,4 +1,5 @@
 # Current
+- [x] Automatically detect assessment property type from TCAD and enable Standard Offer for nonprofits and multifamily; verify lookup and program switching.
 - [x] Correct Standard Offer escalation to 0.5% after year 10 and verify the rate schedule.
 - [x] Verify rebate/federal incentive interaction; add commercial/nonprofit federal benefits and selectable low-income/domestic-content bonuses, persist selections, and verify financial updates.
 - [x] Clarify and verify commercial improvement returns include lower electricity usage and bill savings, separate from rebates and program payments.
