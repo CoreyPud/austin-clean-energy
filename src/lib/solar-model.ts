@@ -383,8 +383,13 @@ export const SSO_MIN_KW         = 50;       // program minimum -- also the thres
 // guaranteed floor beyond the currently published rate. Kept as a fixed step-up here
 // as a simplifying stand-in so the SSO model isn't flat forever, not because we
 // believe the rate is contractually guaranteed to rise on this schedule.
-export const SSO_RATE_STEP = 0.02;               // $/kWh added at each escalation year
-export const SSO_RATE_STEP_YEARS = [6, 11, 16];  // 1-indexed year each step starts, then holds
+export const SSO_RATE_FLAT_YEARS = 10;          // rate holds flat for years 1-10
+export const SSO_RATE_ESCALATION = 0.0005;      // then rises 0.05% per year (compounding)
+
+/** Standard Offer rate: flat for the first 10 years, then +0.05%/yr. */
+export function ssoEscalatedRate(base: number, year: number): number {
+  return base * Math.pow(1 + SSO_RATE_ESCALATION, Math.max(0, year - SSO_RATE_FLAT_YEARS));
+}
 
 export const SSO_OM_PER_KW_YEAR = 10;                          // $/kW/year: insurance, monitoring, maintenance
 export const SSO_OM_ESCALATION = 0.02;                         // per year
@@ -393,8 +398,7 @@ export const SSO_INVERTER_REPLACEMENT_YEAR = 14;               // 1-indexed year
 
 export function ssoRate(systemKw: number, year = 1): number {
   const base = systemKw >= 1000 ? SSO_RATE_OVER_1MW : SSO_RATE_UNDER_1MW;
-  const steps = SSO_RATE_STEP_YEARS.filter(stepYear => year >= stepYear).length;
-  return base + steps * SSO_RATE_STEP;
+  return ssoEscalatedRate(base, year);
 }
 
 export function buildSsoModel(systemKw: number, productionPerKw: number, installCost: number) {

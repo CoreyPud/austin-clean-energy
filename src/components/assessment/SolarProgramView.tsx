@@ -12,8 +12,6 @@ import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import {
   SSO_RATE_UNDER_1MW,
   SSO_RATE_OVER_1MW,
-  SSO_RATE_STEP,
-  SSO_RATE_STEP_YEARS,
   SSO_OM_PER_KW_YEAR,
   SSO_OM_ESCALATION,
   SSO_INVERTER_REPLACEMENT_PER_KW,
@@ -192,10 +190,6 @@ export default function SolarProgramView({
   const tenantCreditsYear1 = yearOne.solarTotal * AUSTIN_ENERGY_RATES.vosRate;
 
 
-  const ssoRateSteps = [1, ...SSO_RATE_STEP_YEARS].map((year, i) => ({
-    year,
-    rate: SSO_RATE_UNDER_1MW + i * SSO_RATE_STEP,
-  }));
 
   const hasRoofInfo = sunshineHrsDisplay || roofSqft || panelCount || imageryQuality;
 
@@ -578,7 +572,7 @@ export default function SolarProgramView({
                   <p className="font-medium text-foreground mb-1">Standard Offer revenue</p>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>
-                      Rate: {ssoRateSteps.map(s => `${(s.rate * 100).toFixed(2)}¢/kWh from year ${s.year}`).join(" → ")}, then holds through year 25. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same step schedule. This step-up is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
+                      Rate: {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh for years 1–10, then rising 0.05% per year. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same schedule. This escalation is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
                     </li>
                     <li>Ongoing operations and maintenance: ${SSO_OM_PER_KW_YEAR} per kilowatt per year, increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually (covers insurance, monitoring, and maintenance)</li>
                     <li>Inverter replacement: about ${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)} per kilowatt, a one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
