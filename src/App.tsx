@@ -78,6 +78,8 @@ import InnovationGapPage from "./pages/InnovationGap";
 import RegistryPage from "./components/utility-registry/RegistryPage";
 import { StatesPage as UirStates, SolarPage as UirSolar, EfficiencyPage as UirEfficiency, AboutPage as UirAbout } from "./components/utility-registry/OtherPages";
 import { SolarBomPage, SolarDraftPage, SolarFlowPage } from "./pages/SolarSuite";
+import LegacyPublicUrlRedirect from "./components/LegacyPublicUrlRedirect";
+import { PUBLIC_URL_RENAMES } from "./lib/public-url-renames";
 
 const queryClient = new QueryClient();
 
@@ -100,6 +102,9 @@ const AppRoutes = () => {
       <Routes location={background || location}>
         {/* Public pages with footer */}
         <Route element={<PublicLayout />}>
+          {Object.keys(PUBLIC_URL_RENAMES).map((path) => (
+            <Route key={path} path={path} element={<LegacyPublicUrlRedirect />} />
+          ))}
           <Route path="/" element={<Index />} />
           <Route path="/austin-at-a-glance" element={<AustinAtGlance />} />
           <Route path="/what-you-can-do" element={<WhatYouCanDo />} />
@@ -133,8 +138,8 @@ const AppRoutes = () => {
           <Route path="/building-energy-use" element={<BuildingEnergyUse />} />
           <Route path="/building-energy-usage" element={<BuildingEnergyUsage />} />
           <Route path="/load-growth" element={<LoadGrowth />} />
-          <Route path="/import-capacity" element={<ImportCapacity />} />
-          <Route path="/power-money" element={<PowerMoney />} />
+          <Route path="/austin-transmission-capacity-calculator" element={<ImportCapacity />} />
+          <Route path="/austin-energy-generation-costs" element={<PowerMoney />} />
           <Route path="/people-with-power" element={<PeopleWithPower />} />
           <Route path="/energy-timeline" element={<EnergyTimeline />} />
           <Route path="/energy-education" element={<EnergyEducation />} />
@@ -143,14 +148,14 @@ const AppRoutes = () => {
           <Route path="/course/login" element={<CourseLogin />} />
           <Route path="/load-estimator" element={<LoadEstimator />} />
           <Route path="/peaker-vs-battery" element={<PeakerVsBatteryPage />} />
-          <Route path="/gets" element={<GetsPage />} />
+          <Route path="/grid-enhancing-technologies" element={<GetsPage />} />
           <Route path="/case-for-austin-energy" element={<CaseForAustinEnergy />} />
           <Route path="/nonprofit-solar-lender" element={<NonprofitSolarLender />} />
-          <Route path="/kwh-cost" element={<KwhCostPage />} />
-          <Route path="/atb-options" element={<AtbOptions />} />
-          <Route path="/peaker-proforma" element={<PeakerProforma />} />
-          <Route path="/peak-shave" element={<PeakShavePage />} />
-          <Route path="/demand-distribution" element={<DemandDistribution />} />
+          <Route path="/austin-electricity-price-arbitrage" element={<KwhCostPage />} />
+          <Route path="/clean-energy-technology-database" element={<AtbOptions />} />
+          <Route path="/gas-peaker-plant-cost-calculator" element={<PeakerProforma />} />
+          <Route path="/peak-shaving-calculator" element={<PeakShavePage />} />
+          <Route path="/austin-electricity-demand-map" element={<DemandDistribution />} />
           <Route path="/austin-irp-planning" element={<AustinIRPPlanning />} />
           <Route path="/austin-load-zone-outlook" element={<AustinLoadZoneOutlook />} />
           <Route path="/innovation-gap" element={<InnovationGapPage />} />

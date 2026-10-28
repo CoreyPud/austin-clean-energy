@@ -392,7 +392,7 @@ const PeopleWithPower = () => {
 
             <p>
               For the dollars behind these resources, see the{" "}
-              <a href="/power-money" className="text-primary hover:underline">
+              <a href="/austin-energy-generation-costs" className="text-primary hover:underline">
                 Power Money
               </a>{" "}
               page.

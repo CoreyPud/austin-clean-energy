@@ -295,7 +295,7 @@ const AustinAtGlance = () => {
       "austin-energy": [
         {
           key: "power-money",
-          to: "/power-money",
+          to: "/austin-energy-generation-costs",
           title: "Price of electricity at different stages from different sources",
           description:
             "How many dollars Austin Energy customers spend on coal, gas, nuclear, wind and solar each year, as system totals and per household.",
@@ -327,7 +327,7 @@ const AustinAtGlance = () => {
         },
         {
           key: "kwh-cost",
-          to: "/kwh-cost",
+          to: "/austin-electricity-price-arbitrage",
           title: "kWh Cost",
           description:
             "Explore Austin electricity price spreads and the daily arbitrage window batteries use to charge low and discharge high.",
@@ -508,8 +508,8 @@ const AustinAtGlance = () => {
         },
         {
           key: "atb-options",
-          to: "/atb-options",
-          title: "NREL Technology Database (ATB)",
+          to: "/clean-energy-technology-database",
+          title: "Clean Energy Technology Database",
           description:
             "Browse NREL's projected costs for new solar, wind, storage, gas, nuclear and more through 2050, and filter by technology.",
           cta: "Compare Technologies",
@@ -526,7 +526,7 @@ const AustinAtGlance = () => {
         },
         {
           key: "demand-distribution",
-          to: "/demand-distribution",
+          to: "/austin-electricity-demand-map",
           title: "Demand Distribution",
           description: "Map of where Austin's electricity demand sits, by building type and size.",
           cta: "Explore map",
@@ -540,7 +540,7 @@ const AustinAtGlance = () => {
         },
         {
           key: "peak-shave",
-          to: "/peak-shave",
+          to: "/peak-shaving-calculator",
           title: "Peak Shave Calculator",
           description: "Estimate how a battery can shave building peak demand and cut demand charges.",
           cta: "Calculate",
@@ -554,7 +554,7 @@ const AustinAtGlance = () => {
         },
         {
           key: "gets",
-          to: "/gets",
+          to: "/grid-enhancing-technologies",
           title: "GETs vs. Peaker",
           description:
             "Can grid-enhancing technologies do the job of a new gas peaker? Compare advanced inverters, dynamic line ratings, and storage against new gas capacity.",
@@ -572,10 +572,10 @@ const AustinAtGlance = () => {
         },
         {
           key: "peaker-proforma",
-          to: "/peaker-proforma",
+          to: "/gas-peaker-plant-cost-calculator",
           title: "Gas Peaker Proforma",
           description:
-            "Interactive 20-year financial model for a new natural gas peaker in ERCOT South: IRR, NPV, equity returns, and payback from adjustable assumptions.",
+            "Interactive financial model for a new natural gas peaker in ERCOT South: IRR, NPV, equity returns, and payback from adjustable assumptions.",
           cta: "Model it",
           preview: (
             <div className="pointer-events-none bg-muted/10 border-b flex flex-col items-center justify-center gap-3 h-[226px]">

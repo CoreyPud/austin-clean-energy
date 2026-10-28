@@ -37,7 +37,7 @@ const MAX_LINES = 8;
 
 export default function AtbOptions() {
   useSeo({
-    title: "ATB Options | Austin Clean Energy",
+    title: "Clean Energy Technology Database | Austin Clean Energy",
     description: "Browse and filter NREL's Annual Technology Baseline costs for solar, wind, storage, gas, nuclear and more, 2022–2050.",
   });
 
@@ -98,7 +98,7 @@ export default function AtbOptions() {
   return (
     <>
       <PageHeader
-        title="ATB Options"
+        title="Clean Energy Technology Database"
         subtitle="Compare what NREL projects new power plants and batteries will cost, by technology, from 2022 to 2050."
         backTo="/austin-at-a-glance"
         backLabel="Back to Austin at a Glance"

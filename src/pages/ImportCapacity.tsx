@@ -31,7 +31,7 @@ const fmtMW = (n: number) => `${Math.round(n).toLocaleString()} MW`;
 
 export default function ImportCapacity() {
   useSeo({
-    title: "Austin Energy Import Capacity Calculator",
+    title: "Austin Transmission Capacity Calculator | Austin Clean Energy",
     description:
       "Model Austin Energy's Total Transfer Capability (TTC) — how much power can be imported into LZ_AUSTIN before ERCOT price separation triggers.",
   });
