@@ -75,13 +75,11 @@ export function useSeo({ title, description, type = "website", jsonLd }: SeoOpti
     setMetaTag("og:type", type, true);
     setMetaTag("og:url", canonicalUrl, true);
     setMetaTag("og:site_name", SITE_NAME, true);
-    setMetaTag("og:image", DEFAULT_OG_IMAGE, true);
 
     // Twitter Card
     setMetaTag("twitter:card", "summary_large_image");
     setMetaTag("twitter:title", fullTitle);
     setMetaTag("twitter:description", description);
-    setMetaTag("twitter:image", DEFAULT_OG_IMAGE);
 
     // JSON-LD
     const ldData = jsonLd ?? {
