@@ -8,10 +8,9 @@ interface SeoOptions {
   jsonLd?: Record<string, unknown>;
 }
 
-const DEFAULT_TITLE = "Austin Clean Energy Opportunity Dashboard";
+const DEFAULT_TITLE = "Austin Clean Energy — Solar Savings, Rebates & Grid Data for Austin, TX";
 const SITE_NAME = "Austin Clean Energy";
 const BASE_URL = "https://austincleanenergy.net";
-const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 
 function setMetaTag(property: string, content: string, isOg = false) {
   const attr = isOg ? "property" : "name";
@@ -76,13 +75,11 @@ export function useSeo({ title, description, type = "website", jsonLd }: SeoOpti
     setMetaTag("og:type", type, true);
     setMetaTag("og:url", canonicalUrl, true);
     setMetaTag("og:site_name", SITE_NAME, true);
-    setMetaTag("og:image", DEFAULT_OG_IMAGE, true);
 
     // Twitter Card
     setMetaTag("twitter:card", "summary_large_image");
     setMetaTag("twitter:title", fullTitle);
     setMetaTag("twitter:description", description);
-    setMetaTag("twitter:image", DEFAULT_OG_IMAGE);
 
     // JSON-LD
     const ldData = jsonLd ?? {

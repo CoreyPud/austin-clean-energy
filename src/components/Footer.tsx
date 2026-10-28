@@ -57,7 +57,7 @@ const Footer = () => {
                   onClick={() => navigate('/austin-electricity-price-arbitrage')}
                   className="text-white/70 hover:text-white transition-colors text-left"
                 >
-                  kWh Cost
+                  Austin Electricity Price Arbitrage
                 </button>
               </li>
               <li>

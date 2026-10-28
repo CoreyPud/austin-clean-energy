@@ -195,6 +195,54 @@ const publicPages = [
     description: "Sign up to join the Austin Clean Energy volunteer Slack community.",
     icon: Users,
   },
+  {
+    path: "/clean-energy-plan",
+    title: "Residential Clean Energy Plan",
+    description: "A personalized clean energy plan for Austin homeowners, with rebates and savings.",
+    icon: Home,
+  },
+  {
+    path: "/commercial-energy-plan",
+    title: "Commercial Clean Energy Plan",
+    description: "Rebates, demand response, and savings returns for Austin commercial buildings.",
+    icon: Building2,
+  },
+  {
+    path: "/ev-comparison",
+    title: "EV vs. Gas Comparison",
+    description: "Compare electric and gas vehicle costs for Austin drivers.",
+    icon: Zap,
+  },
+  {
+    path: "/ev-progress",
+    title: "EV Progress",
+    description: "Electric vehicle adoption trends in Austin.",
+    icon: TrendingUp,
+  },
+  {
+    path: "/council",
+    title: "Council & Utility Oversight",
+    description: "Austin City Council members, votes, and campaign finance related to energy decisions.",
+    icon: Users,
+  },
+  {
+    path: "/council-decisions",
+    title: "Council Energy Decisions",
+    description: "A record of Austin City Council decisions on energy and utility policy.",
+    icon: CalendarDays,
+  },
+  {
+    path: "/pricing-pressure",
+    title: "Load Zone Pricing Pressure",
+    description: "Austin Energy's fleet-wide adverse basis cost per MWh, 2018-2026, with projections.",
+    icon: TrendingUp,
+  },
+  {
+    path: "/contact",
+    title: "Contact",
+    description: "Get in touch with the Austin Clean Energy Initiative.",
+    icon: Users,
+  },
 ];
 
 const Sitemap = () => {
