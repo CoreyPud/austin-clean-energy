@@ -198,4 +198,13 @@
   <url><loc>https://austincleanenergy.net/us-utility-innovation-registry/about</loc></url>
   <url><loc>https://austincleanenergy.net/grid-enhancing-technologies</loc><changefreq>monthly</changefreq></url>
   <url><loc>https://austincleanenergy.net/austin-transmission-capacity-calculator</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://austincleanenergy.net/clean-energy-plan</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://austincleanenergy.net/commercial-energy-plan</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://austincleanenergy.net/ev-comparison</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://austincleanenergy.net/ev-progress</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://austincleanenergy.net/council</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://austincleanenergy.net/council-members</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://austincleanenergy.net/council-decisions</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://austincleanenergy.net/pricing-pressure</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://austincleanenergy.net/contact</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>
