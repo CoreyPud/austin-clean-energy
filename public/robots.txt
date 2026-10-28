@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://austin-clean-energy.lovable.app/sitemap.xml
+Sitemap: https://austincleanenergy.net/sitemap.xml

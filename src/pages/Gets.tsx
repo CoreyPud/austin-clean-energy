@@ -4,7 +4,7 @@ import { useSeo } from "@/hooks/use-seo";
 
 export default function GetsPage() {
   useSeo({
-    title: "GETs vs. Peaker",
+    title: "Grid Enhancing Technologies vs. Gas Peaker",
     description:
       "How grid-enhancing technologies compare with a gas peaker for adding capacity to Austin's grid.",
   });

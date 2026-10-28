@@ -4,7 +4,7 @@ import { useSeo } from "@/hooks/use-seo";
 
 export default function PeakShavePage() {
   useSeo({
-    title: "Peak Shave Calculator | Austin Clean Energy",
+    title: "Peak Shaving Calculator | Austin Clean Energy",
     description: "Estimate how a battery can shave building peak demand and cut demand charges.",
   });
   const ref = useRef<HTMLIFrameElement>(null);

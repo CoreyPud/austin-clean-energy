@@ -4,7 +4,7 @@ import { useSeo } from "@/hooks/use-seo";
 
 export default function KwhCostPage() {
   useSeo({
-    title: "kWh Cost | Austin Clean Energy",
+    title: "Austin Electricity Prices & Battery Arbitrage | Austin Clean Energy",
     description:
       "Explore Austin electricity price spreads and the daily window batteries use to charge low and discharge high.",
   });

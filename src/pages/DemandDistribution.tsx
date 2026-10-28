@@ -132,7 +132,7 @@ function DemandMap({ source, types, minYear, minKw, onStatus }: {
 
 export default function DemandDistribution() {
   useSeo({
-    title: "Demand Distribution | Austin Clean Energy",
+    title: "Austin Electricity Demand Map | Austin Clean Energy",
     description: "Map of where Austin's estimated electricity demand sits, by building type and size.",
   });
   const [source, setSource] = useState<Source>("tcad");

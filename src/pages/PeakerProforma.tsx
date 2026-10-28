@@ -194,7 +194,7 @@ function CostStrip({ nominal, pv, perMwh, life, wacc, deg }: { nominal: number; 
 
 export default function PeakerProforma() {
   useSeo({
-    title: "Gas Peaker Proforma: ERCOT South / Austin",
+    title: "Gas Peaker Plant Cost Calculator: ERCOT South / Austin",
     description: "Interactive financial model for a natural gas peaker plant in ERCOT South: IRR, NPV, EBITDA, lifetime cost and payback.",
   });
   const [rawInp, setInp] = useState<Inputs>(DEFAULTS);

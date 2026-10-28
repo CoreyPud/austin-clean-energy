@@ -146,7 +146,7 @@ const rowsForYear = (data: PowerMoneyData, year: number): ComparisonRow[] => {
 
 const PowerMoney = () => {
   useSeo({
-    title: "Power Money: What Austin Pays for Each Fuel",
+    title: "Austin Energy Generation Costs by Fuel Source",
     description:
       "How many dollars Austin Energy customers spend on coal, gas, nuclear, wind and solar each year — system totals and per household, built from EIA fuel cost and generation data.",
   });

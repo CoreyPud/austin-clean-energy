@@ -12,7 +12,7 @@
 //                  calculations that depend on it will not run until a real number replaces it
 //
 // Sources, in order of how much of this file they fill in:
-//   Power Money page            https://austincleanenergy.net/power-money (read 2026-10-18)
+//   Power Money page            https://austincleanenergy.net/austin-energy-generation-costs (read 2026-10-18)
 //   AE Power Plants             https://austinenergy.com/about/company-profile/electric-system/power-plants (read 2026-10-18, AE's own page last reviewed 2024-11-18)
 //   AE Renewable Power Gen.     https://austinenergy.com/about/company-profile/environment/renewable-power-generation (read 2026-10-18, AE's own page last reviewed 2026-07-16)
 //   Load Zone Pricing Pressure  https://claude.ai/artifact/7iMsxMMy4MeSLzzLoPdjAu
@@ -646,5 +646,5 @@ export const intro = {
   dek:
     "A standard Integrated Resource Plan has three parts: load-forecast and resource inputs, a calculation engine, and output fields — total cost, capacity balance, resource mix, reliability margin. This tool is built to that structure. Every input below is either a real number gathered from Austin Energy, EIA or ERCOT sources elsewhere in this project, or it is set to 0 and marked not available — and any calculation that depends on a 0 field will not run and says exactly which field is missing, instead of quietly guessing.",
   dataNote:
-    "Source data pulled from austincleanenergy.net/power-money, Austin Energy's own Power Plants and Renewable Power Generation pages, Austin City Council RCAs/minutes and Electric Utility Commission agendas and backup documents for contracts not yet on either public site, and three companion tools in this project: Load Zone Pricing Pressure, Load Growth & Pricing Pressure, and Austin Energy's Power Contracts. Edit any field below — the calculations re-run live, including unblocking a calculation once you replace a 0 with a real figure.",
+    "Source data pulled from austincleanenergy.net/austin-energy-generation-costs, Austin Energy's own Power Plants and Renewable Power Generation pages, Austin City Council RCAs/minutes and Electric Utility Commission agendas and backup documents for contracts not yet on either public site, and three companion tools in this project: Load Zone Pricing Pressure, Load Growth & Pricing Pressure, and Austin Energy's Power Contracts. Edit any field below — the calculations re-run live, including unblocking a calculation once you replace a 0 with a real figure.",
 };

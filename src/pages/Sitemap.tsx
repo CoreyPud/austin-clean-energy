@@ -88,13 +88,13 @@ const publicPages = [
     icon: Gauge,
   },
   {
-    path: "/peaker-proforma",
+    path: "/gas-peaker-plant-cost-calculator",
     title: "Gas Peaker Proforma",
-    description: "Interactive 20-year financial model for a natural gas peaker in ERCOT South.",
+    description: "Interactive financial model for a natural gas peaker in ERCOT South.",
     icon: Gauge,
   },
   {
-    path: "/demand-distribution",
+    path: "/austin-electricity-demand-map",
     title: "Demand Distribution",
     description: "Map of estimated electricity demand by building type and size.",
     icon: Gauge,
@@ -124,13 +124,13 @@ const publicPages = [
     icon: Zap,
   },
   {
-    path: "/peak-shave",
+    path: "/peak-shaving-calculator",
     title: "Peak Shave Calculator",
     description: "Estimate how a battery can shave peak demand and cut demand charges.",
     icon: Gauge,
   },
   {
-    path: "/gets",
+    path: "/grid-enhancing-technologies",
     title: "GETs vs. Peaker",
     description: "How grid-enhancing technologies compare with a gas peaker for adding grid capacity.",
     icon: Gauge,
@@ -148,13 +148,13 @@ const publicPages = [
     icon: Gauge,
   },
   {
-    path: "/atb-options",
-    title: "ATB Options",
+    path: "/clean-energy-technology-database",
+    title: "Clean Energy Technology Database",
     description: "Browse and filter NREL's projected costs for solar, wind, storage, gas and more.",
     icon: Zap,
   },
   {
-    path: "/kwh-cost",
+    path: "/austin-electricity-price-arbitrage",
     title: "kWh Cost",
     description: "Explore Austin electricity price spreads and the daily arbitrage window batteries use.",
     icon: Zap,
@@ -166,7 +166,7 @@ const publicPages = [
     icon: Zap,
   },
   {
-    path: "/import-capacity",
+    path: "/austin-transmission-capacity-calculator",
     title: "Austin Energy Import Capacity",
     description: "Model Austin's Total Transfer Capability (TTC) and see when ERCOT price separation triggers.",
     icon: Activity,

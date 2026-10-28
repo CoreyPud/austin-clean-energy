@@ -54,7 +54,7 @@ const Footer = () => {
               </li>
               <li>
                 <button
-                  onClick={() => navigate('/kwh-cost')}
+                  onClick={() => navigate('/austin-electricity-price-arbitrage')}
                   className="text-white/70 hover:text-white transition-colors text-left"
                 >
                   kWh Cost
