@@ -10,7 +10,7 @@ interface SeoOptions {
 
 const DEFAULT_TITLE = "Austin Clean Energy Opportunity Dashboard";
 const SITE_NAME = "Austin Clean Energy";
-const BASE_URL = "https://austin-clean-energy.lovable.app";
+const BASE_URL = "https://austincleanenergy.net";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 
 function setMetaTag(property: string, content: string, isOg = false) {
