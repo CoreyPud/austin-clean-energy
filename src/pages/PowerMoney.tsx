@@ -1,4 +1,7 @@
 import { SourceMatrix } from "@/components/power-money/SourceProvenance";
+import { CommercialPermitNotes } from '@/components/power-money/CommercialPermitNotes';
+import { loadSolarPermitCohorts, commercialPermitCost, type SolarPermitCohort } from '@/lib/commercial-permit-cost';
+import { VOS_RATE } from '@/lib/solar-model';
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,7 +109,9 @@ const SwatchTooltip = ({ header, note, rows }: { header: string; note?: string; 
 
 /** Segment meanings differ for behind-the-meter local solar, so labels are per row. */
 const segmentLabels = (row: ComparisonRow | null) =>
-  row?.key === "localSolar"
+  row?.key === "commercialSolar"
+    ? { fuel: 'Value of Solar bill credit (current model)', nonFuel: 'CBI + five-year PBI, lifetime-amortized', system: 'System delivery costs (not allocated)' }
+    : row?.key === "localSolar"
     ? {
         fuel: "Value of Solar bill credit",
         nonFuel: `Rebate, amortized over ${LOCAL_RATES.systemLifeYears} years`,
@@ -159,6 +164,25 @@ const PowerMoney = () => {
   const [compareYear, setCompareYear] = useState<number | null>(null);
   const [federalYear, setFederalYear] = useState<number | null>(null);
   const [totalCostYear, setTotalCostYear] = useState<number | null>(null);
+  const [permitCohorts, setPermitCohorts] = useState<SolarPermitCohort[] | null>(null);
+  const [permitError, setPermitError] = useState<string | null>(null);
+  const [permitUndated, setPermitUndated] = useState(0);
+  const [permitAsOf, setPermitAsOf] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSolarPermitCohorts().then(result => {
+      setPermitCohorts(result.cohorts);
+      setPermitUndated(result.undatedCount);
+      setPermitAsOf(result.asOf);
+    }).catch(e => setPermitError(e.message));
+  }, []);
+
+  const commercialCohort = useMemo(() => compareYear === null ? null :
+    [...(permitCohorts ?? [])].reverse().find(c => c.year <= compareYear) ?? null,
+    [permitCohorts, compareYear]);
+  const commercialCost = useMemo(() => commercialCohort ?
+    commercialPermitCost(commercialCohort, LOCAL_RATES.yieldKwhPerKwYear, LOCAL_RATES.systemLifeYears) : null,
+    [commercialCohort]);
 
 
 
@@ -197,21 +221,21 @@ const PowerMoney = () => {
     if (local && local.mwh > 0) {
       rows.push({
         key: "localSolar",
-        label: "Local solar",
+        label: "Residential solar",
         color: "#f59e0b",
         fuelRate: LOCAL_RATES.vosUsdPerMwh,
         nonFuelRate: amortizedRebateUsdPerMwh(local.year),
         systemRate: 0,
         allInRate: local.usdPerMwh,
         deliveredRate: local.usdPerMwh,
-        mwh: local.mwh,
-        share: totalMwh > 0 ? local.mwh / totalMwh : 0,
+        mwh: commercialCohort ? commercialCohort.residentialKw * LOCAL_RATES.yieldKwhPerKwYear / 1000 : local.mwh,
+        share: totalMwh > 0 ? (commercialCohort ? commercialCohort.residentialKw * LOCAL_RATES.yieldKwhPerKwYear / 1000 : local.mwh) / totalMwh : 0,
         measured: false,
         contracted: true,
       });
     }
     return rows.sort((a, b) => a.deliveredRate - b.deliveredRate);
-  }, [data, compareYear]);
+  }, [data, compareYear, commercialCohort, commercialCost]);
 
   // Federal support behind the same megawatt-hours, for its own year selector.
   const federalRows = useMemo<FederalRow[]>(() => {
