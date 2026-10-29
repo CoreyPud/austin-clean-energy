@@ -190,7 +190,7 @@ export const usdCompact = (n: number) => {
 };
 
 export interface ComparisonRow {
-  key: FuelKey | "localSolar" | "commercialSolar";
+  key: FuelKey | "localSolar";
   label: string;
   color: string;
   /** fuel purchases or contracted energy price, $/MWh */

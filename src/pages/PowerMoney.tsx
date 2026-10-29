@@ -107,8 +107,9 @@ const SwatchTooltip = ({ header, note, rows }: { header: string; note?: string; 
   );
 };
 
+type SolarComparisonRow = Omit<ComparisonRow, 'key'> & { key: ComparisonRow['key'] | 'commercialSolar' };
 /** Segment meanings differ for behind-the-meter local solar, so labels are per row. */
-const segmentLabels = (row: ComparisonRow | null) =>
+const segmentLabels = (row: SolarComparisonRow | null) =>
   row?.key === "commercialSolar"
     ? { fuel: 'Value of Solar bill credit (current model)', nonFuel: 'CBI + five-year PBI, lifetime-amortized', system: 'System delivery costs (not allocated)' }
     : row?.key === "localSolar"
@@ -213,9 +214,9 @@ const PowerMoney = () => {
 
   // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
   // the Value of Solar credit and rebates instead of fuel and plant costs.
-  const compareRows = useMemo<ComparisonRow[]>(() => {
+  const compareRows = useMemo<SolarComparisonRow[]>(() => {
     if (!data || compareYear === null) return [];
-    const rows = toComparisonRows(data, compareYear);
+    const rows: SolarComparisonRow[] = toComparisonRows(data, compareYear);
     const local = localSolarYear(compareYear);
     const totalMwh = data.years.find((y) => y.year === compareYear)?.totalMwh ?? 0;
     if (local && local.mwh > 0) {
@@ -640,14 +641,14 @@ const PowerMoney = () => {
                       <YAxis
                         type="category"
                         dataKey="label"
-                        width={110}
-                        tick={{ fontSize: 12 }}
+                        width={120}
+                        tick={{ fontSize: 11 }}
                       />
                       <Tooltip
                         cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
                         content={({ active, payload }) => {
                           if (!active || !payload?.length) return null;
-                          const row = (payload[0]?.payload ?? null) as ComparisonRow | null;
+                          const row = (payload[0]?.payload ?? null) as SolarComparisonRow | null;
                           if (!row) return null;
                           const names = segmentLabels(row);
                           // Bottom-up so the rows read in the same order as the stacked segments.
