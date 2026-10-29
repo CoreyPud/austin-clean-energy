@@ -1,4 +1,7 @@
 import { SourceMatrix } from "@/components/power-money/SourceProvenance";
+import { CommercialPermitNotes } from '@/components/power-money/CommercialPermitNotes';
+import { loadSolarPermitCohorts, commercialPermitCost, type SolarPermitCohort } from '@/lib/commercial-permit-cost';
+import { VOS_RATE } from '@/lib/solar-model';
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,9 +107,12 @@ const SwatchTooltip = ({ header, note, rows }: { header: string; note?: string; 
   );
 };
 
+type SolarComparisonRow = Omit<ComparisonRow, 'key'> & { key: ComparisonRow['key'] | 'commercialSolar' };
 /** Segment meanings differ for behind-the-meter local solar, so labels are per row. */
-const segmentLabels = (row: ComparisonRow | null) =>
-  row?.key === "localSolar"
+const segmentLabels = (row: SolarComparisonRow | null) =>
+  row?.key === "commercialSolar"
+    ? { fuel: 'Value of Solar bill credit (current model)', nonFuel: 'CBI + five-year PBI, lifetime-amortized', system: 'System delivery costs (not allocated)' }
+    : row?.key === "localSolar"
     ? {
         fuel: "Value of Solar bill credit",
         nonFuel: `Rebate, amortized over ${LOCAL_RATES.systemLifeYears} years`,
@@ -159,6 +165,25 @@ const PowerMoney = () => {
   const [compareYear, setCompareYear] = useState<number | null>(null);
   const [federalYear, setFederalYear] = useState<number | null>(null);
   const [totalCostYear, setTotalCostYear] = useState<number | null>(null);
+  const [permitCohorts, setPermitCohorts] = useState<SolarPermitCohort[] | null>(null);
+  const [permitError, setPermitError] = useState<string | null>(null);
+  const [permitUndated, setPermitUndated] = useState(0);
+  const [permitAsOf, setPermitAsOf] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSolarPermitCohorts().then(result => {
+      setPermitCohorts(result.cohorts);
+      setPermitUndated(result.undatedCount);
+      setPermitAsOf(result.asOf);
+    }).catch(e => setPermitError(e.message));
+  }, []);
+
+  const commercialCohort = useMemo(() => compareYear === null ? null :
+    [...(permitCohorts ?? [])].reverse().find(c => c.year <= compareYear) ?? null,
+    [permitCohorts, compareYear]);
+  const commercialCost = useMemo(() => commercialCohort ?
+    commercialPermitCost(commercialCohort, LOCAL_RATES.yieldKwhPerKwYear, LOCAL_RATES.systemLifeYears) : null,
+    [commercialCohort]);
 
 
 
@@ -189,29 +214,37 @@ const PowerMoney = () => {
 
   // Utility-scale sources plus local rooftop solar, which Austin Energy pays for through
   // the Value of Solar credit and rebates instead of fuel and plant costs.
-  const compareRows = useMemo<ComparisonRow[]>(() => {
+  const compareRows = useMemo<SolarComparisonRow[]>(() => {
     if (!data || compareYear === null) return [];
-    const rows = toComparisonRows(data, compareYear);
+    const rows: SolarComparisonRow[] = toComparisonRows(data, compareYear);
     const local = localSolarYear(compareYear);
     const totalMwh = data.years.find((y) => y.year === compareYear)?.totalMwh ?? 0;
     if (local && local.mwh > 0) {
       rows.push({
         key: "localSolar",
-        label: "Local solar",
+        label: "Residential solar",
         color: "#f59e0b",
         fuelRate: LOCAL_RATES.vosUsdPerMwh,
         nonFuelRate: amortizedRebateUsdPerMwh(local.year),
         systemRate: 0,
         allInRate: local.usdPerMwh,
         deliveredRate: local.usdPerMwh,
-        mwh: local.mwh,
-        share: totalMwh > 0 ? local.mwh / totalMwh : 0,
+        mwh: commercialCohort ? commercialCohort.residentialKw * LOCAL_RATES.yieldKwhPerKwYear / 1000 : local.mwh,
+        share: totalMwh > 0 ? (commercialCohort ? commercialCohort.residentialKw * LOCAL_RATES.yieldKwhPerKwYear / 1000 : local.mwh) / totalMwh : 0,
         measured: false,
         contracted: true,
       });
     }
+    if (commercialCohort && commercialCost && commercialCohort.commercialKw > 0) {
+      const rate = VOS_RATE * 1000 + commercialCost.cbiRate + commercialCost.pbiRate;
+      const mwh = commercialCohort.commercialKw * LOCAL_RATES.yieldKwhPerKwYear / 1000;
+      rows.push({ key: 'commercialSolar', label: 'Commercial solar', color: 'hsl(var(--primary))',
+        fuelRate: VOS_RATE * 1000, nonFuelRate: commercialCost.cbiRate + commercialCost.pbiRate,
+        systemRate: 0, allInRate: rate, deliveredRate: rate, mwh,
+        share: totalMwh > 0 ? mwh / totalMwh : 0, measured: false, contracted: false });
+    }
     return rows.sort((a, b) => a.deliveredRate - b.deliveredRate);
-  }, [data, compareYear]);
+  }, [data, compareYear, commercialCohort, commercialCost]);
 
   // Federal support behind the same megawatt-hours, for its own year selector.
   const federalRows = useMemo<FederalRow[]>(() => {
@@ -608,14 +641,14 @@ const PowerMoney = () => {
                       <YAxis
                         type="category"
                         dataKey="label"
-                        width={92}
-                        tick={{ fontSize: 12 }}
+                        width={120}
+                        tick={{ fontSize: 11 }}
                       />
                       <Tooltip
                         cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
                         content={({ active, payload }) => {
                           if (!active || !payload?.length) return null;
-                          const row = (payload[0]?.payload ?? null) as ComparisonRow | null;
+                          const row = (payload[0]?.payload ?? null) as SolarComparisonRow | null;
                           if (!row) return null;
                           const names = segmentLabels(row);
                           // Bottom-up so the rows read in the same order as the stacked segments.
@@ -639,10 +672,12 @@ const PowerMoney = () => {
                             <SwatchTooltip
                               header={`${row.label} — $${row.deliveredRate.toFixed(2)}/MWh · ${Math.round(
                                 row.mwh,
-                              ).toLocaleString()} MWh (${(row.share * 100).toFixed(1)}% of generation)`}
+                              ).toLocaleString()} MWh${row.key === 'commercialSolar' || row.key === 'localSolar' ? ' modeled annual output' : ` (${(row.share * 100).toFixed(1)}% of generation)`}`}
                               note={
-                                row.key === "localSolar"
-                                  ? "Customers own and maintain rooftop systems, so no O&M or capital is charged here, and the power never crosses the grid."
+                                row.key === 'commercialSolar' && commercialCost
+                                  ? `CBI $${commercialCost.cbiRate.toFixed(2)}/MWh + PBI $${commercialCost.pbiRate.toFixed(2)}/MWh. Current-rate scenario weighted by known permit kW; enrollment and actual payments are not recorded.`
+                                  : row.key === "localSolar"
+                                  ? "Residential rebate benchmark retained; generation uses residential permit kW when available. Customer ownership costs and grid costs are not allocated to this bar."
                                   : undefined
                               }
                               rows={rows}
@@ -655,7 +690,7 @@ const PowerMoney = () => {
                           name === "fuelRate"
                             ? "Energy payment (fuel, contract, or bill credit)"
                             : name === "nonFuelRate"
-                              ? "Plant O&M + capital, or amortized rebate"
+                              ? "Plant O&M + capital, or amortized CBI/PBI/rebate"
                               : "System delivery costs (est.)"
                         }
                         wrapperStyle={{ fontSize: 12 }}
@@ -686,7 +721,7 @@ const PowerMoney = () => {
                   {compareRows.map((r) => (
                     <span key={r.key}>
                       <span className="font-medium text-foreground">{r.label}</span>{" "}
-                      {Math.round(r.mwh).toLocaleString()} MWh · {(r.share * 100).toFixed(1)}%
+                      {Math.round(r.mwh).toLocaleString()} MWh {r.key === 'commercialSolar' || r.key === 'localSolar' ? '(modeled annual output)' : `· ${(r.share * 100).toFixed(1)}%`}
                     </span>
                   ))}
                 </div>
@@ -709,17 +744,19 @@ const PowerMoney = () => {
                   energy (fuel oil, most years) can look extreme either way.
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Local solar is the one bar whose segments mean something different. Austin Energy does not own,
+                  Residential solar retains the existing benchmark: Austin Energy does not own,
                   operate or maintain these systems — customers do, out of their own pockets — so no O&amp;M or
-                  capital cost is charged to it. Its two segments are the money the utility actually pays out: the
+                  capital cost is charged to it. Its two segments model the
                   Value of Solar bill credit of {(LOCAL_RATES.vosUsdPerMwh / 10).toFixed(2)}&cent;/kWh, and the
                   up-front rebate spread over a {LOCAL_RATES.systemLifeYears}-year system life. There is no system
-                  delivery segment because rooftop power never crosses the transmission or distribution system.
+                  delivery segment allocated here; this is not a claim that rooftop exports never use the grid.
                   Program administration and permitting review are internal Austin Energy overhead that already sits
                   inside the system-cost layer above, so they are not counted again here.
                 </p>
-
-
+                {!permitCohorts && !permitError && <p className="mt-4 text-sm text-muted-foreground">Loading commercial permit sizes…</p>}
+                {permitError && <Alert variant="destructive" className="mt-4"><AlertDescription>{permitError} The commercial bar is not shown.</AlertDescription></Alert>}
+                {permitCohorts && !commercialCohort && <p className="mt-4 text-sm text-muted-foreground">No dated commercial permit cohort is available for {compareYear}.</p>}
+                {commercialCohort && commercialCost && compareYear !== null && <CommercialPermitNotes cohort={commercialCohort} year={compareYear} undated={permitUndated} asOf={permitAsOf} />}
               </CardContent>
             </Card>
 
