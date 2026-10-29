@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { solarPermitCohorts, type SolarPermitRecord } from '../_shared/solar-permit-cohorts.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,6 +67,22 @@ Deno.serve(async (req) => {
       throw new Error('Missing backend environment configuration');
     }
     const client = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // Separate request mode preserves existing fiscal-year dashboard responses.
+    if (requestBody.solarProgramCohorts === true) {
+      const records: SolarPermitRecord[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await client.from('solar_installations_view')
+          .select('id, project_id, permit_class, installed_kw, completed_date, issued_date')
+          .or('is_duplicate.is.null,is_duplicate.eq.false')
+          .order('id').range(offset, offset + 999);
+        if (error) throw error;
+        records.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return new Response(JSON.stringify({ cohorts: solarPermitCohorts(records), undatedCount: records.filter(r => !r.completed_date && !r.issued_date).length, asOf: new Date().toISOString() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1; // 1-12

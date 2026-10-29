@@ -53,10 +53,8 @@ export const AUSTIN_ENERGY_RATES = {
 // Capacity-Based Incentive (CBI) eligibility cutoff for for-profit commercial: per Austin
 // Energy's CBI guidelines, only systems under this size can choose CBI; at or above it, the
 // system is PBI-only (see PBI section below) and gets $0 CBI, not a capped amount.
-export const PBI_MIN_KW = 100;
-export const COMMERCIAL_CBI_PER_W = 0.70;   // $/W, for-profit commercial, only under PBI_MIN_KW
-export const NONPROFIT_CBI_PER_W = 1.00;    // $/W
-export const NONPROFIT_CBI_CAP_KW = 200;    // non-profit rebate applies to the first 200 kW
+import { PBI_MIN_KW, COMMERCIAL_CBI_PER_W, NONPROFIT_CBI_PER_W, NONPROFIT_CBI_CAP_KW, COMMERCIAL_PBI_YEARS, PBI_RATE_TIERS } from '../../supabase/functions/_shared/commercial-solar-programs';
+export { PBI_MIN_KW, COMMERCIAL_CBI_PER_W, NONPROFIT_CBI_PER_W, NONPROFIT_CBI_CAP_KW, COMMERCIAL_PBI_YEARS, PBI_RATE_TIERS };
 
 export function austinEnergyRebate(systemKw: number, propertyType: string): number {
   switch (propertyType) {
@@ -72,15 +70,6 @@ export function austinEnergyRebate(systemKw: number, propertyType: string): numb
 }
 
 // Performance-Based Incentive (PBI) — paid per kWh generated over 5 years
-export const COMMERCIAL_PBI_YEARS = 5;
-
-/** PBI rate tiers by system size, largest first. $/kWh. */
-export const PBI_RATE_TIERS = [
-  { minKw: 1000, rate: 0.06, label: "Extra-Large" },
-  { minKw: 400,  rate: 0.08, label: "Large" },
-  { minKw: 0,    rate: 0.10, label: "Medium" },
-] as const;
-
 export function pbiTier(systemKw: number) {
   return PBI_RATE_TIERS.find(t => systemKw >= t.minKw) ?? PBI_RATE_TIERS[PBI_RATE_TIERS.length - 1];
 }
