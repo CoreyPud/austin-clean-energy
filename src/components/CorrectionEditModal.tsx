@@ -38,6 +38,8 @@ interface CorrectionData {
   corrected_issued_date: string | null;
   corrected_description: string | null;
   is_duplicate: boolean;
+  is_excluded: boolean;
+  exclusion_reason: string | null;
   notes: string | null;
 }
 
@@ -55,6 +57,8 @@ export function CorrectionEditModal({ projectId, onClose, onSave }: CorrectionEd
     corrected_issued_date: null,
     corrected_description: null,
     is_duplicate: false,
+    is_excluded: false,
+    exclusion_reason: null,
     notes: null,
   });
   const [hasExistingCorrection, setHasExistingCorrection] = useState(false);
@@ -90,6 +94,8 @@ export function CorrectionEditModal({ projectId, onClose, onSave }: CorrectionEd
           corrected_issued_date: data.correction.corrected_issued_date,
           corrected_description: data.correction.corrected_description,
           is_duplicate: data.correction.is_duplicate || false,
+          is_excluded: data.correction.is_excluded || false,
+          exclusion_reason: data.correction.exclusion_reason ?? null,
           notes: data.correction.notes,
         });
       }
@@ -121,6 +127,8 @@ export function CorrectionEditModal({ projectId, onClose, onSave }: CorrectionEd
             issued_date: correction.corrected_issued_date,
             description: correction.corrected_description,
             is_duplicate: correction.is_duplicate,
+            is_excluded: correction.is_excluded,
+            exclusion_reason: correction.exclusion_reason,
           },
           notes: correction.notes,
         },
@@ -207,6 +215,29 @@ export function CorrectionEditModal({ projectId, onClose, onSave }: CorrectionEd
                 checked={correction.is_duplicate}
                 onCheckedChange={(checked) => setCorrection(prev => ({ ...prev, is_duplicate: checked }))}
               />
+            </div>
+
+            {/* Include / Exclude from reporting */}
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Include in dashboard reporting</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Turn off to exclude this public permit from charts, stats and maps
+                  </p>
+                </div>
+                <Switch
+                  checked={!correction.is_excluded}
+                  onCheckedChange={(checked) => setCorrection(prev => ({ ...prev, is_excluded: !checked }))}
+                />
+              </div>
+              {correction.is_excluded && (
+                <Input
+                  placeholder="Reason for exclusion"
+                  value={correction.exclusion_reason ?? ''}
+                  onChange={(e) => setCorrection(prev => ({ ...prev, exclusion_reason: e.target.value || null }))}
+                />
+              )}
             </div>
 
             {/* kW Field */}
