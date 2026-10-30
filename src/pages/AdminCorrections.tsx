@@ -24,6 +24,8 @@ interface Installation {
   description: string | null;
   has_correction: boolean;
   is_duplicate: boolean | null;
+  is_excluded?: boolean | null;
+  exclusion_reason?: string | null;
   correction_notes: string | null;
 }
 
@@ -164,6 +166,8 @@ export default function AdminCorrections() {
                   <SelectItem value="all">All Records</SelectItem>
                   <SelectItem value="missing_kw">Missing kW</SelectItem>
                   <SelectItem value="has_corrections">Has Corrections</SelectItem>
+                  <SelectItem value="excluded">Excluded from reporting</SelectItem>
+                  <SelectItem value="included">Included in reporting</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -209,7 +213,7 @@ export default function AdminCorrections() {
                   </TableHeader>
                   <TableBody>
                     {installations.map((install) => (
-                      <TableRow key={install.id} className={install.is_duplicate ? "opacity-50" : ""}>
+                      <TableRow key={install.id} className={install.is_duplicate || install.is_excluded ? "opacity-50" : ""}>
                         <TableCell className="font-mono text-sm">
                           {install.project_id?.substring(0, 12) || 'N/A'}
                         </TableCell>
@@ -252,6 +256,11 @@ export default function AdminCorrections() {
                               <Badge variant="secondary" className="text-xs">
                                 <X className="h-3 w-3 mr-1" />
                                 Duplicate
+                              </Badge>
+                            )}
+                            {install.is_excluded && (
+                              <Badge variant="outline" className="text-xs" title={install.exclusion_reason ?? undefined}>
+                                Excluded
                               </Badge>
                             )}
                           </div>

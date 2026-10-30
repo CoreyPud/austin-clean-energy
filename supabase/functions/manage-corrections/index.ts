@@ -67,7 +67,7 @@ serve(async (req) => {
       const { search, filter, limit = 50, offset = 0 } = params;
       
       let query = supabase
-        .from('solar_installations_view')
+        .from('solar_installations_admin_view')
         .select('*', { count: 'exact' })
         .order('completed_date', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -80,6 +80,10 @@ serve(async (req) => {
         query = query.is('installed_kw', null);
       } else if (filter === 'has_corrections') {
         query = query.eq('has_correction', true);
+      } else if (filter === 'excluded') {
+        query = query.eq('is_excluded', true);
+      } else if (filter === 'included') {
+        query = query.eq('is_excluded', false);
       }
       
       const { data, error, count } = await query;
@@ -163,6 +167,8 @@ serve(async (req) => {
         corrected_issued_date: corrections.issued_date ?? null,
         corrected_description: corrections.description ?? null,
         is_duplicate: corrections.is_duplicate ?? false,
+        is_excluded: corrections.is_excluded ?? false,
+        exclusion_reason: corrections.is_excluded ? (corrections.exclusion_reason ?? null) : null,
         notes: notes ?? null,
         // Store original values
         original_kw: original.installed_kw,
