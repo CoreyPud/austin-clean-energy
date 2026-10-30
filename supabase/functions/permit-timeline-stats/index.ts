@@ -23,16 +23,23 @@ Deno.serve(async (req) => {
     const client = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     // Fetch all installations with both applied_date and completed_date (using view)
-    const { data: installations, error } = await client
-      .from('solar_installations_view')
-      .select('applied_date, completed_date, calendar_year_issued')
-      .not('applied_date', 'is', null)
-      .not('completed_date', 'is', null)
-      .gte('calendar_year_issued', 2014);
-
-    if (error) {
-      console.error('Error fetching installations:', error);
-      throw error;
+    const installations: { applied_date: string; completed_date: string; calendar_year_issued: number }[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await client
+        .from('solar_installations_view')
+        .select('applied_date, completed_date, calendar_year_issued, id')
+        .not('applied_date', 'is', null)
+        .not('completed_date', 'is', null)
+        .gte('calendar_year_issued', 2014)
+        .order('id', { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        console.error('Error fetching installations:', error);
+        throw error;
+      }
+      installations.push(...(data ?? []));
+      if (!data || data.length < PAGE) break;
     }
 
     console.log(`Fetched ${installations?.length || 0} installations with both dates`);
