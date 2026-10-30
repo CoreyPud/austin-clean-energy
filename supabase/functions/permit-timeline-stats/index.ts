@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     console.log(`Fetched ${installations?.length || 0} installations with both dates`);
 
     // Group by year and calculate average days
-    const yearStats = new Map<number, { totalDays: number; count: number }>();
+    const yearStats = new Map<number, { totalDays: number; count: number; days: number[] }>();
 
     installations?.forEach(install => {
       const appliedDate = new Date(install.applied_date);
@@ -57,10 +57,12 @@ Deno.serve(async (req) => {
 
       // Only include valid positive differences (completed after applied)
       if (daysDiff > 0 && year >= 2014) {
-        const existing = yearStats.get(year) || { totalDays: 0, count: 0 };
+        const existing = yearStats.get(year) || { totalDays: 0, count: 0, days: [] as number[] };
+        existing.days.push(daysDiff);
         yearStats.set(year, {
           totalDays: existing.totalDays + daysDiff,
-          count: existing.count + 1
+          count: existing.count + 1,
+          days: existing.days
         });
       }
     });
@@ -70,6 +72,7 @@ Deno.serve(async (req) => {
       .map(([year, stats]) => ({
         year,
         averageDays: Math.round(stats.totalDays / stats.count),
+        medianDays: (() => { const d = [...stats.days].sort((a, b) => a - b); const m = Math.floor(d.length / 2); return Math.round(d.length % 2 ? d[m] : (d[m - 1] + d[m]) / 2); })(),
         count: stats.count
       }))
       .sort((a, b) => a.year - b.year);

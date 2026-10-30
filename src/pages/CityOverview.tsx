@@ -118,6 +118,7 @@ const CityOverview = () => {
     'hsl(199, 89%, 48%)',
   ];
 
+  const [timelineMetric, setTimelineMetric] = useState<'averageDays' | 'medianDays'>('averageDays');
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -956,10 +957,20 @@ const CityOverview = () => {
           {/* Permit Timeline Chart */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Average Permit to Completion Time</CardTitle>
-              <CardDescription>
-                Average days between permit application and completion by year (2014-present)
-              </CardDescription>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="text-2xl">{timelineMetric === 'medianDays' ? 'Median' : 'Average'} Permit to Completion Time</CardTitle>
+                  <CardDescription>
+                    {timelineMetric === 'medianDays' ? 'Median (typical)' : 'Average'} days between permit application and completion by year (2014-present), based on all completed permits
+                  </CardDescription>
+                </div>
+                <Tabs value={timelineMetric} onValueChange={(v) => setTimelineMetric(v as 'averageDays' | 'medianDays')}>
+                  <TabsList>
+                    <TabsTrigger value="averageDays">Average</TabsTrigger>
+                    <TabsTrigger value="medianDays">Median</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoadingTimeline ? (
@@ -973,10 +984,11 @@ const CityOverview = () => {
                     <RechartsTooltip 
                       formatter={(value: number, name: string) => {
                         if (name === 'averageDays') return [`${value} days`, 'Average Processing Time'];
+                        if (name === 'medianDays') return [`${value} days`, 'Median Processing Time'];
                         return [value, name];
                       }}
                     />
-                    <Bar dataKey="averageDays" fill="hsl(var(--secondary))" />
+                    <Bar dataKey={timelineMetric} fill="hsl(var(--secondary))" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
