@@ -464,6 +464,13 @@ export type Database = {
             foreignKeyName: "data_match_results_solar_installation_id_fkey"
             columns: ["solar_installation_id"]
             isOneToOne: false
+            referencedRelation: "solar_installations_admin_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_match_results_solar_installation_id_fkey"
+            columns: ["solar_installation_id"]
+            isOneToOne: false
             referencedRelation: "solar_installations_view"
             referencedColumns: ["id"]
           },
@@ -782,8 +789,10 @@ export type Database = {
           corrected_latitude: number | null
           corrected_longitude: number | null
           created_at: string | null
+          exclusion_reason: string | null
           id: string
           is_duplicate: boolean | null
+          is_excluded: boolean
           notes: string | null
           original_address: string | null
           original_applied_date: string | null
@@ -806,8 +815,10 @@ export type Database = {
           corrected_latitude?: number | null
           corrected_longitude?: number | null
           created_at?: string | null
+          exclusion_reason?: string | null
           id?: string
           is_duplicate?: boolean | null
+          is_excluded?: boolean
           notes?: string | null
           original_address?: string | null
           original_applied_date?: string | null
@@ -830,8 +841,10 @@ export type Database = {
           corrected_latitude?: number | null
           corrected_longitude?: number | null
           created_at?: string | null
+          exclusion_reason?: string | null
           id?: string
           is_duplicate?: boolean | null
+          is_excluded?: boolean
           notes?: string | null
           original_address?: string | null
           original_applied_date?: string | null
@@ -1674,6 +1687,40 @@ export type Database = {
           f_table_schema?: unknown
           srid?: number | null
           type?: string | null
+        }
+        Relationships: []
+      }
+      solar_installations_admin_view: {
+        Row: {
+          address: string | null
+          applied_date: string | null
+          calendar_year_issued: number | null
+          completed_date: string | null
+          contractor_city: string | null
+          contractor_company: string | null
+          correction_notes: string | null
+          council_district: string | null
+          created_at: string | null
+          description: string | null
+          electrical_valuation: number | null
+          exclusion_reason: string | null
+          has_correction: boolean | null
+          id: string | null
+          installed_kw: number | null
+          is_duplicate: boolean | null
+          is_excluded: boolean | null
+          issued_date: string | null
+          jurisdiction: string | null
+          latitude: number | null
+          link: string | null
+          longitude: number | null
+          original_zip: string | null
+          permit_class: string | null
+          permit_number: string | null
+          project_id: string | null
+          status_current: string | null
+          total_job_valuation: number | null
+          updated_at: string | null
         }
         Relationships: []
       }

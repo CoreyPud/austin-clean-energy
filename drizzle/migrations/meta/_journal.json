@@ -36,6 +36,13 @@
       "when": 1791660916706,
       "tag": "0004_demand_json_rpcs",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793396294706,
+      "tag": "0005_installation_exclusions",
+      "breakpoints": true
     }
   ]
 }
