@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +11,8 @@ import { normalizeSolarType } from "../../../supabase/functions/_shared/rebate-f
 import { toast } from "sonner";
 export default function RebateProjectImport({ onImport, address }: { onImport: (v: Partial<RebateDetails>) => void; address: string }) {
   const [params] = useSearchParams();
+  const location = useLocation();
+  const design = location.state?.solarDesign as Partial<RebateDetails> | undefined;
   const [rows, setRows] = useState<{ id: string; address: string; property_type: string; calculator_state: unknown; results: unknown }[]>([]);
   const [selected, setSelected] = useState(params.get("saved") ?? "");
   const [busy, setBusy] = useState(false);
@@ -32,5 +34,5 @@ export default function RebateProjectImport({ onImport, address }: { onImport: (
       toast.success("TCAD details added to empty fields. Confirm the current owner.");
     } finally { setBusy(false); }
   };
-  return <section className="border-t pt-5 space-y-3"><h3 className="font-semibold">Property and solar design</h3><div className="flex flex-col sm:flex-row gap-3 sm:items-end"><div className="flex-1 min-w-0"><Label>Saved property</Label><Select value={selected} onValueChange={setSelected}><SelectTrigger className="mt-2"><SelectValue placeholder="Choose a saved property" /></SelectTrigger><SelectContent>{rows.map(row => <SelectItem key={row.id} value={row.id}>{row.address}</SelectItem>)}</SelectContent></Select></div><Button variant="outline" disabled={!selected || busy} onClick={() => { const row = rows.find(r => r.id === selected); if (row) { onImport(assessmentRebatePrefill(row)); toast.success("Assessment details added to empty fields"); } }}>Use saved assessment</Button></div><Button variant="outline" disabled={!address || busy} onClick={tcad}>Look up TCAD details</Button><p className="text-xs text-muted-foreground">Assessment costs and production are estimates, not contractor quotes. TCAD cannot establish nonprofit status or account ownership.</p></section>;
+  return <section className="border-t pt-5 space-y-3"><h3 className="font-semibold">Property and solar design</h3>{design && <Button variant="outline" onClick={() => { onImport({ system_kw_dc: design.system_kw_dc, installed_cost: design.installed_cost }); toast.success("Design values added to empty fields. Verify against the final design."); }}>Use current solar layout values</Button>}<div className="flex flex-col sm:flex-row gap-3 sm:items-end"><div className="flex-1 min-w-0"><Label>Saved property</Label><Select value={selected} onValueChange={setSelected}><SelectTrigger className="mt-2"><SelectValue placeholder="Choose a saved property" /></SelectTrigger><SelectContent>{rows.map(row => <SelectItem key={row.id} value={row.id}>{row.address}</SelectItem>)}</SelectContent></Select></div><Button variant="outline" disabled={!selected || busy} onClick={() => { const row = rows.find(r => r.id === selected); if (row) { onImport(assessmentRebatePrefill(row)); toast.success("Assessment details added to empty fields"); } }}>Use saved assessment</Button></div><Button variant="outline" disabled={!address || busy} onClick={tcad}>Look up TCAD details</Button><p className="text-xs text-muted-foreground">Assessment costs and production are estimates, not contractor quotes. TCAD cannot establish nonprofit status or account ownership.</p></section>;
 }
