@@ -34,7 +34,7 @@ export function normalizeSolarType(value: string): SolarPropertyType {
   if (normalized === "multi-family") return "multifamily";
   return ["single-family", "condo", "commercial", "non-profit", "multifamily"].includes(normalized) ? normalized as SolarPropertyType : "unknown";
 }
-export function mergeMissing<T extends Record<string, unknown>>(current: T, incoming: Partial<T>): T {
+export function mergeMissing<T extends object>(current: T, incoming: Partial<T>): T {
   const next = { ...current };
   for (const key of Object.keys(incoming) as (keyof T)[]) {
     const value = incoming[key];

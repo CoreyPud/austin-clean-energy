@@ -27,7 +27,7 @@ export default function RebateApplications() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("draft");
   const updateDetails = (next: RebateDetails) => { setDetails(next); const route = solarFormRoute(next); if (route.program && program !== "Commercial property improvements") setProgram(route.program); };
-  const importDetails = (incoming: Partial<RebateDetails>) => setDetails(current => { const next = mergeMissing(current as RebateDetails & Record<string, unknown>, incoming); const route = solarFormRoute(next); if (route.program && program !== "Commercial property improvements") setProgram(route.program); return next; });
+  const importDetails = (incoming: Partial<RebateDetails>) => setDetails(current => { const next = mergeMissing<RebateDetails>(current, incoming); const route = solarFormRoute(next); if (route.program && program !== "Commercial property improvements") setProgram(route.program); return next; });
   useSeo({ title: "My rebate applications", description: "Private Austin Energy rebate application drafts and authorized review." });
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { setUser(data.user); setAuthLoading(false); });
