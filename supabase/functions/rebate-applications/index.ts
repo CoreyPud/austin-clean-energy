@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PROGRAMS, validateDetails, reviewComplete, canAdminAccess, encryptDetails, decryptDetails, csvCell } from "./security.ts";
+import { solarTextFields, solarNumberFields, solarFormRoute, solarForms } from "../_shared/rebate-form-model.ts";
 const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-admin-token", "Cache-Control": "no-store", "Content-Type": "application/json" };
 const response = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers });
 serve(async req => {
@@ -43,6 +44,8 @@ serve(async req => {
       if (!PROGRAMS.includes(b.program)) return response(400, { error: "Choose a program" });
       let details;
       try { details = validateDetails(b.details); } catch { return response(400, { error: "Check the application details" }); }
+      const route = solarFormRoute(details);
+      if (b.request_review === true && b.program !== "Commercial property improvements" && details.property_type && (!route.program || route.program !== b.program)) return response(400, { error: "Confirm the property type, AC rating and matching solar program before review" });
       if (b.request_review === true && (!reviewComplete(details) || b.consent !== true)) return response(400, { error: "Complete required fields and authorize review" });
       const id = b.id || crypto.randomUUID();
       if (b.id) {
@@ -87,6 +90,11 @@ serve(async req => {
       if (error) return response(409, { error: "Application changed. Reload before exporting." });
       const fields = ["application_id", "program", "customer_name", "service_address", "account_number", "email", "phone", "project_description", "usage_source", "monthly_usage_json"];
       const values = [row.id, row.program, details.customer_name, details.service_address, details.account_number, details.email, details.phone, details.project_description, details.source, JSON.stringify(details.months)];
+      const projectFields = [...Object.keys(solarTextFields), ...Object.keys(solarNumberFields)] as (keyof typeof solarTextFields | keyof typeof solarNumberFields)[];
+      fields.push(...projectFields, "suggested_forms_json", "form_selection_note");
+      values.push(...projectFields.map(field => String(details[field] ?? "")));
+      const route = solarFormRoute(details);
+      values.push(JSON.stringify(route.forms.map(key => solarForms[key])), route.note);
       return new Response(fields.join(",") + "\r\n" + values.map(csvCell).join(","), { headers: { ...headers, "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="rebate-application.csv"' } });
     }
     return response(400, { error: "Unknown action" });
