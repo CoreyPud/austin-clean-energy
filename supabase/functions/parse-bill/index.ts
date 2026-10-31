@@ -1,18 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { BILL_GATEWAY_URL, BILL_MODEL, billRequest, GatewayError, readBillStream } from "./gateway.ts";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-
-const OPENAI_URL = "https://api.openai.com/v1/responses";
-const OPENAI_MODEL = "gpt-4.1";
-
-const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_URL = (key: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
 
 const EXTRACTION_PROMPT = [
   "This is a residential electricity bill PDF. Extract monthly electricity usage (kWh) for every month you can find.",
@@ -45,10 +35,19 @@ const EXTRACTION_PROMPT = [
   '- If no per-month data found: {"months": [], "source": "table", "note": "explanation"}.',
 ].join("\n");
 
-function jsonResponse(status: number, body: unknown) {
+function jsonResponse(status: number, body: unknown, gatewayHeaders?: Headers) {
+  const headers = new Headers({ ...corsHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  const exposed: string[] = [];
+  gatewayHeaders?.forEach((value, name) => {
+    if (name.toLowerCase().startsWith("x-lovable-aig-")) {
+      headers.set(name, value);
+      exposed.push(name);
+    }
+  });
+  if (exposed.length) headers.set("Access-Control-Expose-Headers", exposed.join(", "));
   return new Response(JSON.stringify({ ...((body as any) ?? {}), _status: status }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+    status,
+    headers,
   });
 }
 
@@ -68,56 +67,6 @@ function toRawBase64(file: string): string {
   return file.startsWith("data:") ? file.split(",")[1] : file;
 }
 
-async function callOpenAI(base64: string, filename: string, apiKey: string): Promise<string> {
-  const fileData = `data:application/pdf;base64,${base64}`;
-  const res = await fetch(OPENAI_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: [{
-        role: "user",
-        content: [
-          { type: "input_file", filename: filename ?? "bill.pdf", file_data: fileData },
-          { type: "input_text", text: EXTRACTION_PROMPT },
-        ],
-      }],
-      max_output_tokens: 2000,
-    }),
-  });
-  const rawText = await res.text();
-  const payload = JSON.parse(rawText);
-  if (!res.ok) throw new Error(payload?.error?.message ?? `OpenAI error ${res.status}`);
-  const messageOutput = payload.output?.find((o: any) => o.type === "message");
-  const textContent = (messageOutput ?? payload.output?.[0])?.content
-    ?.find((c: any) => c.type === "text" || c.type === "output_text");
-  return textContent?.text ?? "";
-}
-
-async function callGemini(base64: string, apiKey: string): Promise<string> {
-  const res = await fetch(GEMINI_URL(apiKey), {
-    method: "POST",
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { inlineData: { mimeType: "application/pdf", data: base64 } },
-          { text: EXTRACTION_PROMPT },
-        ],
-      }],
-      generationConfig: {
-        maxOutputTokens: 1024,
-        responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    }),
-  });
-  const rawText = await res.text();
-  const payload = JSON.parse(rawText);
-  if (!res.ok) throw new Error(payload?.error?.message ?? `Gemini error ${res.status}`);
-  return payload.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse(405, { error: "Method not allowed." });
@@ -126,7 +75,7 @@ serve(async (req) => {
   try { body = await req.json(); }
   catch { return jsonResponse(400, { error: "Invalid JSON body." }); }
 
-  const { file, filename, provider = "gemini" } = body ?? {};
+  const { file } = body ?? {};
   if (!file || typeof file !== "string") {
     return jsonResponse(400, { error: 'Provide a base64-encoded PDF in the "file" field.' });
   }
@@ -135,28 +84,44 @@ serve(async (req) => {
   }
 
   const base64 = toRawBase64(file);
+  try {
+    const bytes = atob(base64);
+    if (bytes.length > MAX_FILE_BYTES) return jsonResponse(413, { error: "File too large. Maximum supported size is 5 MB." });
+    if (!bytes.startsWith("%PDF-")) return jsonResponse(400, { error: "Please upload a valid, non-empty PDF bill." });
+  } catch { return jsonResponse(400, { error: "Invalid base64 PDF data." }); }
 
   let outputText: string;
+  let gatewayHeaders: Headers | undefined;
   try {
-    if (provider === "gemini") {
-      const apiKey = Deno.env.get("GEMINI_KEY");
-      if (!apiKey) return jsonResponse(500, { error: "Gemini API key not configured." });
-      outputText = await callGemini(base64, apiKey);
-    } else {
-      const apiKey = Deno.env.get("OPENAI_API_KEY");
-      if (!apiKey) return jsonResponse(500, { error: "OpenAI API key not configured." });
-      outputText = await callOpenAI(base64, filename, apiKey);
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) return jsonResponse(500, { error: "Lovable AI bill reader is not configured." });
+    const res = await fetch(BILL_GATEWAY_URL, {
+      method: "POST",
+      headers: {
+        "Lovable-API-Key": apiKey,
+        "Content-Type": "application/json",
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify(billRequest(base64, EXTRACTION_PROMPT)),
+    });
+    gatewayHeaders = res.headers;
+    if (!res.ok) {
+      const payload = await res.json().catch(() => null);
+      return jsonResponse(res.status, { error: payload?.message ?? payload?.error?.message ?? `Lovable AI request failed (${res.status}).` }, gatewayHeaders);
     }
-  } catch (err: any) {
-    return jsonResponse(502, { error: `Model request failed: ${err.message}` });
+    if (!res.body) throw new GatewayError(502, "The bill reader returned an empty response.");
+    outputText = await readBillStream(res.body);
+  } catch (err) {
+    return jsonResponse(err instanceof GatewayError ? err.status : 502,
+      { error: err instanceof GatewayError ? err.message : "Could not connect to the Lovable AI bill reader." }, gatewayHeaders);
   }
 
   let parsed: any;
   try { parsed = parseJsonLoose(outputText); }
-  catch { return jsonResponse(502, { error: "Could not parse model response as JSON.", raw: outputText }); }
+  catch { return jsonResponse(502, { error: "Could not parse model response as JSON." }, gatewayHeaders); }
 
   if (!parsed || !Array.isArray(parsed.months)) {
-    return jsonResponse(502, { error: "Unexpected response format from model.", raw: outputText });
+    return jsonResponse(502, { error: "Unexpected response format from model." }, gatewayHeaders);
   }
 
   const rawMonths = parsed.months
@@ -189,6 +154,7 @@ serve(async (req) => {
     average_monthly_kwh,
     source: String(parsed.source ?? "unknown"),
     note: String(parsed.note ?? ""),
-    provider,
-  });
+    provider: "lovable",
+    model: BILL_MODEL,
+  }, gatewayHeaders);
 });
