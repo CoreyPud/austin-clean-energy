@@ -1,4 +1,5 @@
 # Current
+- [ ] Switch bill parsing to Lovable AI Gateway with the selected Gemini model and measure a sample parse in gateway logs.
 - [x] Add a separate permit-size-weighted commercial solar bar alongside the residential comparison; verified real 2024–2026 cohorts, shared CBI/PBI thresholds, missing-kW disclosure, 52 tests, and build OK.
 - [x] Check US Semrush keyword demand and competition for eight URL renames, then update routes, links, metadata and sitemaps while preserving old links; use /clean-energy-technology-database for ATB Options and verify navigation. Verified eight legacy links, parameters/anchors, metadata, database navigation/data and reload; hosting supports client-side replacements, not HTTP 301 rules.
 - [x] Add a sortable saved-properties table with address search, property-type filtering, and persistent low-income incentive selections; verify saved changes and financials.
