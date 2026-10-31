@@ -43,6 +43,13 @@
       "when": 1793396294706,
       "tag": "0005_installation_exclusions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793410833758,
+      "tag": "0006_private_rebate_applications",
+      "breakpoints": true
     }
   ]
 }

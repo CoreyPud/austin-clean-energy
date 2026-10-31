@@ -1092,6 +1092,69 @@ export type Database = {
         }
         Relationships: []
       }
+      rebate_application_audit: {
+        Row: {
+          action: string
+          actor_type: string
+          actor_user_id: string | null
+          application_id: string | null
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_type: string
+          actor_user_id?: string | null
+          application_id?: string | null
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_type?: string
+          actor_user_id?: string | null
+          application_id?: string | null
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      rebate_applications: {
+        Row: {
+          consent_at: string | null
+          created_at: string
+          encrypted_payload: string
+          id: string
+          key_version: number
+          program: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consent_at?: string | null
+          created_at?: string
+          encrypted_payload: string
+          id?: string
+          key_version?: number
+          program: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consent_at?: string | null
+          created_at?: string
+          encrypted_payload?: string
+          id?: string
+          key_version?: number
+          program?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_assessments: {
         Row: {
           address: string

@@ -2,14 +2,17 @@ import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, CheckCircle, XCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface Props {
   onResult: (monthlyKwh: number[]) => void;
+  applicationMode?: boolean;
+  onApplicationResult?: (data: { applicant: Record<string, string>; raw_months: { label: string; kwh: number }[]; source: string }) => void;
 }
 
 type UploadState = "idle" | "parsing" | "done" | "error";
 
-const BillUpload = ({ onResult }: Props) => {
+const BillUpload = ({ onResult, applicationMode = false, onApplicationResult }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<UploadState>("idle");
   const [summary, setSummary] = useState<{ months: number; avgKwh: number } | null>(null);
@@ -35,7 +38,7 @@ const BillUpload = ({ onResult }: Props) => {
     try {
       const base64 = await fileToBase64(file);
       const { data, error: fnError } = await supabase.functions.invoke("parse-bill", {
-        body: { file: base64, filename: file.name },
+        body: { file: base64, filename: file.name, extract_application: applicationMode },
       });
 
       if (fnError) {
@@ -64,6 +67,7 @@ const BillUpload = ({ onResult }: Props) => {
       });
       setState("done");
       onResult(monthlyKwh);
+      if (applicationMode && onApplicationResult) onApplicationResult(data);
     } catch (err: any) {
       setError(err.message || "Failed to parse bill.");
       setState("error");
@@ -132,7 +136,7 @@ const BillUpload = ({ onResult }: Props) => {
               <p className="text-sm font-medium">
                 Found {summary.months} months · avg {summary.avgKwh} kWh/mo
               </p>
-              <p className="text-xs text-muted-foreground">Calculator updated with your real usage</p>
+              <p className="text-xs text-muted-foreground">{applicationMode ? "Review extracted details before saving" : "Calculator updated with your real usage"}</p>
             </div>
             <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={reset}>
               Clear
@@ -154,6 +158,7 @@ const BillUpload = ({ onResult }: Props) => {
           </div>
         </div>
       )}
+      {!applicationMode && state === "done" && <Button asChild variant="link" size="sm" className="px-0"><Link to="/rebate-applications">Prepare a private rebate application</Link></Button>}
     </div>
   );
 };

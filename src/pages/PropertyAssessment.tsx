@@ -49,6 +49,7 @@ import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import SavedPropertiesDrawer, { type AssessmentSnapshot } from "@/components/assessment/SavedPropertiesDrawer";
 import ContactCtaCard from "@/components/assessment/ContactCtaCard";
+import { Link } from "react-router-dom";
 import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-plan";
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
 import { ASSESSMENT_PROPERTY_TYPES, detectAssessmentPropertyType } from "@/lib/assessment-property-type";
@@ -700,6 +701,8 @@ const PropertyAssessment = () => {
                         )}
                       </div>
                     </div>
+
+                    <Button asChild variant="link" size="sm" className="px-0"><Link to="/rebate-applications">Prepare a private rebate application</Link></Button>
 
                     {billViewMode === "bill" && billParseState === "done" ? (
                       <div className="text-xs text-muted-foreground py-1">
