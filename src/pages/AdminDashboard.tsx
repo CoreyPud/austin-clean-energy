@@ -74,6 +74,13 @@ export default function AdminDashboard() {
 
   const adminTools = [
     {
+      title: "Rebate Applications",
+      description: "Review owner-authorized Austin Energy application details and export a private worksheet.",
+      icon: FileText,
+      path: "/admin/rebate-applications",
+      color: "text-primary"
+    },
+    {
       title: "Data Corrections",
       description: "Review and correct permit data from City API. Flag duplicates, fix addresses, and manage data quality.",
       icon: FileEdit,

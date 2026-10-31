@@ -31,6 +31,8 @@ import Unsubscribe from "./pages/Unsubscribe";
 import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
 import AdminSolarHelpRequests from "./pages/AdminSolarHelpRequests";
+import AdminRebateApplications from "./pages/AdminRebateApplications";
+import RebateApplications from "./pages/RebateApplications";
 
 import AdminSchemaDocs from "./pages/AdminSchemaDocs";
 import NotFound from "./pages/NotFound";
@@ -112,6 +114,7 @@ const AppRoutes = () => {
           <Route path="/city-overview" element={<CityOverview />} />
           <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
           <Route path="/property-assessment" element={<PropertyAssessment />} />
+          <Route path="/rebate-applications" element={<RebateApplications />} />
           <Route path="/recommendations" element={<Navigate to="/property-assessment" replace />} />
           <Route path="/installation/:id" element={<InstallationDetail />} />
           <Route path="/data-sources" element={<DataSources />} />
@@ -183,6 +186,7 @@ const AppRoutes = () => {
         <Route path="/admin/data-comparison" element={<DataComparison />} />
         <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
         <Route path="/admin/solar-help-requests" element={<AdminSolarHelpRequests />} />
+        <Route path="/admin/rebate-applications" element={<AdminRebateApplications />} />
 
         <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
         <Route path="/admin/agenda-items" element={<CouncilVote admin />} />

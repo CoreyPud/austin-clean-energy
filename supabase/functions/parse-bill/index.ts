@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { BILL_GATEWAY_URL, BILL_MODEL, billRequest, GatewayError, readBillStream } from "./gateway.ts";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -76,6 +77,15 @@ serve(async (req) => {
   catch { return jsonResponse(400, { error: "Invalid JSON body." }); }
 
   const { file } = body ?? {};
+  const applicationMode = body?.extract_application === true;
+  if (applicationMode) {
+    const url = Deno.env.get("SUPABASE_URL");
+    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (!url || !service || !token) return jsonResponse(401, { error: "Sign in to read applicant details." });
+    const { data, error } = await createClient(url, service).auth.getUser(token);
+    if (error || !data.user) return jsonResponse(401, { error: "Sign in to read applicant details." });
+  }
   if (!file || typeof file !== "string") {
     return jsonResponse(400, { error: 'Provide a base64-encoded PDF in the "file" field.' });
   }
@@ -102,7 +112,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
         "X-Lovable-AIG-SDK": "fetch",
       },
-      body: JSON.stringify(billRequest(base64, EXTRACTION_PROMPT)),
+      body: JSON.stringify(billRequest(base64, EXTRACTION_PROMPT + (applicationMode ? '\nAlso include an "applicant" object with customer_name, service_address, account_number, email, phone. Copy ONLY explicitly printed values. Account number must be a string preserving leading zeros. Use empty strings for missing fields. Do not infer or invent personal details.' : ""))),
     });
     gatewayHeaders = res.headers;
     if (!res.ok) {
@@ -156,5 +166,6 @@ serve(async (req) => {
     note: String(parsed.note ?? ""),
     provider: "lovable",
     model: BILL_MODEL,
+    ...(applicationMode ? { applicant: Object.fromEntries(["customer_name", "service_address", "account_number", "email", "phone"].map(field => [field, typeof parsed.applicant?.[field] === "string" ? parsed.applicant[field].slice(0, 2000) : ""])), raw_months: rawMonths } : {}),
   }, gatewayHeaders);
 });
