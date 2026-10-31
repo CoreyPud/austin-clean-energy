@@ -27,7 +27,10 @@ export default function RebateApplications() {
   useSeo({ title: "My rebate applications", description: "Private Austin Energy rebate application drafts and authorized review." });
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => { setUser(data.user); setAuthLoading(false); });
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setRows([]); setId(null); setDetails({ ...emptyRebate }); setConsent(false); });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(current => {
+      if (current?.id !== session?.user?.id) { setRows([]); setId(null); setDetails({ ...emptyRebate }); setConsent(false); }
+      return session?.user ?? null;
+    }); });
     return () => data.subscription.unsubscribe();
   }, []);
   const reload = async () => { const data = await rebateRequest({ action: "list" }); setRows(data.applications); };
