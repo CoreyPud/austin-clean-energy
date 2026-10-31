@@ -1,0 +1,10 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { solarFormRoute, mergeMissing } from "./rebate-form-model.ts";
+test("residential selection uses residential forms regardless of commercial-size threshold", () => assert.deepEqual(solarFormRoute({ property_type: "single-family", system_kw_ac: 100 }).forms, ["residential", "dgpa"]));
+test("commercial CBI below 100 kW AC", () => assert.equal(solarFormRoute({ property_type: "commercial", system_kw_ac: 99.9, system_kw_dc: 120 }).program, "Commercial solar CBI"));
+test("commercial PBI starts at 100 kW AC", () => assert.equal(solarFormRoute({ property_type: "commercial", system_kw_ac: 100, system_kw_dc: 120 }).program, "Commercial solar PBI"));
+test("DC rating alone cannot choose commercial forms", () => assert.equal(solarFormRoute({ property_type: "commercial", system_kw_dc: 250 }).program, null));
+test("nonprofit CBI does not use the small-commercial size cutoff", () => assert.equal(solarFormRoute({ property_type: "non-profit", system_kw_ac: 250 }).program, "Commercial solar CBI"));
+test("unknown and multifamily need individual review", () => { assert.equal(solarFormRoute({ property_type: "unknown" }).program, null); assert.equal(solarFormRoute({ property_type: "multifamily" }).program, null); });
+test("imports preserve user edits, including zero, and fill only empty fields", () => assert.deepEqual(mergeMissing({ customer_name: "Owner edit", installed_cost: 0, tcad_pid: "" }, { customer_name: "Bill name", installed_cost: 500, tcad_pid: "123" }), { customer_name: "Owner edit", installed_cost: 0, tcad_pid: "123" }));

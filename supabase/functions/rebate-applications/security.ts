@@ -1,5 +1,6 @@
+import { solarTextFields, solarNumberFields, type SolarApplicationFields } from "../_shared/rebate-form-model.ts";
 export const PROGRAMS = ["Residential solar", "Commercial solar CBI", "Commercial solar PBI", "Commercial property improvements"];
-export interface ApplicationDetails {
+export interface ApplicationDetails extends SolarApplicationFields {
   customer_name: string; service_address: string; account_number: string;
   email: string; phone: string; project_description: string;
   months: { label: string; kwh: number }[]; source: string;
@@ -17,6 +18,16 @@ export function validateDetails(input: unknown): ApplicationDetails {
     if (!m || typeof m.label !== "string" || m.label.length > 40 || !Number.isFinite(m.kwh) || m.kwh < 0) throw new Error("Invalid usage");
     return { label: m.label, kwh: m.kwh };
   });
+  for (const field of Object.keys(solarTextFields) as (keyof typeof solarTextFields)[]) {
+    if (d[field] === undefined) continue;
+    if (typeof d[field] !== "string" || (d[field] as string).length > 2000) throw new Error("Invalid project field");
+    result[field] = (d[field] as string).trim();
+  }
+  for (const field of Object.keys(solarNumberFields) as (keyof typeof solarNumberFields)[]) {
+    if (d[field] === undefined || d[field] === null) continue;
+    if (typeof d[field] !== "number" || !Number.isFinite(d[field]) || (d[field] as number) < 0) throw new Error("Invalid project amount");
+    result[field] = d[field] as number;
+  }
   return result;
 }
 export function reviewComplete(d: ApplicationDetails) {

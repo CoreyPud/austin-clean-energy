@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-export interface RebateDetails {
+import type { SolarApplicationFields } from "../../supabase/functions/_shared/rebate-form-model";
+export interface RebateDetails extends SolarApplicationFields {
   customer_name: string; service_address: string; account_number: string; email: string;
   phone: string; project_description: string; source: string; months: { label: string; kwh: number }[];
 }
