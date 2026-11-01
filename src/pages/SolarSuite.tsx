@@ -4,10 +4,12 @@ import { SolarBomEstimator } from "@/components/solar-suite/solar-bom-estimator"
 import { SolarDraftStudio } from "@/components/solar-suite/solar-draft-studio";
 import { SolarFlowPm } from "@/components/solar-suite/solar-flow-pm";
 import { LinkedPropertyBar } from "@/components/solar-suite/LinkedPropertyBar";
+import { SolarDocumentsBar } from "@/components/solar-suite/SolarDocumentsBar";
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <SharedProjectProvider>
     <LinkedPropertyBar />
+    <SolarDocumentsBar />
     {children}
   </SharedProjectProvider>
 );

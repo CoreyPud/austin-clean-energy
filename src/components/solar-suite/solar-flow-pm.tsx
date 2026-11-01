@@ -125,7 +125,7 @@ export function SolarFlowPm() {
       <header className="border-b border-primary-foreground/15 bg-primary text-primary-foreground">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3"><SunMedium className="size-7 text-accent" /><div><h1 className="font-display text-xl font-bold">SolarFlow PM</h1><p className="font-mono text-[9px] uppercase opacity-70">Austin Clean Energy · Project controls</p></div></div>
-          <div className="flex gap-2"><Button asChild size="sm" variant="outline" className="border-primary-foreground/25 bg-primary text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/solar-suite/bom"><ClipboardList /> BOM</Link></Button><Button asChild size="sm" variant="outline" className="border-primary-foreground/25 bg-primary text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/solar-suite/draft"><Ruler /> Plans</Link></Button></div>
+          <div className="flex gap-2"><Button asChild size="sm" variant="outline" className="border-primary-foreground/25 bg-primary text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/solar-bom"><ClipboardList /> BOM</Link></Button><Button asChild size="sm" variant="outline" className="border-primary-foreground/25 bg-primary text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/solar-draft"><Ruler /> Plans</Link></Button></div>
         </div>
       </header>
 

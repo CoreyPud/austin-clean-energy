@@ -1,5 +1,8 @@
 /** Retain these aliases so bookmarked and shared public links keep working. */
 export const PUBLIC_URL_RENAMES = {
+  "/solar-suite/bom": "/solar-bom",
+  "/solar-suite/draft": "/solar-draft",
+  "/solar-suite/flow": "/solar-flow",
   "/gets": "/grid-enhancing-technologies",
   "/kwh-cost": "/austin-electricity-price-arbitrage",
   "/atb-options": "/clean-energy-technology-database",
