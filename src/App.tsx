@@ -32,6 +32,8 @@ import JoinCommunity from "./pages/JoinCommunity";
 import AdminVolunteerSignups from "./pages/AdminVolunteerSignups";
 import AdminSolarHelpRequests from "./pages/AdminSolarHelpRequests";
 import AdminRebateApplications from "./pages/AdminRebateApplications";
+import AdminProjectShares from "./pages/AdminProjectShares";
+import ProjectPortal from "./pages/ProjectPortal";
 import RebateApplications from "./pages/RebateApplications";
 
 import AdminSchemaDocs from "./pages/AdminSchemaDocs";
@@ -187,6 +189,8 @@ const AppRoutes = () => {
         <Route path="/admin/volunteer-signups" element={<AdminVolunteerSignups />} />
         <Route path="/admin/solar-help-requests" element={<AdminSolarHelpRequests />} />
         <Route path="/admin/rebate-applications" element={<AdminRebateApplications />} />
+        <Route path="/admin/project-links" element={<AdminProjectShares />} />
+        <Route path="/p/:token" element={<ProjectPortal />} />
 
         <Route path="/admin/schema-docs" element={<AdminSchemaDocs />} />
         <Route path="/admin/agenda-items" element={<CouncilVote admin />} />

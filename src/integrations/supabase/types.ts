@@ -1071,6 +1071,77 @@ export type Database = {
         }
         Relationships: []
       }
+      project_share_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          event: string
+          id: string
+          ip_address: string | null
+          share_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          event: string
+          id?: string
+          ip_address?: string | null
+          share_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          event?: string
+          id?: string
+          ip_address?: string | null
+          share_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_share_events_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "project_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_shares: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          recipient_email: string | null
+          recipient_name: string
+          revoked_at: string | null
+          saved_assessment_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          recipient_email?: string | null
+          recipient_name: string
+          revoked_at?: string | null
+          saved_assessment_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          recipient_email?: string | null
+          recipient_name?: string
+          revoked_at?: string | null
+          saved_assessment_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       proposed_peaker_sites: {
         Row: {
           id: number

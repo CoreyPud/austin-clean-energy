@@ -74,6 +74,13 @@ export default function AdminDashboard() {
 
   const adminTools = [
     {
+      title: "Project Links",
+      description: "Create personal project links and see who viewed or downloaded them.",
+      icon: FileText,
+      path: "/admin/project-links",
+      color: "text-primary"
+    },
+    {
       title: "Rebate Applications",
       description: "Review owner-authorized Austin Energy application details and export a private worksheet.",
       icon: FileText,
