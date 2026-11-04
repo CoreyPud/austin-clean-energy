@@ -53,15 +53,15 @@ export const AUSTIN_ENERGY_RATES = {
 // Capacity-Based Incentive (CBI) eligibility cutoff for for-profit commercial: per Austin
 // Energy's CBI guidelines, only systems under this size can choose CBI; at or above it, the
 // system is PBI-only (see PBI section below) and gets $0 CBI, not a capped amount.
-import { PBI_MIN_KW, COMMERCIAL_CBI_PER_W, NONPROFIT_CBI_PER_W, NONPROFIT_CBI_CAP_KW, COMMERCIAL_PBI_YEARS, PBI_RATE_TIERS } from '../../supabase/functions/_shared/commercial-solar-programs';
-export { PBI_MIN_KW, COMMERCIAL_CBI_PER_W, NONPROFIT_CBI_PER_W, NONPROFIT_CBI_CAP_KW, COMMERCIAL_PBI_YEARS, PBI_RATE_TIERS };
+import { PBI_MIN_KW, COMMERCIAL_CBI_PER_W, NONPROFIT_CBI_PER_W, NONPROFIT_CBI_CAP_KW, COMMERCIAL_PBI_YEARS, PBI_RATE_TIERS, SOLAR_AC_DC_RATIO, businessSolarIncentive, BUSINESS_SOLAR_INCENTIVE_SOURCE } from '../../supabase/functions/_shared/commercial-solar-programs';
+export { PBI_MIN_KW, COMMERCIAL_CBI_PER_W, NONPROFIT_CBI_PER_W, NONPROFIT_CBI_CAP_KW, COMMERCIAL_PBI_YEARS, PBI_RATE_TIERS, SOLAR_AC_DC_RATIO, businessSolarIncentive, BUSINESS_SOLAR_INCENTIVE_SOURCE };
 
 export function austinEnergyRebate(systemKw: number, propertyType: string): number {
   switch (propertyType) {
     case "commercial":
-      return systemKw < PBI_MIN_KW ? systemKw * 1000 * COMMERCIAL_CBI_PER_W : 0;
+      return businessSolarIncentive(propertyType, systemKw * SOLAR_AC_DC_RATIO) === "cbi" ? systemKw * 1000 * COMMERCIAL_CBI_PER_W : 0;
     case "non-profit":
-      return Math.min(systemKw, NONPROFIT_CBI_CAP_KW) * 1000 * NONPROFIT_CBI_PER_W;
+      return businessSolarIncentive(propertyType, systemKw * SOLAR_AC_DC_RATIO) === "cbi" ? systemKw * 1000 * NONPROFIT_CBI_PER_W : 0;
     case "multi-family":
       return 0; // AE multifamily CBI ($0.60/W, cap $2,500/unit) not modeled yet: needs unit count
     default: // single-family, condo: flat rebate at or above the minimum size
@@ -71,7 +71,7 @@ export function austinEnergyRebate(systemKw: number, propertyType: string): numb
 
 // Performance-Based Incentive (PBI) — paid per kWh generated over 5 years
 export function pbiTier(systemKw: number) {
-  return PBI_RATE_TIERS.find(t => systemKw >= t.minKw) ?? PBI_RATE_TIERS[PBI_RATE_TIERS.length - 1];
+  return PBI_RATE_TIERS.find(t => systemKw * SOLAR_AC_DC_RATIO >= t.minKw) ?? PBI_RATE_TIERS[PBI_RATE_TIERS.length - 1];
 }
 
 export function commercialPbiRate(systemKw: number): number {

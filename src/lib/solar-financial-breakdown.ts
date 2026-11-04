@@ -48,6 +48,7 @@ export function buildSolarFinancialBreakdown(
   });
   return {
     rows, tenantCredits, financed, isSSO: options.isSSO, grossCost: rec.grossCost, rebate,
+    cbi: ["commercial", "non-profit"].includes(rec.federalPropertyType ?? "") ? rebate : 0,
     loanPrincipal: financed ? initialCost : 0,
     initialCash: financed ? 0 : initialCost,
     federalKind: federal.kind,

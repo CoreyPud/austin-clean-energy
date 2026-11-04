@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { computeRecommendation, buildProgramFinancials } from "./property-solar";
 import { buildSolarFinancialBreakdown } from "./solar-financial-breakdown";
+import { austinEnergyRebate, businessSolarIncentive, commercialPbiRate } from "./solar-model";
 
 function scenario(propertyType: string, size = 10, isSSO = false, financed = false) {
   const rec = computeRecommendation({ maxPanels: 1000, panelCapacityWatts: 400, sunshineHours: 1800, propertyType }, {
@@ -56,6 +57,47 @@ test("commercial PBI is separate from bill savings and stops after year 5", () =
   assert.equal(model.rebate, 0);
   assert.ok(model.rows[4].programPayment > 0);
   assert.equal(model.rows[5].programPayment, 0);
+});
+test("nonprofit selects CBI below 200 kW AC and PBI at or above 200 kW AC", () => {
+  assert.equal(businessSolarIncentive("non-profit", 199.9), "cbi");
+  assert.equal(businessSolarIncentive("non-profit", 200), "pbi");
+  assert.equal(businessSolarIncentive("non-profit", 250), "pbi");
+});
+test("commercial retains a distinct 100 kW AC threshold", () => {
+  assert.equal(businessSolarIncentive("commercial", 99.9), "cbi");
+  assert.equal(businessSolarIncentive("commercial", 100), "pbi");
+});
+test("calculator uses AC eligibility but DC watts for nonprofit CBI", () => {
+  const { rec, model } = scenario("non-profit", 240);
+  assert.equal(rec.pbiEligible, false); // 199.2 kW AC
+  assert.equal(model.cbi, 240000);
+  assert.equal(model.rebate, 240000);
+  assert.equal(model.initialCash, 240000);
+  assert.equal(model.rows.reduce((sum, row) => sum + row.programPayment, 0), 0);
+  assert.equal(austinEnergyRebate(242, "non-profit"), 0); // 200.86 kW AC
+});
+test("nonprofit above 200 kW AC gets five PBI years with no upfront CBI for cash and financing", () => {
+  for (const financed of [false, true]) {
+    const { rec, model, financials } = scenario("non-profit", 250, false, financed);
+    assert.equal(rec.pbiEligible, true);
+    assert.equal(model.cbi, 0);
+    assert.equal(model.rebate, 0);
+    assert.equal(model.rows[0].programPayment, 38700);
+    assert.ok(model.rows[4].programPayment > 0);
+    assert.equal(model.rows[5].programPayment, 0);
+    assert.equal(model.loanPrincipal, financed ? 500000 : 0);
+    let cumulative = -model.initialCash;
+    for (const row of model.rows) {
+      cumulative += row.netCashFlow ?? 0;
+      assert.ok(Math.abs(cumulative - (row.cumulative ?? 0)) <= 0.51);
+    }
+    assert.equal(model.rows[24].cumulative, financials.net25);
+  }
+});
+test("PBI rate tiers use AC size while production remains DC-based", () => {
+  assert.equal(commercialPbiRate(400), 0.10); // 332 kW AC
+  assert.equal(commercialPbiRate(482), 0.08); // 400.06 kW AC
+  assert.equal(commercialPbiRate(1205), 0.06); // 1000.15 kW AC
 });
 test("multifamily credits are tenant benefits, not owner cash flows", () => {
   const { model } = scenario("multi-family", 100);
