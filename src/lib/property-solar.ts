@@ -5,7 +5,8 @@ import {
   SYSTEM_DERATE,
   DEFAULT_PRODUCTION_PER_KW,
   DEFAULT_MONTHLY_USAGE_KWH,
-  PBI_MIN_KW,
+  businessSolarIncentive,
+  SOLAR_AC_DC_RATIO,
   SSO_MIN_KW,
   buildPbiModel,
   billToMonthlyKwh,
@@ -145,7 +146,7 @@ export interface SolarRecommendation {
   netCost: number;
   annualSavings: number;
   paybackYears: number;
-  /** For-profit commercial systems >= PBI_MIN_KW: not CBI-eligible, gets a 5-year PBI credit instead. */
+  /** Commercial/nonprofit systems at their AC threshold use PBI instead of upfront CBI. */
   pbiEligible: boolean;
   /** Year-1 PBI credit; $0 when not pbiEligible. Ongoing VoS (annualSavings) is unaffected. This
    *  is a separate, time-limited stream (see buildPbiModel/mergePbiIntoThirtyYear for the full
@@ -241,10 +242,8 @@ export function computeRecommendation(
   const paybackYears =
     annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
 
-  // aePropertyType, not cls: nonprofits classify as "commercial" too (no TCAD/calculator
-  // distinction otherwise) but are explicitly out of scope for PBI -- they keep the existing
-  // CBI-only treatment (see solar-model.ts's PBI_MIN_KW comment).
-  const pbiEligible = aePropertyType === "commercial" && recommendedKw >= PBI_MIN_KW;
+  // Panel-derived sizing is DC; program eligibility is estimated in AC until design review.
+  const pbiEligible = businessSolarIncentive(aePropertyType, recommendedKw * SOLAR_AC_DC_RATIO) === "pbi";
   const pbiAnnualCredit = pbiEligible ? Math.round(buildPbiModel(recommendedKw, productionPerKw).annualCredit) : 0;
 
   return {

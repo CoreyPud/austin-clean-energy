@@ -11,6 +11,7 @@ export default function SolarFinancialBreakdown({ model }: { model: ReturnType<t
   const [open, setOpen] = useState(false);
   const id = useId();
   const hasPbi = model.rows.some(row => row.programPayment > 0);
+  const hasCbi = model.cbi > 0;
   const hasFederal = model.rows.some(row => row.federalReceipt > 0);
   const totalBenefit = model.rows.reduce((sum, row) => sum + row.benefit, 0);
   const lastRow = model.rows[model.rows.length - 1];
@@ -34,17 +35,29 @@ export default function SolarFinancialBreakdown({ model }: { model: ReturnType<t
             <TableHeader><TableRow>
               <TableHead>Year</TableHead><TableHead className="text-right">Production (kWh)</TableHead>
               <TableHead className="text-right">{model.isSSO ? "SSO revenue" : model.tenantCredits ? "Tenant credits" : "Bill savings"}</TableHead>
+              {hasCbi && <TableHead className="text-right">CBI upfront rebate</TableHead>}
               {hasPbi && <TableHead className="text-right">PBI credit</TableHead>}
               {hasFederal && <TableHead className="text-right">{model.federalKind}</TableHead>}
               <TableHead className="text-right">O&amp;M</TableHead><TableHead className="text-right">Inverter</TableHead>
               <TableHead className="text-right">Loan payment</TableHead>
               {!model.tenantCredits && <><TableHead className="text-right">Net cash flow</TableHead><TableHead className="text-right">Cumulative net</TableHead></>}
             </TableRow></TableHeader>
-            <TableBody>{model.rows.map(row => (
+            <TableBody>
+              {hasCbi && <TableRow>
+                <TableCell className="font-medium">0 (installation)</TableCell>
+                <TableCell className="text-right">—</TableCell><TableCell className="text-right">—</TableCell>
+                <TableCell className="text-right">{money(model.cbi)}</TableCell>
+                {hasPbi && <TableCell className="text-right">—</TableCell>}
+                {hasFederal && <TableCell className="text-right">—</TableCell>}
+                <TableCell className="text-right">—</TableCell><TableCell className="text-right">—</TableCell><TableCell className="text-right">—</TableCell>
+                {!model.tenantCredits && <><TableCell className="text-right">{money(-model.initialCash)}</TableCell><TableCell className="text-right">{money(-model.initialCash)}</TableCell></>}
+              </TableRow>}
+              {model.rows.map(row => (
               <TableRow key={row.year}>
                 <TableCell className="font-medium">{row.year}</TableCell>
                 <TableCell className="text-right">{Math.round(row.production).toLocaleString()}</TableCell>
                 <TableCell className="text-right">{money(row.benefit)}</TableCell>
+                {hasCbi && <TableCell className="text-right">{money(0)}</TableCell>}
                 {hasPbi && <TableCell className="text-right">{money(row.programPayment)}</TableCell>}
                 {hasFederal && <TableCell className="text-right">{money(row.federalReceipt)}</TableCell>}
                 <TableCell className="text-right">{money(row.maintenance)}</TableCell>
@@ -59,6 +72,8 @@ export default function SolarFinancialBreakdown({ model }: { model: ReturnType<t
           </Table>
           <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3 text-sm">
             <span>{model.tenantCredits ? "25-year tenant credits" : model.isSSO ? "25-year gross revenue" : "25-year bill savings"}: <strong>{money(totalBenefit)}</strong></span>
+            {hasCbi && <span>Upfront CBI: <strong>{money(model.cbi)}</strong></span>}
+            {hasPbi && <span>5-year PBI: <strong>{money(model.rows.reduce((sum, row) => sum + row.programPayment, 0))}</strong></span>}
             {!model.tenantCredits && <span>Net position at year 25: <strong>{money(lastRow?.cumulative ?? 0)}</strong></span>}
           </div>
           <p className="text-xs text-muted-foreground">

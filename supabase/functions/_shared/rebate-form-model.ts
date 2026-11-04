@@ -1,3 +1,4 @@
+import { businessSolarIncentive, NONPROFIT_CBI_CAP_KW, PBI_MIN_KW } from "./commercial-solar-programs.ts";
 // Shared private intake contract; no personal data belongs in public assessment shares.
 export const solarTextFields = {
   property_type: "Property / applicant type", property_owner: "Property owner / legal entity",
@@ -23,11 +24,11 @@ export const solarForms = {
 export function solarFormRoute(d: SolarApplicationFields): { program: string | null; forms: (keyof typeof solarForms)[]; note: string } {
   const type = normalizeSolarType(d.property_type ?? "");
   if (type === "single-family" || type === "condo") return { program: "Residential solar", forms: ["residential", "dgpa"], note: "Residential service, eligibility, required education and interconnection agreement must be verified." };
-  if (type === "non-profit") return { program: "Commercial solar CBI", forms: ["cbi", "dgpa"], note: "Nonprofit CBI requires proof of status and Austin Energy approval; size alone does not verify eligibility." };
-  if (type !== "commercial") return { program: null, forms: [], note: "Confirm service / applicant type with Austin Energy. Multifamily and unclassified properties require individual review." };
+  if (type !== "commercial" && type !== "non-profit") return { program: null, forms: [], note: "Confirm service / applicant type with Austin Energy. Multifamily and unclassified properties require individual review." };
   if (!d.system_kw_ac || !Number.isFinite(d.system_kw_ac)) return { program: null, forms: [], note: "Enter the actual design AC rating. Do not substitute DC size or an estimated conversion." };
-  const cbi = d.system_kw_ac < 100;
-  return { program: cbi ? "Commercial solar CBI" : "Commercial solar PBI", forms: [cbi ? "cbi" : "pbi", "dgpa"], note: "Suggested by commercial AC size: CBI below 100 kW AC; PBI at 100 kW AC or above. Austin Energy must confirm eligibility, funding and the current document packet." };
+  const cbi = businessSolarIncentive(type, d.system_kw_ac) === "cbi";
+  const threshold = type === "non-profit" ? NONPROFIT_CBI_CAP_KW : PBI_MIN_KW;
+  return { program: cbi ? "Commercial solar CBI" : "Commercial solar PBI", forms: [cbi ? "cbi" : "pbi", "dgpa"], note: `Suggested by AC size: CBI below ${threshold} kW AC; PBI at ${threshold} kW AC or above. Based on Austin Energy's July 2026 announcement. Older nonprofit guidelines allow CBI at any size; Austin Energy must confirm the applicable program, funding and packet. Nonprofit status requires verification.` };
 }
 export function normalizeSolarType(value: string): SolarPropertyType {
   const normalized = value.replace(/_/g, "-");

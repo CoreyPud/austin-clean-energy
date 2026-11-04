@@ -35,6 +35,8 @@ import {
   PBI_MIN_KW,
   COMMERCIAL_PBI_YEARS,
   SYSTEM_DERATE,
+  SOLAR_AC_DC_RATIO,
+  BUSINESS_SOLAR_INCENTIVE_SOURCE,
   AUSTIN_ENERGY_SOLAR_REBATE,
   AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
 } from "@/lib/solar-model";
@@ -218,7 +220,8 @@ export default function SolarProgramView({
             <div className="flex items-start gap-6">
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-muted-foreground mb-1">Solar system size</div>
-                <div className="text-2xl font-bold tabular-nums mb-3">{liveSystemKw.toFixed(1)} kW</div>
+                <div className="text-2xl font-bold tabular-nums mb-3">{liveSystemKw.toFixed(1)} kW DC</div>
+                {isCommercial && !isSSO && <p className="mb-3 text-xs text-muted-foreground">Estimated {(liveSystemKw * SOLAR_AC_DC_RATIO).toFixed(1)} kW AC · {rec.pbiEligible ? "PBI" : "CBI"} scenario. Confirm actual AC rating with your installer.</p>}
                 <Slider
                   // Capped at the buildable roof max: computeRecommendation clamps any larger
                   // override down to it, so letting the thumb go further would show a kW figure
@@ -488,7 +491,7 @@ export default function SolarProgramView({
         <SolarFinancialBreakdown model={breakdown} />
       </div>
 
-      {/* Performance-Based Incentive -- for-profit commercial >= PBI_MIN_KW on VoS billing.
+      {/* Performance-Based Incentive -- eligible commercial/nonprofit on VoS billing.
           Rendered here (not as a page-level sibling) so the sticky control card's scope
           extends through it instead of releasing before it. */}
       {isCommercial && !isSSO && rec.pbiEligible && (
@@ -576,15 +579,16 @@ export default function SolarProgramView({
                       : "from the Standard Offer pro forma's tiered rate; systems 1,300 kW and above use a slightly higher rate"}
                     . Get real quotes to verify.)
                   </li>
-                  {isNonProfit && !isSSO ? (
-                    <li>Austin Energy non-profit solar rebate: ${NONPROFIT_CBI_PER_W.toFixed(2)}/W, on up to {NONPROFIT_CBI_CAP_KW} kW</li>
-                  ) : isSSO ? (
+                  {isSSO ? (
                     <li>Standard Offer systems don't qualify for Austin Energy's commercial capacity rebate. That rebate is only available to Value of Solar-billed systems.</li>
                   ) : rec.pbiEligible ? (
-                    <li>Not eligible for Austin Energy's upfront commercial capacity rebate (CBI). That program is only for systems under {PBI_MIN_KW} kW. Qualifies for the Performance-Based Incentive instead; see below.</li>
+                    <li>This size is modeled with PBI instead of upfront CBI: {isNonProfit ? NONPROFIT_CBI_CAP_KW : PBI_MIN_KW} kW AC or above. PBI pays for the first {COMMERCIAL_PBI_YEARS} years, separately from Value of Solar.</li>
+                  ) : isNonProfit ? (
+                    <li>Austin Energy nonprofit CBI scenario: ${NONPROFIT_CBI_PER_W.toFixed(2)}/W DC for systems below {NONPROFIT_CBI_CAP_KW} kW AC; not a rebate capped on a larger system.</li>
                   ) : (
-                    <li>Austin Energy commercial capacity rebate: ${COMMERCIAL_CBI_PER_W.toFixed(2)}/W, for systems under {PBI_MIN_KW} kW</li>
+                    <li>Austin Energy commercial capacity rebate: ${COMMERCIAL_CBI_PER_W.toFixed(2)}/W DC, for systems under {PBI_MIN_KW} kW AC</li>
                   )}
+                  {!isSSO && <li>Eligibility uses estimated AC size (83% of panel DC capacity). <a href={BUSINESS_SOLAR_INCENTIVE_SOURCE} target="_blank" rel="noopener noreferrer" className="underline">Austin Energy's July 2026 announcement</a> supplies these thresholds and rates; older nonprofit guidelines allow CBI at any size. Confirm the applicable program with Austin Energy before relying on this scenario.</li>}
                 </ul>
               </div>
               {isSSO ? (
