@@ -11,6 +11,8 @@ import EnvironmentalImpactCard from "@/components/assessment/EnvironmentalImpact
 import SsoProForma from "@/components/assessment/SsoProForma";
 import PbiBreakdown from "@/components/assessment/PbiBreakdown";
 import FederalSolarIncentives from "./FederalSolarIncentives";
+import SolarFinancialBreakdown from "./SolarFinancialBreakdown";
+import { buildSolarFinancialBreakdown } from "@/lib/solar-financial-breakdown";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 import {
   SSO_RATE_UNDER_1MW,
@@ -155,6 +157,9 @@ export default function SolarProgramView({
     monthlyUsageKwh,
   });
   const { yearOne, sso, net25, paybackYear, annualAmount } = financials;
+  const breakdown = buildSolarFinancialBreakdown(rec, {
+    annualUsageKwh, productionPerKw, isSSO, loanTermYears, loanInterestRate, monthlyUsageKwh,
+  }, financials);
 
   const installCost = rec.federal?.netCostUsd ?? (isSSO ? rec.grossCost : rec.netCost);
   const billOffsetPct = yearOne.billWithoutSolar > 0
@@ -480,6 +485,7 @@ export default function SolarProgramView({
         </div>
         )}
 
+        <SolarFinancialBreakdown model={breakdown} />
       </div>
 
       {/* Performance-Based Incentive -- for-profit commercial >= PBI_MIN_KW on VoS billing.
