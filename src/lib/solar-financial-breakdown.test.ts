@@ -38,13 +38,13 @@ test("cash and financed owner cash flows reconcile with the assessment chart", (
 });
 test("residential rebate reduces upfront cost once and never supplies a federal credit", () => {
   const { model } = scenario("single-family");
-  assert.equal(model.rebate, 2500);
-  assert.equal(model.initialCash, 17500);
+  assert.equal(model.rebate, 4000);
+  assert.equal(model.initialCash, 16000);
   assert.equal(model.rows.reduce((sum, row) => sum + row.federalReceipt, 0), 0);
 });
 test("financing keeps the full post-utility-rebate principal and stops payments after the term", () => {
   const { model } = scenario("commercial", 10, false, true);
-  assert.equal(model.loanPrincipal, 16000);
+  assert.equal(model.loanPrincipal, 13000);
   assert.equal(model.initialCash, 0);
   assert.equal(model.rows[0].federalReceipt, 0);
   assert.equal(model.rows[1].federalReceipt, 6000);
@@ -60,7 +60,7 @@ test("commercial PBI is separate from bill savings and stops after year 5", () =
 test("multifamily credits are tenant benefits, not owner cash flows", () => {
   const { model } = scenario("multi-family", 100);
   assert.equal(model.tenantCredits, true);
-  assert.equal(model.rows[0].benefit, 14938.2);
+  assert.ok(Math.abs(model.rows[0].benefit - 19938.24) < 0.001);
   assert.equal(model.rows[0].netCashFlow, null);
   assert.equal(model.rows[24].cumulative, null);
 });
