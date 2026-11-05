@@ -31,6 +31,11 @@ All colors MUST be HSL.
     --muted-foreground: 155 20% 40%;
 
     --accent: 38 90% 55%;
+    --gantt-1: 155 55% 35%;
+    --gantt-2: 38 85% 50%;
+    --gantt-3: 205 70% 45%;
+    --gantt-4: 280 40% 50%;
+    --gantt-5: 0 60% 50%;
     --accent-foreground: 155 40% 15%;
 
     --destructive: 0 84.2% 60.2%;
@@ -75,6 +80,11 @@ All colors MUST be HSL.
     --muted-foreground: 155 15% 60%;
 
     --accent: 38 85% 60%;
+    --gantt-1: 155 50% 45%;
+    --gantt-2: 38 80% 58%;
+    --gantt-3: 205 65% 58%;
+    --gantt-4: 280 45% 65%;
+    --gantt-5: 0 60% 62%;
     --accent-foreground: 155 40% 8%;
 
     --destructive: 0 62.8% 30.6%;
