@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useSharedProject } from "@/lib/shared-project";
+import { GanttWorkspace } from "@/features/gantt/GanttWorkspace";
 import { cn } from "@/lib/utils";
 
 type View = "gantt" | "board" | "milestones";
@@ -141,7 +142,7 @@ export function SolarFlowPm() {
           <div className="border-b border-border bg-background px-4 py-4 sm:px-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="font-mono text-[10px] uppercase text-primary">{project.systemSizeKw} kW DC · {project.address}</p><h2 className="font-display text-2xl font-bold">{view === "gantt" ? "Delivery schedule" : view === "board" ? "Task board" : "Project milestones"}</h2></div>{view === "gantt" && <div className="flex rounded-md border border-border p-1">{(["days", "weeks", "months"] as Scale[]).map((item) => <Button key={item} size="sm" variant={scale === item ? "default" : "ghost"} onClick={() => setScale(item)} className="capitalize">{item}</Button>)}</div>}</div></div>
           <Filters search={search} setSearch={setSearch} assignee={assignee} setAssignee={setAssignee} status={status} setStatus={setStatus} assignees={assignees} />
           <div className="p-3 sm:p-6">
-            {view === "gantt" && <GanttView tasks={filtered} scale={scale} finishDay={finishDay} onOpen={setSelectedId} onDrag={dragTask} dateForDay={dateForDay} />}
+            {view === "gantt" && <div className="-mx-4 sm:-mx-6"><GanttWorkspace /></div>}
             {view === "board" && <BoardView tasks={filtered} onOpen={setSelectedId} onStatus={updateStatus} />}
             {view === "milestones" && <MilestonesView tasks={tasks} overall={overall} finishDate={finishDate} criticalBlockers={criticalBlockers} onOpen={setSelectedId} />}
           </div>
