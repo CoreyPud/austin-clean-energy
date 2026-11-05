@@ -733,6 +733,96 @@ export type Database = {
         }
         Relationships: []
       }
+      gantt_schedules: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          saved_assessment_id: string | null
+          start_date: string
+          tasks: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name: string
+          saved_assessment_id?: string | null
+          start_date?: string
+          tasks?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          saved_assessment_id?: string | null
+          start_date?: string
+          tasks?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      gantt_task_comments: {
+        Row: {
+          author_id: string
+          author_name: string
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          parent_id: string | null
+          resolved: boolean
+          schedule_id: string
+          task_id: string
+        }
+        Insert: {
+          author_id?: string
+          author_name: string
+          body: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          parent_id?: string | null
+          resolved?: boolean
+          schedule_id: string
+          task_id: string
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          parent_id?: string | null
+          resolved?: boolean
+          schedule_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gantt_task_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "gantt_task_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gantt_task_comments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "gantt_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guide_pages: {
         Row: {
           category: string
