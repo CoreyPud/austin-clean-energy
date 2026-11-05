@@ -19,6 +19,7 @@ export default {
       },
       colors: {
         border: "hsl(var(--border))",
+        gantt: { 1: "hsl(var(--gantt-1))", 2: "hsl(var(--gantt-2))", 3: "hsl(var(--gantt-3))", 4: "hsl(var(--gantt-4))", 5: "hsl(var(--gantt-5))" },
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
