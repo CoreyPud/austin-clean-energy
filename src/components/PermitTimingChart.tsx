@@ -5,7 +5,16 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { TimingMonth } from '../../supabase/functions/_shared/permit-timing';
 
-const monthLabel = (month: string) => new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+const monthLabel = (value: unknown) => {
+  const text = String(value ?? '');
+  const match = /^(\d{4})-(\d{2})$/.exec(text);
+  if (!match) return /^\d{4}$/.test(text) ? text : 'Date unavailable';
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return 'Date unavailable';
+  return new Date(Date.UTC(Number(match[1]), month - 1, 1)).toLocaleDateString('en-US', {
+    month: 'short', year: 'numeric', timeZone: 'UTC',
+  });
+};
 
 interface Props {
   kind: 'Solar' | 'Battery-Only';
@@ -43,9 +52,9 @@ export default function PermitTimingChart({ kind, data, loading, error }: Props)
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data} accessibilityLayer>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tickFormatter={monthLabel} minTickGap={35} />
+              <XAxis dataKey={(row) => row.month ?? row.year} tickFormatter={monthLabel} minTickGap={35} />
               <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} />
-              <Tooltip formatter={(value: number) => [`${value} days`, `${measure} time`]} labelFormatter={(month, payload) => `${monthLabel(String(month))} · ${payload[0]?.payload?.count?.toLocaleString() ?? 0} completed projects`} />
+              <Tooltip formatter={(value: number) => [`${value} days`, `${measure} time`]} labelFormatter={(month, payload) => `${monthLabel(payload[0]?.payload?.month ?? payload[0]?.payload?.year ?? month)} · ${payload[0]?.payload?.count?.toLocaleString() ?? 0} completed projects`} />
               <Line type="linear" dataKey={metric} stroke={kind === 'Solar' ? 'hsl(var(--secondary))' : 'hsl(var(--primary))'} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
