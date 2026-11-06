@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapContainer, TileLayer, CircleMarker, Circle, Tooltip, Rectangle, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Circle, Tooltip, Rectangle, Pane, useMap } from "react-leaflet";
 import type { Map as LeafletMap, LatLngBoundsExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Moon, Sun, Plus, Minus, RotateCcw } from "lucide-react";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   type Filters, type Priority, type Site, type Substation, type ZipGrowth, PRIORITY_INFO,
-  filterSites, filtersFromParams, filtersToParams, haversineKm, parseSites, parseSubstations, parseZips, percentileBounds, siteStats,
+  filterSites, filtersFromParams, filtersToParams, nearestSubstation, parseSites, parseSubstations, parseZips, percentileBounds, siteStats,
 } from "./data";
 
 const AUSTIN: [number, number] = [30.3, -97.73];
@@ -25,7 +25,7 @@ function useColors(ref: React.RefObject<HTMLDivElement>, theme: string) {
     if (!ref.current) return;
     const cs = getComputedStyle(ref.current);
     const v = (k: string) => `hsl(${cs.getPropertyValue(k).trim()})`;
-    setC({ 1: v("--rfp-p1"), 2: v("--rfp-p2"), 3: v("--rfp-p3"), 4: v("--rfp-p4"), heat: v("--rfp-heat") });
+    setC({ 1: v("--rfp-p1"), 2: v("--rfp-p2"), 3: v("--rfp-p3"), 4: v("--rfp-p4"), heat: v("--rfp-heat"), substation: v("--foreground"), surface: v("--background") });
   }, [ref, theme]);
   return c;
 }
@@ -36,13 +36,6 @@ function MapRef({ onReady }: { onReady: (m: LeafletMap) => void }) {
   return null;
 }
 
-function nearest(site: Site, subs: Substation[] | null) {
-  if (!subs) return null;
-  let best: Substation | null = null, d = Infinity;
-  for (const s of subs) { const k = haversineKm(site, s); if (k < d) { d = k; best = s; } }
-  return best ? { sub: best, km: d } : null;
-}
-
 export default function BatterySiteMap() {
   const [params, setParams] = useSearchParams();
   const f = useMemo(() => filtersFromParams(params), [params]);
@@ -51,10 +44,11 @@ export default function BatterySiteMap() {
   const [sites, setSites] = useState<Site[]>([]);
   const [zips, setZips] = useState<ZipGrowth[]>([]);
   const [subs, setSubs] = useState<Substation[] | null>(null);
+  const [subError, setSubError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHeat, setShowHeat] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
-  const [showSubs, setShowSubs] = useState(false);
+  const [showSubs, setShowSubs] = useState(true);
   const [selected, setSelected] = useState<number | null>(null);
   const [map, setMap] = useState<LeafletMap | null>(null);
   const systemDark = typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches;
@@ -66,8 +60,14 @@ export default function BatterySiteMap() {
     Promise.all([fetch("/data/rfp-2026-sites.csv").then((r) => r.text()), fetch("/data/rfp-2026-zip-growth.csv").then((r) => r.text())])
       .then(([s, z]) => { setSites(parseSites(s)); setZips(parseZips(z)); })
       .catch(() => setError("The site data could not be loaded."));
-    // Phase 2: optional substations layer, hidden unless the file exists.
-    fetch("/data/substations.csv").then((r) => (r.ok ? r.text() : "")).then((t) => setSubs(parseSubstations(t))).catch(() => setSubs(null));
+    fetch("/data/substations.csv").then((r) => {
+      if (!r.ok) throw new Error("Substations unavailable");
+      return r.text();
+    }).then((t) => {
+      const parsed = parseSubstations(t);
+      if (!parsed) throw new Error("Invalid substation data");
+      setSubs(parsed);
+    }).catch(() => setSubError(true));
   }, []);
 
   const filtered = useMemo(() => filterSites(sites, f), [sites, f]);
@@ -152,7 +152,9 @@ export default function BatterySiteMap() {
               <p className="font-semibold">Layers</p>
               <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showHeat} onCheckedChange={(v) => setShowHeat(!!v)} />New-load heat by ZIP</label>
               <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showLabels} onCheckedChange={(v) => setShowLabels(!!v)} />Label top growth ZIPs</label>
-              {subs && <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showSubs} onCheckedChange={(v) => setShowSubs(!!v)} />Substations</label>}
+              <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showSubs} disabled={!subs} onCheckedChange={(v) => setShowSubs(!!v)} />Substations{subs ? ` (${subs.length})` : ""}</label>
+              {subError && <p className="text-xs text-destructive">Substation locations could not be loaded. Please reload to retry.</p>}
+              <p className="text-xs text-muted-foreground">Nearest means straight-line distance, not the serving substation or available interconnection capacity. Distances from estimated sites use the ZIP center.</p>
               <p className="text-xs text-muted-foreground">ZIP growth is a proxy for where load is growing. It is not feeder or transformer loading.</p>
             </div>
             <div className="border-t pt-4 space-y-3 text-xs text-muted-foreground">
@@ -175,10 +177,14 @@ export default function BatterySiteMap() {
                     <Tooltip permanent direction="center" className="rfp-zip-label">{z.zip}</Tooltip>
                   </CircleMarker>
                 ))}
-                {showSubs && subs?.map((s, i) => {
-                  const d = 0.001 + Math.sqrt(s.capacityKva) / 40000;
-                  return <Rectangle key={`s${i}`} bounds={[[s.lat - d, s.lon - d], [s.lat + d, s.lon + d]]} pathOptions={{ color: "hsl(var(--foreground))", weight: 1, fillOpacity: 0.4 }}><Tooltip>{s.name} · {fmt(s.voltageKv)} kV · {fmt(s.capacityKva)} kVA</Tooltip></Rectangle>;
-                })}
+                <Pane name="substations" className="z-[450]">
+                  {showSubs && colors.substation && subs?.map((s, i) => {
+                    const d = s.capacityKva == null ? 0.00065 : 0.00065 + Math.min(0.002, Math.sqrt(s.capacityKva) / 100000);
+                    return <Rectangle key={`s${i}-${dark}`} pane="substations" bounds={[[s.lat - d, s.lon - d], [s.lat + d, s.lon + d]]} pathOptions={{ color: colors.substation, fillColor: colors.surface, weight: 2, fillOpacity: 0.85 }}>
+                      <Tooltip sticky><div className="text-xs space-y-0.5"><p className="font-semibold">{s.name}</p><p>Voltage: {s.voltageKv == null ? "Not reported" : `${fmt(s.voltageKv)} kV`}</p><p>Capacity: {s.capacityKva == null ? "Not reported" : `${fmt(s.capacityKva)} kVA`}</p><p>Location only; available capacity unverified.</p></div></Tooltip>
+                    </Rectangle>;
+                  })}
+                </Pane>
                 {colors[1] && drawOrder.map((s) => {
                   const c = colors[s.priority];
                   const sel = s.id === selected;
@@ -213,6 +219,7 @@ export default function BatterySiteMap() {
               <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-muted-foreground" /><span className="inline-block h-4 w-4 rounded-full bg-muted-foreground" />Dot size = solar kW</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-full border-2 border-muted-foreground" />Hollow = position estimated from ZIP center</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-16 rounded-sm" style={{ background: `linear-gradient(to right, transparent, ${colors.heat})` }} />Heat = ZIP new load since 2020 (low → high)</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 border-2 border-foreground bg-background" />Square = substation; uniform size when capacity is unreported</span>
             </div>
           </div>
         </div>
@@ -228,12 +235,12 @@ export default function BatterySiteMap() {
                 <tr className="border-b text-left">
                   <th className="p-2">Priority</th><th className="p-2">Site</th><th className="p-2">Address</th><th className="p-2">ZIP</th>
                   <th className="p-2 text-right">Solar kW</th><th className="p-2 text-right">Battery kW (est.)</th><th className="p-2 text-right">ZIP new load GWh</th><th className="p-2">Type</th>
-                  {subs && <th className="p-2">Nearest substation</th>}
+                  <th className="p-2">Nearest substation (straight-line)</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.slice(0, TABLE_LIMIT).map((s) => {
-                  const near = nearest(s, subs);
+                  const near = nearestSubstation(s, subs);
                   return (
                     <tr key={s.id} onClick={() => focus(s)} className={`border-b cursor-pointer hover:bg-muted/50 ${s.id === selected ? "bg-muted" : ""}`}>
                       <td className="p-2"><span className="rfp-num text-xs font-semibold px-2 py-0.5 rounded-full text-background" style={{ background: colors[s.priority] }}>P{s.priority}</span></td>
@@ -244,7 +251,7 @@ export default function BatterySiteMap() {
                       <td className="p-2 rfp-num text-right">{fmt(s.solarKw * f.ratio, 1)}</td>
                       <td className="p-2 rfp-num text-right">{fmt(s.zipGwh, 1)}</td>
                       <td className="p-2 text-xs text-muted-foreground">{s.category}</td>
-                      {subs && <td className="p-2 text-xs">{near ? `${near.sub.name} · ${fmt(near.sub.capacityKva)} kVA · ${fmt(near.km, 1)} km` : "—"}</td>}
+                      <td className="p-2 text-xs min-w-[200px]">{near ? <><span className="font-medium">{near.sub.name}</span><span className="block rfp-num">{fmt(near.km, 1)} km{s.approx ? " (from ZIP center)" : ""}</span><span className="block text-muted-foreground">{near.sub.capacityKva == null ? "Capacity not reported" : `${fmt(near.sub.capacityKva)} kVA`}</span></> : subError ? "Unavailable" : "Loading…"}</td>
                     </tr>
                   );
                 })}
