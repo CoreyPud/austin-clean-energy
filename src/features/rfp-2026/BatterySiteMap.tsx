@@ -253,7 +253,7 @@ export default function BatterySiteMap() {
                   return (
                     <tr key={s.id} onClick={() => focus(s)} className={`border-b cursor-pointer hover:bg-muted/50 ${s.id === selected ? "bg-muted" : ""}`}>
                       <td className="p-2"><span className="rfp-num text-xs font-semibold px-2 py-0.5 rounded-full text-background" style={{ background: colors[s.priority] }}>P{s.priority}</span></td>
-                      <td className="p-2 font-medium">{s.name}</td>
+                      <td className="p-2 font-medium">{siteDisplayName(s)}</td>
                       <td className="p-2">{s.address}{s.approx && <span className="text-muted-foreground"> (est.)</span>}</td>
                       <td className="p-2 rfp-num">{s.zip}</td>
                       <td className="p-2 rfp-num text-right">{fmt(s.solarKw, 1)}</td>
