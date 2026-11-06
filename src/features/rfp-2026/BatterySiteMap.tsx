@@ -154,7 +154,7 @@ export default function BatterySiteMap() {
               <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showLabels} onCheckedChange={(v) => setShowLabels(!!v)} />Label top growth ZIPs</label>
               <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showSubs} disabled={!subs} onCheckedChange={(v) => setShowSubs(!!v)} />Substations{subs ? ` (${subs.length})` : ""}</label>
               {subError && <p className="text-xs text-destructive">Substation locations could not be loaded. Please reload to retry.</p>}
-              <p className="text-xs text-muted-foreground">Nearest means straight-line distance, not the serving substation or available interconnection capacity. Distances from estimated sites use the ZIP center.</p>
+              <p className="text-xs text-muted-foreground">Partial OpenStreetMap snapshot of Austin Energy-tagged substations, not a complete utility inventory. Nearest means nearest in this snapshot by straight-line distance, not the serving substation or available capacity. Estimated sites use the ZIP center.</p>
               <p className="text-xs text-muted-foreground">ZIP growth is a proxy for where load is growing. It is not feeder or transformer loading.</p>
             </div>
             <div className="border-t pt-4 space-y-3 text-xs text-muted-foreground">
@@ -235,7 +235,7 @@ export default function BatterySiteMap() {
                 <tr className="border-b text-left">
                   <th className="p-2">Priority</th><th className="p-2">Site</th><th className="p-2">Address</th><th className="p-2">ZIP</th>
                   <th className="p-2 text-right">Solar kW</th><th className="p-2 text-right">Battery kW (est.)</th><th className="p-2 text-right">ZIP new load GWh</th><th className="p-2">Type</th>
-                  <th className="p-2">Nearest substation (straight-line)</th>
+                  <th className="p-2">Nearest mapped substation (straight-line)</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,6 +261,7 @@ export default function BatterySiteMap() {
         </section>
 
         <p className="text-xs text-muted-foreground">Sources: City of Austin issued construction permits (estimated annual kWh by permit, ZIP totals), Austin solar permit export (commercial solar with stated kW), AISD solar sheets, Roof Revenue rooftop estimates. Solar kW for potential sites is DC. All sizing and growth figures are screening estimates, not Austin Energy feeder data.</p>
+        <p className="text-xs text-muted-foreground">Substations: © <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors (ODbL)</a>, retrieved November 6, 2026. Partial coverage; coordinates are mapped-outline centers. Capacity is not reported; voltage is not available hosting capacity. <a className="underline" href="/data/rfp-2026-substations-source.json" target="_blank" rel="noopener noreferrer">Source records and coverage notes</a>.</p>
       </div>
     </div>
   );
