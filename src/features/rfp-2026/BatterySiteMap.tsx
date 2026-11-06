@@ -98,6 +98,10 @@ export default function BatterySiteMap() {
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
+            <Link to="/austin-at-a-glance" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground -ml-1 mb-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Austin at a Glance
+            </Link>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">RFP 2026</p>
             <h1 className="text-2xl md:text-3xl font-semibold">Austin Battery Priority Site Map</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">Candidate Austin buildings where a battery could pair with existing or new rooftop solar, ranked by existing solar and new electric load permitted in each ZIP since 2020.</p>
