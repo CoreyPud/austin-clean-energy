@@ -156,7 +156,7 @@ export default function BatterySiteMap() {
               <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showLabels} onCheckedChange={(v) => setShowLabels(!!v)} />Label top growth ZIPs</label>
               <label className="flex gap-2 items-center cursor-pointer"><Checkbox checked={showSubs} disabled={!subs} onCheckedChange={(v) => setShowSubs(!!v)} />Substations{subs ? ` (${subs.length})` : ""}</label>
               {subError && <p className="text-xs text-destructive">Substation locations could not be loaded. Please reload to retry.</p>}
-              <p className="text-xs text-muted-foreground">Partial OpenStreetMap snapshot of Austin Energy-tagged substations, not a complete utility inventory. Nearest means nearest in this snapshot by straight-line distance, not the serving substation or available capacity. Estimated sites use the ZIP center.</p>
+              <p className="text-xs text-muted-foreground">The supplied substation list has best-guess ZIPs, not coordinates. Squares show estimated areas, not actual substation locations. Proximity is estimated from those areas, not a serving feeder or available capacity.</p>
               <p className="text-xs text-muted-foreground">ZIP growth is a proxy for where load is growing. It is not feeder or transformer loading.</p>
             </div>
             <div className="border-t pt-4 space-y-3 text-xs text-muted-foreground">
@@ -181,9 +181,9 @@ export default function BatterySiteMap() {
                 ))}
                 <Pane name="substations" className="z-[450]">
                   {showSubs && colors.substation && subs?.map((s, i) => {
-                    const d = s.capacityKva == null ? 0.00065 : 0.00065 + Math.min(0.002, Math.sqrt(s.capacityKva) / 100000);
-                    return <Rectangle key={`s${i}-${dark}`} renderer={substationRenderer} pane="substations" bounds={[[s.lat - d, s.lon - d], [s.lat + d, s.lon + d]]} pathOptions={{ color: colors.substation, fillColor: colors.surface, weight: 2, fillOpacity: 0.85 }}>
-                      <Tooltip sticky><div className="text-xs space-y-0.5"><p className="font-semibold">{s.name}</p><p>Voltage: {s.voltageKv == null ? "Not reported" : `${fmt(s.voltageKv)} kV`}</p><p>Capacity: {s.capacityKva == null ? "Not reported" : `${fmt(s.capacityKva)} kVA`}</p><p>Location only; available capacity unverified.</p></div></Tooltip>
+                    const d = s.approx ? 0.003 : s.capacityKva == null ? 0.00065 : 0.00065 + Math.min(0.002, Math.sqrt(s.capacityKva) / 100000);
+                    return <Rectangle key={`s${i}-${dark}`} renderer={substationRenderer} pane="substations" bounds={[[s.lat - d, s.lon - d], [s.lat + d, s.lon + d]]} pathOptions={{ color: colors.substation, fillColor: colors.surface, weight: 2, fillOpacity: s.approx ? 0.15 : 0.85, dashArray: s.approx ? "4 3" : undefined }}>
+                      <Tooltip sticky><div className="text-xs space-y-0.5"><p className="font-semibold">{s.name}{s.approx ? " (estimated area)" : ""}</p><p>Voltage: {s.voltageKv == null ? "Not reported" : `${fmt(s.voltageKv)} kV`}</p><p>Buses: {s.buses || "Not reported"}</p><p>Best-guess ZIPs: {s.zipGuesses || "Not reported"}</p><p>Capacity: {s.capacityKva == null ? "Not reported" : `${fmt(s.capacityKva)} kVA`}</p>{s.approx && <><p>{s.positionMethod}</p><p>ZIPs used for position: {s.positionZips}</p></>}<p>Actual location and available capacity unverified.</p></div></Tooltip>
                     </Rectangle>;
                   })}
                 </Pane>
@@ -221,7 +221,7 @@ export default function BatterySiteMap() {
               <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-muted-foreground" /><span className="inline-block h-4 w-4 rounded-full bg-muted-foreground" />Dot size = solar kW</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-full border-2 border-muted-foreground" />Hollow = position estimated from ZIP center</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-16 rounded-sm" style={{ background: `linear-gradient(to right, transparent, ${colors.heat})` }} />Heat = ZIP new load since 2020 (low → high)</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 border-2 border-foreground bg-background" />Square = substation; uniform size when capacity is unreported</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 border-2 border-dashed border-foreground bg-background" />Dashed square = estimated substation area; not an actual location</span>
             </div>
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function BatterySiteMap() {
                 <tr className="border-b text-left">
                   <th className="p-2">Priority</th><th className="p-2">Site</th><th className="p-2">Address</th><th className="p-2">ZIP</th>
                   <th className="p-2 text-right">Solar kW</th><th className="p-2 text-right">Battery kW (est.)</th><th className="p-2 text-right">ZIP new load GWh</th><th className="p-2">Type</th>
-                  <th className="p-2">Nearest mapped substation (straight-line)</th>
+                  <th className="p-2">Nearest substation area (estimated)</th>
                 </tr>
               </thead>
               <tbody>
@@ -253,7 +253,7 @@ export default function BatterySiteMap() {
                       <td className="p-2 rfp-num text-right">{fmt(s.solarKw * f.ratio, 1)}</td>
                       <td className="p-2 rfp-num text-right">{fmt(s.zipGwh, 1)}</td>
                       <td className="p-2 text-xs text-muted-foreground">{s.category}</td>
-                      <td className="p-2 text-xs min-w-[200px]">{near ? <><span className="font-medium">{near.sub.name}</span><span className="block rfp-num">{fmt(near.km, 1)} km{s.approx ? " (from ZIP center)" : ""}</span><span className="block text-muted-foreground">{near.sub.capacityKva == null ? "Capacity not reported" : `${fmt(near.sub.capacityKva)} kVA`}</span></> : subError ? "Unavailable" : "Loading…"}</td>
+                      <td className="p-2 text-xs min-w-[230px]">{near ? <><span className="font-medium">{near.sub.name} · {near.sub.voltageKv == null ? "Voltage not reported" : `${fmt(near.sub.voltageKv)} kV`}</span><span className="block rfp-num">{fmt(near.km, 1)} km (est.){s.approx ? " · site at ZIP center" : ""}</span><span className="block">Buses: {near.sub.buses || "Not reported"}</span><span className="block">Best-guess ZIPs: {near.sub.zipGuesses || "Not reported"}</span><span className="block text-muted-foreground">{near.sub.capacityKva == null ? "Capacity not reported" : `${fmt(near.sub.capacityKva)} kVA`}</span></> : subError ? "Unavailable" : "Loading…"}</td>
                     </tr>
                   );
                 })}
@@ -263,7 +263,7 @@ export default function BatterySiteMap() {
         </section>
 
         <p className="text-xs text-muted-foreground">Sources: City of Austin issued construction permits (estimated annual kWh by permit, ZIP totals), Austin solar permit export (commercial solar with stated kW), AISD solar sheets, Roof Revenue rooftop estimates. Solar kW for potential sites is DC. All sizing and growth figures are screening estimates, not Austin Energy feeder data.</p>
-        <p className="text-xs text-muted-foreground">Substations: © <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors (ODbL)</a>, retrieved November 6, 2026. Partial coverage; coordinates are mapped-outline centers. Capacity is not reported; voltage is not available hosting capacity. <a className="underline" href="/data/rfp-2026-substations-source.json" target="_blank" rel="noopener noreferrer">Source records and coverage notes</a>.</p>
+        <p className="text-xs text-muted-foreground">Substations: <a className="underline" href="/data/rfp-2026-substations-supplied.csv" target="_blank" rel="noopener noreferrer">User-supplied voltage, buses, and Best-Guess ZIP list</a> (20 records). Positions average available ZIP centers from the supplied growth file; LAKEWAY uses candidate-site coordinates in its guessed ZIPs because those ZIP centers are unavailable. Some guessed ZIPs lack centers and are omitted from position estimates. All substation positions and proximity distances are estimates, not verified locations. Capacity is not supplied; 138 kV is voltage, not hosting capacity.</p>
       </div>
     </div>
   );
