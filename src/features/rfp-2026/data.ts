@@ -159,6 +159,7 @@ export function filtersFromParams(p: URLSearchParams): Filters {
     zip: p.get("zip") ?? "",
     q: p.get("q") ?? "",
     ratio: ratio >= 0.25 && ratio <= 1 ? ratio : DEFAULT_FILTERS.ratio,
+    hours: (DURATION_OPTIONS as readonly number[]).includes(hours) ? hours : DEFAULT_FILTERS.hours,
   };
 }
 
