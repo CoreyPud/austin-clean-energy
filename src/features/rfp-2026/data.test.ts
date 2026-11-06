@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { filterSites, filtersFromParams, filtersToParams, parseSites, parseSubstations, nearestSubstation, siteStats, DEFAULT_FILTERS } from "./data";
 
 const csv = `category,name,address,zip,lat,lon,solar_kw,detail,approx,zip_gwh,zip_rank,high_growth,priority
@@ -30,6 +31,16 @@ describe("rfp 2026 site ranking", () => {
 });
 
 describe("substation screening", () => {
+  it("preserves all 20 supplied voltage/bus records without asserting surveyed locations or capacity", () => {
+    const subs = parseSubstations(readFileSync("public/data/substations.csv", "utf8"));
+    assert.equal(subs?.length, 20);
+    assert.ok(subs?.every((s) => s.voltageKv === 138 && s.capacityKva === null && s.approx));
+    const elroy = subs?.find((s) => s.name === "ELROY");
+    assert.equal(elroy?.buses, "ELROY138Z");
+    assert.equal(elroy?.zipGuesses, "78617");
+    assert.equal(elroy?.lat, 30.163577625);
+    assert.equal(subs?.find((s) => s.name === "LAKEWAY")?.positionMethod, "Mean of supplied candidate-site coordinates in guessed ZIPs (no ZIP centers available)");
+  });
   it("keeps unknown voltage and capacity unreported and rejects invalid coordinates", () => {
     const subs = parseSubstations("name,voltage_kv,capacity_kva,lat,lon\nUnknown,,,30.3,-97.7\nKnown,138,50000,30.4,-97.8\nInvalid,138,50000,999,-97.7");
     assert.equal(subs?.length, 2);
