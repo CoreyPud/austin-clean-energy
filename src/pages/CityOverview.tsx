@@ -14,6 +14,8 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 import { Slider } from "@/components/ui/slider";
 import { useSeo } from "@/hooks/use-seo";
 import PageHeader from "@/components/PageHeader";
+import PermitTimingChart from "@/components/PermitTimingChart";
+import type { TimingYear } from '../../supabase/functions/_shared/permit-timing';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import {
   TrendingUp,
@@ -41,7 +43,10 @@ const CityOverview = () => {
   const [stats, setStats] = useState<any>(null);
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
-  const [timelineData, setTimelineData] = useState<any[]>([]);
+  const [timelineData, setTimelineData] = useState<TimingYear[]>([]);
+  const [batteryTimelineData, setBatteryTimelineData] = useState<TimingYear[]>([]);
+  const [timelineError, setTimelineError] = useState(false);
+  const [unclassifiedTimingCount, setUnclassifiedTimingCount] = useState(0);
   const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('cumulative');
   const [chartMetric, setChartMetric] = useState<'count' | 'capacity'>('count');
   const [chartPeriod, setChartPeriod] = useState<'quarter' | 'year'>('quarter');
@@ -118,7 +123,6 @@ const CityOverview = () => {
     'hsl(199, 89%, 48%)',
   ];
 
-  const [timelineMetric, setTimelineMetric] = useState<'averageDays' | 'medianDays'>('averageDays');
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -229,12 +233,16 @@ const CityOverview = () => {
 
     const loadTimelineData = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('permit-timeline-stats');
+        const { data, error } = await supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true } });
         if (error) throw error;
-        setTimelineData(data.data || []);
+        if (!Array.isArray(data?.solar) || !Array.isArray(data?.batteryOnly)) throw new Error('Invalid permit timing response');
+        setTimelineData(data.solar);
+        setBatteryTimelineData(data.batteryOnly);
+        setUnclassifiedTimingCount(data.unclassifiedCount ?? 0);
         setIsLoadingTimeline(false);
       } catch (error) {
         console.error('Error loading timeline data:', error);
+        setTimelineError(true);
         setIsLoadingTimeline(false);
       }
     };
@@ -960,49 +968,9 @@ const CityOverview = () => {
           </Card>
 
           {/* Permit Timeline Chart */}
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <CardTitle className="text-2xl">{timelineMetric === 'medianDays' ? 'Median' : 'Average'} Permit to Completion Time</CardTitle>
-                  <CardDescription>
-                    {timelineMetric === 'medianDays' ? 'Median (typical)' : 'Average'} days between permit application and completion by year (2014-present), based on all completed permits
-                  </CardDescription>
-                </div>
-                <Tabs value={timelineMetric} onValueChange={(v) => setTimelineMetric(v as 'averageDays' | 'medianDays')}>
-                  <TabsList>
-                    <TabsTrigger value="averageDays">Average</TabsTrigger>
-                    <TabsTrigger value="medianDays">Median</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingTimeline ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : timelineData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={timelineData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} />
-                    <RechartsTooltip 
-                      formatter={(value: number, name: string) => {
-                        if (name === 'averageDays') return [`${value} days`, 'Average Processing Time'];
-                        if (name === 'medianDays') return [`${value} days`, 'Median Processing Time'];
-                        return [value, name];
-                      }}
-                    />
-                    <Bar dataKey={timelineMetric} fill="hsl(var(--secondary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No timeline data available
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PermitTimingChart kind="Solar" data={timelineData} loading={isLoadingTimeline} error={timelineError} />
+          <PermitTimingChart kind="Battery-Only" data={batteryTimelineData} loading={isLoadingTimeline} error={timelineError} />
+          {unclassifiedTimingCount > 0 && <p className="text-xs text-muted-foreground">{unclassifiedTimingCount.toLocaleString()} completed projects with valid dates are excluded from both timing charts because their descriptions do not identify solar or battery storage.</p>}
         </div>
       </section>
 
