@@ -31,7 +31,7 @@ export interface ZipGrowth {
   lon: number;
 }
 
-export interface Substation { name: string; voltageKv: number; capacityKva: number; lat: number; lon: number }
+export interface Substation { name: string; voltageKv: number | null; capacityKva: number | null; lat: number; lon: number; buses: string; zipGuesses: string; approx: boolean; positionMethod: string; positionZips: string }
 
 export const PRIORITY_INFO: Record<Priority, { label: string; desc: string }> = {
   1: { label: "Priority 1", desc: "Existing solar in a top-12 growth ZIP. A battery can attach now, near growing load." },
@@ -75,8 +75,20 @@ export function parseZips(csv: string): ZipGrowth[] {
 export function parseSubstations(csv: string): Substation[] | null {
   if (!/^\s*name\s*,/i.test(csv)) return null;
   const { data } = Papa.parse<Record<string, string>>(csv, { header: true, skipEmptyLines: true });
-  const rows = data.map((r) => ({ name: r.name ?? "", voltageKv: n(r.voltage_kv), capacityKva: n(r.capacity_kva), lat: n(r.lat), lon: n(r.lon) })).filter((s) => s.lat && s.lon);
+  const positive = (v: string) => v?.trim() && Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null;
+  const rows = data.map((r) => ({ name: r.name?.trim() ?? "", voltageKv: positive(r.voltage_kv), capacityKva: positive(r.capacity_kva), lat: r.lat?.trim() ? Number(r.lat) : NaN, lon: r.lon?.trim() ? Number(r.lon) : NaN, buses: r.buses ?? "", zipGuesses: r.zip_guesses ?? "", approx: b(r.approx), positionMethod: r.position_method ?? "", positionZips: r.position_zips ?? "" }))
+    .filter((s) => s.name && Number.isFinite(s.lat) && Number.isFinite(s.lon) && Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
   return rows.length ? rows : null;
+}
+
+/** Geographic proximity only; does not identify the serving feeder or available capacity. */
+export function nearestSubstation(site: { lat: number; lon: number }, subs: Substation[] | null) {
+  let best: Substation | null = null, km = Infinity;
+  for (const sub of subs ?? []) {
+    const distance = haversineKm(site, sub);
+    if (distance < km) { km = distance; best = sub; }
+  }
+  return best ? { sub: best, km } : null;
 }
 
 export interface Filters {
