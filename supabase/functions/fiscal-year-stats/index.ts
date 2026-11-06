@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { solarPermitCohorts, type SolarPermitRecord } from '../_shared/solar-permit-cohorts.ts';
+import { permitTimingStats, type TimingPermit } from '../_shared/permit-timing.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -67,6 +68,23 @@ Deno.serve(async (req) => {
       throw new Error('Missing backend environment configuration');
     }
     const client = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    if (requestBody.permitTiming === true) {
+      const records: TimingPermit[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await client.from('solar_installations_view')
+          .select('id, project_id, description, applied_date, completed_date')
+          .or('is_duplicate.is.null,is_duplicate.eq.false')
+          .not('applied_date', 'is', null).not('completed_date', 'is', null)
+          .gte('applied_date', '2014-01-01')
+          .order('id').range(offset, offset + 999);
+        if (error) throw error;
+        records.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return new Response(JSON.stringify(permitTimingStats(records)),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // Separate request mode preserves existing fiscal-year dashboard responses.
     if (requestBody.solarProgramCohorts === true) {
