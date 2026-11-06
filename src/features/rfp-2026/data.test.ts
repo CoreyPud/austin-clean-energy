@@ -1,7 +1,7 @@
-import { describe, it } from "node:test";
+import { describe, it, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { filterSites, filtersFromParams, filtersToParams, parseSites, parseSubstations, nearestSubstation, siteStats, DEFAULT_FILTERS } from "./data";
+import { filterSites, filtersFromParams, filtersToParams, parseSites, parseSubstations, nearestSubstation, siteStats, DEFAULT_FILTERS, batteryEstimate } from "./data";
 
 const csv = `category,name,address,zip,lat,lon,solar_kw,detail,approx,zip_gwh,zip_rank,high_growth,priority
 Commercial rooftop with solar potential,Roof,1 A ST,78701,30.2,-97.7,500,,True,180,1,True,4
@@ -56,4 +56,12 @@ describe("substation screening", () => {
     assert.equal(result?.km, 0);
     assert.equal(nearestSubstation({ lat: 30.3, lon: -97.7 }, null), null);
   });
+});
+
+test("battery energy = solar kW x ratio x duration hours", () => {
+  const e = batteryEstimate(200, 0.5, 4);
+  assert.equal(e.kw, 100);
+  assert.equal(e.kwh, 400);
+  assert.equal(filtersFromParams(new URLSearchParams("h=4")).hours, 4);
+  assert.equal(filtersFromParams(new URLSearchParams("h=3")).hours, 2);
 });
