@@ -28,8 +28,8 @@ export function BatteryLogicPanel({ site, ratio, hours, stats, onClear }: Props)
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">How this site's battery estimate works</p>
-            <h2 className="font-semibold text-base">{site.name}</h2>
-            <p className="text-xs text-muted-foreground">{site.address} · {site.zip}{site.approx ? " · position estimated from ZIP center" : ""}</p>
+            <h2 className="font-semibold text-base">{siteDisplayName(site)}</h2>
+            <p className="text-xs text-muted-foreground">{hasDistinctSiteName(site) ? `${site.address} · ` : ""}{site.zip}{site.approx ? " · position estimated from ZIP center" : ""}</p>
           </div>
           <Button size="sm" variant="ghost" onClick={onClear} aria-label="Show logic for all sites"><X className="h-4 w-4 mr-1" />All sites</Button>
         </div>

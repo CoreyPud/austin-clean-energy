@@ -205,8 +205,8 @@ export default function BatterySiteMap() {
                       }}>
                       <Tooltip>
                         <div className="text-xs space-y-0.5">
-                          <p className="font-semibold">{s.name}</p>
-                          <p>{s.address}</p>
+                          <p className="font-semibold">{siteDisplayName(s)}</p>
+                          {hasDistinctSiteName(s) && <p>{s.address}</p>}
                           <p>{s.category} · P{s.priority}</p>
                           <p>Solar {fmt(s.solarKw, 1)} kW · Battery {fmt(s.solarKw * f.ratio, 1)} kW / {fmt(s.solarKw * f.ratio * f.hours)} kWh (est.)</p>
                           <p>ZIP {s.zip}: {fmt(s.zipGwh, 1)} GWh new load{s.zipRank ? ` · rank ${s.zipRank}` : ""}</p>

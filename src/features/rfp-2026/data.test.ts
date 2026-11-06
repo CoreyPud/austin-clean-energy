@@ -58,6 +58,14 @@ describe("substation screening", () => {
   });
 });
 
+test("site labels avoid duplicate addresses and replace unnamed placeholders", () => {
+  assert.equal(siteDisplayName({ name: "Unnamed", address: "1901 E Ben White Blvd" }), "1901 E Ben White Blvd");
+  assert.equal(hasDistinctSiteName({ name: "Unnamed", address: "1901 E Ben White Blvd" }), false);
+  assert.equal(hasDistinctSiteName({ name: "904 WEST AVE", address: "904 WEST AVE" }), false);
+  assert.equal(siteDisplayName({ name: "Austin Church", address: "1 Main St" }), "Austin Church");
+  assert.equal(hasDistinctSiteName({ name: "Austin Church", address: "1 Main St" }), true);
+});
+
 test("battery energy = solar kW x ratio x duration hours", () => {
   const e = batteryEstimate(200, 0.5, 4);
   assert.equal(e.kw, 100);
