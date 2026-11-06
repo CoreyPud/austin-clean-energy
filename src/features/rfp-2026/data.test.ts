@@ -57,3 +57,11 @@ describe("substation screening", () => {
     assert.equal(nearestSubstation({ lat: 30.3, lon: -97.7 }, null), null);
   });
 });
+
+test("battery energy = solar kW x ratio x duration hours", () => {
+  const e = batteryEstimate(200, 0.5, 4);
+  assert.equal(e.kw, 100);
+  assert.equal(e.kwh, 400);
+  assert.equal(filtersFromParams(new URLSearchParams("h=4")).hours, 4);
+  assert.equal(filtersFromParams(new URLSearchParams("h=3")).hours, 2);
+});

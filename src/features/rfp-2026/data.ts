@@ -98,9 +98,19 @@ export interface Filters {
   zip: string; // "" = all
   q: string;
   ratio: number;
+  /** Battery duration in hours (energy kWh = power kW × hours). */
+  hours: number;
 }
 
-export const DEFAULT_FILTERS: Filters = { priorities: [1, 2, 3, 4], highOnly: false, minKw: 0, zip: "", q: "", ratio: 0.5 };
+export const DURATION_OPTIONS = [1, 2, 4] as const;
+
+/** Screening estimate: battery power kW = solar kW × ratio; energy kWh = power × hours. */
+export function batteryEstimate(solarKw: number, ratio: number, hours: number) {
+  const kw = solarKw * ratio;
+  return { kw, kwh: kw * hours };
+}
+
+export const DEFAULT_FILTERS: Filters = { priorities: [1, 2, 3, 4], highOnly: false, minKw: 0, zip: "", q: "", ratio: 0.5, hours: 2 };
 
 /** Filter and rank: priority asc, then ZIP new load desc, then solar kW desc. */
 export function filterSites(sites: Site[], f: Filters): Site[] {
@@ -114,11 +124,11 @@ export function filterSites(sites: Site[], f: Filters): Site[] {
     .sort((a, b) => a.priority - b.priority || b.zipGwh - a.zipGwh || b.solarKw - a.solarKw);
 }
 
-export function siteStats(sites: Site[], ratio: number) {
+export function siteStats(sites: Site[], ratio: number, hours = DEFAULT_FILTERS.hours) {
   const solarMw = sites.reduce((t, s) => t + s.solarKw, 0) / 1000;
   const existing = sites.filter((s) => s.priority <= 2);
   const existingSolarMw = existing.reduce((t, s) => t + s.solarKw, 0) / 1000;
-  return { count: sites.length, solarMw, batteryMw: solarMw * ratio, existingBatteryMw: existingSolarMw * ratio, existingCount: existing.length };
+  return { count: sites.length, solarMw, batteryMw: solarMw * ratio, batteryMwh: solarMw * ratio * hours, existingBatteryMw: existingSolarMw * ratio, existingCount: existing.length };
 }
 
 function pct(sorted: number[], p: number) { return sorted[Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * p)))]; }
@@ -141,6 +151,7 @@ export function filtersFromParams(p: URLSearchParams): Filters {
   const pr = p.get("p");
   const priorities = pr != null ? pr.split("").map(Number).filter((x): x is Priority => x >= 1 && x <= 4) : DEFAULT_FILTERS.priorities;
   const ratio = Number(p.get("ratio"));
+  const hours = Number(p.get("h"));
   return {
     priorities,
     highOnly: p.get("high") === "1",
@@ -160,5 +171,6 @@ export function filtersToParams(f: Filters, base: URLSearchParams): URLSearchPar
   set("zip", f.zip || null);
   set("q", f.q || null);
   set("ratio", f.ratio === DEFAULT_FILTERS.ratio ? null : String(f.ratio));
+  set("h", f.hours === DEFAULT_FILTERS.hours ? null : String(f.hours));
   return p;
 }
