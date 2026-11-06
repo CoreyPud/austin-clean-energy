@@ -37,6 +37,13 @@ export default function RebateProjectImport({ onImport, address }: { onImport: (
     onImport(assessmentRebatePrefill(row));
     toast.success("Saved property details added to empty fields");
   }, [selected, rows, onImport]);
+  const reapply = () => {
+    if (design) onImport(Object.fromEntries(Object.entries(design).filter(([, v]) => v != null && v !== "" && v !== "Austin, Texas")) as Partial<RebateDetails>);
+    const row = rows.find(r => r.id === selected);
+    if (row) onImport(assessmentRebatePrefill(row));
+    applied.current.tcad = "";
+    toast.success("Property and layout details added to empty fields");
+  };
   useEffect(() => {
     const key = address.trim().toLowerCase();
     if (!key || applied.current.tcad === key || !tcadAddressMatch(address)) return;
@@ -56,5 +63,5 @@ export default function RebateProjectImport({ onImport, address }: { onImport: (
       toast.success("TCAD details added to empty fields. Confirm the current owner.");
     } finally { setBusy(false); }
   };
-  return <section className="border-t pt-5 space-y-3"><h3 className="font-semibold">Property and solar design</h3><div className="flex flex-col sm:flex-row gap-3 sm:items-end"><div className="flex-1 min-w-0"><Label>Saved property</Label><Select value={selected} onValueChange={setSelected}><SelectTrigger className="mt-2"><SelectValue placeholder="Choose a saved property" /></SelectTrigger><SelectContent>{rows.map(row => <SelectItem key={row.id} value={row.id}>{row.address}</SelectItem>)}</SelectContent></Select></div></div><Button variant="outline" disabled={!address || busy} onClick={() => tcad()}>Look up TCAD details again</Button><p className="text-xs text-muted-foreground">Assessment costs and production are estimates, not contractor quotes. TCAD cannot establish nonprofit status or account ownership.</p></section>;
+  return <section className="border-t pt-5 space-y-3"><h3 className="font-semibold">Property and solar design</h3><div className="flex flex-col sm:flex-row gap-3 sm:items-end"><div className="flex-1 min-w-0"><Label>Saved property</Label><Select value={selected} onValueChange={setSelected}><SelectTrigger className="mt-2"><SelectValue placeholder="Choose a saved property" /></SelectTrigger><SelectContent>{rows.map(row => <SelectItem key={row.id} value={row.id}>{row.address}</SelectItem>)}</SelectContent></Select></div></div><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!design && !selected} onClick={reapply}>Fill empty fields from property and layout again</Button><Button variant="outline" disabled={!address || busy} onClick={() => tcad()}>Look up TCAD details again</Button></div><p className="text-xs text-muted-foreground">Assessment costs and production are estimates, not contractor quotes. TCAD cannot establish nonprofit status or account ownership.</p></section>;
 }

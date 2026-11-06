@@ -1,3 +1,4 @@
+import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, CheckCircle, XCircle, FileText } from "lucide-react";
@@ -42,15 +43,7 @@ const BillUpload = ({ onResult, applicationMode = false, onApplicationResult }: 
       });
 
       if (fnError) {
-        // Extract the actual error from the function body (Supabase wraps non-2xx responses)
-        let msg = fnError.message;
-        try {
-          const body = typeof fnError.context?.body === "string"
-            ? JSON.parse(fnError.context.body)
-            : fnError.context?.body;
-          if (body?.error) msg = body.error;
-        } catch {}
-        throw new Error(msg);
+        throw new Error(await edgeFunctionErrorMessage(fnError));
       }
       if (data?.error) throw new Error(data.error);
       if (!Array.isArray(data?.months) || data.months.length === 0) {

@@ -113,9 +113,10 @@ const CommercialEnergyPlan = () => {
         roofSqFt: num(roof),
         windowSqFt: num(win),
         applicable: {
-          insulation: data.insulation !== "ok",
-          reflectiveRoof: data.roofSurface !== "reflective" && data.roofType !== "pitched",
-          windows:
+          // A blank cost means "skip this initiative" (per the step 2 instructions).
+          insulation: data.insulation !== "ok" && String(costInsulation).trim() !== "",
+          reflectiveRoof: data.roofSurface !== "reflective" && data.roofType !== "pitched" && String(costRoof).trim() !== "",
+          windows: String(costWindows).trim() === "" ? null :
             data.windows === "single" ? "single" : data.windows === "unshaded" ? "unshaded" : null,
         },
       }),
