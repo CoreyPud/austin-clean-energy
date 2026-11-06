@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
         records.push(...(data ?? []));
         if (!data || data.length < 1000) break;
       }
-      return new Response(JSON.stringify(permitTimingStats(records)),
+      return new Response(JSON.stringify(permitTimingStats(records, requestBody.period === 'month' ? 'month' : 'year')),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

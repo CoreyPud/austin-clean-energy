@@ -15,7 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { useSeo } from "@/hooks/use-seo";
 import PageHeader from "@/components/PageHeader";
 import PermitTimingChart from "@/components/PermitTimingChart";
-import type { TimingYear } from '../../supabase/functions/_shared/permit-timing';
+import type { TimingMonth } from '../../supabase/functions/_shared/permit-timing';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import {
   TrendingUp,
@@ -43,8 +43,8 @@ const CityOverview = () => {
   const [stats, setStats] = useState<any>(null);
   const [recentInstallations, setRecentInstallations] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
-  const [timelineData, setTimelineData] = useState<TimingYear[]>([]);
-  const [batteryTimelineData, setBatteryTimelineData] = useState<TimingYear[]>([]);
+  const [timelineData, setTimelineData] = useState<TimingMonth[]>([]);
+  const [batteryTimelineData, setBatteryTimelineData] = useState<TimingMonth[]>([]);
   const [timelineError, setTimelineError] = useState(false);
   const [unclassifiedTimingCount, setUnclassifiedTimingCount] = useState(0);
   const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('cumulative');
@@ -233,7 +233,7 @@ const CityOverview = () => {
 
     const loadTimelineData = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true } });
+        const { data, error } = await supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'month' } });
         if (error) throw error;
         if (!Array.isArray(data?.solar) || !Array.isArray(data?.batteryOnly)) throw new Error('Invalid permit timing response');
         setTimelineData(data.solar);

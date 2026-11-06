@@ -5,6 +5,20 @@ import { permitTimingStats, timingPermitType, type TimingPermit } from './permit
 const row = (id: string, description: string, completed_date = '2024-01-11'): TimingPermit => ({
   id, project_id: id, description, applied_date: '2024-01-01', completed_date,
 });
+test('monthly timing separates application months and keeps completion dates out of cohort selection', () => {
+  const stats = permitTimingStats([
+    row('jan', 'solar'),
+    { ...row('feb', 'solar', '2024-03-02'), applied_date: '2024-02-01' },
+    { ...row('battery', 'battery', '2024-02-21'), applied_date: '2024-02-01' },
+  ], 'month');
+  assert.deepEqual(stats.solar, [
+    { year: 2024, month: '2024-01', averageDays: 10, medianDays: 10, count: 1 },
+    { year: 2024, month: '2024-02', averageDays: 30, medianDays: 30, count: 1 },
+  ]);
+  assert.deepEqual(stats.batteryOnly, [
+    { year: 2024, month: '2024-02', averageDays: 20, medianDays: 20, count: 1 },
+  ]);
+});
 test('solar timing excludes battery-only permits', () => {
   const stats = permitTimingStats([row('s', 'Install solar panels'), row('b', 'Install New 54kw Battery Storage System', '2024-01-31')]);
   assert.deepEqual(stats.solar, [{ year: 2024, averageDays: 10, medianDays: 10, count: 1 }]);
