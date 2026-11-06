@@ -94,7 +94,7 @@ export default function BatterySiteMap() {
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">RFP 2026</p>
-            <h1 className="text-2xl md:text-3xl font-semibold">Austin Battery Site Map</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold">Austin Battery Priority Site Map</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">Candidate Austin buildings where a battery could pair with existing or new rooftop solar, ranked by existing solar and new electric load permitted in each ZIP since 2020.</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setDark(!dark)} aria-label="Toggle dark mode">{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
