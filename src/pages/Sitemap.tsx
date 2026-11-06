@@ -82,6 +82,12 @@ const publicPages = [
     icon: TrendingUp,
   },
   {
+    path: "/rfp-2026",
+    title: "RFP 2026: Battery Site Map",
+    description: "Candidate battery sites ranked by existing solar and ZIP-level new load, with a map and ranked table.",
+    icon: TrendingUp,
+  },
+  {
     path: "/load-estimator",
     title: "Austin Load Growth Estimator",
     description: "Build a scenario for how housing, data centers, industry, EV fleets, and planned development affect peak demand.",

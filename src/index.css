@@ -130,3 +130,26 @@ All colors MUST be HSL.
     max-width: 100% !important;
   }
 }
+
+/* RFP 2026 battery site map: data-viz palette (color-blind safe), light + dark */
+.rfp-2026 {
+  --rfp-p1: 170 83% 26%;
+  --rfp-p2: 210 58% 44%;
+  --rfp-p3: 40 84% 43%;
+  --rfp-p4: 260 20% 57%;
+  --rfp-heat: 10 70% 51%;
+  --rfp-surface: 120 10% 96%;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+}
+.dark .rfp-2026, .rfp-2026.dark {
+  --rfp-p1: 168 54% 50%;
+  --rfp-p2: 211 71% 66%;
+  --rfp-p3: 39 77% 56%;
+  --rfp-p4: 260 39% 73%;
+  --rfp-heat: 9 100% 65%;
+  --rfp-surface: 150 10% 9%;
+}
+.rfp-2026 .rfp-num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.rfp-2026 .leaflet-container { background: hsl(var(--muted)); font-family: inherit; }
+.rfp-2026 .rfp-zip-label { background: transparent; border: 0; box-shadow: none; color: hsl(var(--foreground)); font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 11px; text-shadow: 0 0 3px hsl(var(--background)); }
+.rfp-2026 .rfp-zip-label::before { display: none; }
