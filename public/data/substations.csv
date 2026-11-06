@@ -1,0 +1,7 @@
+name,voltage_kv,capacity_kva,lat,lon,source_url,voltage_detail_kv
+Bullick Hollow Substation,,,30.4031954,-97.8569325,https://www.openstreetmap.org/way/508684669,138.0;12.5
+Garfield Substation,,,30.1426409,-97.5453484,https://www.openstreetmap.org/way/173298395,345.0;138.0
+Hidden Valley Substation,138.0,,30.38408225,-97.90024345,https://www.openstreetmap.org/way/206173697,138.0
+Jett Substation,138.0,,30.374718350000002,-97.80647594999999,https://www.openstreetmap.org/way/325214746,138.0
+River Place Substation,138.0,,30.39868845,-97.842263,https://www.openstreetmap.org/way/206126573,138.0
+Trading Post Substation,138.0,,30.3129588,-97.9712898,https://www.openstreetmap.org/way/340565891,138.0
