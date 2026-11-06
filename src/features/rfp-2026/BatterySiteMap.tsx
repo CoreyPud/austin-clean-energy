@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, CircleMarker, Circle, Tooltip, Rectangle, Pane
 import type { Map as LeafletMap, LatLngBoundsExpression } from "leaflet";
 import { svg } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { BatteryLogicPanel } from "./BatteryLogicPanel";
 import { Moon, Sun, Plus, Minus, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
@@ -73,7 +74,7 @@ export default function BatterySiteMap() {
   }, []);
 
   const filtered = useMemo(() => filterSites(sites, f), [sites, f]);
-  const stats = useMemo(() => siteStats(filtered, f.ratio), [filtered, f.ratio]);
+  const stats = useMemo(() => siteStats(filtered, f.ratio, f.hours), [filtered, f.ratio, f.hours]);
   const bounds = useMemo(() => percentileBounds(sites), [sites]);
   const maxGwh = useMemo(() => Math.max(1, ...zips.map((z) => z.gwhAll)), [zips]);
   const zipOptions = useMemo(() => {
@@ -88,6 +89,7 @@ export default function BatterySiteMap() {
   const focus = (s: Site) => { setSelected(s.id); map?.setView([s.lat, s.lon], 16); };
 
   const radius = (s: Site) => { const r = 3 + Math.sqrt(s.solarKw) * 0.6; return s.priority === 4 ? Math.min(r, 9) : Math.min(r, 22); };
+  const selSite = selected == null ? null : sites.find((s) => s.id === selected) ?? null;
   const togglePriority = (p: Priority, on: boolean) => update({ priorities: on ? [...new Set([...f.priorities, p])] : f.priorities.filter((x) => x !== p) });
 
   return (
@@ -102,11 +104,12 @@ export default function BatterySiteMap() {
           <Button variant="outline" size="sm" onClick={() => setDark(!dark)} aria-label="Toggle dark mode">{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
         </header>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {[
             ["Sites shown", fmt(stats.count)],
             ["Solar MW (DC)", fmt(stats.solarMw, 1)],
             ["Battery MW (est.)", fmt(stats.batteryMw, 1)],
+            ["Battery MWh (est.)", fmt(stats.batteryMwh, 1), `${f.hours}-hour duration`],
             ["Battery MW on existing solar (est.)", `${fmt(stats.existingBatteryMw, 1)}`, `${fmt(stats.existingCount)} sites`],
           ].map(([label, value, sub]) => (
             <div key={label} className="bg-card border rounded-md p-3">
@@ -116,7 +119,7 @@ export default function BatterySiteMap() {
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground -mt-2">Battery figures are estimates: solar kW × the battery ratio ({f.ratio.toFixed(2)}) set in the filters.</p>
+        <p className="text-xs text-muted-foreground -mt-2">Battery figures are estimates: power (kW) = solar kW × the battery ratio ({f.ratio.toFixed(2)}); energy (kWh) = power × {f.hours} hours. Both are set in the filters.</p>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -148,7 +151,9 @@ export default function BatterySiteMap() {
               <p className="font-semibold">Battery sizing</p>
               <Label>Battery kW as a share of solar kW: <span className="rfp-num">{f.ratio.toFixed(2)}</span></Label>
               <Slider min={0.25} max={1} step={0.05} value={[f.ratio]} onValueChange={([v]) => update({ ratio: Math.round(v * 100) / 100 })} />
-              <p className="text-xs text-muted-foreground">Placeholder. A 2-hour battery at half the solar size can fill from midday solar and cover the evening peak.</p>
+              <Label>Duration (hours of discharge)</Label>
+              <div className="flex gap-1">{DURATION_OPTIONS.map((h) => <Button key={h} type="button" size="sm" variant={f.hours === h ? "default" : "outline"} className="flex-1" onClick={() => update({ hours: h })}>{h} hr</Button>)}</div>
+              <p className="text-xs text-muted-foreground">Rule-of-thumb screening values, not engineered designs. Energy (kWh) = battery kW × hours.</p>
             </div>
             <div className="space-y-2 border-t pt-4">
               <p className="font-semibold">Layers</p>
@@ -202,7 +207,7 @@ export default function BatterySiteMap() {
                           <p className="font-semibold">{s.name}</p>
                           <p>{s.address}</p>
                           <p>{s.category} · P{s.priority}</p>
-                          <p>Solar {fmt(s.solarKw, 1)} kW · Battery {fmt(s.solarKw * f.ratio, 1)} kW (est.)</p>
+                          <p>Solar {fmt(s.solarKw, 1)} kW · Battery {fmt(s.solarKw * f.ratio, 1)} kW / {fmt(s.solarKw * f.ratio * f.hours)} kWh (est.)</p>
                           <p>ZIP {s.zip}: {fmt(s.zipGwh, 1)} GWh new load{s.zipRank ? ` · rank ${s.zipRank}` : ""}</p>
                           {s.approx && <p className="italic">Position estimated from ZIP center</p>}
                         </div>
@@ -223,6 +228,7 @@ export default function BatterySiteMap() {
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-16 rounded-sm" style={{ background: `linear-gradient(to right, transparent, ${colors.heat})` }} />Heat = ZIP new load since 2020 (low → high)</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 border-2 border-dashed border-foreground bg-background" />Dashed square = estimated substation area; not an actual location</span>
             </div>
+            <BatteryLogicPanel site={selSite} ratio={f.ratio} hours={f.hours} stats={stats} onClear={() => { setSelected(null); resetView(); }} />
           </div>
         </div>
 
@@ -236,7 +242,7 @@ export default function BatterySiteMap() {
               <thead className="sticky top-0 bg-card z-10 text-xs text-muted-foreground">
                 <tr className="border-b text-left">
                   <th className="p-2">Priority</th><th className="p-2">Site</th><th className="p-2">Address</th><th className="p-2">ZIP</th>
-                  <th className="p-2 text-right">Solar kW</th><th className="p-2 text-right">Battery kW (est.)</th><th className="p-2 text-right">ZIP new load GWh</th><th className="p-2">Type</th>
+                  <th className="p-2 text-right">Solar kW</th><th className="p-2 text-right">Battery kW (est.)</th><th className="p-2 text-right">Battery kWh (est.)</th><th className="p-2 text-right">ZIP new load GWh</th><th className="p-2">Type</th>
                   <th className="p-2">Nearest substation area (estimated)</th>
                 </tr>
               </thead>
@@ -251,6 +257,7 @@ export default function BatterySiteMap() {
                       <td className="p-2 rfp-num">{s.zip}</td>
                       <td className="p-2 rfp-num text-right">{fmt(s.solarKw, 1)}</td>
                       <td className="p-2 rfp-num text-right">{fmt(s.solarKw * f.ratio, 1)}</td>
+                      <td className="p-2 rfp-num text-right">{fmt(s.solarKw * f.ratio * f.hours)}</td>
                       <td className="p-2 rfp-num text-right">{fmt(s.zipGwh, 1)}</td>
                       <td className="p-2 text-xs text-muted-foreground">{s.category}</td>
                       <td className="p-2 text-xs min-w-[230px]">{near ? <><span className="font-medium">{near.sub.name} · {near.sub.voltageKv == null ? "Voltage not reported" : `${fmt(near.sub.voltageKv)} kV`}</span><span className="block rfp-num">{fmt(near.km, 1)} km (est.){s.approx ? " · site at ZIP center" : ""}</span><span className="block">Buses: {near.sub.buses || "Not reported"}</span><span className="block">Best-guess ZIPs: {near.sub.zipGuesses || "Not reported"}</span><span className="block text-muted-foreground">{near.sub.capacityKva == null ? "Capacity not reported" : `${fmt(near.sub.capacityKva)} kVA`}</span></> : subError ? "Unavailable" : "Loading…"}</td>
