@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PRIORITY_INFO, batteryEstimate, type Site, type siteStats } from "./data";
+import { PRIORITY_INFO, batteryEstimate, hasDistinctSiteName, siteDisplayName, type Site, type siteStats } from "./data";
 
 const fmt = (v: number, d = 0) => v.toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d });
 

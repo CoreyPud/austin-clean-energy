@@ -1,7 +1,7 @@
 import { describe, it, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { filterSites, filtersFromParams, filtersToParams, parseSites, parseSubstations, nearestSubstation, siteStats, DEFAULT_FILTERS, batteryEstimate } from "./data";
+import { filterSites, filtersFromParams, filtersToParams, parseSites, parseSubstations, nearestSubstation, siteStats, DEFAULT_FILTERS, batteryEstimate, hasDistinctSiteName, siteDisplayName } from "./data";
 
 const csv = `category,name,address,zip,lat,lon,solar_kw,detail,approx,zip_gwh,zip_rank,high_growth,priority
 Commercial rooftop with solar potential,Roof,1 A ST,78701,30.2,-97.7,500,,True,180,1,True,4
