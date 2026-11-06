@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { TimingYear } from '../../supabase/functions/_shared/permit-timing';
 
 interface Props {
@@ -39,13 +39,13 @@ export default function PermitTimingChart({ kind, data, loading, error }: Props)
           <div className="h-[300px] flex items-center justify-center text-muted-foreground">Permit timing data could not be loaded. Please try again later.</div>
         ) : data.length ? (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data} accessibilityLayer>
+            <LineChart data={data} accessibilityLayer>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="year" />
               <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} />
               <Tooltip formatter={(value: number) => [`${value} days`, `${measure} time`]} labelFormatter={(year, payload) => `${year} · ${payload[0]?.payload?.count?.toLocaleString() ?? 0} completed projects`} />
-              <Bar dataKey={metric} fill={kind === 'Solar' ? 'hsl(var(--secondary))' : 'hsl(var(--primary))'} />
-            </BarChart>
+              <Line type="linear" dataKey={metric} stroke={kind === 'Solar' ? 'hsl(var(--secondary))' : 'hsl(var(--primary))'} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+            </LineChart>
           </ResponsiveContainer>
         ) : (
           <div className="h-[300px] flex items-center justify-center text-muted-foreground">No completed {kind.toLowerCase()} permits with valid timing data available.</div>
