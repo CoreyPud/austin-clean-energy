@@ -33,6 +33,18 @@ export interface ZipGrowth {
 
 export interface Substation { name: string; voltageKv: number | null; capacityKva: number | null; lat: number; lon: number; buses: string; zipGuesses: string; approx: boolean; positionMethod: string; positionZips: string }
 
+/** Prefer a real site name, but fall back to its address when the source has no name. */
+export function siteDisplayName(site: Pick<Site, "name" | "address">) {
+  const name = site.name.trim();
+  return !name || name.toLowerCase() === "unnamed" ? site.address.trim() : name;
+}
+
+/** Avoid printing the same address as both a site name and a separate address line. */
+export function hasDistinctSiteName(site: Pick<Site, "name" | "address">) {
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+  return siteDisplayName(site) !== site.address.trim() && normalize(siteDisplayName(site)) !== normalize(site.address);
+}
+
 export const PRIORITY_INFO: Record<Priority, { label: string; desc: string }> = {
   1: { label: "Priority 1", desc: "Existing solar in a top-12 growth ZIP. A battery can attach now, near growing load." },
   2: { label: "Priority 2", desc: "Existing solar in any other ZIP." },

@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   type Filters, type Priority, type Site, type Substation, type ZipGrowth, PRIORITY_INFO,
   filterSites, filtersFromParams, filtersToParams, nearestSubstation, parseSites, parseSubstations, parseZips, percentileBounds, siteStats,
-  DURATION_OPTIONS,
+  DURATION_OPTIONS, hasDistinctSiteName, siteDisplayName,
 } from "./data";
 
 const AUSTIN: [number, number] = [30.3, -97.73];
@@ -205,8 +205,8 @@ export default function BatterySiteMap() {
                       }}>
                       <Tooltip>
                         <div className="text-xs space-y-0.5">
-                          <p className="font-semibold">{s.name}</p>
-                          <p>{s.address}</p>
+                          <p className="font-semibold">{siteDisplayName(s)}</p>
+                          {hasDistinctSiteName(s) && <p>{s.address}</p>}
                           <p>{s.category} · P{s.priority}</p>
                           <p>Solar {fmt(s.solarKw, 1)} kW · Battery {fmt(s.solarKw * f.ratio, 1)} kW / {fmt(s.solarKw * f.ratio * f.hours)} kWh (est.)</p>
                           <p>ZIP {s.zip}: {fmt(s.zipGwh, 1)} GWh new load{s.zipRank ? ` · rank ${s.zipRank}` : ""}</p>
@@ -253,7 +253,7 @@ export default function BatterySiteMap() {
                   return (
                     <tr key={s.id} onClick={() => focus(s)} className={`border-b cursor-pointer hover:bg-muted/50 ${s.id === selected ? "bg-muted" : ""}`}>
                       <td className="p-2"><span className="rfp-num text-xs font-semibold px-2 py-0.5 rounded-full text-background" style={{ background: colors[s.priority] }}>P{s.priority}</span></td>
-                      <td className="p-2 font-medium">{s.name}</td>
+                      <td className="p-2 font-medium">{siteDisplayName(s)}</td>
                       <td className="p-2">{s.address}{s.approx && <span className="text-muted-foreground"> (est.)</span>}</td>
                       <td className="p-2 rfp-num">{s.zip}</td>
                       <td className="p-2 rfp-num text-right">{fmt(s.solarKw, 1)}</td>

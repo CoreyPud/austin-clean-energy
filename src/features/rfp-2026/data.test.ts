@@ -1,7 +1,7 @@
 import { describe, it, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { filterSites, filtersFromParams, filtersToParams, parseSites, parseSubstations, nearestSubstation, siteStats, DEFAULT_FILTERS, batteryEstimate } from "./data";
+import { filterSites, filtersFromParams, filtersToParams, parseSites, parseSubstations, nearestSubstation, siteStats, DEFAULT_FILTERS, batteryEstimate, hasDistinctSiteName, siteDisplayName } from "./data";
 
 const csv = `category,name,address,zip,lat,lon,solar_kw,detail,approx,zip_gwh,zip_rank,high_growth,priority
 Commercial rooftop with solar potential,Roof,1 A ST,78701,30.2,-97.7,500,,True,180,1,True,4
@@ -56,6 +56,14 @@ describe("substation screening", () => {
     assert.equal(result?.km, 0);
     assert.equal(nearestSubstation({ lat: 30.3, lon: -97.7 }, null), null);
   });
+});
+
+test("site labels avoid duplicate addresses and replace unnamed placeholders", () => {
+  assert.equal(siteDisplayName({ name: "Unnamed", address: "1901 E Ben White Blvd" }), "1901 E Ben White Blvd");
+  assert.equal(hasDistinctSiteName({ name: "Unnamed", address: "1901 E Ben White Blvd" }), false);
+  assert.equal(hasDistinctSiteName({ name: "904 WEST AVE", address: "904 WEST AVE" }), false);
+  assert.equal(siteDisplayName({ name: "Austin Church", address: "1 Main St" }), "Austin Church");
+  assert.equal(hasDistinctSiteName({ name: "Austin Church", address: "1 Main St" }), true);
 });
 
 test("battery energy = solar kW x ratio x duration hours", () => {
