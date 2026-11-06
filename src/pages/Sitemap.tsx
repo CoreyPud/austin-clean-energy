@@ -28,6 +28,12 @@ const publicPages = [
     icon: BarChart3,
   },
   {
+    path: "/solar-permits",
+    title: "Austin Solar Permits",
+    description: "Search permit addresses, system sizes, recorded property owners, contractors, and project details.",
+    icon: Database,
+  },
+  {
     path: "/property-assessment",
     title: "Calculate Solar Savings in Austin",
     description: "Address-driven profile: neighborhood snapshot, solar potential, savings, council member, and recommendations.",

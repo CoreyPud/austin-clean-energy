@@ -489,6 +489,11 @@ const CityOverview = () => {
         subtitle="Real-time insights into our city's solar adoption and path to net-zero emissions."
         contentClassName="max-w-5xl mx-auto px-4"
       />
+      <div className="max-w-5xl mx-auto px-4 py-5">
+        <Button variant="outline" onClick={() => navigate('/solar-permits')}>
+          Browse Solar Permits <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
 
       {/* Key Metrics */}
       <section className="py-12 bg-muted/30">
