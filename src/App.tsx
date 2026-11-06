@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import AustinAtGlance from "./pages/AustinAtGlance";
 import WhatYouCanDo from "./pages/WhatYouCanDo";
 import CityOverview from "./pages/CityOverview";
+import SolarPermits from "./pages/SolarPermits";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
 import { Navigate } from "react-router-dom";
@@ -114,6 +115,7 @@ const AppRoutes = () => {
           <Route path="/what-you-can-do" element={<WhatYouCanDo />} />
           <Route path="/progress-resources" element={<Navigate to="/austin-at-a-glance" replace />} />
           <Route path="/city-overview" element={<CityOverview />} />
+          <Route path="/solar-permits" element={<SolarPermits />} />
           <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
           <Route path="/property-assessment" element={<PropertyAssessment />} />
           <Route path="/rebate-applications" element={<RebateApplications />} />
