@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   type Filters, type Priority, type Site, type Substation, type ZipGrowth, PRIORITY_INFO,
   filterSites, filtersFromParams, filtersToParams, nearestSubstation, parseSites, parseSubstations, parseZips, percentileBounds, siteStats,
+  DURATION_OPTIONS,
 } from "./data";
 
 const AUSTIN: [number, number] = [30.3, -97.73];
