@@ -3,11 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { TimingYear } from '../../supabase/functions/_shared/permit-timing';
+import type { TimingMonth } from '../../supabase/functions/_shared/permit-timing';
+
+const monthLabel = (month: string) => new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
 
 interface Props {
   kind: 'Solar' | 'Battery-Only';
-  data: TimingYear[];
+  data: TimingMonth[];
   loading: boolean;
   error: boolean;
 }
@@ -22,7 +24,7 @@ export default function PermitTimingChart({ kind, data, loading, error }: Props)
           <div>
             <CardTitle className="text-2xl">{measure} {kind} Permit to Completion Time</CardTitle>
             <CardDescription>
-              {measure} days from application to completion, by application calendar year (2014–present).
+              {measure} days from application to completion, by application calendar month (2014–present).
               {' '}{kind === 'Solar' ? 'Solar permits, including solar with batteries; battery-only permits excluded.' : 'Battery/storage permits with no solar or PV mentioned in their descriptions.'}
             </CardDescription>
           </div>
@@ -41,9 +43,9 @@ export default function PermitTimingChart({ kind, data, loading, error }: Props)
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data} accessibilityLayer>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
+              <XAxis dataKey="month" tickFormatter={monthLabel} minTickGap={35} />
               <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} />
-              <Tooltip formatter={(value: number) => [`${value} days`, `${measure} time`]} labelFormatter={(year, payload) => `${year} · ${payload[0]?.payload?.count?.toLocaleString() ?? 0} completed projects`} />
+              <Tooltip formatter={(value: number) => [`${value} days`, `${measure} time`]} labelFormatter={(month, payload) => `${monthLabel(String(month))} · ${payload[0]?.payload?.count?.toLocaleString() ?? 0} completed projects`} />
               <Line type="linear" dataKey={metric} stroke={kind === 'Solar' ? 'hsl(var(--secondary))' : 'hsl(var(--primary))'} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
@@ -51,7 +53,7 @@ export default function PermitTimingChart({ kind, data, loading, error }: Props)
           <div className="h-[300px] flex items-center justify-center text-muted-foreground">No completed {kind.toLowerCase()} permits with valid timing data available.</div>
         )}
         <p className="mt-4 text-xs text-muted-foreground">
-          Source: corrected City of Austin permit records. Projects are deduplicated; only records with application and completion dates and a positive duration are included. Classification uses permit descriptions, not verified equipment inventories. This measures elapsed time, not solely City review time; unfinished permits are excluded.
+          Source: corrected City of Austin permit records. Projects are deduplicated; only records with application and completion dates and a positive duration are included. Months without qualifying completed projects are omitted, not counted as zero days. Classification uses permit descriptions, not verified equipment inventories. This measures elapsed time, not solely City review time; unfinished permits are excluded.
         </p>
       </CardContent>
     </Card>
