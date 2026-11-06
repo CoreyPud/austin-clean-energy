@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Circle, Tooltip, Rectangle, Pane, useMap } from "react-leaflet";
 import type { Map as LeafletMap, LatLngBoundsExpression } from "leaflet";
+import { svg } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Moon, Sun, Plus, Minus, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,6 +56,7 @@ export default function BatterySiteMap() {
   const [dark, setDark] = useState<boolean>(!!systemDark);
   const root = useRef<HTMLDivElement>(null);
   const colors = useColors(root, dark ? "dark" : "light");
+  const substationRenderer = useMemo(() => svg({ pane: "substations" }), []);
 
   useEffect(() => {
     Promise.all([fetch("/data/rfp-2026-sites.csv").then((r) => r.text()), fetch("/data/rfp-2026-zip-growth.csv").then((r) => r.text())])
@@ -180,7 +182,7 @@ export default function BatterySiteMap() {
                 <Pane name="substations" className="z-[450]">
                   {showSubs && colors.substation && subs?.map((s, i) => {
                     const d = s.capacityKva == null ? 0.00065 : 0.00065 + Math.min(0.002, Math.sqrt(s.capacityKva) / 100000);
-                    return <Rectangle key={`s${i}-${dark}`} pane="substations" bounds={[[s.lat - d, s.lon - d], [s.lat + d, s.lon + d]]} pathOptions={{ color: colors.substation, fillColor: colors.surface, weight: 2, fillOpacity: 0.85 }}>
+                    return <Rectangle key={`s${i}-${dark}`} renderer={substationRenderer} pane="substations" bounds={[[s.lat - d, s.lon - d], [s.lat + d, s.lon + d]]} pathOptions={{ color: colors.substation, fillColor: colors.surface, weight: 2, fillOpacity: 0.85 }}>
                       <Tooltip sticky><div className="text-xs space-y-0.5"><p className="font-semibold">{s.name}</p><p>Voltage: {s.voltageKv == null ? "Not reported" : `${fmt(s.voltageKv)} kV`}</p><p>Capacity: {s.capacityKva == null ? "Not reported" : `${fmt(s.capacityKva)} kVA`}</p><p>Location only; available capacity unverified.</p></div></Tooltip>
                     </Rectangle>;
                   })}
