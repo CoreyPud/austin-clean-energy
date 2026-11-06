@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Circle, Tooltip, Rectangle, Pane, useMap } from "react-leaflet";
 import type { Map as LeafletMap, LatLngBoundsExpression } from "leaflet";
 import { svg } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { BatteryLogicPanel } from "./BatteryLogicPanel";
-import { Moon, Sun, Plus, Minus, RotateCcw } from "lucide-react";
+import { Moon, Sun, Plus, Minus, RotateCcw, ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
