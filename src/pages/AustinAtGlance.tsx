@@ -403,6 +403,22 @@ const AustinAtGlance = () => {
       ],
       "grid-tools": [
         {
+          key: "building-load-curves-battery",
+          to: "/building-load-curves-battery",
+          title: "See the Peak: Building Load Curves",
+          description: "See how a battery reshapes a commercial building's daily demand and what it saves on Austin Energy demand charges, by building type.",
+          cta: "See the Peak",
+          preview: <CouncilIconPreview icon={TrendingUp} className="h-[226px]" />,
+        },
+        {
+          key: "peak-savings-irr-calculator",
+          to: "/peak-savings-irr-calculator",
+          title: "Peak Savings Calculator",
+          description: "Estimate IRR, NPV and payback for efficiency, demand response or a battery that cuts a building's peak, with Austin Energy rates.",
+          cta: "Open the Calculator",
+          preview: <CouncilIconPreview icon={Network} className="h-[226px]" />,
+        },
+        {
           key: "austin-load-zone-outlook",
           to: "/austin-load-zone-outlook",
           title: "Austin Load Zone Outlook",

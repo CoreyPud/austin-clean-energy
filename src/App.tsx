@@ -80,6 +80,8 @@ import DemandDistribution from "./pages/DemandDistribution";
 import AustinIRPPlanning from "./pages/AustinIRPPlanning";
 import AustinLoadZoneOutlook from "./pages/AustinLoadZoneOutlook";
 import Rfp2026 from "./pages/Rfp2026";
+import PeakSavingsCalculatorPage from "./pages/PeakSavingsCalculatorPage";
+import BuildingLoadCurves from "./pages/BuildingLoadCurves";
 import InnovationGapPage from "./pages/InnovationGap";
 import RegistryPage from "./components/utility-registry/RegistryPage";
 import { StatesPage as UirStates, SolarPage as UirSolar, EfficiencyPage as UirEfficiency, AboutPage as UirAbout } from "./components/utility-registry/OtherPages";
@@ -167,6 +169,8 @@ const AppRoutes = () => {
           <Route path="/austin-irp-planning" element={<AustinIRPPlanning />} />
           <Route path="/austin-load-zone-outlook" element={<AustinLoadZoneOutlook />} />
           <Route path="/rfp-2026" element={<Rfp2026 />} />
+          <Route path="/peak-savings-irr-calculator" element={<PeakSavingsCalculatorPage />} />
+          <Route path="/building-load-curves-battery" element={<BuildingLoadCurves />} />
           <Route path="/innovation-gap" element={<InnovationGapPage />} />
           <Route path="/us-utility-innovation-registry" element={<RegistryPage />} />
           <Route path="/us-utility-innovation-registry/states" element={<UirStates />} />
