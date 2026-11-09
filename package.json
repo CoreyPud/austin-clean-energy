@@ -52,6 +52,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "geotiff": "^3.0.5",
+    "html-to-image": "^1.11.13",
     "input-otp": "^1.4.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.462.0",
@@ -79,6 +80,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@lovable.dev/vite-plugin-dev-server-bridge": "^1.0.2",
+    "@lovable.dev/vite-plugin-hmr-gate": "^1.8.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/google.maps": "^3.64.0",
     "@types/node": "^22.16.5",
