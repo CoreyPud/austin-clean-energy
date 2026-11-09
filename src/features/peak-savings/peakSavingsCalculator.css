@@ -1,0 +1,63 @@
+/* peakSavingsCalculator.css: styles for the Peak Savings Calculator. Scoped under .psc-root. */
+.psc-root {
+  --teal: #123a4a; --green: #2e7d6b; --amber: #f2a541; --line: #d9e1e5; --soft: #f4f7f8; --text: #1c2b33;
+  background: #fff; color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.45; max-width: 1200px; margin: 0 auto; padding: 16px; box-sizing: border-box;
+}
+.psc-root *, .psc-root *::before, .psc-root *::after { box-sizing: border-box; }
+.psc-root h1 { color: var(--teal); font-size: 2rem; margin: 8px 0 4px; }
+.psc-root h2 { color: var(--teal); font-size: 1.05rem; margin: 0 0 10px; }
+.psc-root h3 { color: var(--teal); font-size: 0.8rem; font-weight: 600; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+.psc-header p { margin: 0 0 12px; color: #3f545e; }
+.psc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.psc-tabs button { padding: 8px 14px; border: 1px solid #b7c4ca; background: #fff; border-radius: 999px; cursor: pointer; font-size: 0.9rem; color: var(--text); }
+.psc-tabs button.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+.psc-layout { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 18px; align-items: start; }
+.psc-inputs, .psc-results { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.psc-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #fff; }
+.psc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.psc-field { display: flex; flex-direction: column; gap: 5px; font-size: 0.86rem; }
+.psc-field > span { font-weight: 600; color: var(--teal); }
+.psc-field small, .psc-card > small { color: #5a6e77; font-size: 0.76rem; }
+.psc-field input[type="number"] { width: 100%; padding: 7px 9px; border: 1px solid #b7c4ca; border-radius: 8px; font-size: 0.95rem; color: var(--text); background: #fff; }
+.psc-field input[readonly] { background: var(--soft); color: #51666f; }
+.psc-field input[type="range"] { accent-color: var(--green); width: 100%; }
+.psc-seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.psc-seg button { padding: 7px 10px; border: 1px solid #b7c4ca; border-radius: 8px; background: #fff; cursor: pointer; font-size: 0.82rem; color: var(--text); }
+.psc-seg button.on { background: var(--green); color: #fff; border-color: var(--green); font-weight: 600; }
+.psc-link { background: none; border: 0; color: var(--green); text-decoration: underline; cursor: pointer; font-size: 0.8rem; padding: 0; margin-bottom: 8px; }
+.psc-total { background: var(--soft); border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; margin: 10px 0; }
+.psc-note { font-size: 0.8rem; color: #5a6e77; margin: 8px 0 0; }
+
+.psc-sentence { font-size: 1.1rem; font-weight: 600; color: var(--teal); margin: 0; }
+.psc-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.psc-metric { background: var(--soft); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.psc-metric .big { font-size: 1.5rem; font-weight: 700; color: var(--teal); margin: 0; }
+.psc-metric p { margin: 0; }
+.psc-metric p:last-child { font-size: 0.78rem; color: #5a6e77; }
+.psc-results svg { width: 100%; height: auto; display: block; }
+.psc-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.8rem; color: #3f545e; margin-top: 6px; }
+.psc-legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 5px; }
+
+.psc-bar { display: grid; grid-template-columns: 150px 1fr 90px; gap: 10px; align-items: center; font-size: 0.85rem; margin: 6px 0; }
+.psc-bar .track { background: #edf1f3; border-radius: 6px; height: 14px; overflow: hidden; }
+.psc-bar .track div { height: 100%; border-radius: 6px; }
+.psc-bar strong { text-align: right; }
+
+.psc-tablewrap { overflow-x: auto; }
+.psc-root table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.psc-root th { text-align: left; background: var(--soft); color: var(--teal); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.psc-root td { padding: 7px 10px; border-bottom: 1px solid #edf1f3; }
+.psc-warn { background: #fff6e8; border-left: 4px solid var(--amber); padding: 8px 12px; border-radius: 6px; font-size: 0.84rem; color: #5b4310; }
+.psc-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.psc-actions button { padding: 8px 14px; border: 1px solid var(--green); background: #fff; color: var(--green); border-radius: 8px; cursor: pointer; font-size: 0.88rem; }
+.psc-actions button:hover { background: var(--green); color: #fff; }
+.psc-acc { width: 100%; text-align: left; background: none; border: 0; font-size: 0.95rem; font-weight: 600; color: var(--teal); cursor: pointer; padding: 0; }
+.psc-footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 0.78rem; color: #5a6e77; }
+
+@media (max-width: 860px) {
+  .psc-layout { grid-template-columns: 1fr; }
+  .psc-bar { grid-template-columns: 110px 1fr 80px; }
+  .psc-root h1 { font-size: 1.6rem; }
+}
