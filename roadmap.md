@@ -1,5 +1,5 @@
 # Current
-- [ ] Add Clean Canvas multi-topic selection, Policy/strategy/personnel topic, and examples elsewhere; preserve existing ideas and verify saved submissions.
+- [x] Add Clean Canvas multi-topic selection, Policy/strategy/personnel topic, and examples elsewhere; existing topics backfilled, signed-in submission/reload/secondary-topic filter verified on desktop and phone, test post deleted, 7 tests pass, build OK.
 - [x] Build `/clean-canvas`: public idea browsing, signed-in submissions with supporting links, changeable support/oppose votes, threaded discussion, navigation and sitemap. Verified signed-in submission, resource link, vote changes, comment/reply counts and cleanup; tools-card/back navigation and phone form/page fit; 4 tests pass, typecheck/build OK, no browser errors.
 - [x] Switch both permit completion-time charts to monthly lines; 6 timing tests pass, deployed authoritative monthly aggregation, verified real charts and independent Median controls, build OK. Frontend awaits publishing.
 - [x] Keep solar completion timing separate from a new battery-only chart through authoritative fiscal-year-stats; 5 classification/timing tests pass, real solar/battery data and independent average/median controls verified on desktop/phone, no overflow or runtime errors, build OK. Frontend changes await publishing.
