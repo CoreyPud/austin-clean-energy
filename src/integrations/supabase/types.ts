@@ -151,6 +151,137 @@ export type Database = {
         }
         Relationships: []
       }
+      clean_canvas_comments: {
+        Row: {
+          author_id: string
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          idea_id: string
+          parent_id: string | null
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          author_id: string
+          author_name: string
+          body: string
+          created_at?: string
+          id?: string
+          idea_id: string
+          parent_id?: string | null
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          body?: string
+          created_at?: string
+          id?: string
+          idea_id?: string
+          parent_id?: string | null
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clean_canvas_comments_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "clean_canvas_ideas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clean_canvas_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "clean_canvas_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clean_canvas_ideas: {
+        Row: {
+          author_id: string
+          author_name: string
+          comment_count: number
+          created_at: string
+          description: string
+          id: string
+          oppose_count: number
+          resources: Json
+          support_count: number
+          title: string
+          topic: string
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          author_id: string
+          author_name: string
+          comment_count?: number
+          created_at?: string
+          description: string
+          id?: string
+          oppose_count?: number
+          resources?: Json
+          support_count?: number
+          title: string
+          topic: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          comment_count?: number
+          created_at?: string
+          description?: string
+          id?: string
+          oppose_count?: number
+          resources?: Json
+          support_count?: number
+          title?: string
+          topic?: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
+      clean_canvas_votes: {
+        Row: {
+          choice: string
+          created_at: string
+          idea_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          choice: string
+          created_at?: string
+          idea_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          choice?: string
+          created_at?: string
+          idea_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clean_canvas_votes_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "clean_canvas_ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       council_decisions: {
         Row: {
           body: string | null

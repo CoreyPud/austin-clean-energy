@@ -62,6 +62,7 @@ import CouncilMembers from "./pages/CouncilMembers";
 import CouncilMemberDetail from "./pages/CouncilMemberDetail";
 import CouncilDecisions from "./pages/CouncilDecisions";
 import CouncilVote from "./pages/CouncilVote";
+import CleanCanvas from "./pages/CleanCanvas";
 import PricingPressurePage from "./pages/PricingPressure";
 import SecretVoteCoursePage from "./pages/SecretVoteCourse";
 import CourseLogin from "./pages/CourseLogin";
@@ -136,6 +137,7 @@ const AppRoutes = () => {
           <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
           <Route path="/council-decisions" element={<CouncilDecisions />} />
           <Route path="/council-vote" element={<CouncilVote />} />
+          <Route path="/clean-canvas" element={<CleanCanvas />} />
           <Route path="/council-climate-record" element={<Navigate to="/council" replace />} />
           <Route path="/council-lobbying" element={<Navigate to="/council" replace />} />
 

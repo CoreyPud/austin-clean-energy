@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp, Activity, Network } from "lucide-react";
+import { Home, BarChart3, MapPin, Building2, Database, CalendarDays, Zap, BookOpen, Users, Gauge, TrendingUp, Activity, Network, Lightbulb } from "lucide-react";
 import { useSeo } from "@/hooks/use-seo";
 
 const publicPages = [
@@ -242,6 +242,12 @@ const publicPages = [
     title: "Council Energy Decisions",
     description: "A record of Austin City Council decisions on energy and utility policy.",
     icon: CalendarDays,
+  },
+  {
+    path: "/clean-canvas",
+    title: "Clean Canvas",
+    description: "Community clean energy ideas with supporting resources, voting, and discussion.",
+    icon: Lightbulb,
   },
   {
     path: "/pricing-pressure",
