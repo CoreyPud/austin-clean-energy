@@ -206,6 +206,7 @@
   <url><loc>https://austincleanenergy.net/council</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://austincleanenergy.net/council-members</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://austincleanenergy.net/council-decisions</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://austincleanenergy.net/clean-canvas</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://austincleanenergy.net/pricing-pressure</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://austincleanenergy.net/contact</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://austincleanenergy.net/solar-permits</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>

@@ -1,10 +1,10 @@
-import { Landmark, Users, FileText, Vote as VoteIcon, type LucideIcon } from "lucide-react";
+import { Landmark, Users, FileText, Vote as VoteIcon, Lightbulb, type LucideIcon } from "lucide-react";
 import FeatureCard from "@/components/FeatureCard";
 
 // Replaces the old CouncilNav tab/cross-link row: instead of a persistent sub-nav,
 // each council accountability page links to the other three as cards at the bottom,
 // matching how every other section of the site cross-links (see AustinAtGlance, Index).
-type PageKey = "overview" | "members" | "decisions" | "vote";
+type PageKey = "overview" | "members" | "decisions" | "vote" | "canvas";
 
 // Exported so other pages that list council tools (Austin at a Glance) use the same titles,
 // descriptions, and icons instead of their own copies.
@@ -36,6 +36,13 @@ export const PAGES: Record<PageKey, { to: string; title: string; description: st
     description: "Share your opinion on what council is voting on now, then see how others voted.",
     cta: "Cast your vote",
     icon: VoteIcon,
+  },
+  canvas: {
+    to: "/clean-canvas",
+    title: "Clean Canvas",
+    description: "Share your own clean energy ideas, add supporting resources, vote, and join the discussion.",
+    cta: "Explore community ideas",
+    icon: Lightbulb,
   },
 };
 
