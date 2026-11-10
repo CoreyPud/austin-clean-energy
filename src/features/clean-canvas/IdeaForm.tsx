@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json, TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { CLEAN_CANVAS_TOPICS, ideaFromRow, ideaSchema, type CleanCanvasIdea, type CleanCanvasResource, type CleanCanvasTopic } from "./model";
+import { CLEAN_CANVAS_TOPICS, ideaFromRow, ideaSchema, importedIdeaSchema, resourceSchema, type CleanCanvasIdea, type CleanCanvasResource, type CleanCanvasTopic } from "./model";
 
 interface Props {
   userId: string;
@@ -25,6 +26,34 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
   const [resources, setResources] = useState<CleanCanvasResource[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [imported, setImported] = useState(false);
+
+  const importUrl = async () => {
+    setImportError(null);
+    const source = resourceSchema.safeParse({ label: "Source", url: sourceUrl });
+    if (!source.success) { setImportError("Enter a complete HTTP or HTTPS webpage or public shared chat URL."); return; }
+    if ((title.trim() || description.trim() || examplesElsewhere.trim()) && !window.confirm("Replace the title, explanation, topics and examples with a draft from this link?")) return;
+    setImporting(true);
+    try {
+      const { data, error: readError } = await supabase.functions.invoke("clean-canvas-import", { body: { url: source.data.url } });
+      if (readError) {
+        if (readError instanceof FunctionsHttpError) {
+          const body = await readError.context.json().catch(() => null);
+          throw new Error(typeof body?.error === "string" ? body.error : "The webpage couldn't be read. Try a public share link.");
+        }
+        throw new Error("The webpage couldn't be read. Your current details have been kept.");
+      }
+      const draft = importedIdeaSchema.parse(data?.draft);
+      const resource = resourceSchema.parse(data?.resource);
+      setTitle(draft.title); setDescription(draft.description); setTopics(draft.topics); setExamplesElsewhere(draft.examples_elsewhere);
+      setResources((current) => current.some((r) => r.url === resource.url) ? current : [...current.slice(0, 4), resource]);
+      setImported(true);
+    } catch (failure) { setImportError(failure instanceof Error ? failure.message : "The webpage couldn't be read."); }
+    finally { setImporting(false); }
+  };
 
   const updateResource = (index: number, patch: Partial<CleanCanvasResource>) => {
     setResources((current) => current.map((resource, i) => i === index ? { ...resource, ...patch } : resource));
@@ -75,6 +104,15 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
 
   return (
     <form onSubmit={submit} className="space-y-5">
+      <div className="space-y-2 border-b pb-5">
+        <Label htmlFor="idea-source">Webpage or public AI chat URL</Label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input id="idea-source" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} maxLength={1000} placeholder="https://…" disabled={importing} />
+          <Button type="button" variant="outline" disabled={importing || saving || !sourceUrl.trim()} onClick={() => void importUrl()}><Link2 className="mr-2 h-4 w-4" />{importing ? "Reading link…" : "Fill from link"}</Button>
+        </div>
+        {importError && <p role="alert" className="text-sm text-destructive">{importError}</p>}
+        {imported && <p role="status" className="text-xs text-muted-foreground">AI-generated draft from your source. Verify the facts and examples before publishing.</p>}
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="idea-name">Your display name</Label>
@@ -122,7 +160,7 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
       </div>
       <p className="rounded-md bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">Post constructively and focus on the idea. Your submission will be public; you can delete it later.</p>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full" disabled={saving}>{saving ? "Publishing…" : "Publish idea"}</Button>
+      <Button type="submit" className="w-full" disabled={saving || importing}>{saving ? "Publishing…" : "Publish idea"}</Button>
     </form>
   );
 }

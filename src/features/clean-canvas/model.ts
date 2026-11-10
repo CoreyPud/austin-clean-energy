@@ -107,3 +107,11 @@ export function filterAndSortIdeas(
 export function nextVote(current: VoteChoice | null, incoming: VoteChoice): VoteChoice | null {
   return current === incoming ? null : incoming;
 }
+
+export function hotIdeas(ideas: CleanCanvasIdea[], choice: VoteChoice): CleanCanvasIdea[] {
+  const count = choice === "support" ? "support_count" : "oppose_count";
+  return ideas.filter((idea) => idea.visible && idea[count] > 0)
+    .sort((a, b) => b[count] - a[count] || b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)).slice(0, 5);
+}
+
+export const importedIdeaSchema = ideaSchema.pick({ title: true, description: true, topics: true, examples_elsewhere: true });
