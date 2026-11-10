@@ -209,12 +209,14 @@ export type Database = {
           comment_count: number
           created_at: string
           description: string
+          examples_elsewhere: string
           id: string
           oppose_count: number
           resources: Json
           support_count: number
           title: string
           topic: string
+          topics: string[] | null
           updated_at: string
           visible: boolean
         }
@@ -224,12 +226,14 @@ export type Database = {
           comment_count?: number
           created_at?: string
           description: string
+          examples_elsewhere?: string
           id?: string
           oppose_count?: number
           resources?: Json
           support_count?: number
           title: string
           topic: string
+          topics?: string[] | null
           updated_at?: string
           visible?: boolean
         }
@@ -239,12 +243,14 @@ export type Database = {
           comment_count?: number
           created_at?: string
           description?: string
+          examples_elsewhere?: string
           id?: string
           oppose_count?: number
           resources?: Json
           support_count?: number
           title?: string
           topic?: string
+          topics?: string[] | null
           updated_at?: string
           visible?: boolean
         }
