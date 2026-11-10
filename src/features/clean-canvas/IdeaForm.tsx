@@ -46,9 +46,17 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
     }
     setSaving(true);
     try {
+      const payload: TablesInsert<"clean_canvas_ideas"> = {
+        author_id: userId,
+        author_name: parsed.data.author_name,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        topic: parsed.data.topic,
+        resources: parsed.data.resources as Json,
+      };
       const { data, error: saveError } = await supabase
         .from("clean_canvas_ideas")
-        .insert({ ...parsed.data, resources: parsed.data.resources as Json, author_id: userId })
+        .insert(payload)
         .select("*")
         .single();
       if (saveError) throw saveError;
