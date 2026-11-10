@@ -1,4 +1,5 @@
 # Current
+- [ ] Add Clean Canvas webpage/shared-AI-chat URL import to fill idea fields and Hot Topics lists for five most supported and five most opposed ideas; verify import and ranking.
 - [x] Add Clean Canvas multi-topic selection, Policy/strategy/personnel topic, and examples elsewhere; existing topics backfilled, signed-in submission/reload/secondary-topic filter verified on desktop and phone, test post deleted, 7 tests pass, build OK.
 - [x] Build `/clean-canvas`: public idea browsing, signed-in submissions with supporting links, changeable support/oppose votes, threaded discussion, navigation and sitemap. Verified signed-in submission, resource link, vote changes, comment/reply counts and cleanup; tools-card/back navigation and phone form/page fit; 4 tests pass, typecheck/build OK, no browser errors.
 - [x] Switch both permit completion-time charts to monthly lines; 6 timing tests pass, deployed authoritative monthly aggregation, verified real charts and independent Median controls, build OK. Frontend awaits publishing.
