@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { filterAndSortIdeas, ideaSchema, nextVote, type CleanCanvasIdea } from "./model.ts";
+import { filterAndSortIdeas, hotIdeas, ideaSchema, nextVote, type CleanCanvasIdea } from "./model.ts";
 
 const validIdea = {
   title: "Shade bus stops with solar canopies",
@@ -76,4 +76,14 @@ test("examples elsewhere are preserved and searchable", () => {
   assert.equal(parsed.examples_elsewhere, "Copenhagen district heating");
   assert.equal(filterAndSortIdeas([idea({ examples_elsewhere: parsed.examples_elsewhere })], { query: "Copenhagen", topic: "", sort: "newest" }).length, 1);
   assert.equal(ideaSchema.parse(validIdea).examples_elsewhere, "");
+});
+
+test("hot topics shows the five highest support counts, not net support", () => {
+  const rows = Array.from({ length: 7 }, (_, i) => idea({ id: String(i), support_count: i, oppose_count: i * 10 }));
+  assert.deepEqual(hotIdeas(rows, "support").map((i) => i.id), ["6", "5", "4", "3", "2"]);
+});
+test("hot topics shows the five highest oppose counts and excludes hidden or unvoted ideas", () => {
+  const rows = Array.from({ length: 7 }, (_, i) => idea({ id: String(i), oppose_count: i }));
+  assert.deepEqual(hotIdeas([...rows, idea({ id: "hidden", visible: false, oppose_count: 99 })], "oppose").map((i) => i.id), ["6", "5", "4", "3", "2"]);
+  assert.deepEqual(hotIdeas([idea({})], "support"), []);
 });

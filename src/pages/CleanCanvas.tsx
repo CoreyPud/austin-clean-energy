@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Discussion } from "@/features/clean-canvas/Discussion";
 import { IdeaForm } from "@/features/clean-canvas/IdeaForm";
+import { HotTopics } from "@/features/clean-canvas/HotTopics";
 import { CLEAN_CANVAS_TOPICS, filterAndSortIdeas, ideaFromRow, nextVote, type CleanCanvasComment, type CleanCanvasIdea, type IdeaSort, type VoteChoice } from "@/features/clean-canvas/model";
 
 function defaultDisplayName(user: User): string {
@@ -30,6 +31,8 @@ export default function CleanCanvas() {
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState("Neighbor");
   const [ideas, setIdeas] = useState<CleanCanvasIdea[]>([]);
+  const [hotSupported, setHotSupported] = useState<CleanCanvasIdea[]>([]);
+  const [hotOpposed, setHotOpposed] = useState<CleanCanvasIdea[]>([]);
   const [comments, setComments] = useState<CleanCanvasComment[]>([]);
   const [votes, setVotes] = useState<Record<string, VoteChoice>>({});
   const [loading, setLoading] = useState(true);
@@ -79,6 +82,13 @@ export default function CleanCanvas() {
       if (commentResult.error) throw commentResult.error;
       if (voteResult.error) throw voteResult.error;
       setIdeas(nextIdeas);
+      const [supported, opposed] = await Promise.all([
+        supabase.from("clean_canvas_ideas").select("*").eq("visible", true).gt("support_count", 0).order("support_count", { ascending: false }).order("created_at", { ascending: false }).order("id").limit(5),
+        supabase.from("clean_canvas_ideas").select("*").eq("visible", true).gt("oppose_count", 0).order("oppose_count", { ascending: false }).order("created_at", { ascending: false }).order("id").limit(5),
+      ]);
+      if (supported.error || opposed.error) throw supported.error ?? opposed.error;
+      setHotSupported((supported.data ?? []).map(ideaFromRow));
+      setHotOpposed((opposed.data ?? []).map(ideaFromRow));
       setComments(commentResult.data ?? []);
       setVotes(Object.fromEntries((voteResult.data ?? []).map((vote) => [vote.idea_id, vote.choice === "support" ? "support" : "oppose"])));
     } catch {
@@ -122,6 +132,7 @@ export default function CleanCanvas() {
         return updated;
       });
       setIdeas((current) => current.map((item) => item.id === idea.id ? { ...item, ...data } : item));
+      void loadPage();
     } catch {
       toast.error("Your vote couldn't be saved. Please try again.");
     } finally {
@@ -147,6 +158,7 @@ export default function CleanCanvas() {
     setIdeas((current) => current.filter((item) => item.id !== idea.id));
     setComments((current) => current.filter((comment) => comment.idea_id !== idea.id));
     toast.success("Idea deleted");
+    void loadPage();
   };
 
   const visibleIdeas = useMemo(() => filterAndSortIdeas(ideas, { query, topic, sort }), [ideas, query, topic, sort]);
@@ -191,6 +203,13 @@ export default function CleanCanvas() {
         </aside>
 
         <section className="min-w-0">
+          {!loading && !loadError && <HotTopics supported={hotSupported} opposed={hotOpposed} onSelect={(idea) => {
+            setIdeas((current) => current.some((item) => item.id === idea.id) ? current : [idea, ...current]);
+            setQuery(""); setTopic("");
+            setOpenDiscussions((current) => new Set([...current, idea.id]));
+            void refreshDiscussion(idea.id).catch(() => toast.error("Discussion couldn't be loaded."));
+            requestAnimationFrame(() => document.getElementById(`idea-${idea.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+          }} />}
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 md:flex-row md:items-center">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -220,7 +239,7 @@ export default function CleanCanvas() {
                 const currentVote = votes[idea.id] ?? null;
                 const discussionOpen = openDiscussions.has(idea.id);
                 return (
-                  <article key={idea.id} className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                  <article id={`idea-${idea.id}`} key={idea.id} className="scroll-mt-6 rounded-xl border bg-card p-5 shadow-sm sm:p-6">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 flex-wrap gap-2">{idea.topics.map((item) => <Badge key={item} variant="outline" className="whitespace-normal border-primary/25 bg-primary/5 text-primary">{item}</Badge>)}</div>
                       {idea.author_id === userId && <Button variant="ghost" size="icon" className="-mr-2 -mt-2 h-8 w-8 text-muted-foreground" aria-label={`Delete ${idea.title}`} onClick={() => void deleteIdea(idea)}><Trash2 className="h-4 w-4" /></Button>}
