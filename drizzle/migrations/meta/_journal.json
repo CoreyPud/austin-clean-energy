@@ -64,6 +64,13 @@
       "when": 1793908989894,
       "tag": "0008_gantt_schedules",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794270452496,
+      "tag": "0009_create_clean_canvas",
+      "breakpoints": true
     }
   ]
 }
