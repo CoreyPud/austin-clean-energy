@@ -6,7 +6,7 @@ import type { Json, TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { CLEAN_CANVAS_TOPICS, ideaFromRow, ideaSchema, type CleanCanvasIdea, type CleanCanvasResource, type CleanCanvasTopic } from "./model";
 
@@ -20,7 +20,8 @@ interface Props {
 export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [topic, setTopic] = useState<CleanCanvasTopic>("Energy supply");
+  const [topics, setTopics] = useState<CleanCanvasTopic[]>(["Energy supply"]);
+  const [examplesElsewhere, setExamplesElsewhere] = useState("");
   const [resources, setResources] = useState<CleanCanvasResource[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -35,7 +36,8 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
     const draft = {
       title,
       description,
-      topic,
+      topics,
+      examples_elsewhere: examplesElsewhere,
       author_name: displayName,
       resources: resources.filter((resource) => resource.label.trim() || resource.url.trim()),
     };
@@ -51,7 +53,9 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
         author_name: parsed.data.author_name,
         title: parsed.data.title,
         description: parsed.data.description,
-        topic: parsed.data.topic,
+        topic: parsed.data.topics[0] ?? "Other",
+        topics: parsed.data.topics,
+        examples_elsewhere: parsed.data.examples_elsewhere,
         resources: parsed.data.resources as Json,
       };
       const { data, error: saveError } = await supabase
@@ -77,14 +81,18 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
           <Input id="idea-name" value={displayName} onChange={(e) => onDisplayNameChange(e.target.value)} maxLength={80} autoComplete="name" required />
           <p className="text-xs text-muted-foreground">Shown with your ideas and comments. Don't use your email address.</p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="idea-topic">Topic</Label>
-          <Select value={topic} onValueChange={(value) => setTopic(value as CleanCanvasTopic)}>
-            <SelectTrigger id="idea-topic"><SelectValue /></SelectTrigger>
-            <SelectContent>{CLEAN_CANVAS_TOPICS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
       </div>
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium">Topics</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {CLEAN_CANVAS_TOPICS.map((item, index) => (
+            <div key={item} className="flex items-start gap-2">
+              <Checkbox id={`idea-topic-${index}`} checked={topics.includes(item)} onCheckedChange={(checked) => setTopics((current) => checked === true ? [...current, item] : current.filter((topic) => topic !== item))} />
+              <Label htmlFor={`idea-topic-${index}`} className="min-w-0 leading-5">{item}</Label>
+            </div>
+          ))}
+        </div>
+      </fieldset>
       <div className="space-y-2">
         <Label htmlFor="idea-title">Idea title</Label>
         <Input id="idea-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} placeholder="What should Austin try?" required />
@@ -95,6 +103,10 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
         <p className="text-right text-xs text-muted-foreground">{description.length}/4,000</p>
       </div>
       <div className="space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="idea-examples">Where else in the country or world is this done? <span className="font-normal text-muted-foreground">(optional)</span></Label>
+          <Textarea id="idea-examples" value={examplesElsewhere} onChange={(e) => setExamplesElsewhere(e.target.value)} maxLength={4000} rows={3} placeholder="Name the places or programs and describe their experience." />
+        </div>
         <div>
           <Label>Supporting resources <span className="font-normal text-muted-foreground">(optional)</span></Label>
           <p className="mt-1 text-xs text-muted-foreground">Add up to five links to research, examples, official documents, or other useful context.</p>

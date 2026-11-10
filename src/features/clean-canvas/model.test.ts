@@ -5,7 +5,7 @@ import { filterAndSortIdeas, ideaSchema, nextVote, type CleanCanvasIdea } from "
 const validIdea = {
   title: "Shade bus stops with solar canopies",
   description: "Install solar canopies at busy bus stops to provide shade and power lighting.",
-  topic: "Energy supply",
+  topics: ["Energy supply"],
   author_name: "Austin Neighbor",
   resources: [{ label: "Capital Metro", url: "https://www.capmetro.org/" }],
 } as const;
@@ -18,6 +18,8 @@ function idea(patch: Partial<CleanCanvasIdea>): CleanCanvasIdea {
     title: "First idea",
     description: "A sufficiently detailed community idea.",
     topic: "Other",
+    topics: ["Other"],
+    examples_elsewhere: "",
     resources: [],
     support_count: 0,
     oppose_count: 0,
@@ -54,4 +56,24 @@ test("a person can change a vote or withdraw it by selecting it again", () => {
   assert.equal(nextVote(null, "support"), "support");
   assert.equal(nextVote("support", "oppose"), "oppose");
   assert.equal(nextVote("oppose", "oppose"), null);
+});
+
+test("ideas accept multiple topics including Policy, strategy, personnel", () => {
+  const parsed = ideaSchema.parse({ ...validIdea, topics: ["Energy supply", "Policy, strategy, personnel"] });
+  assert.deepEqual(parsed.topics, ["Energy supply", "Policy, strategy, personnel"]);
+  assert.equal(ideaSchema.safeParse({ ...validIdea, topics: [] }).success, false);
+  assert.equal(ideaSchema.safeParse({ ...validIdea, topics: ["Unknown"] }).success, false);
+});
+
+test("topic filters match any selected topic", () => {
+  const row = idea({ topics: ["Energy supply", "Policy, strategy, personnel"] });
+  assert.deepEqual(filterAndSortIdeas([row], { query: "", topic: "Policy, strategy, personnel", sort: "newest" }).map((i) => i.id), ["one"]);
+  assert.equal(filterAndSortIdeas([row], { query: "", topic: "Transportation", sort: "newest" }).length, 0);
+});
+
+test("examples elsewhere are preserved and searchable", () => {
+  const parsed = ideaSchema.parse({ ...validIdea, examples_elsewhere: "  Copenhagen district heating  " });
+  assert.equal(parsed.examples_elsewhere, "Copenhagen district heating");
+  assert.equal(filterAndSortIdeas([idea({ examples_elsewhere: parsed.examples_elsewhere })], { query: "Copenhagen", topic: "", sort: "newest" }).length, 1);
+  assert.equal(ideaSchema.parse(validIdea).examples_elsewhere, "");
 });
