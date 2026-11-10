@@ -7,6 +7,7 @@ export const CLEAN_CANVAS_TOPICS = [
   "Transportation",
   "Housing & buildings",
   "Community & equity",
+  "Policy, strategy, personnel",
   "Other",
 ] as const;
 
@@ -31,7 +32,8 @@ export const resourceSchema = z.object({
 export const ideaSchema = z.object({
   title: z.string().trim().min(5, "Title must be at least 5 characters").max(160, "Title must be less than 160 characters"),
   description: z.string().trim().min(20, "Add at least 20 characters so others can understand the idea").max(4000, "Description must be less than 4,000 characters"),
-  topic: z.enum(CLEAN_CANVAS_TOPICS),
+  topics: z.array(z.enum(CLEAN_CANVAS_TOPICS)).min(1, "Select at least one topic").max(CLEAN_CANVAS_TOPICS.length).refine((topics) => new Set(topics).size === topics.length, "Select each topic only once"),
+  examples_elsewhere: z.string().trim().max(4000, "Examples must be less than 4,000 characters").default(""),
   author_name: z.string().trim().min(2, "Display name must be at least 2 characters").max(80, "Display name must be less than 80 characters"),
   resources: z.array(resourceSchema).max(5, "Add up to five supporting links"),
 });
@@ -50,6 +52,8 @@ export interface CleanCanvasIdea {
   title: string;
   description: string;
   topic: string;
+  topics: string[];
+  examples_elsewhere: string;
   resources: CleanCanvasResource[];
   support_count: number;
   oppose_count: number;
@@ -71,9 +75,9 @@ export interface CleanCanvasComment {
   updated_at: string;
 }
 
-export function ideaFromRow(row: Omit<CleanCanvasIdea, "resources"> & { resources: unknown }): CleanCanvasIdea {
+export function ideaFromRow(row: Omit<CleanCanvasIdea, "resources" | "topics"> & { resources: unknown; topics: string[] | null }): CleanCanvasIdea {
   const parsed = z.array(resourceSchema).safeParse(row.resources);
-  return { ...row, resources: parsed.success ? parsed.data : [] };
+  return { ...row, topics: row.topics?.length ? row.topics : [row.topic], resources: parsed.success ? parsed.data : [] };
 }
 
 export function filterAndSortIdeas(
@@ -82,10 +86,10 @@ export function filterAndSortIdeas(
 ): CleanCanvasIdea[] {
   const query = options.query.trim().toLocaleLowerCase();
   return ideas
-    .filter((idea) => !options.topic || idea.topic === options.topic)
+    .filter((idea) => !options.topic || idea.topics.includes(options.topic))
     .filter((idea) => {
       if (!query) return true;
-      return [idea.title, idea.description, idea.author_name, idea.topic, ...idea.resources.map((r) => r.label)]
+      return [idea.title, idea.description, idea.author_name, ...idea.topics, idea.examples_elsewhere, ...idea.resources.map((r) => r.label)]
         .join(" ")
         .toLocaleLowerCase()
         .includes(query);

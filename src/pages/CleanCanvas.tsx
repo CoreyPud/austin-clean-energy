@@ -197,7 +197,7 @@ export default function CleanCanvas() {
               <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search ideas and resources" aria-label="Search ideas and resources" className="pl-9" />
             </div>
             <Select value={topic || "all"} onValueChange={(value) => setTopic(value === "all" ? "" : value)}>
-              <SelectTrigger className="md:w-48" aria-label="Filter by topic"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="min-w-0 md:w-64" aria-label="Filter by topic"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">All topics</SelectItem>{CLEAN_CANVAS_TOPICS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={sort} onValueChange={(value) => setSort(value as IdeaSort)}>
@@ -222,12 +222,16 @@ export default function CleanCanvas() {
                 return (
                   <article key={idea.id} className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
                     <div className="flex items-start justify-between gap-3">
-                      <Badge variant="outline" className="border-primary/25 bg-primary/5 text-primary">{idea.topic}</Badge>
+                      <div className="flex min-w-0 flex-wrap gap-2">{idea.topics.map((item) => <Badge key={item} variant="outline" className="whitespace-normal border-primary/25 bg-primary/5 text-primary">{item}</Badge>)}</div>
                       {idea.author_id === userId && <Button variant="ghost" size="icon" className="-mr-2 -mt-2 h-8 w-8 text-muted-foreground" aria-label={`Delete ${idea.title}`} onClick={() => void deleteIdea(idea)}><Trash2 className="h-4 w-4" /></Button>}
                     </div>
                     <h2 className="mt-3 text-2xl font-semibold tracking-tight">{idea.title}</h2>
                     <p className="mt-2 text-xs text-muted-foreground">Shared by {idea.author_name} · {new Date(idea.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
                     <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-foreground/90">{idea.description}</p>
+                    {idea.examples_elsewhere && <div className="mt-4">
+                      <h3 className="text-sm font-semibold">Where else in the country or world is this done?</h3>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-foreground/90">{idea.examples_elsewhere}</p>
+                    </div>}
                     {idea.resources.length > 0 && (
                       <div className="mt-5 rounded-lg bg-muted/40 p-4">
                         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Supporting resources</h3>
