@@ -48,7 +48,7 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
     try {
       const { data, error: saveError } = await supabase
         .from("clean_canvas_ideas")
-        .insert({ ...parsed.data, author_id: userId })
+        .insert({ ...parsed.data, resources: parsed.data.resources as Json, author_id: userId })
         .select("*")
         .single();
       if (saveError) throw saveError;
