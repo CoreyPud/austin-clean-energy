@@ -118,6 +118,12 @@ const publicPages = [
     icon: Network,
   },
   {
+    path: "/digital-twin-map",
+    title: "Digital Twin Map",
+    description: "Hourly Austin Energy sources, allocated substation flows and commercial-building demand in a schematic map.",
+    icon: Network,
+  },
+  {
     path: "/austin-load-zone-outlook",
     title: "Austin Load Zone Outlook",
     description: "Wholesale price scenarios, supply investments, and large-load projects with a map and source notes.",

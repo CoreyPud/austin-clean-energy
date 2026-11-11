@@ -136,12 +136,15 @@
 /* ---- two-column supply/demand grid ---- */
 .lzo-grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
 }
+.lzo-grid-2 > * { min-width: 0; }
 @media (max-width: 640px) {
-  .lzo-grid-2 { grid-template-columns: 1fr; }
+  .lzo-grid-2 { grid-template-columns: minmax(0, 1fr); }
   .lzo-readout-row { grid-template-columns: 1fr; }
+  .lzo-stat-list li { flex-wrap: wrap; }
+  .lzo-stat-list .figure { white-space: normal; text-align: right; overflow-wrap: anywhere; }
 }
 
 .lzo-panel {

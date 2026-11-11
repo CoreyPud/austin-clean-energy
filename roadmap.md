@@ -1,4 +1,6 @@
 # Current
+- [x] Create Digital Twin Map from the supplied component, model, hourly data and styles; Grid Planning Tools navigation, sitemap, exact load balancing, presets, timeline, playback and phone layout verified; 9 related tests and build pass.
+- [x] Verify Load Zone Outlook supplied v14 content and correct phone overflow while preserving its Texas map and source notes; VOS annual chart/methodology changes, map zoom, navigation, 6 tests and phone fit verified.
 - [x] Update Peak Savings Calculator from supplied rev2 files; both battery designs match documented results, 15-year CSV, navigation and phone layout verified; 3 tests pass, no browser errors and build OK.
 - [x] Update See the Peak from supplied rev2 files; existing JSON matches supplied data. Owner/system-peak designs, reference savings, monthly CSV, forecast readiness, building selection, phone fit and back navigation verified; 3 tests pass, no browser errors and build OK.
 - [x] Add monthly/annual permit timing toggle, count-proportional annual bars, day labels and Deep Dive links; real solar/battery cohorts, annual average/median labels, phone fit and permit-search navigation verified, 8 tests pass and build OK.

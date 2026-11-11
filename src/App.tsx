@@ -80,6 +80,7 @@ import PeakShavePage from "./pages/PeakShave";
 import DemandDistribution from "./pages/DemandDistribution";
 import AustinIRPPlanning from "./pages/AustinIRPPlanning";
 import AustinLoadZoneOutlook from "./pages/AustinLoadZoneOutlook";
+import DigitalTwinMap from "./pages/DigitalTwinMap";
 import Rfp2026 from "./pages/Rfp2026";
 import PeakSavingsCalculatorPage from "./pages/PeakSavingsCalculatorPage";
 import BuildingLoadCurves from "./pages/BuildingLoadCurves";
@@ -170,6 +171,7 @@ const AppRoutes = () => {
           <Route path="/austin-electricity-demand-map" element={<DemandDistribution />} />
           <Route path="/austin-irp-planning" element={<AustinIRPPlanning />} />
           <Route path="/austin-load-zone-outlook" element={<AustinLoadZoneOutlook />} />
+          <Route path="/digital-twin-map" element={<DigitalTwinMap />} />
           <Route path="/rfp-2026" element={<Rfp2026 />} />
           <Route path="/peak-savings-irr-calculator" element={<PeakSavingsCalculatorPage />} />
           <Route path="/building-load-curves-battery" element={<BuildingLoadCurves />} />
