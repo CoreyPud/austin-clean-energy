@@ -95,14 +95,14 @@ export default function PermitTimingChart({ kind, data, annualData, loading, err
               {period === 'month' ? (
                 <LineChart data={rows} margin={{ top: 30, right: 25, bottom: 5, left: 10 }} accessibilityLayer>
                   {axes}
-                  <Line type="linear" dataKey={metric} stroke={color} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }}>
+                  <Line type="linear" dataKey={metric} stroke={color} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} isAnimationActive={false}>
                     <LabelList dataKey={metric} position="top" offset={10} fill="hsl(var(--foreground))" fontSize={12} />
                   </Line>
                 </LineChart>
               ) : (
                 <BarChart data={rows} margin={{ top: 30, right: 25, bottom: 5, left: 10 }} barCategoryGap="15%" accessibilityLayer>
                   {axes}
-                  <Bar dataKey={metric} fill={color} shape={<CountBar maximumCount={maximumCount} />}>
+                  <Bar dataKey={metric} fill={color} shape={<CountBar maximumCount={maximumCount} />} isAnimationActive={false}>
                     <LabelList dataKey={metric} position="top" offset={10} fill="hsl(var(--foreground))" fontSize={12} />
                   </Bar>
                 </BarChart>
