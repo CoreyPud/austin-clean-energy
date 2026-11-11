@@ -264,10 +264,10 @@ export function computeRecommendation(
 
 export interface ProgramFinancials {
   yearOne: YearResult;
-  /** VoS 30-year model, with PBI credits layered on when rec.pbiEligible. Computed
+  /** VoS financial-horizon model, with PBI credits layered on when rec.pbiEligible. Computed
    *  regardless of billing mode -- harmless when isSSO, and lets a caller show both. */
   thirtyYear: ThirtyYearResult;
-  /** Standard Offer 30-year model, computed regardless of billing mode for the same reason. */
+  /** Standard Offer financial-horizon model, computed regardless of billing mode for the same reason. */
   sso: ReturnType<typeof buildSsoModel>;
   isSSO: boolean;
   /** Net cumulative total at year 25, from whichever model (sso/thirtyYear) matches isSSO. */

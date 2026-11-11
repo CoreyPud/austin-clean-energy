@@ -212,11 +212,11 @@ const PropertyAssessment = () => {
 
   useSeo({
     title: sharedAddress
-      ? `Clean energy options for ${sharedAddress} | Austin Clean Energy`
+      ? `Solar Savings in Austin for ${sharedAddress} | Austin Clean Energy`
       : "Calculate Solar Savings in Austin | Austin Clean Energy",
     description: sharedAddress
-      ? `See solar potential, neighborhood adoption, savings estimates and personalized clean energy actions for ${sharedAddress}.`
-      : "Enter your Austin address to see your neighborhood's solar adoption, your roof's solar potential, projected savings, your city council representative, and personalized clean energy actions.",
+      ? `Calculate 25-year solar savings in Austin for ${sharedAddress}, including roof potential, Austin Energy rebates, and personalized clean energy actions.`
+      : "Calculate 25-year solar savings in Austin using your address, roof potential, electricity usage, and Austin Energy rebates. Compare costs and personalized clean energy options.",
   });
 
   const [showLifestyleForm, setShowLifestyleForm] = useState(false);

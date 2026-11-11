@@ -13,7 +13,7 @@ const ShareAssessmentCard = ({ address }: Props) => {
 
   const buildShareUrl = () => {
     const url = new URL(window.location.href);
-    url.pathname = "/property-assessment";
+    url.pathname = "/solar-savings-austin";
     url.searchParams.set("address", address);
     return url.toString();
   };

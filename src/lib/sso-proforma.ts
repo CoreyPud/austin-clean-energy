@@ -1,10 +1,10 @@
-import { ssoEscalatedRate } from "./solar-model";
+import { ssoEscalatedRate, FINANCIAL_HORIZON_YEARS } from "./solar-model";
 import { calculateFederalSolarIncentive, type FederalSolarOptions } from "./solar-federal-incentives";
 // Austin Energy Standard Offer pro forma — third-party owner (TPO) economics.
 // Ported from Standard_offer_financial_model_stand_alone.xlsx
 // ("Standard Offer Ground" tab = under 1,300 kWdc; "Standard Offer Large" tab = 1,300 kWdc and above).
 
-export const SSO_PROFORMA_TERM_YEARS = 25;
+export const SSO_PROFORMA_TERM_YEARS = FINANCIAL_HORIZON_YEARS;
 export const SSO_SCENARIO_BREAK_KW = 1300; // kWdc boundary between the two spreadsheet tabs
 
 export interface SsoScenario {

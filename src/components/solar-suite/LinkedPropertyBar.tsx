@@ -23,7 +23,7 @@ export function LinkedPropertyBar() {
         {project.costPerW != null && <span>${project.costPerW.toFixed(2)}/W{total != null ? ` · ${usd(total)} installed` : ""}</span>}
         <span>{finance}</span>
         {billing && <span>{billing}</span>}
-        <Link to="/property-assessment" className="ml-auto text-primary underline">Edit on property assessment</Link>
+        <Link to="/solar-savings-austin" className="ml-auto text-primary underline">Edit on property assessment</Link>
       </div>
     </div>
   );

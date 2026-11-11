@@ -77,7 +77,7 @@ export default function SolarFinancialBreakdown({ model }: { model: ReturnType<t
             {!model.tenantCredits && <span>Net position at year 25: <strong>{money(lastRow?.cumulative ?? 0)}</strong></span>}
           </div>
           <p className="text-xs text-muted-foreground">
-            Planning estimates, not guaranteed payments. These are the first 25 years of the same 30-year assessment model used in the chart.
+            Planning estimates, not guaranteed payments. This uses the same 25-year assessment model as the savings summary and chart.
             Upfront rebates reduce installation cost once; conditional federal benefits arrive in year 2 and do not reduce loan principal.
             {hasPbi && " PBI credits stop after year 5."}
             {model.isSSO && " Standard Offer rate escalation is a planning assumption, not an Austin Energy commitment. This is the property-owner scenario, separate from the investor pro forma."}

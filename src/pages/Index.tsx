@@ -13,7 +13,7 @@ import { CalculatorPreview, PlanCategoriesPreview, ImagePreview } from "@/compon
 // same tools.
 const CHOICES = [
   {
-    to: "/property-assessment",
+    to: "/solar-savings-austin",
     title: "Your Solar Potential",
     description: "See what solar could do for your property, including Austin Energy rebates and Federal Incentives.",
     preview: <CalculatorPreview />,
@@ -50,7 +50,7 @@ const Index = () => {
 
   const goToAssessment = () => {
     const trimmed = address.trim();
-    navigate(trimmed ? `/property-assessment?address=${encodeURIComponent(trimmed)}` : "/property-assessment");
+    navigate(trimmed ? `/solar-savings-austin?address=${encodeURIComponent(trimmed)}` : "/solar-savings-austin");
   };
 
   return (

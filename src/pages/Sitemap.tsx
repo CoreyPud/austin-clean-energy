@@ -34,7 +34,7 @@ const publicPages = [
     icon: Database,
   },
   {
-    path: "/property-assessment",
+    path: "/solar-savings-austin",
     title: "Calculate Solar Savings in Austin",
     description: "Address-driven profile: neighborhood snapshot, solar potential, savings, council member, and recommendations.",
     icon: Home,

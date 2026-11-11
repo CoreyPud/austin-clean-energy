@@ -79,7 +79,7 @@ export function buildRecommendationCards(opts: CardOpts) {
       title: `Install a ${solar.recommendedSystemKw} kW solar system`,
       summary,
       bullets,
-      cta: { label: "Calculate Solar Savings", url: "/property-assessment" },
+      cta: { label: "Calculate Solar Savings", url: "/solar-savings-austin" },
       icon: "Sun",
     });
   } else if (!hasSolar && isOwner && !hasSolarPotential) {
@@ -93,7 +93,7 @@ export function buildRecommendationCards(opts: CardOpts) {
         "Austin Energy solar rebate: up to $4,000",
         "Federal Investment Tax Credit: 30% of system cost",
       ],
-      cta: { label: "See your roof's potential", url: "/property-assessment" },
+      cta: { label: "See your roof's potential", url: "/solar-savings-austin" },
       icon: "Sun",
     });
   } else if (!isOwner) {

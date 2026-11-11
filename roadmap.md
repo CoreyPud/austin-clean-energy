@@ -1,4 +1,5 @@
 # Current
+- [ ] Rename assessment to /solar-savings-austin with legacy-link preservation and consistent SEO; align solar savings summaries, charts, worksheets and pro forma to the same 25-year horizon and verify.
 - [x] Create Digital Twin Map from the supplied component, model, hourly data and styles; Grid Planning Tools navigation, sitemap, exact load balancing, presets, timeline, playback and phone layout verified; 9 related tests and build pass.
 - [x] Verify Load Zone Outlook supplied v14 content and correct phone overflow while preserving its Texas map and source notes; VOS annual chart/methodology changes, map zoom, navigation, 6 tests and phone fit verified.
 - [x] Update Peak Savings Calculator from supplied rev2 files; both battery designs match documented results, 15-year CSV, navigation and phone layout verified; 3 tests pass, no browser errors and build OK.
