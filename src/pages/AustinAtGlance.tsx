@@ -403,6 +403,14 @@ const AustinAtGlance = () => {
       ],
       "grid-tools": [
         {
+          key: "digital-twin-map",
+          to: "/digital-twin-map",
+          title: "Digital Twin Map",
+          description: "Explore hourly power sources, allocated substation flows and commercial-building demand across Austin in FY2024.",
+          cta: "Explore the Map",
+          preview: <CouncilIconPreview icon={Network} className="h-[226px]" />,
+        },
+        {
           key: "building-load-curves-battery",
           to: "/building-load-curves-battery",
           title: "See the Peak: Building Load Curves",

@@ -80,6 +80,7 @@ import PeakShavePage from "./pages/PeakShave";
 import DemandDistribution from "./pages/DemandDistribution";
 import AustinIRPPlanning from "./pages/AustinIRPPlanning";
 import AustinLoadZoneOutlook from "./pages/AustinLoadZoneOutlook";
+import DigitalTwinMap from "./pages/DigitalTwinMap";
 import Rfp2026 from "./pages/Rfp2026";
 import PeakSavingsCalculatorPage from "./pages/PeakSavingsCalculatorPage";
 import BuildingLoadCurves from "./pages/BuildingLoadCurves";
