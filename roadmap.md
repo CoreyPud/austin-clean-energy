@@ -1,4 +1,5 @@
 # Current
+- [x] Update Peak Savings Calculator from supplied rev2 files; both battery designs match documented results, 15-year CSV, navigation and phone layout verified; 3 tests pass, no browser errors and build OK.
 - [x] Update See the Peak from supplied rev2 files; existing JSON matches supplied data. Owner/system-peak designs, reference savings, monthly CSV, forecast readiness, building selection, phone fit and back navigation verified; 3 tests pass, no browser errors and build OK.
 - [x] Add monthly/annual permit timing toggle, count-proportional annual bars, day labels and Deep Dive links; real solar/battery cohorts, annual average/median labels, phone fit and permit-search navigation verified, 8 tests pass and build OK.
 - [x] Add Clean Canvas public webpage/shared-AI-chat URL import with reviewable drafts and source links; Hot Topics ranks all visible ideas by support/oppose separately. Real webpage import, publish, vote/list updates, discussion navigation and phone fit verified; temporary post removed, 11 tests pass, build OK. Private/inaccessible chats require public share links; no specific shared-chat URL supplied for end-to-end testing.
