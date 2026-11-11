@@ -152,7 +152,11 @@ export function computeHour(model: FlowModel, data: HourlyFlow, h: number): Hour
   const plantMw: number[] = [];
   for (let p = 0; p < P; p++) plantMw.push(data.mw[p][h] * scale);
   const sl = data.slot[h];
-  const subLoad: number[] = model.share.map((row) => row[sl] * load);
+  // The supplied shares are rounded, so normalize them to keep delivered MW
+  // exactly equal to system load rather than gaining or losing a small remainder.
+  const shares = model.share.map((row) => row[sl]);
+  const shareTotal = shares.reduce((sum, value) => sum + value, 0);
+  const subLoad: number[] = shares.map((share) => share * (shareTotal > 0 ? load / shareTotal : 0));
   const g = plantMw.concat([imported]);
   const K = model.K.concat([model.ercotK]);
   const flow = ipf(g, subLoad, K);
