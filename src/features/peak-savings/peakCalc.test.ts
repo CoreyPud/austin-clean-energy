@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 import { design2Terms, run, type Inputs } from "./peakCalc";
 
 const batteryDefaults: Inputs = {
@@ -19,26 +20,24 @@ const batteryDefaults: Inputs = {
   omEscPct: 2.5,
 };
 
-describe("battery peak-saving designs", () => {
-  test("Design 1 defaults keep year-1 net savings at $2,508 and do not pay back", () => {
-    const result = run(batteryDefaults);
-    expect(Math.round(result.y1Net)).toBe(2508);
-    expect(result.payback).toBeNull();
-  });
+test("Design 1 defaults keep year-1 net savings at $2,508 and do not pay back", () => {
+  const result = run(batteryDefaults);
+  assert.equal(Math.round(result.y1Net), 2508);
+  assert.equal(result.payback, null);
+});
 
-  test("Design 2 defaults retain 67% of owner peak reduction and pay $6,890 yearly", () => {
-    const terms = design2Terms(100, 50, 67, 100, 68.9);
-    expect(terms.ownerKw).toBeCloseTo(33.5);
-    expect(terms.payment).toBeCloseTo(6890);
-  });
+test("Design 2 defaults retain 67% of owner peak reduction and pay $6,890 yearly", () => {
+  const terms = design2Terms(100, 50, 67, 100, 68.9);
+  assert.ok(Math.abs(terms.ownerKw - 33.5) < 1e-9);
+  assert.ok(Math.abs(terms.payment - 6890) < 1e-9);
+});
 
-  test("Design 2 defaults produce the documented payback, IRR and NPV", () => {
-    const terms = design2Terms(100, 50, 67, 100, 68.9);
-    const result = run({ ...batteryDefaults, kw: terms.ownerKw, extraIncome: terms.payment });
-    expect(Math.round(result.y1Net)).toBe(7118);
-    expect(result.payback).toBe(13);
-    expect(result.irr).not.toBeNull();
-    expect((result.irr as number) * 100).toBeCloseTo(2.3, 1);
-    expect(Math.round(result.npv)).toBe(-21642);
-  });
+test("Design 2 defaults produce the documented payback, IRR and NPV", () => {
+  const terms = design2Terms(100, 50, 67, 100, 68.9);
+  const result = run({ ...batteryDefaults, kw: terms.ownerKw, extraIncome: terms.payment });
+  assert.equal(Math.round(result.y1Net), 7118);
+  assert.equal(result.payback, 13);
+  assert.notEqual(result.irr, null);
+  assert.ok(Math.abs((result.irr as number) * 100 - 2.3) < 0.05);
+  assert.equal(Math.round(result.npv), -21642);
 });
