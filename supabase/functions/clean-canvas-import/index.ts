@@ -45,11 +45,14 @@ Deno.serve(async (req) => {
     }
     const result = await response.json();
     const document = result.data ?? result;
+    if (typeof document.metadata?.statusCode === 'number' && document.metadata.statusCode >= 400) {
+      return json({ error: "This webpage is unavailable. Check the URL or use a public shared chat link." }, 422);
+    }
     const draft = draftSchema.safeParse(document.json);
     if (result.success === false || !draft.success || draft.data.title.length < 5 || draft.data.description.length < 20) {
       return json({ error: "This link didn't provide enough readable content. Private chats require a public share link; you can still enter the idea manually." }, 422);
     }
-    return json({ draft: { ...draft.data, topics: [...new Set(draft.data.topics)] }, resource: { label: draft.data.title.slice(0, 120), url } });
+    return json({ draft: { ...draft.data, topics: draft.data.topics.length ? [...new Set(draft.data.topics)] : ['Other'] }, resource: { label: draft.data.title.slice(0, 120), url } });
   } catch (error) {
     console.error('Clean Canvas import failed', error instanceof Error ? error.message : 'Unknown error');
     return json({ error: 'The link could not be read. Your existing idea details have been kept.' }, 500);
