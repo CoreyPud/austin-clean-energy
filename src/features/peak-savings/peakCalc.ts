@@ -29,6 +29,7 @@ export interface Inputs {
   omEscPct: number;
   annualOverride?: number; // replaces the first-year savings (used by the utility view)
   thirdPartySharePct?: number; // when set, owner pays this share of demand savings, no upfront cost
+  extraIncome?: number; // flat yearly payment received (Design 2: Austin Energy pays the host); not escalated, loses the yearly degradation
 }
 
 export interface Outcome {
@@ -48,6 +49,7 @@ export interface Outcome {
   neededExtra: number; // extra yearly savings needed for the discount rate
   thirdParty: boolean;
   ownerPayment1: number;
+  y1Extra: number;
 }
 
 export const totalDemandRate = (i: Pick<Inputs, "demandCharge" | "regCharge">) => i.demandCharge + i.regCharge;
@@ -80,12 +82,13 @@ export function run(i: Inputs): Outcome {
   let ownerPayment1 = 0;
   for (let t = 1; t <= i.life; t++) {
     const g = Math.pow(1 + esc, t - 1) * Math.pow(1 - deg, t - 1);
-    let s = base * g;
+    const extra = (i.extraIncome ?? 0) * Math.pow(1 - deg, t - 1);
+    let s = base * g + extra;
     let o = i.om * Math.pow(1 + infl, t - 1);
     if (third) {
       const pay = demandPart * g * ((i.thirdPartySharePct as number) / 100);
       if (t === 1) ownerPayment1 = pay;
-      s = demandPart * g - pay;
+      s = demandPart * g - pay + extra;
       o = 0;
     }
     savings.push(s);
@@ -109,7 +112,7 @@ export function run(i: Inputs): Outcome {
     y1Energy: energyPart,
     y1Net: (savings[0] ?? 0) - (om[0] ?? 0),
     totalSavings, netGain: totalSavings - totalOm - netCost,
-    neededExtra, thirdParty: third, ownerPayment1,
+    neededExtra, thirdParty: third, ownerPayment1, y1Extra: i.extraIncome ?? 0,
   };
 }
 
@@ -137,4 +140,13 @@ export function download(filename: string, text: string, mime = "text/csv") {
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+/* Design 2 for a battery: held for the Austin Energy system peak, and Austin Energy pays the host. */
+export const SUMMER_SHARE_LOST = 4 / 12; // June to September are given to the system peak
+export function design2Terms(batteryKw: number, shaveKw: number, keepPct: number, hitPct: number, payPerKwYear: number) {
+  return {
+    ownerKw: shaveKw * (keepPct / 100), // kW removed from the owner's own monthly peaks
+    payment: batteryKw * (hitPct / 100) * payPerKwYear, // yearly payment from Austin Energy
+  };
 }

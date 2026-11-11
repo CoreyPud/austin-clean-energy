@@ -2,7 +2,7 @@
 // Needs: src/lib/peakCalc.ts and src/styles/peakSavingsCalculator.css. No extra packages (charts are plain SVG).
 import { useMemo, useState } from "react";
 import "./peakSavingsCalculator.css";
-import { Inputs, MEASURES, MeasureType, Ownership, download, pct1, run, sensitivity, toCsv, totalDemandRate, usd, utilityValue } from "./peakCalc";
+import { Inputs, MEASURES, MeasureType, Ownership, design2Terms, download, pct1, run, sensitivity, toCsv, totalDemandRate, usd, utilityValue } from "./peakCalc";
 
 type Tab = "owner" | "utility";
 const GREEN = "#2E7D6B", TEAL = "#123A4A", GREY = "#7D8F97", AMBER = "#F2A541";
@@ -56,6 +56,8 @@ export default function PeakSavingsCalculator() {
   const [tab, setTab] = useState<Tab>("owner");
   const [type, setType] = useState<MeasureType>("led");
   const [own, setOwn] = useState<Ownership>("buy");
+  const [design, setDesign] = useState<"owner" | "ae">("owner");
+  const [d2, setD2] = useState({ keepPct: 67, hitPct: 100, payPerKwYear: 68.9 });
   const [share, setShare] = useState(50);
   const [bill, setBill] = useState({ demandCharge: 10.32, regCharge: 5.03, energyRate: 0.0594, capturePct: 75, rateEscPct: 3, buildingPeak: 0 });
   const [m, setM] = useState({ kw: 10, kwh: 35000, upfront: 3500, rebate: 0, creditPct: 0, om: 0, degPct: 0, life: 12, discPct: 8, omEscPct: 2.5 });
@@ -81,14 +83,16 @@ export default function PeakSavingsCalculator() {
     } else {
       setM({ kw: d.kw, kwh: d.kwh, upfront: d.cost, rebate: 0, creditPct: 0, om: d.om, degPct: 0, life: d.life, discPct: m.discPct, omEscPct: m.omEscPct });
     }
-    if (t !== "battery") setOwn("buy");
+    if (t !== "battery") { setOwn("buy"); setDesign("owner"); }
   };
+  const isAe = type === "battery" && design === "ae";
 
   const inputs: Inputs = useMemo(() => ({
     demandCharge: bill.demandCharge, regCharge: bill.regCharge, energyRate: bill.energyRate, capturePct: bill.capturePct, rateEscPct: bill.rateEscPct,
-    kw: m.kw, kwh: m.kwh, upfront: m.upfront, rebate: m.rebate, creditPct: m.creditPct, om: m.om, degPct: m.degPct, life: Math.max(1, Math.round(m.life)), discPct: m.discPct, omEscPct: m.omEscPct,
-    thirdPartySharePct: type === "battery" && own === "third" ? share : undefined,
-  }), [bill, m, type, own, share]);
+    kw: isAe ? design2Terms(bat.kw, m.kw, d2.keepPct, d2.hitPct, d2.payPerKwYear).ownerKw : m.kw, kwh: m.kwh, upfront: m.upfront, rebate: m.rebate, creditPct: m.creditPct, om: m.om, degPct: m.degPct, life: Math.max(1, Math.round(m.life)), discPct: m.discPct, omEscPct: m.omEscPct,
+    thirdPartySharePct: type === "battery" && own === "third" && !isAe ? share : undefined,
+    extraIncome: isAe ? design2Terms(bat.kw, m.kw, d2.keepPct, d2.hitPct, d2.payPerKwYear).payment : undefined,
+  }), [bill, m, type, own, share, isAe, bat.kw, d2]);
 
   const uv = utilityValue(util);
   const utilInputs: Inputs = { ...inputs, thirdPartySharePct: undefined, annualOverride: uv.annual };
@@ -105,6 +109,7 @@ export default function PeakSavingsCalculator() {
   if (type === "battery" && bat.shave > 0.6) warnings.push("A shave above 0.6 needs perfect forecasting. Treat results above that as a best case.");
   if (bill.capturePct > 90) warnings.push("Few buildings lower their peak in nearly every month.");
   if (bill.buildingPeak > 0 && m.kw > 0.3 * bill.buildingPeak) warnings.push("That is a large share of your peak; check the estimate with your installer.");
+  if (isAe) warnings.push("Design 2 results depend on a payment Austin Energy has not offered. Change the payment to see how much the contract needs to pay for this to work.");
   warnings.push("Demand charges here are Austin Energy rates published in 2026 and may change. A pending Texas PUC rule (replacing 4CP with 12CP) may change how transmission costs are allocated. Check your bill.");
 
   const copy = async () => {
@@ -116,6 +121,7 @@ export default function PeakSavingsCalculator() {
   const drivers = [
     { label: "Demand-charge savings", v: out.y1Demand, color: GREEN },
     { label: "Energy savings", v: out.y1Energy, color: "#5FA896" },
+    ...(isAe ? [{ label: "Austin Energy payment", v: out.y1Extra, color: TEAL }] : []),
     { label: "Operating cost", v: -(out.om[0] ?? 0), color: AMBER },
   ];
   const dmax = Math.max(1, ...drivers.map((d) => Math.abs(d.v)));
@@ -143,12 +149,30 @@ export default function PeakSavingsCalculator() {
                 </div>
                 <button type="button" className="psc-link" onClick={() => pickType(type)}>Reset to defaults</button>
                 {type === "battery" && (
+                  <>
+                    <div className="psc-seg" role="group" aria-label="Design">
+                      <button type="button" className={design === "owner" ? "on" : ""} onClick={() => setDesign("owner")}>Design 1: cut my own monthly peak</button>
+                      <button type="button" className={design === "ae" ? "on" : ""} onClick={() => setDesign("ae")}>Design 2: hold for Austin Energy's system peak</button>
+                    </div>
+                    <small>{isAe
+                      ? "The battery saves its two hours for the utility's peak (about 4:30 to 6:30 pm) on forecast peak days, so it cannot also cut your own noon peak that day. You give up part of your own demand-charge savings and Austin Energy pays you instead. The payment below is an assumption, not an offer."
+                      : "The battery cuts your own highest reading each month. That is what your demand charge is based on."}</small>
+                  </>
+                )}
+                {isAe && (
+                  <div className="psc-grid">
+                    <Num label="Share of your own demand-charge savings you keep, %" value={d2.keepPct} onChange={(v) => setD2({ ...d2, keepPct: v })} max={100} help="67 means you keep October to May and give up June to September. Placeholder; the See the Peak page shows it by building type." />
+                    <Num label="Chance the battery is ready at the system peak, %" value={d2.hitPct} onChange={(v) => setD2({ ...d2, hitPct: v })} max={100} help="100 is perfect forecasting. A simple rule will miss some of the four peaks." />
+                    <Num label="Austin Energy payment, $ per battery kW-year" value={d2.payPerKwYear} onChange={(v) => setD2({ ...d2, payPerKwYear: v })} step={1} help="68.90 is the most the transmission savings could justify: $65 per kW-year x 1.06 line losses. A real contract would pay less. Austin Energy's Fast Auto-DR pays $65 to $80 per kW-year, with $265 to $280 in the first year." />
+                  </div>
+                )}
+                {type === "battery" && !isAe && (
                   <div className="psc-seg" role="group" aria-label="Ownership">
                     <button type="button" className={own === "buy" ? "on" : ""} onClick={() => setOwn("buy")}>I buy it</button>
                     <button type="button" className={own === "third" ? "on" : ""} onClick={() => setOwn("third")}>Third party owns it (shared savings)</button>
                   </div>
                 )}
-                {own === "third" && type === "battery" && <Num label="Share of your demand-charge savings paid to the owner, %" value={share} onChange={setShare} max={100} help="No upfront cost and no tax credit for you." />}
+                {own === "third" && type === "battery" && !isAe && <Num label="Share of your demand-charge savings paid to the owner, %" value={share} onChange={setShare} max={100} help="No upfront cost and no tax credit for you." />}
                 <small>Defaults are typical placeholders; replace them with your quote.</small>
               </section>
 
@@ -248,7 +272,7 @@ export default function PeakSavingsCalculator() {
                 <strong>{usd(d.v)}</strong>
               </div>
             ))}
-            <p className="psc-note">Year 1. Demand savings = kW removed x ${D.toFixed(2)} x 12 x {bill.capturePct}% of months.</p>
+            <p className="psc-note">Year 1. Demand savings = kW removed x ${D.toFixed(2)} x 12 x {bill.capturePct}% of months.{isAe ? " The Austin Energy payment is a flat yearly amount." : ""}</p>
           </section>
 
           {sens && (
@@ -277,6 +301,7 @@ export default function PeakSavingsCalculator() {
                 <p>Demand savings in year t = kW removed x (demand charge + regulatory charge) x 12 x share of months that count, grown by the yearly rate increase and reduced by any yearly loss of savings.</p>
                 <p>Energy savings in year t = kWh saved x energy rate, grown the same way.</p>
                 <p>Net upfront cost = upfront cost x (1 - tax credit) - rebate. Cash flow in year t = savings - operating cost. IRR is the rate that makes the cash flows add to zero; NPV discounts them at your rate. Payback is the first year the running total reaches zero.</p>
+                <p>Design 2: your own demand savings are multiplied by the share you keep, and Austin Energy pays a flat amount per battery kW times the chance the battery is ready. That payment is not escalated.</p>
                 <p>With third-party ownership you pay the owner your chosen share of demand savings and have no upfront cost, so IRR does not apply.</p>
               </div>
             )}
