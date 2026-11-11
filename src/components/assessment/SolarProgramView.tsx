@@ -134,7 +134,7 @@ export default function SolarProgramView({
 }: SolarProgramViewProps) {
   const [showCalcDetails, setShowCalcDetails] = useState(false);
   // Sliders commit on every drag tick so every number updates live; the model is cheap enough
-  // (a 30-year monthly loop) to recompute per tick. systemKw can briefly exceed the roof max
+  // (a financial-horizon monthly loop) to recompute per tick. systemKw can briefly exceed the roof max
   // (the page seeds a default before results load), so never display a size the model clamps.
   const liveSystemKw = Math.min(systemKw, rec.maxKw);
   const liveCostPerW = rec.costPerW;
@@ -190,7 +190,7 @@ export default function SolarProgramView({
     year: `Yr ${d.year}`,
     [cumulativeKey]: d.cumulative,
   }));
-  // Net position at the end of the full modeled term (not just year 25) -- the headline figure
+  // Net position at the end of the same modeled term as the worksheet -- the headline figure
   // above the payback chart.
   const netFullTerm = cumulativeSource[cumulativeSource.length - 1]?.cumulative ?? net25;
   // Financed (VoS only; SSO has no financing option). A single "payback year" is misleading
@@ -268,7 +268,7 @@ export default function SolarProgramView({
               ) : (
                 <StickyKpi
                   label="payback"
-                  value={paybackYear ? `${paybackYear} years` : "> 30 years"}
+                  value={paybackYear ? `${paybackYear} years` : `> ${FINANCIAL_HORIZON_YEARS} years`}
                   href="#section-payback"
                 />
               )}
@@ -406,7 +406,7 @@ export default function SolarProgramView({
               </div>
               <div className="text-xs text-muted-foreground leading-snug">
                 {isFinanced
-                  ? `Total net savings over ${FINANCIAL_HORIZON_YEARS} years, after all loan payments`
+                  ? `Total net savings over ${FINANCIAL_HORIZON_YEARS} years, after loan payments within that period`
                   : `Total net ${isSSO ? "revenue" : "savings"} over ${FINANCIAL_HORIZON_YEARS} years, after the system pays for itself`}
               </div>
             </div>

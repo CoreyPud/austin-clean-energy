@@ -121,10 +121,8 @@ const AppRoutes = () => {
           <Route path="/progress-resources" element={<Navigate to="/austin-at-a-glance" replace />} />
           <Route path="/city-overview" element={<CityOverview />} />
           <Route path="/solar-permits" element={<SolarPermits />} />
-          <Route path="/area-analysis" element={<Navigate to="/property-assessment" replace />} />
-          <Route path="/property-assessment" element={<PropertyAssessment />} />
+          <Route path="/solar-savings-austin" element={<PropertyAssessment />} />
           <Route path="/rebate-applications" element={<RebateApplications />} />
-          <Route path="/recommendations" element={<Navigate to="/property-assessment" replace />} />
           <Route path="/installation/:id" element={<InstallationDetail />} />
           <Route path="/data-sources" element={<DataSources />} />
           <Route path="/fiscal-year-stats" element={<FiscalYearStats />} />

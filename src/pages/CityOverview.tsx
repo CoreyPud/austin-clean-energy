@@ -473,7 +473,7 @@ const CityOverview = () => {
     {
       title: "Solar Savings Calculator",
       description: "See your personalized solar savings estimate using your Austin address and actual utility data.",
-      link: "/property-assessment",
+      link: "/solar-savings-austin",
       icon: Zap,
       internal: true,
     },
@@ -1085,7 +1085,7 @@ const CityOverview = () => {
             <div className="flex justify-center">
               <Button
                 size="lg"
-                onClick={() => navigate("/property-assessment")}
+                onClick={() => navigate("/solar-savings-austin")}
                 className="bg-white text-primary hover:bg-white/90"
               >
                 Assess Your Property

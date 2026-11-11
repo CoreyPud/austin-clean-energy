@@ -32,7 +32,7 @@ interface Props {
 }
 
 export const shareUrlFor = (token: string) =>
-  `${window.location.origin}/property-assessment?share=${token}`;
+  `${window.location.origin}/solar-savings-austin?share=${token}`;
 
 const PENDING_KEY = "ace_pending_save";
 

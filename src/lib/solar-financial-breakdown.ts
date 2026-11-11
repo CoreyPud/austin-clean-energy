@@ -3,12 +3,12 @@ import {
   INVERTER_REPLACEMENT_YEAR, INVERTER_REPLACEMENT_PER_W,
   SSO_OM_PER_KW_YEAR, SSO_OM_ESCALATION,
   SSO_INVERTER_REPLACEMENT_YEAR, SSO_INVERTER_REPLACEMENT_PER_KW,
-  buildPbiModel, ssoRate,
+  buildPbiModel, ssoRate, FINANCIAL_HORIZON_YEARS,
 } from "./solar-model";
 import { calculateFederalSolarIncentive, FEDERAL_SOLAR_RECEIPT_YEAR } from "./solar-federal-incentives";
 import { buildProgramFinancials, classifyProperty, type SolarRecommendation } from "./property-solar";
 
-export const BREAKDOWN_YEARS = 25;
+export const BREAKDOWN_YEARS = FINANCIAL_HORIZON_YEARS;
 
 /** Presentation of the same owner model used by the assessment chart, not the investor pro forma. */
 export function buildSolarFinancialBreakdown(

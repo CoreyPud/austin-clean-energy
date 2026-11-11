@@ -24,7 +24,7 @@ export {
 } from "../../supabase/functions/_shared/solar-rates";
 
 export const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-export const FINANCIAL_HORIZON_YEARS = 30;
+export const FINANCIAL_HORIZON_YEARS = 25;
 
 // Normalised monthly solar production weights (Austin, Jan–Dec)
 const RAW_SOLAR_PROFILE = [0.78,0.86,0.99,1.06,1.11,1.10,1.07,1.01,0.96,0.91,0.82,0.74];
@@ -87,7 +87,7 @@ export function commercialPbiBenefit(systemKw: number, productionPerKw: number):
 // Electricity price escalation applied to avoided-bill savings. Austin Energy's residential
 // rates have risen a little over 2%/yr on a long-run average; 2.5% is a deliberately
 // conservative middle figure. Without it, payback is overstated because the model would
-// hold 2025 rates flat for 30 years while system cost is paid in today's dollars.
+// hold 2025 rates flat for the financial horizon while system cost is paid in today's dollars.
 export const UTILITY_RATE_ESCALATION = 0.025;
 // One inverter replacement partway through the term -- a real owner cost that a payback
 // figure has to carry. String inverters typically last 12-15 years; $0.20/W is in line with
@@ -235,7 +235,7 @@ export function buildYearModel(
   };
 }
 
-// ── 30-year model ─────────────────────────────────────────────────────────────
+// ── Multi-year model ─────────────────────────────────────────────────────────────
 
 export function calculateAnnualLoanPayment(principal: number, annualRate: number, termYears: number) {
   if (principal <= 0 || termYears <= 0) return 0;

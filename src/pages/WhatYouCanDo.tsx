@@ -32,7 +32,7 @@ const WhatYouCanDo = () => {
 
           <div className="grid items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
-              to="/property-assessment"
+              to="/solar-savings-austin"
               title="Check Solar for Your Home"
               description="Enter your address to see neighborhood solar trends, your roof's potential, cost estimates, your council member, and a personalized plan — all in one place."
               cta="Calculate Savings"
@@ -75,7 +75,7 @@ const WhatYouCanDo = () => {
             </p>
             <Button
               size="lg"
-              onClick={() => navigate("/property-assessment")}
+              onClick={() => navigate("/solar-savings-austin")}
               className="bg-white font-semibold text-primary hover:bg-white/90"
             >
               Get Started
