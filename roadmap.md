@@ -1,4 +1,6 @@
 # Current
+- [ ] Create Digital Twin Map from the supplied component, model, hourly data and styles; wire navigation and verify interactions.
+- [ ] Finish Load Zone Outlook supplied-file verification and correct phone overflow while preserving its Texas map and source notes.
 - [x] Update Peak Savings Calculator from supplied rev2 files; both battery designs match documented results, 15-year CSV, navigation and phone layout verified; 3 tests pass, no browser errors and build OK.
 - [x] Update See the Peak from supplied rev2 files; existing JSON matches supplied data. Owner/system-peak designs, reference savings, monthly CSV, forecast readiness, building selection, phone fit and back navigation verified; 3 tests pass, no browser errors and build OK.
 - [x] Add monthly/annual permit timing toggle, count-proportional annual bars, day labels and Deep Dive links; real solar/battery cohorts, annual average/median labels, phone fit and permit-search navigation verified, 8 tests pass and build OK.
