@@ -15,7 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { useSeo } from "@/hooks/use-seo";
 import PageHeader from "@/components/PageHeader";
 import PermitTimingChart from "@/components/PermitTimingChart";
-import type { TimingMonth } from '../../supabase/functions/_shared/permit-timing';
+import type { TimingMonth, TimingYear } from '../../supabase/functions/_shared/permit-timing';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import {
   TrendingUp,
@@ -45,6 +45,8 @@ const CityOverview = () => {
   const [yearlyData, setYearlyData] = useState<any[]>([]);
   const [timelineData, setTimelineData] = useState<TimingMonth[]>([]);
   const [batteryTimelineData, setBatteryTimelineData] = useState<TimingMonth[]>([]);
+  const [annualTimelineData, setAnnualTimelineData] = useState<TimingYear[]>([]);
+  const [annualBatteryTimelineData, setAnnualBatteryTimelineData] = useState<TimingYear[]>([]);
   const [timelineError, setTimelineError] = useState(false);
   const [unclassifiedTimingCount, setUnclassifiedTimingCount] = useState(0);
   const [chartMode, setChartMode] = useState<'perPeriod' | 'cumulative'>('cumulative');
@@ -233,11 +235,19 @@ const CityOverview = () => {
 
     const loadTimelineData = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'month' } });
-        if (error) throw error;
+        const [monthly, annual] = await Promise.all([
+          supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'month' } }),
+          supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'year' } }),
+        ]);
+        if (monthly.error) throw monthly.error;
+        if (annual.error) throw annual.error;
+        const data = monthly.data;
         if (!Array.isArray(data?.solar) || !Array.isArray(data?.batteryOnly)) throw new Error('Invalid permit timing response');
+        if (!Array.isArray(annual.data?.solar) || !Array.isArray(annual.data?.batteryOnly)) throw new Error('Invalid annual permit timing response');
         setTimelineData(data.solar);
         setBatteryTimelineData(data.batteryOnly);
+        setAnnualTimelineData(annual.data.solar);
+        setAnnualBatteryTimelineData(annual.data.batteryOnly);
         setUnclassifiedTimingCount(data.unclassifiedCount ?? 0);
         setIsLoadingTimeline(false);
       } catch (error) {
@@ -968,8 +978,8 @@ const CityOverview = () => {
           </Card>
 
           {/* Permit Timeline Chart */}
-          <PermitTimingChart kind="Solar" data={timelineData} loading={isLoadingTimeline} error={timelineError} />
-          <PermitTimingChart kind="Battery-Only" data={batteryTimelineData} loading={isLoadingTimeline} error={timelineError} />
+          <PermitTimingChart kind="Solar" data={timelineData} annualData={annualTimelineData} loading={isLoadingTimeline} error={timelineError} />
+          <PermitTimingChart kind="Battery-Only" data={batteryTimelineData} annualData={annualBatteryTimelineData} loading={isLoadingTimeline} error={timelineError} />
           {unclassifiedTimingCount > 0 && <p className="text-xs text-muted-foreground">{unclassifiedTimingCount.toLocaleString()} completed projects with valid dates are excluded from both timing charts because their descriptions do not identify solar or battery storage.</p>}
         </div>
       </section>
