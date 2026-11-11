@@ -89,3 +89,6 @@
   .stp-controls { position: static; }
   .stp-root h1 { font-size: 1.6rem; }
 }
+
+.stp-root .stp-wide { grid-column: 1 / -1; }
+.stp-root .stp-static { position: static; margin-top: 12px; }
