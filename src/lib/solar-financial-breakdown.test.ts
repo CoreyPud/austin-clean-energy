@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeRecommendation, buildProgramFinancials } from "./property-solar";
+import { computeRecommendation, buildProgramFinancials, buildSolarSummary, classifyProperty } from "./property-solar";
 import { buildSolarFinancialBreakdown } from "./solar-financial-breakdown";
-import { austinEnergyRebate, businessSolarIncentive, commercialPbiRate } from "./solar-model";
+import { austinEnergyRebate, businessSolarIncentive, commercialPbiRate, FINANCIAL_HORIZON_YEARS, buildPbiModel } from "./solar-model";
+import { buildSsoProForma, SSO_PROFORMA_TERM_YEARS } from "./sso-proforma";
 
 function scenario(propertyType: string, size = 10, isSSO = false, financed = false) {
   const rec = computeRecommendation({ maxPanels: 1000, panelCapacityWatts: 400, sunshineHours: 1800, propertyType }, {
@@ -13,6 +14,29 @@ function scenario(propertyType: string, size = 10, isSSO = false, financed = fal
   const financials = buildProgramFinancials(rec, options);
   return { rec, financials, model: buildSolarFinancialBreakdown(rec, options, financials) };
 }
+
+test("all solar financial projections end at year 25 and summaries equal the final worksheet position", () => {
+  assert.equal(FINANCIAL_HORIZON_YEARS, 25);
+  assert.equal(SSO_PROFORMA_TERM_YEARS, 25);
+  for (const type of ["single-family", "condo", "commercial", "non-profit", "multi-family"]) {
+    for (const isSSO of [false, true]) {
+      const { rec, financials, model } = scenario(type, 150, isSSO);
+      assert.equal(financials.thirtyYear.yearlyResults.length, 25);
+      for (const stream of [financials.thirtyYear.cumulativeByYear, financials.sso.cumulativeByYear]) {
+        assert.equal(stream.length, 25);
+        assert.equal(stream.at(-1)?.year, 25);
+      }
+      const summary = buildSolarSummary(rec, classifyProperty(type), { annualUsageKwh: 500000, productionPerKw: 1548, isSSO });
+      assert.equal(summary.horizonYears, 25);
+      assert.equal(summary.lifetimeNetSavingsUsd, model.rows.at(-1)?.cumulative);
+    }
+  }
+  assert.equal(buildPbiModel(150, 1548).yearlyRows.length, 25);
+  const investor = buildSsoProForma(150);
+  assert.equal(investor.rows.length, 25);
+  assert.equal(investor.rows.at(-1)?.year, 25);
+  assert.equal(investor.totalNetCashFlow, investor.rows.at(-1)?.cumulative);
+});
 
 for (const type of ["single-family", "condo", "commercial", "non-profit", "multi-family"]) {
   for (const financed of [false, true]) {
