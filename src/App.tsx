@@ -85,8 +85,7 @@ import Rfp2026 from "./pages/Rfp2026";
 import PeakSavingsCalculatorPage from "./pages/PeakSavingsCalculatorPage";
 import BuildingLoadCurves from "./pages/BuildingLoadCurves";
 import InnovationGapPage from "./pages/InnovationGap";
-import RegistryPage from "./components/utility-registry/RegistryPage";
-import { StatesPage as UirStates, SolarPage as UirSolar, EfficiencyPage as UirEfficiency, AboutPage as UirAbout } from "./components/utility-registry/OtherPages";
+import RegistryPage from "./features/utility-registry/UtilityRegistryPage";
 import { SolarBomPage, SolarDraftPage, SolarFlowPage } from "./pages/SolarSuite";
 import LegacyPublicUrlRedirect from "./components/LegacyPublicUrlRedirect";
 import { PUBLIC_URL_RENAMES } from "./lib/public-url-renames";
@@ -175,10 +174,10 @@ const AppRoutes = () => {
           <Route path="/building-load-curves-battery" element={<BuildingLoadCurves />} />
           <Route path="/innovation-gap" element={<InnovationGapPage />} />
           <Route path="/us-utility-innovation-registry" element={<RegistryPage />} />
-          <Route path="/us-utility-innovation-registry/states" element={<UirStates />} />
-          <Route path="/us-utility-innovation-registry/solar" element={<UirSolar />} />
-          <Route path="/us-utility-innovation-registry/efficiency" element={<UirEfficiency />} />
-          <Route path="/us-utility-innovation-registry/about" element={<UirAbout />} />
+          <Route path="/us-utility-innovation-registry/states" element={<RegistryPage />} />
+          <Route path="/us-utility-innovation-registry/solar" element={<RegistryPage />} />
+          <Route path="/us-utility-innovation-registry/efficiency" element={<RegistryPage />} />
+          <Route path="/us-utility-innovation-registry/about" element={<RegistryPage />} />
         </Route>
 
         {/* Pages without footer */}
