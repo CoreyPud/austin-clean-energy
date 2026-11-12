@@ -29,7 +29,7 @@ export interface Inputs {
   omEscPct: number;
   annualOverride?: number; // replaces the first-year savings (used by the utility view)
   thirdPartySharePct?: number; // when set, owner pays this share of demand savings, no upfront cost
-  extraIncome?: number; // flat yearly payment received (Design 2: Austin Energy pays the host); not escalated, loses the yearly degradation
+  extraIncome?: number; // signed yearly transfer: positive for the host, negative for the utility; not escalated, loses the yearly degradation
 }
 
 export interface Outcome {
@@ -127,6 +127,15 @@ export interface UtilityInputs { kw: number; ratePerKwYear: number; lossPct: num
 export function utilityValue(u: UtilityInputs) {
   const annual = u.kw * (1 + u.lossPct / 100) * u.ratePerKwYear;
   return { annual, perCustomer: u.customers > 0 ? annual / u.customers : 0 };
+}
+
+export function utilityScenarioInputs(owner: Inputs, annualValue: number): Inputs {
+  return {
+    ...owner,
+    thirdPartySharePct: undefined,
+    annualOverride: annualValue,
+    extraIncome: -Math.abs(owner.extraIncome ?? 0),
+  };
 }
 
 export const usd = (v: number) => `${v < 0 ? "-" : ""}$${Math.abs(Math.round(v)).toLocaleString("en-US")}`;
