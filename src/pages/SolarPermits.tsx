@@ -11,9 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { emptyPermitFilters, filterPermits, sortPermits, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
+import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = PERMITS_PAGE_SIZE;
 const PERMIT_COLUMNS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
 const dateLabel = (value: string | null) => value ? new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not reported';
 const columns: [PermitSort, string][] = [['address', 'Address'], ['installed_kw', 'kW'], ['host', 'Host / owner'], ['contractor_company', 'Contractor'], ['status_current', 'Status'], ['issued_date', 'Issued'], ['completed_date', 'Final'], ['issued_to_final', 'Issued → final (days)']];
@@ -41,9 +41,9 @@ export default function SolarPermits() {
     let cancelled = false;
     setQuickLoading(true);
     (async () => {
-      const from = page * PAGE_SIZE;
+      const [from, to] = permitPageRange(page);
       const { data, count, error } = await supabase.from('solar_installations_view').select(PERMIT_COLUMNS, { count: 'exact' })
-        .order('completed_date', { ascending: false, nullsFirst: false }).order('id').range(from, from + PAGE_SIZE - 1);
+        .order('completed_date', { ascending: false, nullsFirst: false }).order('id').range(from, to);
       if (cancelled || error) return;
       const base = (data || []).filter(r => r.id).map(r => ({ ...r, id: r.id as string, host: null, host_pid: null })) as SolarPermit[];
       const ids = base.map(r => r.id);
