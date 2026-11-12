@@ -2,7 +2,7 @@
 // Needs: src/lib/peakCalc.ts and src/styles/peakSavingsCalculator.css. No extra packages (charts are plain SVG).
 import { useMemo, useState } from "react";
 import "./peakSavingsCalculator.css";
-import { Inputs, MEASURES, MeasureType, Ownership, design2Terms, download, pct1, run, sensitivity, toCsv, totalDemandRate, usd, utilityValue } from "./peakCalc";
+import { Inputs, MEASURES, MeasureType, Ownership, design2Terms, download, pct1, run, sensitivity, toCsv, totalDemandRate, usd, utilityScenarioInputs, utilityValue } from "./peakCalc";
 
 type Tab = "owner" | "utility";
 const GREEN = "#2E7D6B", TEAL = "#123A4A", GREY = "#7D8F97", AMBER = "#F2A541";
@@ -95,7 +95,7 @@ export default function PeakSavingsCalculator() {
   }), [bill, m, type, own, share, isAe, bat.kw, d2]);
 
   const uv = utilityValue(util);
-  const utilInputs: Inputs = { ...inputs, thirdPartySharePct: undefined, annualOverride: uv.annual };
+  const utilInputs = utilityScenarioInputs(inputs, uv.annual);
   const out = useMemo(() => run(tab === "owner" ? inputs : utilInputs), [tab, inputs, uv.annual]); // eslint-disable-line react-hooks/exhaustive-deps
   const sens = useMemo(() => (tab === "owner" && !out.thirdParty ? sensitivity(inputs) : null), [tab, inputs, out.thirdParty]);
 
@@ -119,9 +119,9 @@ export default function PeakSavingsCalculator() {
   const csv = () => download("peak-savings-cashflow.csv", toCsv([["Year", "Savings", "Operating cost", "Cash flow", "Cumulative"], ...out.cashflow.map((c, i) => [i, i === 0 ? 0 : out.savings[i - 1], i === 0 ? 0 : out.om[i - 1], c, out.cumulative[i]])]));
 
   const drivers = [
-    { label: "Demand-charge savings", v: out.y1Demand, color: GREEN },
+    { label: tab === "utility" ? "Transmission savings" : "Demand-charge savings", v: out.y1Demand, color: GREEN },
     { label: "Energy savings", v: out.y1Energy, color: "#5FA896" },
-    ...(isAe ? [{ label: "Austin Energy payment", v: out.y1Extra, color: TEAL }] : []),
+    ...(isAe ? [{ label: tab === "utility" ? "Payment to building owner" : "Austin Energy payment", v: out.y1Extra, color: tab === "utility" ? AMBER : TEAL }] : []),
     { label: "Operating cost", v: -(out.om[0] ?? 0), color: AMBER },
   ];
   const dmax = Math.max(1, ...drivers.map((d) => Math.abs(d.v)));
@@ -272,7 +272,9 @@ export default function PeakSavingsCalculator() {
                 <strong>{usd(d.v)}</strong>
               </div>
             ))}
-            <p className="psc-note">Year 1. Demand savings = kW removed x ${D.toFixed(2)} x 12 x {bill.capturePct}% of months.{isAe ? " The Austin Energy payment is a flat yearly amount." : ""}</p>
+            <p className="psc-note">{tab === "utility"
+              ? `Year 1. Transmission savings = ${util.kw.toLocaleString("en-US")} kW x $${util.ratePerKwYear} per kW-year x ${1 + util.lossPct / 100} line-loss gross-up.${isAe ? " The payment to the building owner is subtracted, not counted as utility income." : ""}`
+              : `Year 1. Demand savings = kW removed x $${D.toFixed(2)} x 12 x ${bill.capturePct}% of months.${isAe ? " The Austin Energy payment is a flat yearly amount." : ""}`}</p>
           </section>
 
           {sens && (
@@ -301,7 +303,7 @@ export default function PeakSavingsCalculator() {
                 <p>Demand savings in year t = kW removed x (demand charge + regulatory charge) x 12 x share of months that count, grown by the yearly rate increase and reduced by any yearly loss of savings.</p>
                 <p>Energy savings in year t = kWh saved x energy rate, grown the same way.</p>
                 <p>Net upfront cost = upfront cost x (1 - tax credit) - rebate. Cash flow in year t = savings - operating cost. IRR is the rate that makes the cash flows add to zero; NPV discounts them at your rate. Payback is the first year the running total reaches zero.</p>
-                <p>Design 2: your own demand savings are multiplied by the share you keep, and Austin Energy pays a flat amount per battery kW times the chance the battery is ready. That payment is not escalated.</p>
+                <p>Design 2: your own demand savings are multiplied by the share you keep, and Austin Energy pays a flat amount per battery kW times the chance the battery is ready. That payment is not escalated. It is income for the building owner and a cost subtracted from transmission savings in Utility view.</p>
                 <p>With third-party ownership you pay the owner your chosen share of demand savings and have no upfront cost, so IRR does not apply.</p>
               </div>
             )}

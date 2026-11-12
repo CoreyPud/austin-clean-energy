@@ -1,4 +1,5 @@
 # Current
+- [x] Fix Design 2 host payments being counted as utility income; owner remains unchanged, utility subtracts the transfer across all years. Owner-to-utility switch verified ($57,610 year-1 net, negative $6,890 payment); 5 tests pass, build OK.
 - [x] Show permit Deep Dive records in 25-row pages with a fast initial load; real Next/Previous and global address filtering verified, 9 tests pass and build OK.
 - [x] Rename assessment to /solar-savings-austin with legacy-link preservation and consistent SEO; align savings summaries, charts, worksheets and pro forma to the shared 25-year horizon. Verified three legacy URLs with address/anchor preservation, canonical, real address assessment and year-25 detail; 50 tests pass, no browser errors, build OK.
 - [x] Create Digital Twin Map from the supplied component, model, hourly data and styles; Grid Planning Tools navigation, sitemap, exact load balancing, presets, timeline, playback and phone layout verified; 9 related tests and build pass.
