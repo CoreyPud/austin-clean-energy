@@ -25,9 +25,10 @@ test('host sorting covers the complete result set without changing source order'
   assert.deepEqual(sortPermits(rows, 'host', true).map(r => r.id), ['a', 'b', 'c']);
   assert.deepEqual(rows.map(r => r.id), ['a', 'b', 'c']);
 });test('applied-to-final days count whole days and skip missing or reversed dates', () => {
-  assert.equal(daysAppliedToFinal({ applied_date: '2026-01-01', completed_date: '2026-01-31' }), 30);
-  assert.equal(daysAppliedToFinal({ applied_date: '2026-01-01', completed_date: null }), null);
-  assert.equal(daysAppliedToFinal({ applied_date: '2026-02-01', completed_date: '2026-01-01' }), null);
+  assert.equal(daysAppliedToFinal({ applied_date: '2026-01-01', completed_date: '2026-01-31', status_current: 'Final' }), 30);
+  assert.equal(daysAppliedToFinal({ applied_date: '2026-01-01', completed_date: '2026-01-31', status_current: 'Active' }), null);
+  assert.equal(daysAppliedToFinal({ applied_date: '2026-01-01', completed_date: null, status_current: 'Final' }), null);
+  assert.equal(daysAppliedToFinal({ applied_date: '2026-02-01', completed_date: '2026-01-01', status_current: 'Final' }), null);
 });
 
 import { daysIssuedToFinal, permitEquipment } from './solar-permits';

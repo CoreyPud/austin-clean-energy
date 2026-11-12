@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
+import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, isFinalPermit, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
 
 const PAGE_SIZE = PERMITS_PAGE_SIZE;
 const PERMIT_COLUMNS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
