@@ -60,6 +60,27 @@ const CityOverview = () => {
   const [builtRows, setBuiltRows] = useState<Array<{ year: number; property_type: string; zip: string; built_count: number }>>([]);
   const [solarRows, setSolarRows] = useState<Array<{ year: number; permit_class: string; zip: string; solar_count: number }>>([]);
   const [isLoadingAdoption, setIsLoadingAdoption] = useState(true);
+  const [solarTimingClass, setSolarTimingClass] = useState<'all' | 'residential' | 'commercial'>('all');
+  const [solarTimingLoading, setSolarTimingLoading] = useState(false);
+  const [classTiming, setClassTiming] = useState<{ month: TimingMonth[]; year: TimingYear[] } | null>(null);
+  const timingCache = useRef<Record<string, { month: TimingMonth[]; year: TimingYear[] }>>({});
+  useEffect(() => {
+    if (solarTimingClass === 'all') { setClassTiming(null); return; }
+    const cached = timingCache.current[solarTimingClass];
+    if (cached) { setClassTiming(cached); return; }
+    let cancelled = false;
+    setSolarTimingLoading(true);
+    Promise.all(['month', 'year'].map(period => supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period, permitClass: solarTimingClass } })))
+      .then(([m, y]) => {
+        if (m.error || y.error || !Array.isArray(m.data?.solar) || !Array.isArray(y.data?.solar)) throw new Error('timing');
+        const value = { month: m.data.solar, year: y.data.solar };
+        timingCache.current[solarTimingClass] = value;
+        if (!cancelled) setClassTiming(value);
+      })
+      .catch(() => { if (!cancelled) setTimelineError(true); })
+      .finally(() => { if (!cancelled) setSolarTimingLoading(false); });
+    return () => { cancelled = true; };
+  }, [solarTimingClass]);
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'residential' | 'commercial'>('all');
   const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
@@ -239,6 +260,7 @@ const CityOverview = () => {
           supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'month' } }),
           supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'year' } }),
         ]);
+        timingCache.current.all = { month: monthly.data?.solar, year: annual.data?.solar };
         if (monthly.error) throw monthly.error;
         if (annual.error) throw annual.error;
         const data = monthly.data;
@@ -978,7 +1000,7 @@ const CityOverview = () => {
           </Card>
 
           {/* Permit Timeline Chart */}
-          <PermitTimingChart kind="Solar" data={timelineData} annualData={annualTimelineData} loading={isLoadingTimeline} error={timelineError} />
+          <PermitTimingChart kind="Solar" data={solarTiming.month} annualData={solarTiming.year} loading={isLoadingTimeline || solarTimingLoading} error={timelineError} permitClass={solarTimingClass} onPermitClassChange={setSolarTimingClass} />
           <PermitTimingChart kind="Battery-Only" data={batteryTimelineData} annualData={annualBatteryTimelineData} loading={isLoadingTimeline} error={timelineError} />
           {unclassifiedTimingCount > 0 && <p className="text-xs text-muted-foreground">{unclassifiedTimingCount.toLocaleString()} completed projects with valid dates are excluded from both timing charts because their descriptions do not identify solar or battery storage.</p>}
         </div>
