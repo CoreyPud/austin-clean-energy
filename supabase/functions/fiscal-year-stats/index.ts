@@ -33,6 +33,7 @@ async function fetchAllRows(
     const { data, error } = await client
       .from(tableName)
       .select(columns)
+      .eq('status_current', 'Final')
       .gte(dateColumn, startDate)
       .lte(dateColumn, endDate)
       .range(offset, offset + pageSize - 1);
@@ -77,6 +78,7 @@ Deno.serve(async (req) => {
           .select('id, project_id, description, applied_date, completed_date')
           .or('is_duplicate.is.null,is_duplicate.eq.false')
           .not('applied_date', 'is', null).not('completed_date', 'is', null)
+          .eq('status_current', 'Final')
           .gte('applied_date', '2014-01-01');
         if (permitClass) q = q.ilike('permit_class', permitClass);
         const { data, error } = await q.order('id').range(offset, offset + 999);
@@ -94,6 +96,7 @@ Deno.serve(async (req) => {
       for (let offset = 0; ; offset += 1000) {
         const { data, error } = await client.from('solar_installations_view')
           .select('id, project_id, permit_class, installed_kw, completed_date, issued_date')
+          .eq('status_current', 'Final')
           .or('is_duplicate.is.null,is_duplicate.eq.false')
           .order('id').range(offset, offset + 999);
         if (error) throw error;
