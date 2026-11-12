@@ -47,7 +47,7 @@ export const emptyPermitFilters: PermitFilters = { search: '', contractor: '', h
 export function filterPermits(rows: SolarPermit[], f: PermitFilters) {
   const contains = (value: string | null, text: string) => (value || '').toLowerCase().includes(text.trim().toLowerCase());
   return rows.filter(row => {
-    const date = row.completed_date || row.issued_date || row.applied_date;
+    const date = (isFinalPermit(row) ? row.completed_date : null) || row.issued_date || row.applied_date;
     return (!f.search.trim() || [row.address, row.permit_number, row.project_id, row.original_zip, row.description].some(value => contains(value, f.search)))
       && contains(row.contractor_company, f.contractor) && contains(row.host, f.host)
       && (f.status === 'all' || row.status_current === f.status)
@@ -71,7 +71,12 @@ export function sortPermits(rows: SolarPermit[], field: PermitSort, ascending: b
   });
 }
 /** Whole days from application to final inspection, or null when either date is missing or out of order. */
-export function daysAppliedToFinal(row: Pick<SolarPermit, 'applied_date' | 'completed_date'>): number | null {
+/** Only permits the City marks Final have a final date; other statuses' status date is just the latest update. */
+export function isFinalPermit(row: Pick<SolarPermit, 'status_current'>) {
+  return (row.status_current || '').trim().toLowerCase() === 'final';
+}
+export function daysAppliedToFinal(row: Pick<SolarPermit, 'applied_date' | 'completed_date' | 'status_current'>): number | null {
+  if (!isFinalPermit(row)) return null;
   if (!row.applied_date || !row.completed_date) return null;
   const a = Date.parse(`${row.applied_date.slice(0, 10)}T00:00:00Z`), f = Date.parse(`${row.completed_date.slice(0, 10)}T00:00:00Z`);
   if (!Number.isFinite(a) || !Number.isFinite(f) || f < a) return null;
@@ -88,8 +93,9 @@ export function permitEquipment(description: string | null): PermitEquipment {
   return solar ? (battery ? 'solarBattery' : 'solar') : battery ? 'batteryOnly' : 'unclassified';
 }
 /** Whole days from issuance to final inspection, or null when either date is missing or out of order. */
-export function daysIssuedToFinal(row: Pick<SolarPermit, 'issued_date' | 'completed_date'>): number | null {
-  return daysAppliedToFinal({ applied_date: row.issued_date, completed_date: row.completed_date });
+export function daysIssuedToFinal(row: Pick<SolarPermit, 'issued_date' | 'completed_date' | 'status_current'>): number | null {
+  if (!isFinalPermit(row)) return null;
+  return daysAppliedToFinal({ applied_date: row.issued_date, completed_date: row.completed_date, status_current: row.status_current });
 }
 function daysWithin(days: number | null, min: string, max: string) {
   if (!min && !max) return true;
