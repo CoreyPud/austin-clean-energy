@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { emptyPermitFilters, filterPermits, sortPermits, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
+import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = PERMITS_PAGE_SIZE;
+const PERMIT_COLUMNS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
 const dateLabel = (value: string | null) => value ? new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not reported';
 const columns: [PermitSort, string][] = [['address', 'Address'], ['installed_kw', 'kW'], ['host', 'Host / owner'], ['contractor_company', 'Contractor'], ['status_current', 'Status'], ['issued_date', 'Issued'], ['completed_date', 'Final'], ['issued_to_final', 'Issued → final (days)']];
 
@@ -29,6 +30,32 @@ export default function SolarPermits() {
   const [ascending, setAscending] = useState(false);
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<SolarPermit | null>(null);
+  // Quick server-side pages shown while the full record set loads in the background.
+  const [quick, setQuick] = useState<{ page: number; rows: SolarPermit[]; total: number } | null>(null);
+  const [quickLoading, setQuickLoading] = useState(false);
+  const isDefaultView = sort === 'completed_date' && !ascending && JSON.stringify(filters) === JSON.stringify(emptyPermitFilters);
+  const useQuick = loading && !error && isDefaultView;
+
+  useEffect(() => {
+    if (!useQuick) return;
+    let cancelled = false;
+    setQuickLoading(true);
+    (async () => {
+      const [from, to] = permitPageRange(page);
+      const { data, count, error } = await supabase.from('solar_installations_view').select(PERMIT_COLUMNS, { count: 'exact' })
+        .order('completed_date', { ascending: false, nullsFirst: false }).order('id').range(from, to);
+      if (cancelled || error) return;
+      const base = (data || []).filter(r => r.id).map(r => ({ ...r, id: r.id as string, host: null, host_pid: null })) as SolarPermit[];
+      const ids = base.map(r => r.id);
+      const owners = new Map<string, { name: string | null; pid: string }>();
+      if (ids.length) {
+        const { data: hostRows } = await supabase.from('solar_installations').select('id,tcad_properties!fk_solar_tcad_pid(pid,py_owner_name)').in('id', ids);
+        for (const h of hostRows || []) if (h.tcad_properties) owners.set(h.id, { name: h.tcad_properties.py_owner_name, pid: h.tcad_properties.pid });
+      }
+      if (!cancelled) setQuick({ page, total: count ?? base.length, rows: base.map(r => ({ ...r, host: owners.get(r.id)?.name || null, host_pid: owners.get(r.id)?.pid || null })) });
+    })().finally(() => { if (!cancelled) setQuickLoading(false); });
+    return () => { cancelled = true; };
+  }, [useQuick, page, attempt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +66,7 @@ export default function SolarPermits() {
       const loadPermits = async () => {
         for (let offset = 0; !cancelled; offset += 1000) {
           const { data, error } = await supabase.from('solar_installations_view')
-            .select('id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction')
+            .select(PERMIT_COLUMNS)
             .order('id').range(offset, offset + 999);
           if (error) throw error;
           for (const row of data || []) if (row.id) permits.push({ ...row, id: row.id, host: null, host_pid: null });
@@ -77,7 +104,10 @@ export default function SolarPermits() {
   const results = useMemo(() => sortPermits(filterPermits(rows, filters), sort, ascending), [rows, filters, sort, ascending]);
   const statuses = useMemo(() => [...new Set(rows.map(r => r.status_current).filter((s): s is string => Boolean(s)))].sort(), [rows]);
   const classes = useMemo(() => [...new Set(rows.map(r => r.permit_class).filter((s): s is string => Boolean(s)))].sort(), [rows]);
-  const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const showQuick = useQuick && quick !== null;
+  const totalCount = showQuick ? quick.total : results.length;
+  const pageRows = showQuick ? quick.rows : results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const update = (key: keyof PermitFilters, value: string) => { setFilters(f => ({ ...f, [key]: value })); setPage(0); };
   const changeSort = (field: PermitSort) => { setAscending(sort === field ? !ascending : true); setSort(field); setPage(0); };
   const textFilter = (key: keyof PermitFilters, label: string, type = 'text', placeholder?: string) => <div className="space-y-1.5"><Label htmlFor={`permit-${key}`}>{label}</Label><Input id={`permit-${key}`} type={type} min={type === 'number' ? 0 : undefined} step={type === 'number' ? 'any' : undefined} value={filters[key]} onChange={e => update(key, e.target.value)} placeholder={placeholder} /></div>;
@@ -100,20 +130,20 @@ export default function SolarPermits() {
           <div className="flex items-end"><Button variant="ghost" onClick={() => { setFilters({ ...emptyPermitFilters }); setPage(0); }}><X className="h-4 w-4 mr-2" />Clear filters</Button></div>
         </div>
       </section>
-      {loading ? <div className="flex items-center gap-3 py-16 justify-center" role="status"><Loader2 className="h-5 w-5 animate-spin" />Loading permit records…</div> : error ? <div role="alert" className="py-10 space-y-4"><p className="text-destructive">{error}</p><Button onClick={() => setAttempt(a => a + 1)}>Try again</Button></div> : <>
-        <div className="flex flex-wrap gap-3 justify-between items-center"><p className="text-sm text-muted-foreground">{results.length.toLocaleString()} matching permit records · {rows.length.toLocaleString()} available</p><span className="text-sm text-muted-foreground">Page {page + 1} of {pageCount}</span></div>
+      {loading && !showQuick ? <div className="flex items-center gap-3 py-16 justify-center" role="status"><Loader2 className="h-5 w-5 animate-spin" />Loading permit records…</div> : error ? <div role="alert" className="py-10 space-y-4"><p className="text-destructive">{error}</p><Button onClick={() => setAttempt(a => a + 1)}>Try again</Button></div> : <>
+        <div className="flex flex-wrap gap-3 justify-between items-center"><p className="text-sm text-muted-foreground">{showQuick ? <>{totalCount.toLocaleString()} permit records · <Loader2 className="inline h-3 w-3 animate-spin" /> loading all records for filtering and sorting…</> : <>{results.length.toLocaleString()} matching permit records · {rows.length.toLocaleString()} available</>}</p><span className="text-sm text-muted-foreground">Page {page + 1} of {pageCount}</span></div>
         <div className="border border-border rounded-md overflow-hidden">
           <Table><TableHeader><TableRow>{columns.map(([field, title]) => <TableHead key={field} aria-sort={sort === field ? ascending ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" onClick={() => changeSort(field)} className="px-1 whitespace-nowrap text-xs">{title}{sort === field ? ascending ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" /> : <ArrowUpDown className="ml-1 h-3 w-3" />}</Button></TableHead>)}</TableRow></TableHeader>
-            <TableBody>{results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map(row => <TableRow key={row.id}>
+            <TableBody>{pageRows.map(row => <TableRow key={row.id}>
               <TableCell className="max-w-48 text-sm"><Button variant="link" className="h-auto p-0 text-left whitespace-normal justify-start" onClick={() => setSelected(row)}>{row.address || 'Address not reported'}</Button>{row.has_correction && <span className="block text-xs text-muted-foreground mt-1">Corrected record</span>}<span className="block text-xs text-muted-foreground">{[equipmentLabels[permitEquipment(row.description)], row.permit_class].filter(Boolean).join(' · ')}</span></TableCell>
               <TableCell className="tabular-nums whitespace-nowrap text-sm">{row.installed_kw === null ? '—' : row.installed_kw.toLocaleString(undefined, { maximumFractionDigits: 1 })}</TableCell>
               <TableCell className="max-w-40 text-sm break-words">{row.host || <span className="text-muted-foreground">Not reported</span>}</TableCell>
               <TableCell className="max-w-40 text-sm break-words">{row.contractor_company || <span className="text-muted-foreground">Not reported</span>}</TableCell>
               <TableCell className="text-sm">{row.status_current || '—'}</TableCell><TableCell className="whitespace-nowrap text-sm">{dateLabel(row.issued_date)}</TableCell><TableCell className="whitespace-nowrap text-sm">{dateLabel(row.completed_date)}</TableCell><TableCell className="tabular-nums text-sm text-right">{daysIssuedToFinal(row)?.toLocaleString() ?? '—'}</TableCell>
-            </TableRow>)}{results.length === 0 && <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground">No permits match these filters.</TableCell></TableRow>}</TableBody>
+            </TableRow>)}{totalCount === 0 && <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground">No permits match these filters.</TableCell></TableRow>}</TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-between gap-2"><Button variant="outline" disabled={page === 0} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-4 w-4 mr-1" />Previous</Button><span className="text-sm tabular-nums">{results.length ? page * PAGE_SIZE + 1 : 0}–{Math.min((page + 1) * PAGE_SIZE, results.length)} of {results.length.toLocaleString()}</span><Button variant="outline" disabled={page + 1 >= pageCount} onClick={() => setPage(p => p + 1)}>Next<ChevronRight className="h-4 w-4 ml-1" /></Button></div>
+        <div className="flex items-center justify-between gap-2"><Button variant="outline" disabled={page === 0 || quickLoading} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-4 w-4 mr-1" />Previous</Button><span className="text-sm tabular-nums">{totalCount ? page * PAGE_SIZE + 1 : 0}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount.toLocaleString()}{quickLoading && <Loader2 className="inline ml-2 h-3 w-3 animate-spin" />}</span><Button variant="outline" disabled={page + 1 >= pageCount || quickLoading} onClick={() => setPage(p => p + 1)}>Next<ChevronRight className="h-4 w-4 ml-1" /></Button></div>
       </>}
     </main>
     <Dialog open={selected !== null} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle className="pr-6">{selected?.address || 'Permit details'}</DialogTitle></DialogHeader>{selected && <div className="space-y-5">
