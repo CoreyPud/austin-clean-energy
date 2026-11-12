@@ -20,7 +20,7 @@ export interface SolarPermit {
   host_pid: string | null;
 }
 
-export type PermitSort = 'address' | 'installed_kw' | 'host' | 'contractor_company' | 'permit_class' | 'status_current' | 'completed_date' | 'permit_number';
+export type PermitSort = 'address' | 'installed_kw' | 'host' | 'contractor_company' | 'permit_class' | 'status_current' | 'issued_date' | 'completed_date' | 'permit_number';
 export interface PermitFilters {
   search: string;
   contractor: string;
@@ -57,4 +57,11 @@ export function sortPermits(rows: SolarPermit[], field: PermitSort, ascending: b
     const result = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
     return (ascending ? result : -result) || a.id.localeCompare(b.id);
   });
+}
+/** Whole days from application to final inspection, or null when either date is missing or out of order. */
+export function daysAppliedToFinal(row: Pick<SolarPermit, 'applied_date' | 'completed_date'>): number | null {
+  if (!row.applied_date || !row.completed_date) return null;
+  const a = Date.parse(`${row.applied_date.slice(0, 10)}T00:00:00Z`), f = Date.parse(`${row.completed_date.slice(0, 10)}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(f) || f < a) return null;
+  return Math.round((f - a) / 86400000);
 }
