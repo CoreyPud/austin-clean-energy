@@ -1,5 +1,5 @@
 # Current
-- [ ] Show permit Deep Dive records in 25-row pages with a fast initial load; verify Next/Previous and global filters.
+- [x] Show permit Deep Dive records in 25-row pages with a fast initial load; real Next/Previous and global address filtering verified, 9 tests pass and build OK.
 - [x] Rename assessment to /solar-savings-austin with legacy-link preservation and consistent SEO; align savings summaries, charts, worksheets and pro forma to the shared 25-year horizon. Verified three legacy URLs with address/anchor preservation, canonical, real address assessment and year-25 detail; 50 tests pass, no browser errors, build OK.
 - [x] Create Digital Twin Map from the supplied component, model, hourly data and styles; Grid Planning Tools navigation, sitemap, exact load balancing, presets, timeline, playback and phone layout verified; 9 related tests and build pass.
 - [x] Verify Load Zone Outlook supplied v14 content and correct phone overflow while preserving its Texas map and source notes; VOS annual chart/methodology changes, map zoom, navigation, 6 tests and phone fit verified.
