@@ -22,3 +22,15 @@ test('host sorting covers the complete result set without changing source order'
   assert.equal(daysAppliedToFinal({ applied_date: '2026-01-01', completed_date: null }), null);
   assert.equal(daysAppliedToFinal({ applied_date: '2026-02-01', completed_date: '2026-01-01' }), null);
 });
+
+import { daysIssuedToFinal as _d, permitEquipment as _e, filterPermits as _f, emptyPermitFilters as _empty } from './solar-permits';
+describe('issued to final and equipment', () => {
+  const base = { id: '1', issued_date: '2026-01-01', completed_date: '2026-02-05', description: 'Install PV with Powerwall' } as never;
+  it('counts days from issued to final', () => expect(_d(base)).toBe(35));
+  it('classifies equipment', () => { expect(_e('rooftop solar')).toBe('solar'); expect(_e('PV + battery')).toBe('solarBattery'); expect(_e('install BESS')).toBe('batteryOnly'); });
+  it('filters under 40 days and excludes unfinished', () => {
+    const open = { ...(base as object), id: '2', completed_date: null, applied_date: null } as never;
+    const slow = { ...(base as object), id: '3', completed_date: '2026-03-01' } as never;
+    expect(_f([base, open, slow], { ..._empty, maxDays: '40' }).map((r: { id: string }) => r.id)).toEqual(['1']);
+  });
+});
