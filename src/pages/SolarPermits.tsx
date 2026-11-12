@@ -22,6 +22,7 @@ export default function SolarPermits() {
   useSeo({ title: 'Austin Solar & Battery Permits', description: 'Search and compare Austin solar and battery permit addresses, reported system sizes, property owners, contractors, and permit details.' });
   const [rows, setRows] = useState<SolarPermit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fullRequested, setFullRequested] = useState(false);
   const [error, setError] = useState('');
   const [ownerWarning, setOwnerWarning] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -30,7 +31,7 @@ export default function SolarPermits() {
   const [ascending, setAscending] = useState(false);
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<SolarPermit | null>(null);
-  // Quick server-side pages shown while the full record set loads in the background.
+  // Fetch only the requested page until the user interacts with filters or sorting.
   const [quick, setQuick] = useState<{ page: number; rows: SolarPermit[]; total: number } | null>(null);
   const [quickLoading, setQuickLoading] = useState(false);
   const isDefaultView = sort === 'completed_date' && !ascending && JSON.stringify(filters) === JSON.stringify(emptyPermitFilters);
@@ -58,6 +59,7 @@ export default function SolarPermits() {
   }, [useQuick, page, attempt]);
 
   useEffect(() => {
+    if (!fullRequested) return;
     let cancelled = false;
     setLoading(true); setError(''); setOwnerWarning(false);
     async function load() {
@@ -99,17 +101,18 @@ export default function SolarPermits() {
     }
     void load();
     return () => { cancelled = true; };
-  }, [attempt]);
+  }, [attempt, fullRequested]);
 
   const results = useMemo(() => sortPermits(filterPermits(rows, filters), sort, ascending), [rows, filters, sort, ascending]);
-  const statuses = useMemo(() => [...new Set(rows.map(r => r.status_current).filter((s): s is string => Boolean(s)))].sort(), [rows]);
-  const classes = useMemo(() => [...new Set(rows.map(r => r.permit_class).filter((s): s is string => Boolean(s)))].sort(), [rows]);
+  const optionRows = rows.length ? rows : quick?.rows ?? [];
+  const statuses = useMemo(() => [...new Set(optionRows.map(r => r.status_current).filter((s): s is string => Boolean(s)))].sort(), [optionRows]);
+  const classes = useMemo(() => [...new Set(optionRows.map(r => r.permit_class).filter((s): s is string => Boolean(s)))].sort(), [optionRows]);
   const showQuick = useQuick && quick !== null;
   const totalCount = showQuick ? quick.total : results.length;
   const pageRows = showQuick ? quick.rows : results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const update = (key: keyof PermitFilters, value: string) => { setFilters(f => ({ ...f, [key]: value })); setPage(0); };
-  const changeSort = (field: PermitSort) => { setAscending(sort === field ? !ascending : true); setSort(field); setPage(0); };
+  const changeSort = (field: PermitSort) => { setFullRequested(true); setAscending(sort === field ? !ascending : true); setSort(field); setPage(0); };
   const textFilter = (key: keyof PermitFilters, label: string, type = 'text', placeholder?: string) => <div className="space-y-1.5"><Label htmlFor={`permit-${key}`}>{label}</Label><Input id={`permit-${key}`} type={type} min={type === 'number' ? 0 : undefined} step={type === 'number' ? 'any' : undefined} value={filters[key]} onChange={e => update(key, e.target.value)} placeholder={placeholder} /></div>;
   const optionFilter = (key: 'status' | 'type' | 'equipment', label: string, options: string[], names: Record<string, string> = {}) => <div className="space-y-1.5"><Label htmlFor={`permit-${key}`}>{label}</Label><Select value={filters[key]} onValueChange={v => update(key, v)}><SelectTrigger id={`permit-${key}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All {label.toLowerCase()}</SelectItem>{options.map(s => <SelectItem key={s} value={s}>{names[s] || s}</SelectItem>)}</SelectContent></Select></div>;
 
@@ -121,7 +124,7 @@ export default function SolarPermits() {
         <p>Host / owner is the TCAD recorded property owner when a parcel is linked, not a verified solar-system host or current account holder. Unmatched owners are not reported. Dates filter by final, then issuance, then application. Every record here comes from the City's issued-permit dataset, so all have an issue date; Status shows where each permit stands now. Equipment is read from the permit description (same terms as the Solar Progress charts). Day filters exclude permits without a final date.</p>
         {ownerWarning && <p role="status" className="text-destructive">Property-owner data is temporarily unavailable. Permit records remain available.</p>}
       </div>
-      <section aria-label="Permit filters" className="border-y border-border py-5 space-y-4">
+      <section aria-label="Permit filters" onFocusCapture={() => setFullRequested(true)} className="border-y border-border py-5 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="permit-search">Address, permit number, ZIP or description</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="permit-search" className="pl-9" value={filters.search} onChange={e => update('search', e.target.value)} placeholder="Search permits" /></div></div>
           {textFilter('host', 'Host / owner', 'text', 'Owner name')}{textFilter('contractor', 'Contractor', 'text', 'Contractor name')}
@@ -131,7 +134,7 @@ export default function SolarPermits() {
         </div>
       </section>
       {loading && !showQuick ? <div className="flex items-center gap-3 py-16 justify-center" role="status"><Loader2 className="h-5 w-5 animate-spin" />Loading permit records…</div> : error ? <div role="alert" className="py-10 space-y-4"><p className="text-destructive">{error}</p><Button onClick={() => setAttempt(a => a + 1)}>Try again</Button></div> : <>
-        <div className="flex flex-wrap gap-3 justify-between items-center"><p className="text-sm text-muted-foreground">{showQuick ? <>{totalCount.toLocaleString()} permit records · <Loader2 className="inline h-3 w-3 animate-spin" /> loading all records for filtering and sorting…</> : <>{results.length.toLocaleString()} matching permit records · {rows.length.toLocaleString()} available</>}</p><span className="text-sm text-muted-foreground">Page {page + 1} of {pageCount}</span></div>
+        <div className="flex flex-wrap gap-3 justify-between items-center"><p className="text-sm text-muted-foreground">{pageRows.length} permits on this page · {totalCount.toLocaleString()} {showQuick ? 'total' : 'matching'}{showQuick && fullRequested && <> · <Loader2 className="inline h-3 w-3 animate-spin" /> Loading search results…</>}</p><span className="text-sm text-muted-foreground">Page {page + 1} of {pageCount}</span></div>
         <div className="border border-border rounded-md overflow-hidden">
           <Table><TableHeader><TableRow>{columns.map(([field, title]) => <TableHead key={field} aria-sort={sort === field ? ascending ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" onClick={() => changeSort(field)} className="px-1 whitespace-nowrap text-xs">{title}{sort === field ? ascending ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" /> : <ArrowUpDown className="ml-1 h-3 w-3" />}</Button></TableHead>)}</TableRow></TableHeader>
             <TableBody>{pageRows.map(row => <TableRow key={row.id}>
