@@ -81,6 +81,7 @@ const CityOverview = () => {
       .finally(() => { if (!cancelled) setSolarTimingLoading(false); });
     return () => { cancelled = true; };
   }, [solarTimingClass]);
+  const solarTiming = classTiming ?? { month: timelineData, year: annualTimelineData };
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'residential' | 'commercial'>('all');
   const [zipFilter, setZipFilter] = useState<string>('all');
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
@@ -260,7 +261,6 @@ const CityOverview = () => {
           supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'month' } }),
           supabase.functions.invoke('fiscal-year-stats', { body: { permitTiming: true, period: 'year' } }),
         ]);
-        timingCache.current.all = { month: monthly.data?.solar, year: annual.data?.solar };
         if (monthly.error) throw monthly.error;
         if (annual.error) throw annual.error;
         const data = monthly.data;

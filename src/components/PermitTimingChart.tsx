@@ -44,9 +44,11 @@ interface Props {
   annualData: TimingYear[];
   loading: boolean;
   error: boolean;
+  permitClass?: 'all' | 'residential' | 'commercial';
+  onPermitClassChange?: (value: 'all' | 'residential' | 'commercial') => void;
 }
 
-export default function PermitTimingChart({ kind, data, annualData, loading, error }: Props) {
+export default function PermitTimingChart({ kind, data, annualData, loading, error, permitClass, onPermitClassChange }: Props) {
   const [metric, setMetric] = useState<'averageDays' | 'medianDays'>('averageDays');
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const measure = metric === 'averageDays' ? 'Average' : 'Median';
@@ -64,13 +66,22 @@ export default function PermitTimingChart({ kind, data, annualData, loading, err
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-2xl">{measure} {kind} Permit to Completion Time</CardTitle>
+            <CardTitle className="text-2xl">{measure} {kind} Applied to Completion Time</CardTitle>
             <CardDescription>
               {measure} days from application to completion, by application calendar {period === 'month' ? 'month' : 'year'} (2014–present).
-              {' '}{kind === 'Solar' ? 'Solar permits, including solar with batteries; battery-only permits excluded.' : 'Battery/storage permits with no solar or PV mentioned in their descriptions.'}
+              {' '}{permitClass === 'residential' ? 'Residential only. ' : permitClass === 'commercial' ? 'Commercial only. ' : ''}{kind === 'Solar' ? 'Solar permits, including solar with batteries; battery-only permits excluded.' : 'Battery/storage permits with no solar or PV mentioned in their descriptions.'}
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
+          {permitClass && onPermitClassChange && (
+            <Tabs aria-label={`${kind} property type`} value={permitClass} onValueChange={(v) => { if (v === 'all' || v === 'residential' || v === 'commercial') onPermitClassChange(v); }}>
+              <TabsList>
+                <TabsTrigger value="all">Both</TabsTrigger>
+                <TabsTrigger value="residential">Residential</TabsTrigger>
+                <TabsTrigger value="commercial">Commercial</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
           <Tabs aria-label={`${kind} chart period`} value={period} onValueChange={(v) => { if (v === 'month' || v === 'year') setPeriod(v); }}>
             <TabsList>
               <TabsTrigger value="month">Monthly lines</TabsTrigger>
