@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { daysAppliedToFinal, filterPermits, sortPermits, emptyPermitFilters, type SolarPermit } from './solar-permits';
+import { daysAppliedToFinal, filterPermits, sortPermits, emptyPermitFilters, PERMITS_PAGE_SIZE, permitPageRange, type SolarPermit } from './solar-permits';
+
+test('permit pages load 25 records with consecutive non-overlapping ranges', () => {
+  assert.equal(PERMITS_PAGE_SIZE, 25);
+  assert.deepEqual(permitPageRange(0), [0, 24]);
+  assert.deepEqual(permitPageRange(1), [25, 49]);
+  assert.deepEqual(permitPageRange(2), [50, 74]);
+});
 
 const make = (id: string, patch: Partial<SolarPermit>): SolarPermit => ({ id, project_id: null, permit_number: null, address: null, installed_kw: null, contractor_company: null, permit_class: null, status_current: null, applied_date: null, issued_date: null, completed_date: null, original_zip: null, council_district: null, description: null, total_job_valuation: null, link: null, has_correction: false, host: null, host_pid: null, ...patch });
 const rows = [make('a', { address: '100 Main St', installed_kw: 5, host: 'Example Church', contractor_company: 'Solar One', completed_date: '2026-11-01' }), make('b', { address: '200 Oak St', installed_kw: 200, host: 'Example Company', contractor_company: 'Solar Two', permit_class: 'Commercial', status_current: 'Final', issued_date: '2026-10-01' }), make('c', {})];

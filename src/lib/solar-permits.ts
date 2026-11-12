@@ -1,3 +1,10 @@
+export const PERMITS_PAGE_SIZE = 25;
+
+export function permitPageRange(page: number): [number, number] {
+  const start = Math.max(0, Math.floor(page)) * PERMITS_PAGE_SIZE;
+  return [start, start + PERMITS_PAGE_SIZE - 1];
+}
+
 export interface SolarPermit {
   id: string;
   project_id: string | null;
