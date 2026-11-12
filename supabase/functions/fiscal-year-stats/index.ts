@@ -71,13 +71,15 @@ Deno.serve(async (req) => {
 
     if (requestBody.permitTiming === true) {
       const records: TimingPermit[] = [];
+      const permitClass = requestBody.permitClass === 'residential' || requestBody.permitClass === 'commercial' ? requestBody.permitClass : null;
       for (let offset = 0; ; offset += 1000) {
-        const { data, error } = await client.from('solar_installations_view')
+        let q = client.from('solar_installations_view')
           .select('id, project_id, description, applied_date, completed_date')
           .or('is_duplicate.is.null,is_duplicate.eq.false')
           .not('applied_date', 'is', null).not('completed_date', 'is', null)
-          .gte('applied_date', '2014-01-01')
-          .order('id').range(offset, offset + 999);
+          .gte('applied_date', '2014-01-01');
+        if (permitClass) q = q.ilike('permit_class', permitClass);
+        const { data, error } = await q.order('id').range(offset, offset + 999);
         if (error) throw error;
         records.push(...(data ?? []));
         if (!data || data.length < 1000) break;
