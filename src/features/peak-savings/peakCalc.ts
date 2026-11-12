@@ -134,7 +134,7 @@ export function utilityScenarioInputs(owner: Inputs, annualValue: number): Input
     ...owner,
     thirdPartySharePct: undefined,
     annualOverride: annualValue,
-    extraIncome: -Math.abs(owner.extraIncome ?? 0),
+    extraIncome: owner.extraIncome ? -Math.abs(owner.extraIncome) : 0,
   };
 }
 
