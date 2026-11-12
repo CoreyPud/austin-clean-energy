@@ -22,3 +22,13 @@ test('host sorting covers the complete result set without changing source order'
   assert.equal(daysAppliedToFinal({ applied_date: '2026-01-01', completed_date: null }), null);
   assert.equal(daysAppliedToFinal({ applied_date: '2026-02-01', completed_date: '2026-01-01' }), null);
 });
+
+import { daysIssuedToFinal, permitEquipment } from './solar-permits';
+const quick = { id: '1', issued_date: '2026-01-01', completed_date: '2026-02-05', description: 'Install PV with Powerwall' } as unknown as SolarPermit;
+test('issued to final counts whole days', () => assert.equal(daysIssuedToFinal(quick), 35));
+test('equipment classification', () => { assert.equal(permitEquipment('rooftop solar'), 'solar'); assert.equal(permitEquipment('PV + battery'), 'solarBattery'); assert.equal(permitEquipment('install BESS'), 'batteryOnly'); });
+test('max days filter keeps under-40 permits and excludes unfinished', () => {
+  const open = { ...quick, id: '2', completed_date: null } as SolarPermit;
+  const slow = { ...quick, id: '3', completed_date: '2026-03-01' } as SolarPermit;
+  assert.deepEqual(filterPermits([quick, open, slow], { ...emptyPermitFilters, maxDays: '40' }).map(r => r.id), ['1']);
+});
