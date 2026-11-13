@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { ArrowLeft, ExternalLink, Lightbulb, LogIn, LogOut, MessageSquare, Pencil, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ExternalLink, Lightbulb, LogIn, LogOut, MessageSquare, Pencil, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,7 @@ export default function CleanCanvas() {
   const [sort, setSort] = useState<IdeaSort>("supported");
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingIdea, setEditingIdea] = useState<CleanCanvasIdea | null>(null);
+  const [expandedIdeas, setExpandedIdeas] = useState<Set<string>>(new Set());
   const [openDiscussions, setOpenDiscussions] = useState<Set<string>>(new Set());
   const [pendingVote, setPendingVote] = useState<string | null>(null);
   const userId = user?.id ?? null;
@@ -209,6 +210,7 @@ export default function CleanCanvas() {
           {!loading && !loadError && <HotTopics supported={hotSupported} opposed={hotOpposed} onSelect={(idea) => {
             setIdeas((current) => current.some((item) => item.id === idea.id) ? current : [idea, ...current]);
             setQuery(""); setTopic("");
+            setExpandedIdeas((current) => new Set([...current, idea.id]));
             setOpenDiscussions((current) => new Set([...current, idea.id]));
             void refreshDiscussion(idea.id).catch(() => toast.error("Discussion couldn't be loaded."));
             requestAnimationFrame(() => document.getElementById(`idea-${idea.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -237,12 +239,23 @@ export default function CleanCanvas() {
               {!ideas.length && <Button className="mt-5" onClick={openComposer}>Share the first idea</Button>}
             </div>
           ) : (
-            <div className="mt-6 space-y-5">
+            <div className="mt-6 space-y-3">
               {visibleIdeas.map((idea) => {
                 const currentVote = votes[idea.id] ?? null;
                 const discussionOpen = openDiscussions.has(idea.id);
+                const expanded = expandedIdeas.has(idea.id);
                 return (
-                  <article id={`idea-${idea.id}`} key={idea.id} className="scroll-mt-6 rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                  <article id={`idea-${idea.id}`} key={idea.id} className="scroll-mt-6 rounded-lg border bg-card p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h2 className="break-words text-xl font-semibold">{idea.title}</h2>
+                        <p className="mt-1 text-xs text-muted-foreground">Shared by {idea.author_name} · {idea.edit_count > 0 ? "Updated " : ""}{new Date(ideaDisplayDate(idea)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {idea.edit_count} {idea.edit_count === 1 ? "edit" : "edits"}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="shrink-0" aria-label={`${expanded ? "Hide" : "Show"} details for ${idea.title}`} title={expanded ? "Hide details" : "Show details"} aria-expanded={expanded} aria-controls={`idea-details-${idea.id}`} onClick={() => setExpandedIdeas((current) => { const next = new Set(current); if (next.has(idea.id)) next.delete(idea.id); else next.add(idea.id); return next; })}>
+                        <ChevronDown className={`h-5 w-5 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} />
+                      </Button>
+                    </div>
+                    <div id={`idea-details-${idea.id}`} hidden={!expanded} className="mt-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 flex-wrap gap-2">{idea.topics.map((item) => <Badge key={item} variant="outline" className="whitespace-normal border-primary/25 bg-primary/5 text-primary">{item}</Badge>)}</div>
                       {idea.author_id === userId && <div className="flex shrink-0 items-center gap-1">
@@ -250,8 +263,6 @@ export default function CleanCanvas() {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label={`Delete ${idea.title}`} onClick={() => void deleteIdea(idea)}><Trash2 className="h-4 w-4" /></Button>
                       </div>}
                     </div>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight">{idea.title}</h2>
-                    <p className="mt-2 text-xs text-muted-foreground">Shared by {idea.author_name} · {idea.edit_count > 0 ? "Updated " : ""}{new Date(ideaDisplayDate(idea)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {idea.edit_count} {idea.edit_count === 1 ? "edit" : "edits"}</p>
                     <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-foreground/90">{idea.description}</p>
                     {idea.examples_elsewhere && <div className="mt-4">
                       <h3 className="text-sm font-semibold">Where else in the country or world is this done?</h3>
@@ -265,12 +276,13 @@ export default function CleanCanvas() {
                         </ul>
                       </div>
                     )}
-                    <div className="mt-5 flex flex-wrap items-center gap-2 border-t pt-4">
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
                       <Button size="sm" variant={currentVote === "support" ? "default" : "outline"} aria-pressed={currentVote === "support"} disabled={pendingVote === idea.id} onClick={() => void castVote(idea, "support")}><ThumbsUp className="mr-2 h-4 w-4" />Support <span className="ml-1 font-semibold">{idea.support_count}</span></Button>
                       <Button size="sm" variant={currentVote === "oppose" ? "secondary" : "outline"} aria-pressed={currentVote === "oppose"} disabled={pendingVote === idea.id} onClick={() => void castVote(idea, "oppose")}><ThumbsDown className="mr-2 h-4 w-4" />Oppose <span className="ml-1 font-semibold">{idea.oppose_count}</span></Button>
-                      <Button size="sm" variant="ghost" aria-expanded={discussionOpen} onClick={() => setOpenDiscussions((current) => { const next = new Set(current); if (next.has(idea.id)) next.delete(idea.id); else next.add(idea.id); return next; })}><MessageSquare className="mr-2 h-4 w-4" />{idea.comment_count} {idea.comment_count === 1 ? "comment" : "comments"}</Button>
+                      <Button size="sm" variant="ghost" aria-expanded={discussionOpen} onClick={() => { setExpandedIdeas((current) => new Set([...current, idea.id])); setOpenDiscussions((current) => { const next = new Set(current); if (next.has(idea.id)) next.delete(idea.id); else next.add(idea.id); return next; }); }}><MessageSquare className="mr-2 h-4 w-4" />{idea.comment_count} {idea.comment_count === 1 ? "comment" : "comments"}</Button>
                     </div>
-                    {discussionOpen && (
+                    {expanded && discussionOpen && (
                       <div className="mt-5 border-t pt-5">
                         <h3 className="mb-4 text-sm font-semibold">Discussion</h3>
                         <Discussion ideaId={idea.id} comments={comments.filter((comment) => comment.idea_id === idea.id)} currentUserId={userId} displayName={displayName} onRequireAuth={() => void signIn()} onChanged={() => refreshDiscussion(idea.id)} />
