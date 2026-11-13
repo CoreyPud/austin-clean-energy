@@ -135,7 +135,7 @@ const AppRoutes = () => {
           <Route path="/council-members/:slug" element={<CouncilMemberDetail />} />
           <Route path="/council-decisions" element={<CouncilDecisions />} />
           <Route path="/council-vote" element={<CouncilVote />} />
-          <Route path="/clean-canvas" element={<CleanCanvas />} />
+          <Route path="/clean-energy-ideas-actions" element={<CleanCanvas />} />
           <Route path="/council-climate-record" element={<Navigate to="/council" replace />} />
           <Route path="/council-lobbying" element={<Navigate to="/council" replace />} />
 

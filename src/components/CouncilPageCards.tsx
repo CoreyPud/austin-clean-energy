@@ -38,7 +38,7 @@ export const PAGES: Record<PageKey, { to: string; title: string; description: st
     icon: VoteIcon,
   },
   canvas: {
-    to: "/clean-canvas",
+    to: "/clean-energy-ideas-actions",
     title: "Clean Canvas",
     description: "Share your own clean energy ideas, add supporting resources, vote, and join the discussion.",
     cta: "Explore community ideas",
