@@ -1,0 +1,2 @@
+REVOKE UPDATE ON public.clean_canvas_ideas FROM authenticated;
+GRANT UPDATE (author_name, title, description, topic, topics, examples_elsewhere, resources) ON public.clean_canvas_ideas TO authenticated;
