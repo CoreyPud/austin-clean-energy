@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { filterAndSortIdeas, hotIdeas, ideaSchema, nextVote, type CleanCanvasIdea } from "./model.ts";
+import { IDEA_LEVELS, describeIdea, detailsFromDescription, ideaDetailsSchema, filterAndSortIdeas, hotIdeas, ideaSchema, nextVote, type CleanCanvasIdea } from "./model.ts";
 
 const validIdea = {
   title: "Shade bus stops with solar canopies",
@@ -34,6 +34,28 @@ function idea(patch: Partial<CleanCanvasIdea>): CleanCanvasIdea {
 test("idea submissions accept supporting HTTPS resources", () => {
   const result = ideaSchema.safeParse(validIdea);
   assert.equal(result.success, true);
+});
+
+test("four idea answers survive storage and reading back independently", () => {
+  const details = ideaDetailsSchema.parse({ problem: "Unshaded stops", solution: "Solar canopies", beneficiaries: "Bus riders", tradeoffs: "Installation costs", level: "local" });
+  const description = ideaSchema.parse({ ...validIdea, description: describeIdea(details) }).description;
+  assert.deepEqual(detailsFromDescription(description), details);
+  for (const field of ["problem", "solution", "beneficiaries", "tradeoffs"]) {
+    assert.equal(ideaDetailsSchema.safeParse({ ...details, [field]: " " }).success, false);
+  }
+});
+
+test("idea levels map Austin to Local, Texas to State and United States to Federal", () => {
+  assert.deepEqual(IDEA_LEVELS, [{ value: "local", label: "Local — Austin" }, { value: "state", label: "State — Texas" }, { value: "federal", label: "Federal — United States" }]);
+  for (const level of ["local", "state", "federal"]) {
+    const parsed = ideaDetailsSchema.parse({ problem: "Problem", solution: "Solution", beneficiaries: "Residents", tradeoffs: "None known", level });
+    assert.equal(detailsFromDescription(describeIdea(parsed)).level, level);
+  }
+  assert.equal(ideaDetailsSchema.safeParse({ problem: "Problem", solution: "Solution", beneficiaries: "Residents", tradeoffs: "None", level: "global" }).success, false);
+});
+
+test("existing free-text ideas remain unchanged and are not assigned a scope", () => {
+  assert.deepEqual(detailsFromDescription(validIdea.description), { problem: validIdea.description });
 });
 
 test("supporting resources reject non-web links and more than five links", () => {

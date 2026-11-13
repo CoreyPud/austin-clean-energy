@@ -15,6 +15,34 @@ export type CleanCanvasTopic = (typeof CLEAN_CANVAS_TOPICS)[number];
 export type VoteChoice = "support" | "oppose";
 export type IdeaSort = "supported" | "newest" | "discussed";
 
+export const IDEA_LEVELS = [
+  { value: "local", label: "Local — Austin" },
+  { value: "state", label: "State — Texas" },
+  { value: "federal", label: "Federal — United States" },
+] as const;
+
+export const ideaDetailsSchema = z.object({
+  problem: z.string().trim().min(1, "Describe the problem"),
+  solution: z.string().trim().min(1, "Describe the solution"),
+  beneficiaries: z.string().trim().min(1, "Tell us who it would help"),
+  tradeoffs: z.string().trim().min(1, "Describe any tradeoffs, or say none known"),
+  level: z.enum(["local", "state", "federal"], { errorMap: () => ({ message: "Select Local, State, or Federal" }) }),
+});
+
+export type IdeaDetails = z.infer<typeof ideaDetailsSchema>;
+
+/** Human-readable storage preserves the existing description contract and older ideas. */
+export function describeIdea(details: IdeaDetails): string {
+  const level = IDEA_LEVELS.find((item) => item.value === details.level);
+  return `Idea level: ${level?.label}\n\nWhat is the problem?\n${details.problem}\n\nWhat is the solution?\n${details.solution}\n\nWho would it help?\n${details.beneficiaries}\n\nAre there any tradeoffs?\n${details.tradeoffs}`;
+}
+
+export function detailsFromDescription(description: string): Partial<IdeaDetails> {
+  const match = /^Idea level: (Local — Austin|State — Texas|Federal — United States)\n\nWhat is the problem\?\n([\s\S]*?)\n\nWhat is the solution\?\n([\s\S]*?)\n\nWho would it help\?\n([\s\S]*?)\n\nAre there any tradeoffs\?\n([\s\S]*)$/.exec(description);
+  if (!match) return { problem: description };
+  return { level: IDEA_LEVELS.find((item) => item.label === match[1])?.value, problem: match[2], solution: match[3], beneficiaries: match[4], tradeoffs: match[5] };
+}
+
 const webAddress = z.string().trim().max(1000, "Link must be less than 1,000 characters").refine((value) => {
   try {
     const url = new URL(value);

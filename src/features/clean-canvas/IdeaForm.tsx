@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { CLEAN_CANVAS_TOPICS, ideaFromRow, ideaSchema, importedIdeaSchema, resourceSchema, type CleanCanvasIdea, type CleanCanvasResource, type CleanCanvasTopic } from "./model";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CLEAN_CANVAS_TOPICS, IDEA_LEVELS, describeIdea, detailsFromDescription, ideaDetailsSchema, ideaFromRow, ideaSchema, importedIdeaSchema, resourceSchema, type IdeaDetails, type CleanCanvasIdea, type CleanCanvasResource, type CleanCanvasTopic } from "./model";
 
 interface Props {
   userId: string;
@@ -20,7 +21,11 @@ interface Props {
 
 export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted }: Props) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [problem, setProblem] = useState("");
+  const [solution, setSolution] = useState("");
+  const [beneficiaries, setBeneficiaries] = useState("");
+  const [tradeoffs, setTradeoffs] = useState("");
+  const [level, setLevel] = useState<IdeaDetails["level"] | "">("");
   const [topics, setTopics] = useState<CleanCanvasTopic[]>(["Energy supply"]);
   const [examplesElsewhere, setExamplesElsewhere] = useState("");
   const [resources, setResources] = useState<CleanCanvasResource[]>([]);
@@ -35,7 +40,7 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
     setImportError(null);
     const source = resourceSchema.safeParse({ label: "Source", url: sourceUrl });
     if (!source.success) { setImportError("Enter a complete HTTP or HTTPS webpage or public shared chat URL."); return; }
-    if ((title.trim() || description.trim() || examplesElsewhere.trim()) && !window.confirm("Replace the title, explanation, topics and examples with a draft from this link?")) return;
+    if ((title.trim() || problem.trim() || solution.trim() || beneficiaries.trim() || tradeoffs.trim() || level || examplesElsewhere.trim()) && !window.confirm("Replace the title, idea details, level, topics and examples with a draft from this link?")) return;
     setImporting(true);
     try {
       const { data, error: readError } = await supabase.functions.invoke("clean-canvas-import", { body: { url: source.data.url } });
@@ -48,7 +53,10 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
       }
       const draft = importedIdeaSchema.parse(data?.draft);
       const resource = resourceSchema.parse(data?.resource);
-      setTitle(draft.title); setDescription(draft.description); setTopics(draft.topics); setExamplesElsewhere(draft.examples_elsewhere);
+      const details = detailsFromDescription(draft.description);
+      setTitle(draft.title); setProblem(details.problem ?? ""); setSolution(details.solution ?? "");
+      setBeneficiaries(details.beneficiaries ?? ""); setTradeoffs(details.tradeoffs ?? ""); setLevel(details.level ?? "");
+      setTopics(draft.topics); setExamplesElsewhere(draft.examples_elsewhere);
       setResources((current) => current.some((r) => r.url === resource.url) ? current : [...current.slice(0, 4), resource]);
       setImported(true);
     } catch (failure) { setImportError(failure instanceof Error ? failure.message : "The webpage couldn't be read."); }
@@ -62,9 +70,14 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    const details = ideaDetailsSchema.safeParse({ problem, solution, beneficiaries, tradeoffs, level });
+    if (!details.success) {
+      setError(details.error.issues[0]?.message ?? "Check the idea details");
+      return;
+    }
     const draft = {
       title,
-      description,
+      description: describeIdea(details.data),
       topics,
       examples_elsewhere: examplesElsewhere,
       author_name: displayName,
@@ -136,9 +149,22 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
         <Input id="idea-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} placeholder="What should Austin try?" required />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="idea-description">Explain the idea</Label>
-        <Textarea id="idea-description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={4000} rows={6} placeholder="What problem would it solve, who would it help, and what might the tradeoffs be?" required />
-        <p className="text-right text-xs text-muted-foreground">{description.length}/4,000</p>
+        <Label htmlFor="idea-level">Idea level</Label>
+        <Select value={level} onValueChange={(value) => { const selected = IDEA_LEVELS.find((item) => item.value === value); if (selected) setLevel(selected.value); }}>
+          <SelectTrigger id="idea-level"><SelectValue placeholder="Select a level" /></SelectTrigger>
+          <SelectContent>{IDEA_LEVELS.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {[
+          { id: "problem", label: "What is the problem?", value: problem, set: setProblem },
+          { id: "solution", label: "What is the solution?", value: solution, set: setSolution },
+          { id: "beneficiaries", label: "Who would it help?", value: beneficiaries, set: setBeneficiaries },
+          { id: "tradeoffs", label: "Are there any tradeoffs?", value: tradeoffs, set: setTradeoffs },
+        ].map((field) => <div key={field.id} className="space-y-2">
+          <Label htmlFor={`idea-${field.id}`}>{field.label}</Label>
+          <Textarea id={`idea-${field.id}`} value={field.value} onChange={(e) => field.set(e.target.value)} maxLength={4000} rows={3} required />
+        </div>)}
       </div>
       <div className="space-y-3">
         <div className="space-y-2">
