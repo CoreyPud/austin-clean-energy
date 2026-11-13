@@ -1,4 +1,5 @@
 # Current
+- [ ] Replace Clean Canvas explanation with problem, solution, beneficiaries and tradeoffs inputs; add Local/Austin, State/Texas and Federal/United States scope and verify publishing.
 - [x] Fix Design 2 host payments being counted as utility income; owner remains unchanged, utility subtracts the transfer across all years. Owner-to-utility switch verified ($57,610 year-1 net, negative $6,890 payment); 5 tests pass, build OK.
 - [x] Show permit Deep Dive records in 25-row pages with a fast initial load; real Next/Previous and global address filtering verified, 9 tests pass and build OK.
 - [x] Rename assessment to /solar-savings-austin with legacy-link preservation and consistent SEO; align savings summaries, charts, worksheets and pro forma to the shared 25-year horizon. Verified three legacy URLs with address/anchor preservation, canonical, real address assessment and year-25 detail; 50 tests pass, no browser errors, build OK.
