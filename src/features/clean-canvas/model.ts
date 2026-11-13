@@ -89,6 +89,8 @@ export interface CleanCanvasIdea {
   visible: boolean;
   created_at: string;
   updated_at: string;
+  edit_count: number;
+  edited_at: string | null;
 }
 
 export interface CleanCanvasComment {
@@ -103,9 +105,14 @@ export interface CleanCanvasComment {
   updated_at: string;
 }
 
-export function ideaFromRow(row: Omit<CleanCanvasIdea, "resources" | "topics"> & { resources: unknown; topics: string[] | null }): CleanCanvasIdea {
+export function ideaFromRow(row: Omit<CleanCanvasIdea, "resources" | "topics" | "edit_count" | "edited_at"> & { resources: unknown; topics: string[] | null; edit_count?: number; edited_at?: string | null }): CleanCanvasIdea {
   const parsed = z.array(resourceSchema).safeParse(row.resources);
-  return { ...row, topics: row.topics?.length ? row.topics : [row.topic], resources: parsed.success ? parsed.data : [] };
+  return { ...row, edit_count: row.edit_count ?? 0, edited_at: row.edited_at ?? null, topics: row.topics?.length ? row.topics : [row.topic], resources: parsed.success ? parsed.data : [] };
+}
+
+/** Activity timestamps also change on votes/comments; only authored edits change this date. */
+export function ideaDisplayDate(idea: CleanCanvasIdea): string {
+  return idea.edited_at ?? idea.created_at;
 }
 
 export function filterAndSortIdeas(

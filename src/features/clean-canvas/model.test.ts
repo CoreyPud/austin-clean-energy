@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { IDEA_LEVELS, describeIdea, detailsFromDescription, ideaDetailsSchema, filterAndSortIdeas, hotIdeas, ideaSchema, nextVote, type CleanCanvasIdea } from "./model.ts";
+import { IDEA_LEVELS, describeIdea, detailsFromDescription, ideaDetailsSchema, filterAndSortIdeas, hotIdeas, ideaSchema, ideaDisplayDate, nextVote, type CleanCanvasIdea } from "./model.ts";
 
 const validIdea = {
   title: "Shade bus stops with solar canopies",
@@ -27,6 +27,8 @@ function idea(patch: Partial<CleanCanvasIdea>): CleanCanvasIdea {
     visible: true,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    edit_count: 0,
+    edited_at: null,
     ...patch,
   };
 }
@@ -34,6 +36,12 @@ function idea(patch: Partial<CleanCanvasIdea>): CleanCanvasIdea {
 test("idea submissions accept supporting HTTPS resources", () => {
   const result = ideaSchema.safeParse(validIdea);
   assert.equal(result.success, true);
+});
+
+test("idea date uses the latest authored edit, not vote or comment activity", () => {
+  const original = idea({ updated_at: "2026-11-13T12:55:00Z" });
+  assert.equal(ideaDisplayDate(original), "2026-01-01T00:00:00Z");
+  assert.equal(ideaDisplayDate(idea({ edit_count: 2, edited_at: "2026-11-13T12:50:00Z", updated_at: "2026-11-13T12:55:00Z" })), "2026-11-13T12:50:00Z");
 });
 
 test("four idea answers survive storage and reading back independently", () => {

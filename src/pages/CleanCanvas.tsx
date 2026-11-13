@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { ArrowLeft, ExternalLink, Lightbulb, LogIn, LogOut, MessageSquare, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Lightbulb, LogIn, LogOut, MessageSquare, Pencil, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Discussion } from "@/features/clean-canvas/Discussion";
 import { IdeaForm } from "@/features/clean-canvas/IdeaForm";
 import { HotTopics } from "@/features/clean-canvas/HotTopics";
-import { CLEAN_CANVAS_TOPICS, filterAndSortIdeas, ideaFromRow, nextVote, type CleanCanvasComment, type CleanCanvasIdea, type IdeaSort, type VoteChoice } from "@/features/clean-canvas/model";
+import { CLEAN_CANVAS_TOPICS, filterAndSortIdeas, ideaFromRow, ideaDisplayDate, nextVote, type CleanCanvasComment, type CleanCanvasIdea, type IdeaSort, type VoteChoice } from "@/features/clean-canvas/model";
 
 function defaultDisplayName(user: User): string {
   const metadataName = user.user_metadata?.full_name || user.user_metadata?.name;
@@ -41,6 +41,7 @@ export default function CleanCanvas() {
   const [topic, setTopic] = useState("");
   const [sort, setSort] = useState<IdeaSort>("supported");
   const [composerOpen, setComposerOpen] = useState(false);
+  const [editingIdea, setEditingIdea] = useState<CleanCanvasIdea | null>(null);
   const [openDiscussions, setOpenDiscussions] = useState<Set<string>>(new Set());
   const [pendingVote, setPendingVote] = useState<string | null>(null);
   const userId = user?.id ?? null;
@@ -56,6 +57,7 @@ export default function CleanCanvas() {
     else {
       setVotes({});
       setComposerOpen(false);
+      setEditingIdea(null);
     }
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -107,6 +109,7 @@ export default function CleanCanvas() {
 
   const openComposer = () => {
     if (!userId) return void signIn();
+    setEditingIdea(null);
     setComposerOpen(true);
   };
 
@@ -242,10 +245,13 @@ export default function CleanCanvas() {
                   <article id={`idea-${idea.id}`} key={idea.id} className="scroll-mt-6 rounded-xl border bg-card p-5 shadow-sm sm:p-6">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 flex-wrap gap-2">{idea.topics.map((item) => <Badge key={item} variant="outline" className="whitespace-normal border-primary/25 bg-primary/5 text-primary">{item}</Badge>)}</div>
-                      {idea.author_id === userId && <Button variant="ghost" size="icon" className="-mr-2 -mt-2 h-8 w-8 text-muted-foreground" aria-label={`Delete ${idea.title}`} onClick={() => void deleteIdea(idea)}><Trash2 className="h-4 w-4" /></Button>}
+                      {idea.author_id === userId && <div className="flex shrink-0 items-center gap-1">
+                        <Button variant="ghost" size="sm" aria-label={`Edit ${idea.title}`} onClick={() => { setEditingIdea(idea); setDisplayName(idea.author_name); setComposerOpen(true); }}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label={`Delete ${idea.title}`} onClick={() => void deleteIdea(idea)}><Trash2 className="h-4 w-4" /></Button>
+                      </div>}
                     </div>
                     <h2 className="mt-3 text-2xl font-semibold tracking-tight">{idea.title}</h2>
-                    <p className="mt-2 text-xs text-muted-foreground">Shared by {idea.author_name} · {new Date(idea.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Shared by {idea.author_name} · {idea.edit_count > 0 ? "Updated " : ""}{new Date(ideaDisplayDate(idea)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {idea.edit_count} {idea.edit_count === 1 ? "edit" : "edits"}</p>
                     <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-foreground/90">{idea.description}</p>
                     {idea.examples_elsewhere && <div className="mt-4">
                       <h3 className="text-sm font-semibold">Where else in the country or world is this done?</h3>
@@ -281,10 +287,10 @@ export default function CleanCanvas() {
       <Dialog open={composerOpen} onOpenChange={setComposerOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Share an idea</DialogTitle>
+            <DialogTitle className="text-2xl">{editingIdea ? "Edit idea" : "Share an idea"}</DialogTitle>
             <DialogDescription>Give the community enough detail to understand, evaluate, and discuss your proposal.</DialogDescription>
           </DialogHeader>
-          {userId && <IdeaForm userId={userId} displayName={displayName} onDisplayNameChange={setDisplayName} onSubmitted={(idea) => { setIdeas((current) => [idea, ...current]); setComposerOpen(false); }} />}
+          {userId && <IdeaForm key={editingIdea?.id ?? "new"} idea={editingIdea ?? undefined} userId={userId} displayName={displayName} onDisplayNameChange={setDisplayName} onSubmitted={(idea) => { setIdeas((current) => editingIdea ? current.map((item) => item.id === idea.id ? idea : item) : [idea, ...current]); setComposerOpen(false); setEditingIdea(null); void loadPage(); }} />}
         </DialogContent>
       </Dialog>
     </main>
