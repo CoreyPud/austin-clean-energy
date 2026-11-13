@@ -104,7 +104,7 @@ export default function CleanCanvas() {
   useEffect(() => { void loadPage(); }, [loadPage]);
 
   const signIn = useCallback(async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/clean-canvas` });
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/clean-energy-ideas-actions` });
     if (result.error) toast.error("Unable to sign in with Google right now");
   }, []);
 
