@@ -149,7 +149,7 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
         </Select>
       </div>
       <div className="space-y-2 border-b pb-5">
-        <Label htmlFor="idea-source">Automatically create an idea by pasting a link to a webpage or Chat.</Label>
+        <Label htmlFor="idea-source">Automatically create an idea by pasting a link to a webpage.</Label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input id="idea-source" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} maxLength={1000} placeholder="https://…" disabled={importing} />
           <Button type="button" variant="outline" disabled={importing || saving || !sourceUrl.trim()} onClick={() => void importUrl()}><Link2 className="mr-2 h-4 w-4" />{importing ? "Reading link…" : "Fill from link"}</Button>
