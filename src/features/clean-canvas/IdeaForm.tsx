@@ -119,15 +119,6 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
 
   return (
     <form onSubmit={submit} className="space-y-5">
-      <div className="space-y-2 border-b pb-5">
-        <Label htmlFor="idea-source">Webpage or public AI chat URL</Label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input id="idea-source" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} maxLength={1000} placeholder="https://…" disabled={importing} />
-          <Button type="button" variant="outline" disabled={importing || saving || !sourceUrl.trim()} onClick={() => void importUrl()}><Link2 className="mr-2 h-4 w-4" />{importing ? "Reading link…" : "Fill from link"}</Button>
-        </div>
-        {importError && <p role="alert" className="text-sm text-destructive">{importError}</p>}
-        {imported && <p role="status" className="text-xs text-muted-foreground">AI-generated draft from your source. Verify the facts and examples before publishing.</p>}
-      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="idea-name">Your display name</Label>
@@ -156,6 +147,15 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
           <SelectTrigger id="idea-level"><SelectValue placeholder="Select a level" /></SelectTrigger>
           <SelectContent>{IDEA_LEVELS.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
         </Select>
+      </div>
+      <div className="space-y-2 border-b pb-5">
+        <Label htmlFor="idea-source">Webpage or public AI chat URL</Label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input id="idea-source" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} maxLength={1000} placeholder="https://…" disabled={importing} />
+          <Button type="button" variant="outline" disabled={importing || saving || !sourceUrl.trim()} onClick={() => void importUrl()}><Link2 className="mr-2 h-4 w-4" />{importing ? "Reading link…" : "Fill from link"}</Button>
+        </div>
+        {importError && <p role="alert" className="text-sm text-destructive">{importError}</p>}
+        {imported && <p role="status" className="text-xs text-muted-foreground">AI-generated draft from your source. Verify the facts and examples before publishing.</p>}
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {[
