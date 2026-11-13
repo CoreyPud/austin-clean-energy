@@ -24,7 +24,7 @@ export function timingPermitType(description: string | null): 'solar' | 'battery
   return 'unclassified';
 }
 
-/** Corrected, deduplicated projects timed by application calendar year, not completion year. */
+/** Application cohorts: calendar months or Austin fiscal years (Oct–Sep, named by ending year). */
 export function permitTimingStats(records: TimingPermit[], period: 'year' | 'month' = 'year') {
   const unique = new Map<string, TimingPermit>();
   for (const row of [...records].sort((a, b) =>
@@ -41,7 +41,8 @@ export function permitTimingStats(records: TimingPermit[], period: 'year' | 'mon
     if (!Number.isFinite(days) || days <= 0 || year < 2014) continue;
     const type = timingPermitType(row.description);
     if (type === 'unclassified') { unclassifiedCount++; continue; }
-    const key = period === 'month' ? row.applied_date.slice(0, 7) : String(year);
+    const fiscalYear = year + (Number(row.applied_date.slice(5, 7)) >= 10 ? 1 : 0);
+    const key = period === 'month' ? row.applied_date.slice(0, 7) : String(fiscalYear);
     const values = groups[type].get(key) ?? [];
     values.push(days);
     groups[type].set(key, values);

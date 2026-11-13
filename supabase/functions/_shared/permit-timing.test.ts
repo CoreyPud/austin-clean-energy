@@ -36,16 +36,31 @@ test('battery terms identify battery-only without treating generic backup work a
   }
   assert.equal(timingPermitType('backup generator'), 'unclassified');
 });
-test('application year and positive completed durations determine average and median', () => {
+test('application fiscal year and positive completed durations determine average and median', () => {
   const stats = permitTimingStats([
     row('a', 'solar'), row('b', 'solar', '2024-01-21'), row('c', 'solar', '2024-04-10'),
     row('d', 'solar', '2023-12-31'), { ...row('e', 'solar'), completed_date: null },
     { ...row('f', 'solar', '2024-01-10'), applied_date: '2023-12-31' },
   ]);
   assert.deepEqual(stats.solar, [
-    { year: 2023, averageDays: 10, medianDays: 10, count: 1 },
-    { year: 2024, averageDays: 43, medianDays: 20, count: 3 },
+    { year: 2024, averageDays: 35, medianDays: 15, count: 4 },
   ]);
+});
+test('annual solar and battery cohorts cross on October 1, not January 1 or completion date', () => {
+  const records = ['solar', 'battery'].flatMap(description => [
+    { ...row(`${description}-sep`, description, '2024-10-10'), applied_date: '2024-09-30' },
+    { ...row(`${description}-oct`, description, '2024-10-21'), applied_date: '2024-10-01' },
+    { ...row(`${description}-jan`, description, '2025-01-31'), applied_date: '2025-01-01' },
+    { ...row(`${description}-end`, description, '2025-10-10'), applied_date: '2025-09-30' },
+  ]);
+  const stats = permitTimingStats(records, 'year');
+  const expected = [
+    { year: 2024, averageDays: 10, medianDays: 10, count: 1 },
+    { year: 2025, averageDays: 20, medianDays: 20, count: 3 },
+  ];
+  assert.deepEqual(stats.solar, expected);
+  assert.deepEqual(stats.batteryOnly, expected);
+  assert.deepEqual(permitTimingStats(records, 'month').solar.map(r => r.month), ['2024-09', '2024-10', '2025-01', '2025-09']);
 });
 test('duplicate projects count once and unclassified descriptions are disclosed', () => {
   const stats = permitTimingStats([row('a', 'solar'), { ...row('b', 'solar', '2024-01-21'), project_id: 'a' }, row('c', 'electrical work')]);
