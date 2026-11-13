@@ -78,6 +78,13 @@
       "when": 1794322808296,
       "tag": "0010_clean_canvas_topics_and_examples",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794574224162,
+      "tag": "0011_clean_canvas_author_edits",
+      "breakpoints": true
     }
   ]
 }
