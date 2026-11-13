@@ -1,4 +1,5 @@
 # Current
+- [x] Move the Clean Canvas webpage/AI chat URL input below the Idea level dropdown in the idea dialog. Field order, link-fill button enablement and dialog layout verified in the signed-in preview; 13 tests pass.
 - [x] Convert annual solar and battery timing bars to application fiscal years (October–September); monthly lines unchanged, 9 tests pass, authoritative function deployed, both live fiscal charts and monthly switch verified, build OK.
 - [x] Rename Clean Canvas URL to /clean-energy-ideas-actions with legacy /clean-canvas preservation, and add it as a home page module. Home module click, legacy query/anchor-preserving redirect, sitemap and council card links, sign-in redirect target, 5 rename tests, phone-safe layout and build pass.
 - [x] Add author-only Clean Canvas editing, server-maintained edit counts and latest edit dates. Two edits/reload, unchanged saves, voting, discussion activity, public-reader controls and phone fit verified; temporary posts removed, 13 tests and build pass. Authenticated edits are column-limited so vote totals and ownership cannot be changed.
