@@ -23,7 +23,7 @@ function CountBar({ x = 0, y = 0, width = 0, height = 0, fill, payload, maximumC
   const count = payload?.count ?? 0;
   const scaledWidth = permitBarWidth(count, maximumCount, width);
   return <rect x={x + (width - scaledWidth) / 2} y={y} width={scaledWidth} height={height} fill={fill}>
-    <title>{payload?.year}: {count.toLocaleString()} completed permits</title>
+    <title>FY {payload?.year}: {count.toLocaleString()} completed permits</title>
   </rect>;
 }
 
@@ -55,11 +55,12 @@ export default function PermitTimingChart({ kind, data, annualData, loading, err
   const rows = period === 'month' ? data : annualData;
   const color = kind === 'Solar' ? 'hsl(var(--secondary))' : 'hsl(var(--primary))';
   const maximumCount = Math.max(0, ...annualData.map(row => row.count));
+  const periodLabel = (value: unknown) => period === 'month' ? monthLabel(value) : `FY ${value}`;
   const axes = <>
     <CartesianGrid strokeDasharray="3 3" />
-    <XAxis dataKey={period === 'month' ? 'month' : 'year'} tickFormatter={monthLabel} minTickGap={35} />
+    <XAxis dataKey={period === 'month' ? 'month' : 'year'} tickFormatter={periodLabel} minTickGap={35} />
     <YAxis label={{ value: 'Days', angle: -90, position: 'insideLeft' }} domain={[0, 'auto']} />
-    <Tooltip formatter={(value: number) => [`${value} days`, `${measure} time`]} labelFormatter={(label, payload) => `${monthLabel(payload[0]?.payload?.month ?? payload[0]?.payload?.year ?? label)} · ${payload[0]?.payload?.count?.toLocaleString() ?? 0} completed permits`} />
+    <Tooltip formatter={(value: number) => [`${value} days`, `${measure} time`]} labelFormatter={(label, payload) => `${periodLabel(payload[0]?.payload?.month ?? payload[0]?.payload?.year ?? label)} · ${payload[0]?.payload?.count?.toLocaleString() ?? 0} completed permits`} />
   </>;
   return (
     <Card>
@@ -68,7 +69,7 @@ export default function PermitTimingChart({ kind, data, annualData, loading, err
           <div>
             <CardTitle className="text-2xl">{measure} {kind} Applied to Completion Time</CardTitle>
             <CardDescription>
-              {measure} days from application to completion, by application calendar {period === 'month' ? 'month' : 'year'} (2014–present).
+              {measure} days from application to completion, by application {period === 'month' ? 'calendar month' : 'City Fiscal Year (October 1–September 30, named by ending year)'} (applications since January 2014).
               {' '}{permitClass === 'residential' ? 'Residential only. ' : permitClass === 'commercial' ? 'Commercial only. ' : ''}{kind === 'Solar' ? 'Solar permits, including solar with batteries; battery-only permits excluded.' : 'Battery/storage permits with no solar or PV mentioned in their descriptions.'}
             </CardDescription>
           </div>
@@ -85,7 +86,7 @@ export default function PermitTimingChart({ kind, data, annualData, loading, err
           <Tabs aria-label={`${kind} chart period`} value={period} onValueChange={(v) => { if (v === 'month' || v === 'year') setPeriod(v); }}>
             <TabsList>
               <TabsTrigger value="month">Monthly lines</TabsTrigger>
-              <TabsTrigger value="year">Annual bars</TabsTrigger>
+              <TabsTrigger value="year">Fiscal-year bars</TabsTrigger>
             </TabsList>
           </Tabs>
           <Tabs aria-label={`${kind} timing measure`} value={metric} onValueChange={(v) => { if (v === 'averageDays' || v === 'medianDays') setMetric(v); }}>
@@ -125,7 +126,7 @@ export default function PermitTimingChart({ kind, data, annualData, loading, err
         )}
         <p className="mt-4 text-xs text-muted-foreground">
           {period === 'year' && 'Bar width is proportional to qualifying completed permit count within this chart; height and labels show days. '}
-          Source: corrected City of Austin permit records. Projects are deduplicated; only records with application and completion dates and a positive duration are included. {period === 'month' ? 'Months' : 'Years'} without qualifying completed projects are omitted, not counted as zero days. Classification uses permit descriptions, not verified equipment inventories. This measures elapsed time, not solely City review time; unfinished permits are excluded.
+          Source: corrected City of Austin permit records. Projects are deduplicated; only records with application and completion dates and a positive duration are included. {period === 'month' ? 'Months' : 'Fiscal years'} without qualifying completed projects are omitted, not counted as zero days. Classification uses permit descriptions, not verified equipment inventories. This measures elapsed time, not solely City review time; unfinished permits are excluded. {period === 'year' && 'FY 2014 starts with January 2014 in this dataset; the current fiscal-year cohort is partial. Cohorts use application dates, unlike installation charts grouped by completion dates.'}
         </p>
         <Button variant="link" asChild className="mt-2 px-0"><Link to="/solar-permits">Deep Dive <ArrowRight /></Link></Button>
       </CardContent>

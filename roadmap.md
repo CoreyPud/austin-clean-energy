@@ -1,4 +1,5 @@
 # Current
+- [ ] Convert annual solar and battery timing bars to application fiscal years (October–September); retain monthly lines and verify boundary tests and live charts.
 - [x] Rename Clean Canvas URL to /clean-energy-ideas-actions with legacy /clean-canvas preservation, and add it as a home page module. Home module click, legacy query/anchor-preserving redirect, sitemap and council card links, sign-in redirect target, 5 rename tests, phone-safe layout and build pass.
 - [x] Add author-only Clean Canvas editing, server-maintained edit counts and latest edit dates. Two edits/reload, unchanged saves, voting, discussion activity, public-reader controls and phone fit verified; temporary posts removed, 13 tests and build pass. Authenticated edits are column-limited so vote totals and ownership cannot be changed.
 - [x] Replace Clean Canvas explanation with problem, solution, beneficiaries and tradeoffs inputs; add Local/Austin, State/Texas and Federal/United States scope. Signed-in publishing and reload verified, test post removed; 12 tests and build pass, phone form fits. Existing free-text ideas retained.
