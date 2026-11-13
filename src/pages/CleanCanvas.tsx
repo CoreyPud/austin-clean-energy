@@ -185,8 +185,8 @@ export default function CleanCanvas() {
           </div>
           <div className="mt-10 max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/70">A community idea exchange</p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">Clean Canvas</h1>
-            <p className="mt-4 text-lg leading-relaxed text-primary-foreground/85">Sketch a better clean energy future for Austin. Share an idea, back it with useful resources, and learn from the discussion.</p>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">Reliable, Affordable, and Clean Energy Ideas &amp; Actions</h1>
+            <p className="mt-4 text-lg leading-relaxed text-primary-foreground/85">Share an idea, back it with useful resources, and learn from the discussion.</p>
           </div>
         </div>
       </header>
