@@ -250,7 +250,7 @@ const publicPages = [
     icon: CalendarDays,
   },
   {
-    path: "/clean-canvas",
+    path: "/clean-energy-ideas-actions",
     title: "Clean Canvas",
     description: "Community clean energy ideas with supporting resources, voting, and discussion.",
     icon: Lightbulb,

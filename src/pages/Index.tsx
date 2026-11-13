@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MapPin, Search } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { ArrowRight, Lightbulb, MapPin, Search } from "lucide-react";
 import heroImage from "@/assets/hero-austin-solar.jpg";
 import CampaignPopup from "@/components/CampaignPopup";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -106,6 +107,33 @@ const Index = () => {
             </Button>
           </div>
         </div>
+      </section>
+
+      {/* Community ideas module */}
+      <section className="container mx-auto px-4 pb-14">
+        <Link to="/clean-energy-ideas-actions" className="group block">
+          <Card className="overflow-hidden border transition-all duration-300 hover:border-primary/40 hover:shadow-lg">
+            <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-7 sm:p-8">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Lightbulb className="h-7 w-7 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="mb-2 text-2xl font-bold">Reliable, Affordable, and Clean Energy Ideas &amp; Actions</h2>
+                <p className="text-base text-muted-foreground">
+                  Share your own clean energy ideas for Austin, add the resources that back them up, vote on what
+                  neighbors propose, and join the discussion.
+                </p>
+              </div>
+              <Button
+                size="lg"
+                className="shrink-0 transition-colors group-hover:bg-primary group-hover:text-primary-foreground"
+              >
+                Explore community ideas
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+        </Link>
       </section>
     </div>
   );
