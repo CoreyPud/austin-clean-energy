@@ -17,18 +17,20 @@ interface Props {
   displayName: string;
   onDisplayNameChange: (name: string) => void;
   onSubmitted: (idea: CleanCanvasIdea) => void;
+  idea?: CleanCanvasIdea;
 }
 
-export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted }: Props) {
-  const [title, setTitle] = useState("");
-  const [problem, setProblem] = useState("");
-  const [solution, setSolution] = useState("");
-  const [beneficiaries, setBeneficiaries] = useState("");
-  const [tradeoffs, setTradeoffs] = useState("");
-  const [level, setLevel] = useState<IdeaDetails["level"] | "">("");
-  const [topics, setTopics] = useState<CleanCanvasTopic[]>(["Energy supply"]);
-  const [examplesElsewhere, setExamplesElsewhere] = useState("");
-  const [resources, setResources] = useState<CleanCanvasResource[]>([]);
+export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted, idea }: Props) {
+  const initialDetails = idea ? detailsFromDescription(idea.description) : {};
+  const [title, setTitle] = useState(idea?.title ?? "");
+  const [problem, setProblem] = useState(initialDetails.problem ?? "");
+  const [solution, setSolution] = useState(initialDetails.solution ?? "");
+  const [beneficiaries, setBeneficiaries] = useState(initialDetails.beneficiaries ?? "");
+  const [tradeoffs, setTradeoffs] = useState(initialDetails.tradeoffs ?? "");
+  const [level, setLevel] = useState<IdeaDetails["level"] | "">(initialDetails.level ?? "");
+  const [topics, setTopics] = useState<CleanCanvasTopic[]>(idea ? CLEAN_CANVAS_TOPICS.filter((topic) => idea.topics.includes(topic)) : ["Energy supply"]);
+  const [examplesElsewhere, setExamplesElsewhere] = useState(idea?.examples_elsewhere ?? "");
+  const [resources, setResources] = useState<CleanCanvasResource[]>(idea?.resources ?? []);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [sourceUrl, setSourceUrl] = useState("");
@@ -100,16 +102,16 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
         examples_elsewhere: parsed.data.examples_elsewhere,
         resources: parsed.data.resources as Json,
       };
-      const { data, error: saveError } = await supabase
-        .from("clean_canvas_ideas")
-        .insert(payload)
-        .select("*")
-        .single();
+      const { author_id: _authorId, ...editable } = payload;
+      const request = idea
+        ? supabase.from("clean_canvas_ideas").update(editable).eq("id", idea.id).eq("author_id", userId)
+        : supabase.from("clean_canvas_ideas").insert(payload);
+      const { data, error: saveError } = await request.select("*").single();
       if (saveError) throw saveError;
       onSubmitted(ideaFromRow(data));
-      toast.success("Your idea is now on Clean Canvas");
+      toast.success(idea ? "Your idea has been updated" : "Your idea is now on Clean Canvas");
     } catch {
-      setError("We couldn't publish the idea. Please try again.");
+      setError(idea ? "We couldn't save your changes. Please try again." : "We couldn't publish the idea. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -186,7 +188,7 @@ export function IdeaForm({ userId, displayName, onDisplayNameChange, onSubmitted
       </div>
       <p className="rounded-md bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">Post constructively and focus on the idea. Your submission will be public; you can delete it later.</p>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full" disabled={saving || importing}>{saving ? "Publishing…" : "Publish idea"}</Button>
+      <Button type="submit" className="w-full" disabled={saving || importing}>{saving ? (idea ? "Saving…" : "Publishing…") : (idea ? "Save changes" : "Publish idea")}</Button>
     </form>
   );
 }

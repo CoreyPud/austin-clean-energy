@@ -209,6 +209,8 @@ export type Database = {
           comment_count: number
           created_at: string
           description: string
+          edit_count: number
+          edited_at: string | null
           examples_elsewhere: string
           id: string
           oppose_count: number
@@ -226,6 +228,8 @@ export type Database = {
           comment_count?: number
           created_at?: string
           description: string
+          edit_count?: number
+          edited_at?: string | null
           examples_elsewhere?: string
           id?: string
           oppose_count?: number
@@ -243,6 +247,8 @@ export type Database = {
           comment_count?: number
           created_at?: string
           description?: string
+          edit_count?: number
+          edited_at?: string | null
           examples_elsewhere?: string
           id?: string
           oppose_count?: number

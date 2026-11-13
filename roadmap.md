@@ -1,4 +1,5 @@
 # Current
+- [x] Add author-only Clean Canvas editing, server-maintained edit counts and latest edit dates. Two edits/reload, unchanged saves, voting, discussion activity, public-reader controls and phone fit verified; temporary posts removed, 13 tests and build pass. Authenticated edits are column-limited so vote totals and ownership cannot be changed.
 - [x] Replace Clean Canvas explanation with problem, solution, beneficiaries and tradeoffs inputs; add Local/Austin, State/Texas and Federal/United States scope. Signed-in publishing and reload verified, test post removed; 12 tests and build pass, phone form fits. Existing free-text ideas retained.
 - [x] Fix Design 2 host payments being counted as utility income; owner remains unchanged, utility subtracts the transfer across all years. Owner-to-utility switch verified ($57,610 year-1 net, negative $6,890 payment); 5 tests pass, build OK.
 - [x] Show permit Deep Dive records in 25-row pages with a fast initial load; real Next/Previous and global address filtering verified, 9 tests pass and build OK.
