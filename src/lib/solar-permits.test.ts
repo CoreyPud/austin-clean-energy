@@ -41,3 +41,9 @@ test('max days filter keeps under-40 permits and excludes unfinished', () => {
   assert.deepEqual(filterPermits([quick, open, slow], { ...emptyPermitFilters, maxDays: '40' }).map(r => r.id), ['1']);
 });
 test('active permits show no issued-to-final days even with a status date', () => assert.equal(daysIssuedToFinal({ ...quick, status_current: 'Active' }), null));
+test('permit class and status dropdowns list every value in the database, not just the loaded page', () => {
+  const loadedClasses = ['Residential', 'Residential', null];
+  assert.deepEqual(mergeFilterOptions(['Commercial', 'Residential'], loadedClasses), ['Commercial', 'Residential']);
+  assert.deepEqual(mergeFilterOptions(['Final', 'Active'], ['Final', null, '']), ['Active', 'Final']);
+  assert.deepEqual(mergeFilterOptions([], loadedClasses), ['Residential']);
+});
