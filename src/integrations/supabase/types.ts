@@ -2646,6 +2646,13 @@ export type Database = {
         }
         Returns: number
       }
+      permit_filter_options: {
+        Args: never
+        Returns: {
+          filter_kind: string
+          option_value: string
+        }[]
+      }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }

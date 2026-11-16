@@ -92,6 +92,13 @@
       "when": 1794574362395,
       "tag": "0012_limit_clean_canvas_edit_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794848561399,
+      "tag": "0013_permit_filter_options",
+      "breakpoints": true
     }
   ]
 }
