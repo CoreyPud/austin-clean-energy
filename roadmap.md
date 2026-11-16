@@ -1,4 +1,5 @@
 # Current
+- [x] Restore Commercial to the permit table's Permit class dropdown and list every status; dropdown choices now come from all permit records, not just the 25 rows on screen. Live check shows Commercial/Residential and all seven statuses, Commercial filter returns 419 matching permits, 11 tests pass, build OK.
 - [x] Move the Clean Canvas webpage/AI chat URL input below the Idea level dropdown in the idea dialog. Field order, link-fill button enablement and dialog layout verified in the signed-in preview; 13 tests pass.
 - [x] Convert annual solar and battery timing bars to application fiscal years (October–September); monthly lines unchanged, 9 tests pass, authoritative function deployed, both live fiscal charts and monthly switch verified, build OK.
 - [x] Rename Clean Canvas URL to /clean-energy-ideas-actions with legacy /clean-canvas preservation, and add it as a home page module. Home module click, legacy query/anchor-preserving redirect, sitemap and council card links, sign-in redirect target, 5 rename tests, phone-safe layout and build pass.

@@ -2057,6 +2057,13 @@ export type Database = {
         }
         Relationships: []
       }
+      permit_filter_options_view: {
+        Row: {
+          filter_kind: string | null
+          option_value: string | null
+        }
+        Relationships: []
+      }
       solar_installations_admin_view: {
         Row: {
           address: string | null

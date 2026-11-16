@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, isFinalPermit, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
+import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, mergeFilterOptions, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, isFinalPermit, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
 
 const PAGE_SIZE = PERMITS_PAGE_SIZE;
 const PERMIT_COLUMNS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
@@ -34,6 +34,7 @@ export default function SolarPermits() {
   // Fetch only the requested page until the user interacts with filters or sorting.
   const [quick, setQuick] = useState<{ page: number; rows: SolarPermit[]; total: number } | null>(null);
   const [quickLoading, setQuickLoading] = useState(false);
+  const [dbOptions, setDbOptions] = useState<{ status: string[]; type: string[] }>({ status: [], type: [] });
   const isDefaultView = sort === 'completed_date' && !ascending && JSON.stringify(filters) === JSON.stringify(emptyPermitFilters);
   const useQuick = loading && !error && isDefaultView;
 
@@ -57,6 +58,22 @@ export default function SolarPermits() {
     })().finally(() => { if (!cancelled) setQuickLoading(false); });
     return () => { cancelled = true; };
   }, [useQuick, page, attempt]);
+
+  // Dropdown choices come from every permit record, not just the 25 rows on screen.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.from('permit_filter_options_view').select('filter_kind,option_value');
+      if (cancelled || error || !data) return;
+      const status: string[] = [], type: string[] = [];
+      for (const row of data) {
+        if (row.filter_kind === 'status') status.push(row.option_value || '');
+        else if (row.filter_kind === 'permit_class') type.push(row.option_value || '');
+      }
+      setDbOptions({ status, type });
+    })();
+    return () => { cancelled = true; };
+  }, [attempt]);
 
   useEffect(() => {
     if (!fullRequested) return;
@@ -105,8 +122,8 @@ export default function SolarPermits() {
 
   const results = useMemo(() => sortPermits(filterPermits(rows, filters), sort, ascending), [rows, filters, sort, ascending]);
   const optionRows = rows.length ? rows : quick?.rows ?? [];
-  const statuses = useMemo(() => [...new Set(optionRows.map(r => r.status_current).filter((s): s is string => Boolean(s)))].sort(), [optionRows]);
-  const classes = useMemo(() => [...new Set(optionRows.map(r => r.permit_class).filter((s): s is string => Boolean(s)))].sort(), [optionRows]);
+  const statuses = useMemo(() => mergeFilterOptions(dbOptions.status, optionRows.map(r => r.status_current)), [dbOptions.status, optionRows]);
+  const classes = useMemo(() => mergeFilterOptions(dbOptions.type, optionRows.map(r => r.permit_class)), [dbOptions.type, optionRows]);
   const showQuick = useQuick && quick !== null;
   const totalCount = showQuick ? quick.total : results.length;
   const pageRows = showQuick ? quick.rows : results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
