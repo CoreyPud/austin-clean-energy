@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { daysAppliedToFinal, filterPermits, sortPermits, emptyPermitFilters, PERMITS_PAGE_SIZE, permitPageRange, type SolarPermit } from './solar-permits';
+import { daysAppliedToFinal, filterPermits, sortPermits, emptyPermitFilters, mergeFilterOptions, PERMITS_PAGE_SIZE, permitPageRange, type SolarPermit } from './solar-permits';
 
 test('permit pages load 25 records with consecutive non-overlapping ranges', () => {
   assert.equal(PERMITS_PAGE_SIZE, 25);

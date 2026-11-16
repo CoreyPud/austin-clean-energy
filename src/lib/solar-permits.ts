@@ -102,3 +102,18 @@ function daysWithin(days: number | null, min: string, max: string) {
   if (days === null) return false;
   return (!min || days >= Number(min)) && (!max || days <= Number(max));
 }
+/**
+ * Dropdown choices for permit class and status.
+ *
+ * The database list covers every permit record, so a class that is rare in the
+ * dataset (Commercial) still appears even though only 25 rows load at a time.
+ * Row values are merged in as a fallback for when the database list is unavailable.
+ */
+export function mergeFilterOptions(dbValues: string[], rowValues: Array<string | null>): string[] {
+  const values = new Set<string>();
+  for (const value of [...dbValues, ...rowValues]) {
+    const trimmed = (value || '').trim();
+    if (trimmed) values.add(trimmed);
+  }
+  return [...values].sort();
+}
