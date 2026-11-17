@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, LabelList, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { TimingMonth, TimingYear } from '../../supabase/functions/_shared/permit-timing';
+import { MIN_TIMING_DAYS, type TimingMonth, type TimingYear } from '../../supabase/functions/_shared/permit-timing';
 import { permitBarWidth } from '@/lib/permit-timing-chart';
 
 interface CountBarProps {
@@ -46,9 +46,10 @@ interface Props {
   error: boolean;
   permitClass?: 'all' | 'residential' | 'commercial';
   onPermitClassChange?: (value: 'all' | 'residential' | 'commercial') => void;
+  excludedShort?: number;
 }
 
-export default function PermitTimingChart({ kind, data, annualData, loading, error, permitClass, onPermitClassChange }: Props) {
+export default function PermitTimingChart({ kind, data, annualData, loading, error, permitClass, onPermitClassChange, excludedShort = 0 }: Props) {
   const [metric, setMetric] = useState<'averageDays' | 'medianDays'>('averageDays');
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const measure = metric === 'averageDays' ? 'Average' : 'Median';
@@ -126,6 +127,7 @@ export default function PermitTimingChart({ kind, data, annualData, loading, err
         )}
         <p className="mt-4 text-xs text-muted-foreground">
           {period === 'year' && 'Bar width is proportional to qualifying completed permit count within this chart; height and labels show days. '}
+          {!loading && !error && <span className="block font-medium text-foreground mb-1">{excludedShort.toLocaleString()} completed {kind.toLowerCase()} permit{excludedShort === 1 ? '' : 's'} with under {MIN_TIMING_DAYS} days from application to completion {excludedShort === 1 ? 'was' : 'were'} left out as likely data errors.</span>}
           Source: corrected City of Austin permit records. Projects are deduplicated; only records with application and completion dates and a positive duration are included. {period === 'month' ? 'Months' : 'Fiscal years'} without qualifying completed projects are omitted, not counted as zero days. Classification uses permit descriptions, not verified equipment inventories. This measures elapsed time, not solely City review time; unfinished permits are excluded. {period === 'year' && 'FY 2014 starts with January 2014 in this dataset; the current fiscal-year cohort is partial. Cohorts use application dates, unlike installation charts grouped by completion dates.'}
         </p>
         <Button variant="link" asChild className="mt-2 px-0"><Link to="/solar-permits">Deep Dive <ArrowRight /></Link></Button>

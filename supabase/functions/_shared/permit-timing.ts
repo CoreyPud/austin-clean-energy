@@ -17,6 +17,9 @@ export interface TimingMonth extends TimingYear {
   month: string;
 }
 
+/** Shorter applied→completed durations are treated as data errors. */
+export const MIN_TIMING_DAYS = 10;
+
 export function timingPermitType(description: string | null): 'solar' | 'batteryOnly' | 'unclassified' {
   const text = description ?? '';
   if (/\b(solar|photovoltaic|pv)\b/i.test(text)) return 'solar';
@@ -34,6 +37,7 @@ export function permitTimingStats(records: TimingPermit[], period: 'year' | 'mon
   }
   const groups = { solar: new Map<string, number[]>(), batteryOnly: new Map<string, number[]>() };
   let unclassifiedCount = 0;
+  const excludedShort = { solar: 0, batteryOnly: 0 };
   for (const row of unique.values()) {
     if (!row.applied_date || !row.completed_date) continue;
     const year = Number(row.applied_date.slice(0, 4));
@@ -41,6 +45,7 @@ export function permitTimingStats(records: TimingPermit[], period: 'year' | 'mon
     if (!Number.isFinite(days) || days <= 0 || year < 2014) continue;
     const type = timingPermitType(row.description);
     if (type === 'unclassified') { unclassifiedCount++; continue; }
+    if (days < MIN_TIMING_DAYS) { excludedShort[type]++; continue; }
     const fiscalYear = year + (Number(row.applied_date.slice(5, 7)) >= 10 ? 1 : 0);
     const key = period === 'month' ? row.applied_date.slice(0, 7) : String(fiscalYear);
     const values = groups[type].get(key) ?? [];
@@ -58,5 +63,5 @@ export function permitTimingStats(records: TimingPermit[], period: 'year' | 'mon
       count: days.length,
     };
   });
-  return { solar: summarize(groups.solar), batteryOnly: summarize(groups.batteryOnly), unclassifiedCount };
+  return { solar: summarize(groups.solar), batteryOnly: summarize(groups.batteryOnly), unclassifiedCount, excludedShort };
 }

@@ -68,3 +68,14 @@ test('duplicate projects count once and unclassified descriptions are disclosed'
   assert.equal(stats.solar[0]?.averageDays, 20);
   assert.equal(stats.unclassifiedCount, 1);
 });
+
+test('permits under 10 days from applied to completion are left out and counted', () => {
+  const stats = permitTimingStats([
+    row('nine', 'solar', '2024-01-10'),
+    row('ten', 'solar', '2024-01-11'),
+    row('bat', 'battery', '2024-01-05'),
+  ], 'year');
+  assert.equal(stats.solar[0].count, 1);
+  assert.deepEqual(stats.excludedShort, { solar: 1, batteryOnly: 1 });
+  assert.deepEqual(stats.batteryOnly, []);
+});
