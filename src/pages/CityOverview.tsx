@@ -532,9 +532,14 @@ const CityOverview = () => {
         contentClassName="max-w-5xl mx-auto px-4"
       />
       <div className="max-w-5xl mx-auto px-4 py-5">
-        <Button variant="outline" onClick={() => navigate('/solar-permits')}>
-          Browse Solar Permits <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" onClick={() => navigate('/solar-permits')}>
+            Browse Solar Permits <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/solar-permits/contractors')}>
+            Permit Timing by Contractor <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Key Metrics */}
