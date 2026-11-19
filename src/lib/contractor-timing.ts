@@ -23,8 +23,7 @@ export function median(values: number[]): number | null {
 
 export interface ContractorTiming {
   contractor: string;
-  permits: number;
-  totalKw: number;
+  permits: number;  totalKw: number;
   appliedToIssued: number | null;
   appliedToIssuedCount: number;
   appliedToFinal: number | null;
@@ -32,6 +31,20 @@ export interface ContractorTiming {
   issuedToFinal: number | null;
   issuedToFinalCount: number;
 }
+/**
+ * Bar thickness (pixels) used by the contractor timing charts, so a thick bar
+ * means a busy contractor. Square-root scaled: a contractor with 4x the permits
+ * gets roughly 2x the thickness, which matches how people read bar area.
+ */
+export const BAR_THICKNESS = { min: 4, max: 26 };
+
+export function barThickness(permits: number, maxPermits: number, scale = BAR_THICKNESS) {
+  const p = Number(permits), max = Number(maxPermits);
+  if (!Number.isFinite(p) || p <= 0 || !Number.isFinite(max) || max <= 0) return scale.min;
+  const ratio = Math.sqrt(Math.min(p, max) / max);
+  return scale.min + (scale.max - scale.min) * ratio;
+}
+
 export type ContractorSort = 'contractor' | 'permits' | 'totalKw' | 'appliedToIssued' | 'appliedToFinal' | 'issuedToFinal';
 
 /** First click on a column header: contractor names go A→Z, every number puts its largest value on top. */

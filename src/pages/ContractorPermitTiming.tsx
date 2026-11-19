@@ -11,28 +11,45 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { emptyPermitFilters, equipmentLabels, filterPermits, mergeFilterOptions, type PermitFilters, type SolarPermit } from '@/lib/solar-permits';
-import { contractorTiming, firstClickAscending, sortContractors, MIN_VALID_APPLIED_TO_FINAL_DAYS, type ContractorSort, type ContractorTiming } from '@/lib/contractor-timing';
+import { barThickness, contractorTiming, firstClickAscending, sortContractors, MIN_VALID_APPLIED_TO_FINAL_DAYS, type ContractorSort, type ContractorTiming } from '@/lib/contractor-timing';
 
 const COLS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
 const sortNames: Record<ContractorSort, string> = { issuedToFinal: 'Issued → final (median days)', appliedToFinal: 'Applied → final (median days)', appliedToIssued: 'Applied → issued (median days)', permits: 'Number of permits', totalKw: 'Total reported kW', contractor: 'Contractor name' };
 const tableColumns: [ContractorSort, string][] = [['contractor', 'Contractor'], ['permits', 'Permits'], ['totalKw', 'Total reported kW'], ['appliedToIssued', 'Applied → issued (median days)'], ['appliedToFinal', 'Applied → final (median days)'], ['issuedToFinal', 'Issued → final (median days)']];
 
+type BarGeom = { x?: number; y?: number; width?: number; height?: number; payload?: { permits?: number } };
+
+/** A horizontal bar whose thickness shows how many permits the contractor had, centered in its row. */
+function ScaledBar({ x = 0, y = 0, width = 0, height = 0, payload, fill, roundedRight = false, maxPermits }: BarGeom & { fill: string; roundedRight?: boolean; maxPermits: number }) {
+  const w = Math.max(0, Number(width) || 0);
+  const h = Number(height) || 0;
+  const t = barThickness(Number(payload?.permits) || 0, maxPermits);
+  const top = y + (h - t) / 2;
+  const r = roundedRight ? Math.min(3, t / 2, w / 2) : 0;
+  const d = r > 0
+    ? `M${x},${top}L${x + w - r},${top}Q${x + w},${top} ${x + w},${top + r}L${x + w},${top + t - r}Q${x + w},${top + t} ${x + w - r},${top + t}L${x},${top + t}Z`
+    : `M${x},${top}L${x + w},${top}L${x + w},${top + t}L${x},${top + t}Z`;
+  return <path d={d} fill={fill} />;
+}
+
 function TimingChart({ title, data, field, count, color }: { title: string; data: ContractorTiming[]; field: 'appliedToIssued' | 'appliedToFinal' | 'issuedToFinal'; count: 'appliedToIssuedCount' | 'appliedToFinalCount' | 'issuedToFinalCount'; color: string }) {
   const [longestFirst, setLongestFirst] = useState(true);
   const rows = data.filter(d => d[field] !== null).sort((a, b) => longestFirst ? (b[field] as number) - (a[field] as number) : (a[field] as number) - (b[field] as number));
+  const maxPermits = Math.max(1, ...rows.map(r => r.permits));
   return <section className="border border-border rounded-md p-4 space-y-2">
     <div className="flex items-center justify-between gap-3 flex-wrap">
       <h2 className="text-lg font-semibold">{title}</h2>
       <Button variant="outline" size="sm" onClick={() => setLongestFirst(v => !v)} aria-pressed={!longestFirst}>{longestFirst ? 'Longest median times on top' : 'Shortest median times on top'}</Button>
     </div>
+    <p className="text-xs text-muted-foreground">Bar length = median days · bar thickness = number of permits (thicker means more permits)</p>
     {rows.length === 0 ? <p className="text-sm text-muted-foreground py-8 text-center">No contractors with this timing match these filters.</p> :
-      <div style={{ height: Math.max(200, rows.length * 28 + 40) }}><ResponsiveContainer width="100%" height="100%">
+      <div style={{ height: Math.max(200, rows.length * 34 + 40) }}><ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 48, bottom: 12 }}>
           <CartesianGrid horizontal={false} stroke="hsl(var(--border))" />
           <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} label={{ value: 'Median days', position: 'insideBottom', offset: -2, fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
           <YAxis type="category" dataKey="contractor" width={210} interval={0} tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} tickFormatter={(v: string) => v.length > 32 ? `${v.slice(0, 31)}…` : v} />
           <Tooltip contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }} formatter={(v: number, _n, item) => [`${v.toLocaleString()} days (median of ${(item.payload as ContractorTiming)[count].toLocaleString()} permits)`, title]} />
-          <Bar dataKey={field} fill={color} radius={[0, 3, 3, 0]}><LabelList dataKey={field} position="right" fill="hsl(var(--foreground))" fontSize={11} /></Bar>
+          <Bar dataKey={field} fill={color} isAnimationActive={false} shape={(p: BarGeom) => <ScaledBar {...p} fill={color} roundedRight maxPermits={maxPermits} />}><LabelList dataKey={field} position="right" fill="hsl(var(--foreground))" fontSize={11} /></Bar>
         </BarChart>
       </ResponsiveContainer></div>}
   </section>;
@@ -46,6 +63,7 @@ function StackedFinalChart({ data }: { data: ContractorTiming[] }) {
     const total = d.appliedToFinal as number;
     return { ...d, gap: Math.max(0, total - parts), over: parts > total };
   }).sort((a, b) => longestFirst ? (b.appliedToFinal as number) - (a.appliedToFinal as number) : (a.appliedToFinal as number) - (b.appliedToFinal as number));
+  const maxPermits = Math.max(1, ...rows.map(r => r.permits));
   const tip = ({ active, payload }: { active?: boolean; payload?: { payload: StackRow }[] }) => {
     if (!active || !payload?.length) return null;
     const r = payload[0].payload;
@@ -69,18 +87,19 @@ function StackedFinalChart({ data }: { data: ContractorTiming[] }) {
       <span><span style={{ color: 'hsl(var(--chart-green))' }}>■</span> Issued → final</span>
       <span><span style={{ color: 'hsl(var(--accent))' }}>■</span> Rest of applied → final</span>
       <span>Number at the end = applied → final median</span>
+      <span>Bar thickness = number of permits</span>
     </div>
     <p className="text-xs text-muted-foreground">Each step is a separate median, so the steps don't add up exactly to the total. Orange shows how much longer the total median is than the two steps combined.</p>
     {rows.length === 0 ? <p className="text-sm text-muted-foreground py-8 text-center">No contractors with this timing match these filters.</p> :
-      <div style={{ height: Math.max(200, rows.length * 28 + 40) }}><ResponsiveContainer width="100%" height="100%">
+      <div style={{ height: Math.max(200, rows.length * 34 + 40) }}><ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 48, bottom: 12 }}>
           <CartesianGrid horizontal={false} stroke="hsl(var(--border))" />
           <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} label={{ value: 'Median days', position: 'insideBottom', offset: -2, fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
           <YAxis type="category" dataKey="contractor" width={210} interval={0} tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} tickFormatter={(v: string) => v.length > 32 ? `${v.slice(0, 31)}…` : v} />
           <Tooltip content={tip} />
-          <Bar dataKey="appliedToIssued" stackId="t" fill="hsl(var(--chart-blue))" />
-          <Bar dataKey="issuedToFinal" stackId="t" fill="hsl(var(--chart-green))" />
-          <Bar dataKey="gap" stackId="t" fill="hsl(var(--accent))" radius={[0, 3, 3, 0]}><LabelList dataKey="appliedToFinal" position="right" fill="hsl(var(--foreground))" fontSize={11} /></Bar>
+          <Bar dataKey="appliedToIssued" stackId="t" fill="hsl(var(--chart-blue))" isAnimationActive={false} shape={(p: BarGeom) => <ScaledBar {...p} fill="hsl(var(--chart-blue))" maxPermits={maxPermits} />} />
+          <Bar dataKey="issuedToFinal" stackId="t" fill="hsl(var(--chart-green))" isAnimationActive={false} shape={(p: BarGeom) => <ScaledBar {...p} fill="hsl(var(--chart-green))" maxPermits={maxPermits} />} />
+          <Bar dataKey="gap" stackId="t" fill="hsl(var(--accent))" isAnimationActive={false} shape={(p: BarGeom) => <ScaledBar {...p} fill="hsl(var(--accent))" roundedRight maxPermits={maxPermits} />}><LabelList dataKey="appliedToFinal" position="right" fill="hsl(var(--foreground))" fontSize={11} /></Bar>
         </BarChart>
       </ResponsiveContainer></div>}
   </section>;
@@ -141,7 +160,7 @@ export default function ContractorPermitTiming() {
   return <div className="min-h-screen bg-background text-foreground">
     <PageHeader title="Permit Timing by Contractor" backTo="/solar-permits" backLabel="Back to Permit Deep Dive" subtitle="Median days from application to issuance, and issuance to final, for each contractor." contentClassName="max-w-7xl mx-auto px-4" />
     <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-      <p className="text-sm text-muted-foreground">Uses the same City permit records and filters as the <Link to="/solar-permits" className="text-primary underline">permit deep dive</Link>. Bars show the median (middle) permit for each contractor. Applied → issued counts any permit with both dates; applied → final and issued → final count only permits the City marks Final. Permits under {MIN_VALID_APPLIED_TO_FINAL_DAYS} days from application to final are treated as data errors and left out. Filters plus <strong>Sort contractors by</strong> and <strong>Show</strong> choose which contractors appear; each chart then orders its own bars by its own median time — use the button in a chart's corner to flip it.</p>
+      <p className="text-sm text-muted-foreground">Uses the same City permit records and filters as the <Link to="/solar-permits" className="text-primary underline">permit deep dive</Link>. Bars show the median (middle) permit for each contractor, and the thickness of each bar shows how many permits that contractor had — thicker means more permits. Applied → issued counts any permit with both dates; applied → final and issued → final count only permits the City marks Final. Permits under {MIN_VALID_APPLIED_TO_FINAL_DAYS} days from application to final are treated as data errors and left out. Filters plus <strong>Sort contractors by</strong> and <strong>Show</strong> choose which contractors appear; each chart then orders its own bars by its own median time — use the button in a chart's corner to flip it.</p>
       <section aria-label="Filters" className="border-y border-border py-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {text('search', 'Address, permit, ZIP or description')}{text('host', 'Host / owner')}{text('contractor', 'Contractor')}
         {opt('status', 'Status', statuses)}{opt('type', 'Permit class', classes)}{opt('equipment', 'Equipment', Object.keys(equipmentLabels), equipmentLabels)}

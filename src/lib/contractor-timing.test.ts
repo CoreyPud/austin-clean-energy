@@ -1,6 +1,6 @@
 import { test as it } from 'node:test';
 import assert from 'node:assert/strict';
-import { contractorTiming, daysAppliedToIssued, firstClickAscending, sortContractors } from './contractor-timing';
+import { barThickness, BAR_THICKNESS, contractorTiming, daysAppliedToIssued, firstClickAscending, sortContractors } from './contractor-timing';
 import type { SolarPermit } from './solar-permits';
 
 const p = (o: Partial<SolarPermit>): SolarPermit => ({ id: Math.random().toString(), project_id: null, permit_number: null, address: null, installed_kw: null, contractor_company: 'A', permit_class: null, status_current: 'Final', applied_date: null, issued_date: null, completed_date: null, original_zip: null, council_district: null, description: null, total_job_valuation: null, link: null, has_correction: null, host: null, host_pid: null, ...o });
@@ -58,4 +58,17 @@ const p = (o: Partial<SolarPermit>): SolarPermit => ({ id: Math.random().toStrin
       { contractor: 'Big Co', permits: 60, totalKw: 900, appliedToIssued: 21, appliedToIssuedCount: 60, appliedToFinal: 44, appliedToFinalCount: 60, issuedToFinal: 44, issuedToFinalCount: 60 },
       { contractor: 'No Final Co', permits: 30, totalKw: 200, appliedToIssued: 7, appliedToIssuedCount: 30, appliedToFinal: null, appliedToFinalCount: 0, issuedToFinal: null, issuedToFinalCount: 0 },
     ], 'issuedToFinal', true).map(c => c.contractor), ['Small Co', 'Big Co', 'No Final Co']);
+  });
+
+  it('makes bar thickness grow with the permit count', () => {
+    assert.equal(barThickness(100, 100), BAR_THICKNESS.max);
+    assert.equal(barThickness(0, 100), BAR_THICKNESS.min);
+    assert.equal(barThickness(25, 100), BAR_THICKNESS.min + (BAR_THICKNESS.max - BAR_THICKNESS.min) * 0.5);
+    assert.ok(barThickness(60, 100) > barThickness(12, 100));
+  });
+  it('keeps bar thickness inside its range for odd counts', () => {
+    assert.equal(barThickness(500, 100), BAR_THICKNESS.max);
+    assert.equal(barThickness(Number.NaN, 100), BAR_THICKNESS.min);
+    assert.equal(barThickness(10, 0), BAR_THICKNESS.min);
+    assert.ok(barThickness(1, 100) >= BAR_THICKNESS.min && barThickness(1, 100) <= BAR_THICKNESS.max);
   });
