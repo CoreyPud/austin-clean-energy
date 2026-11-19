@@ -133,9 +133,9 @@ const PropertyAssessment = () => {
     return next;
   });
   const roofSurfaces = useMemo(() => {
-    const m = new globalThis.Map<number, number>();
-    (assessmentPanels ?? []).forEach(p => m.set(p.segmentIndex, (m.get(p.segmentIndex) ?? 0) + 1));
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([seg, count]) => ({ seg, count }));
+    const counts: Record<number, number> = {};
+    (assessmentPanels ?? []).forEach(p => { counts[p.segmentIndex] = (counts[p.segmentIndex] ?? 0) + 1; });
+    return Object.entries(counts).map(([seg, count]) => ({ seg: Number(seg), count })).sort((a, b) => b.count - a.count);
   }, [assessmentPanels]);
   const selectedSurfacePanels = useMemo(
     () => assessmentPanels?.filter(p => !excludedSegments.has(p.segmentIndex)),
