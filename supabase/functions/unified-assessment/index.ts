@@ -17,7 +17,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
-import { applySolarFilters, GOOGLE_PANEL_DIMS, type SolarPanel } from "../_shared/solar-filters.ts";
+import { applySolarFilters, GOOGLE_PANEL_DIMS, panelTsrf, type SolarPanel } from "../_shared/solar-filters.ts";
 import { tcadAddressMatch } from "../_shared/tcad-address.ts";
 import {
   buildSolarRecord,
@@ -291,6 +291,12 @@ serve(async (req) => {
         : Promise.resolve({ count: 0 }),
       councilPromise,
     ]);
+
+    // 2b. Campus pre-scan: non-house parcels often have several buildings, but Google returns
+    // one per lookup. Probe a few nearby points (capped to limit paid calls), keep up to
+    // EXTRA_BUILDINGS_MAX more large roofs, and add only their high-sun panels (>= 80% of
+    // optimal) so the user can untick any roof they don't want. The cache keeps the main roof only.
+    const solarResp = await mergeNearbyBuildings(solarApiResp, propertyType, GOOGLE_KEY);
     const zipInstallationsTotal = (zipCountResp as any).count ?? 0;
 
     const dbInstallations = (zipDbResp as any).data || [];
@@ -328,8 +334,8 @@ serve(async (req) => {
     // built. Falls back to the raw count when we don't have individual panel positions
     // to derate (e.g. Google returned only aggregate roof stats).
     let solarInsights: any = null;
-    if (solarApiResp?.solarPotential) {
-      const sp = solarApiResp.solarPotential;
+    if (solarResp?.solarPotential) {
+      const sp = solarResp.solarPotential;
 
       let maxPanels = sp.maxArrayPanelsCount;
       if (sp.solarPanels?.length) {
@@ -368,6 +374,7 @@ serve(async (req) => {
             ? Math.round((annualProductionKwh / 1000) * sp.carbonOffsetFactorKgPerMwh)
             : null,
         panelLifetimeYears: sp.panelLifetimeYears || 20,
+        extraBuildings: solarResp.extraBuildings ?? 0,
         imageryDate: solarApiResp.imageryDate || null,
         imageryQuality: solarApiResp.imageryQuality || null,
       };
@@ -378,8 +385,8 @@ serve(async (req) => {
     let panelDims: any = null;
     let roofSegments: any = null;
     let solarPanelsCompact: any = null;
-    if (solarApiResp?.solarPotential?.solarPanels && solarApiResp?.center) {
-      const sp = solarApiResp.solarPotential;
+    if (solarResp?.solarPotential?.solarPanels && solarApiResp?.center) {
+      const sp = solarResp.solarPotential;
       const refLat = solarApiResp.center.latitude;
       const refLon = solarApiResp.center.longitude;
       solarCenter = { lat: refLat, lon: refLon };
@@ -905,4 +912,60 @@ function generateCouncilOutreachScript(opts: {
   const closing = `I would welcome the chance to hear your position on Austin's clean energy goals and would appreciate any support you can offer. Thank you for your time.\n\n[Your name]`;
 
   return [intro, solarContext, neighborhoodContext, body, closing].filter(s => s.trim()).join(" ");
+}
+
+const EXTRA_BUILDINGS_MAX = 4; // main building + 4 = top 5 per property
+const EXTRA_MIN_AREA_M2 = 140; // ~1,500 sq ft of usable roof; skips sheds and carports
+const EXTRA_MAX_DIST_M = 160;
+const EXTRA_TSRF_MIN = 0.8;
+const PROBE_OFFSET_M = 70;
+
+// deno-lint-ignore no-explicit-any
+async function mergeNearbyBuildings(main: any, propertyType: string, key: string | undefined): Promise<any> {
+  const sp = main?.solarPotential;
+  if (!key || !sp?.solarPanels?.length || !main?.center) return main;
+  if (["single-family", "residential", "townhome", "condo"].includes(String(propertyType).toLowerCase())) return main;
+  const c = main.center;
+  const dLat = PROBE_OFFSET_M / 111320;
+  const dLng = PROBE_OFFSET_M / (111320 * Math.cos((c.latitude * Math.PI) / 180));
+  const probes = [[dLat, 0], [-dLat, 0], [0, dLng], [0, -dLng]];
+  const results = await Promise.all(probes.map(([a, b]) =>
+    fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${c.latitude + a}&location.longitude=${c.longitude + b}&key=${key}`)
+      .then((r) => (r.ok ? r.json() : null)).catch(() => null)));
+  const seen = new Set<string>([main.name]);
+  const dist = (x: any) => {
+    const dy = (x.latitude - c.latitude) * 111320;
+    const dx = (x.longitude - c.longitude) * 111320 * Math.cos((c.latitude * Math.PI) / 180);
+    return Math.hypot(dx, dy);
+  };
+  const extras = results
+    .filter((r) => r?.solarPotential?.solarPanels?.length && r.center && !seen.has(r.name) && (seen.add(r.name), true))
+    .filter((r) => (r.solarPotential.maxArrayAreaMeters2 ?? 0) >= EXTRA_MIN_AREA_M2 && dist(r.center) <= EXTRA_MAX_DIST_M && dist(r.center) > 15)
+    .sort((a, b) => b.solarPotential.maxArrayAreaMeters2 - a.solarPotential.maxArrayAreaMeters2)
+    .slice(0, EXTRA_BUILDINGS_MAX);
+  if (!extras.length) return main;
+  const segs = [...(sp.roofSegmentStats ?? [])];
+  const panels = [...sp.solarPanels];
+  let added = 0;
+  for (const b of extras) {
+    const offset = segs.length;
+    const bSegs = b.solarPotential.roofSegmentStats ?? [];
+    const good = b.solarPotential.solarPanels.filter((p: any) => panelTsrf(p.yearlyEnergyDcKwh) >= EXTRA_TSRF_MIN);
+    if (!good.length) continue;
+    segs.push(...bSegs);
+    for (const p of good) panels.push({ ...p, segmentIndex: p.segmentIndex + offset });
+    added++;
+  }
+  if (!added) return main;
+  return {
+    ...main,
+    extraBuildings: added,
+    solarPotential: {
+      ...sp,
+      roofSegmentStats: segs,
+      solarPanels: panels,
+      maxArrayPanelsCount: panels.length,
+      maxArrayAreaMeters2: (sp.maxArrayAreaMeters2 ?? 0) + extras.reduce((t, b) => t + b.solarPotential.maxArrayAreaMeters2, 0),
+    },
+  };
 }
