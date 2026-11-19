@@ -83,6 +83,11 @@ serve(async (req) => {
 
     const body = await req.json();
     const { address, propertyType, lifestyleData, solarSummary } = body;
+    // Optional roof the user picked on the map; when present it replaces geocoding entirely.
+    const picked =
+      body.location && Number.isFinite(Number(body.location.lat)) && Number.isFinite(Number(body.location.lng))
+        ? { lat: Number(body.location.lat), lng: Number(body.location.lng) }
+        : null;
 
     const v = validateAddress(address);
     if (!v.valid) {
@@ -158,8 +163,10 @@ serve(async (req) => {
       );
     const inArea = (c: Candidate | null) => !!c && isInAustinArea(c.geometry.location.lat, c.geometry.location.lng);
     const withAustin = /austin/i.test(address) ? address : `${address}, Austin, TX`;
-    let candidate = await findPlace(address);
-    if (!inArea(candidate)) candidate = (await findPlace(withAustin)) ?? candidate;
+    let candidate: Candidate | null = picked
+      ? { formatted_address: address, geometry: { location: picked } }
+      : await findPlace(address);
+    if (!picked && !inArea(candidate)) candidate = (await findPlace(withAustin)) ?? candidate;
     if (!candidate) candidate = await geocode(withAustin);
     if (!candidate) candidate = await geocode(address);
     if (!candidate) {
@@ -210,7 +217,8 @@ serve(async (req) => {
     // 2. Everything below is independent, so it all runs in parallel. Solar data comes from our
     // tcad_properties cache when this address matches a single parcel with fresh Google data;
     // only a miss calls the Google Solar API (the slow, paid step).
-    const tcadMatch = tcadAddressMatch(standardizedAddress);
+    // A picked roof may be a different building than the address's parcel, so skip the cache.
+    const tcadMatch = picked ? null : tcadAddressMatch(standardizedAddress);
     const tcadPromise: Promise<any | null> = tcadMatch
       ? (() => {
           let q = supabase

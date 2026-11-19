@@ -74,6 +74,8 @@ const PropertyAssessment = () => {
   const manualPropertyType = useRef(VALID_TYPES.includes(requestedType));
   const currentAddress = useRef(address);
   currentAddress.current = address;
+  // Roof the user picked on the map; tied to the address it was picked for.
+  const pickedLocation = useRef<{ address: string; lat: number; lng: number } | null>(null);
   const [typeLookupStatus, setTypeLookupStatus] = useState<"idle" | "checking" | "matched" | "unmatched">("idle");
   const [results, setResults] = useState<any>(null);
   const [monthlyBill, setMonthlyBill] = useState(150);
@@ -321,11 +323,22 @@ const PropertyAssessment = () => {
 
   const callUnified = async (lifestyleData?: LifestyleData, solarSummary?: SolarSummary | null, assessedType = propertyType) => {
     const { data, error } = await supabase.functions.invoke("unified-assessment", {
-      body: { address: address.trim(), propertyType: assessedType, lifestyleData, solarSummary },
+      body: {
+        address: address.trim(), propertyType: assessedType, lifestyleData, solarSummary,
+        location: pickedLocation.current?.address === address.trim()
+          ? { lat: pickedLocation.current.lat, lng: pickedLocation.current.lng }
+          : undefined,
+      },
     });
     if (error) throw new Error(await edgeFunctionErrorMessage(error));
     if (data?.error) throw new Error(data.error);
     return data;
+  };
+
+  const handleRoofPick = (lat: number, lng: number) => {
+    pickedLocation.current = { address: address.trim(), lat, lng };
+    toast({ title: "Re-checking that roof", description: "Analyzing the building you picked…" });
+    void handleAssess();
   };
 
   const handleAssess = async () => {
@@ -794,6 +807,7 @@ const PropertyAssessment = () => {
                             panelWidthM={results.panelDims?.w}
                             segmentAzimuths={assessmentAzimuths}
                             segmentPitches={assessmentPitches}
+                            onPickLocation={loading ? undefined : handleRoofPick}
                             selectedPanelCount={
                               assessmentPanels && si?.panelCapacityWatts
                                 ? Math.round(systemKw * 1000 / si.panelCapacityWatts)

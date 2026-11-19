@@ -23,6 +23,8 @@ interface Props {
   segmentPitches?: Record<number, number>;
   selectedPanelCount?: number;
   fitKey?: string | number;
+  /** When set, shows a "Wrong building?" control; clicking the map reports the picked roof. */
+  onPickLocation?: (lat: number, lon: number) => void;
 }
 
 const PANEL_OPACITY = 0.9;
@@ -70,14 +72,17 @@ function fillOpacityExpr(opacity: number, selectedCount: number | undefined): an
   return ["case", ["<", ["get", "rank"], selectedCount], opacity, Math.max(0.07, opacity * 0.18)];
 }
 
-interface MapProps extends Omit<Props, "className"> {
+interface MapProps extends Omit<Props, "className" | "onPickLocation"> {
   panelsVisible: boolean;
+  onMapClick?: (lat: number, lon: number) => void;
 }
 
 function SatelliteMap({
   lat, lon, panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
-  segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey,
+  segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey, onMapClick,
 }: MapProps) {
+  const clickRef = useRef(onMapClick);
+  clickRef.current = onMapClick;
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
@@ -110,6 +115,7 @@ function SatelliteMap({
     });
     mapRef.current = map;
     map.once("load", () => { styleLoadedRef.current = true; });
+    map.on("click", (e) => clickRef.current?.(e.lngLat.lat, e.lngLat.lng));
     if (!panels?.length) {
       markerRef.current = new mapboxgl.Marker({ color: "#ef4444" }).setLngLat([lon, lat]).addTo(map);
     }
@@ -453,6 +459,11 @@ function SatelliteMap({
   }, [panelsVisible]);
 
   useEffect(() => {
+    const canvas = mapRef.current?.getCanvas();
+    if (canvas) canvas.style.cursor = onMapClick ? "crosshair" : "";
+  }, [onMapClick]);
+
+  useEffect(() => {
     if (panels === undefined || panels.length > 0) return;
     mapRef.current?.jumpTo({ center: [lon, lat], zoom: 18 });
     markerRef.current?.setLngLat([lon, lat]);
@@ -469,9 +480,10 @@ export default function SatellitePane({
   lat, lon,
   className = "w-full h-64 rounded-lg overflow-hidden border border-border",
   panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM,
-  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey,
+  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey, onPickLocation,
 }: Props) {
   const [panelsVisible, setPanelsVisible] = useState(true);
+  const [picking, setPicking] = useState(false);
 
   return (
     <div className={`${className} relative`}>
@@ -484,8 +496,25 @@ export default function SatellitePane({
           segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches}
           panelsVisible={panelsVisible} selectedPanelCount={selectedPanelCount}
           fitKey={fitKey}
+          onMapClick={picking && onPickLocation ? (la, lo) => { setPicking(false); onPickLocation(la, lo); } : undefined}
         />
       </MapTokenLoader>
+      {onPickLocation ? (
+        <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-2 pointer-events-none">
+          <button
+            type="button"
+            onClick={() => setPicking((v) => !v)}
+            className="pointer-events-auto rounded-full bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow border border-border hover:bg-background"
+          >
+            {picking ? "Cancel" : "Wrong building? Pick your roof"}
+          </button>
+          {picking ? (
+            <span className="rounded-full bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow">
+              Move the map, then click the middle of your roof
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {panels?.length ? (
         <div className="absolute bottom-2 left-3 flex items-center gap-2 pointer-events-none">
           <label className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 pointer-events-auto cursor-pointer">
