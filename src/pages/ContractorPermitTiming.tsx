@@ -38,6 +38,54 @@ function TimingChart({ title, data, field, count, color }: { title: string; data
   </section>;
 }
 
+type StackRow = ContractorTiming & { gap: number; over: boolean };
+function StackedFinalChart({ data }: { data: ContractorTiming[] }) {
+  const [longestFirst, setLongestFirst] = useState(true);
+  const rows: StackRow[] = data.filter(d => d.appliedToFinal !== null).map(d => {
+    const parts = (d.appliedToIssued ?? 0) + (d.issuedToFinal ?? 0);
+    const total = d.appliedToFinal as number;
+    return { ...d, gap: Math.max(0, total - parts), over: parts > total };
+  }).sort((a, b) => longestFirst ? (b.appliedToFinal as number) - (a.appliedToFinal as number) : (a.appliedToFinal as number) - (b.appliedToFinal as number));
+  const tip = ({ active, payload }: { active?: boolean; payload?: { payload: StackRow }[] }) => {
+    if (!active || !payload?.length) return null;
+    const r = payload[0].payload;
+    const fmt = (v: number | null, n: number) => v === null ? 'no data' : `${v.toLocaleString()} days (median of ${n.toLocaleString()} permits)`;
+    return <div className="rounded-md border border-border bg-popover text-popover-foreground p-2 text-xs space-y-1">
+      <p className="font-semibold">{r.contractor}</p>
+      <p><span style={{ color: 'hsl(var(--chart-blue))' }}>■</span> Applied → issued: {fmt(r.appliedToIssued, r.appliedToIssuedCount)}</p>
+      <p><span style={{ color: 'hsl(var(--chart-green))' }}>■</span> Issued → final: {fmt(r.issuedToFinal, r.issuedToFinalCount)}</p>
+      <p><span style={{ color: 'hsl(var(--accent))' }}>■</span> Applied → final (total): {fmt(r.appliedToFinal, r.appliedToFinalCount)}</p>
+      {r.gap > 0 && <p className="text-muted-foreground">Orange segment: {r.gap.toLocaleString()} days the total exceeds the two steps combined.</p>}
+      {r.over && <p className="text-muted-foreground">The two steps combined are longer than the total median, so the bar extends past the total.</p>}
+    </div>;
+  };
+  return <section className="border border-border rounded-md p-4 space-y-2">
+    <div className="flex items-center justify-between gap-3 flex-wrap">
+      <h2 className="text-lg font-semibold">Applied → final</h2>
+      <Button variant="outline" size="sm" onClick={() => setLongestFirst(v => !v)} aria-pressed={!longestFirst}>{longestFirst ? 'Longest median times on top' : 'Shortest median times on top'}</Button>
+    </div>
+    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+      <span><span style={{ color: 'hsl(var(--chart-blue))' }}>■</span> Applied → issued</span>
+      <span><span style={{ color: 'hsl(var(--chart-green))' }}>■</span> Issued → final</span>
+      <span><span style={{ color: 'hsl(var(--accent))' }}>■</span> Rest of applied → final</span>
+      <span>Number at the end = applied → final median</span>
+    </div>
+    <p className="text-xs text-muted-foreground">Each step is a separate median, so the steps don't add up exactly to the total. Orange shows how much longer the total median is than the two steps combined.</p>
+    {rows.length === 0 ? <p className="text-sm text-muted-foreground py-8 text-center">No contractors with this timing match these filters.</p> :
+      <div style={{ height: Math.max(200, rows.length * 28 + 40) }}><ResponsiveContainer width="100%" height="100%">
+        <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 48, bottom: 12 }}>
+          <CartesianGrid horizontal={false} stroke="hsl(var(--border))" />
+          <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} label={{ value: 'Median days', position: 'insideBottom', offset: -2, fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+          <YAxis type="category" dataKey="contractor" width={210} interval={0} tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }} tickFormatter={(v: string) => v.length > 32 ? `${v.slice(0, 31)}…` : v} />
+          <Tooltip content={tip} />
+          <Bar dataKey="appliedToIssued" stackId="t" fill="hsl(var(--chart-blue))" />
+          <Bar dataKey="issuedToFinal" stackId="t" fill="hsl(var(--chart-green))" />
+          <Bar dataKey="gap" stackId="t" fill="hsl(var(--accent))" radius={[0, 3, 3, 0]}><LabelList dataKey="appliedToFinal" position="right" fill="hsl(var(--foreground))" fontSize={11} /></Bar>
+        </BarChart>
+      </ResponsiveContainer></div>}
+  </section>;
+}
+
 export default function ContractorPermitTiming() {
   useSeo({ title: 'Austin Solar Permit Timing by Contractor', description: 'Compare how long Austin solar and battery permits take from application to issuance, application to final, and issuance to final inspection, by contractor.' });
   const [rows, setRows] = useState<SolarPermit[]>([]);
@@ -109,10 +157,10 @@ export default function ContractorPermitTiming() {
         : <>
           <p className="text-sm text-muted-foreground">{filtered.length.toLocaleString()} matching permits · {contractors.length.toLocaleString()} contractors · showing {shown.length} · {excluded.toLocaleString()} permits left out as likely data errors</p>
           <div className="grid gap-6 lg:grid-cols-2">
-            <TimingChart title="Applied → issued" data={shown} field="appliedToIssued" count="appliedToIssuedCount" color="hsl(var(--primary))" />
-            <TimingChart title="Issued → final" data={shown} field="issuedToFinal" count="issuedToFinalCount" color="hsl(var(--accent-foreground))" />
+            <TimingChart title="Applied → issued" data={shown} field="appliedToIssued" count="appliedToIssuedCount" color="hsl(var(--chart-blue))" />
+            <TimingChart title="Issued → final" data={shown} field="issuedToFinal" count="issuedToFinalCount" color="hsl(var(--chart-green))" />
           </div>
-          <TimingChart title="Applied → final" data={shown} field="appliedToFinal" count="appliedToFinalCount" color="hsl(var(--accent))" />
+          <StackedFinalChart data={shown} />
           <section aria-label="Contractor timing table" className="border border-border rounded-md overflow-hidden">
             <div className="p-4 border-b border-border">
               <h2 className="text-lg font-semibold">Contractor details</h2>
