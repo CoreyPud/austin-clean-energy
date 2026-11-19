@@ -403,6 +403,14 @@ const AustinAtGlance = () => {
       ],
       "grid-tools": [
         {
+          key: "austin-der-planning",
+          to: "/austin-der-planning",
+          title: "Austin DER Planning",
+          description: "Screen candidate battery sites across Austin, ranked by existing rooftop solar, ZIP-level new load growth, and nearest substations.",
+          cta: "Open the Site Map",
+          preview: <CouncilIconPreview icon={BatteryCharging} className="h-[226px]" />,
+        },
+        {
           key: "digital-twin-map",
           to: "/digital-twin-map",
           title: "Digital Twin Map",

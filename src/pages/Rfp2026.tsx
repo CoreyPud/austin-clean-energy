@@ -3,7 +3,7 @@ import { useSeo } from "@/hooks/use-seo";
 
 export default function Rfp2026() {
   useSeo({
-    title: "RFP 2026: Austin Battery Site Map",
+    title: "Austin DER Planning | Battery Priority Site Map",
     description: "Screening map of Austin buildings where batteries could pair with existing or new rooftop solar, ranked by solar and ZIP-level new load growth.",
   });
   return <BatterySiteMap />;

@@ -7,7 +7,7 @@ test("ATB Options uses the requested clean energy technology database URL", () =
 });
 
 test("all legacy public links redirect to their replacement with parameters and anchors intact", () => {
-  assert.equal(Object.keys(PUBLIC_URL_RENAMES).length, 15);
+  assert.equal(Object.keys(PUBLIC_URL_RENAMES).length, 16);
   for (const [oldPath, newPath] of Object.entries(PUBLIC_URL_RENAMES)) {
     assert.equal(renamedPublicUrl(oldPath, "?year=2030", "#sources"), `${newPath}?year=2030#sources`);
     assert.equal(renamedPublicUrl(`${oldPath}/`, "?year=2030", "#sources"), `${newPath}?year=2030#sources`);
@@ -17,6 +17,8 @@ test("all legacy public links redirect to their replacement with parameters and 
 
 test("Clean Canvas uses the clean energy ideas and actions URL", () => {
   assert.equal(renamedPublicUrl("/clean-canvas"), "/clean-energy-ideas-actions");
+  assert.equal(renamedPublicUrl("/rfp-2026"), "/austin-der-planning");
+  assert.equal(renamedPublicUrl("/rfp-2026/", "?site=904-west-ave", "#table"), "/austin-der-planning?site=904-west-ave#table");
   assert.equal(renamedPublicUrl("/clean-canvas/", "?topic=Policy", "#idea-1"), "/clean-energy-ideas-actions?topic=Policy#idea-1");
 });
 

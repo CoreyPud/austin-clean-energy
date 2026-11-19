@@ -15,6 +15,7 @@ export const PUBLIC_URL_RENAMES = {
   "/import-capacity": "/austin-transmission-capacity-calculator",
   "/power-money": "/austin-energy-generation-costs",
   "/clean-canvas": "/clean-energy-ideas-actions",
+  "/rfp-2026": "/austin-der-planning",
 } as const;
 
 export function renamedPublicUrl(pathname: string, search = "", hash = "") {

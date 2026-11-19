@@ -82,8 +82,8 @@ const publicPages = [
     icon: TrendingUp,
   },
   {
-    path: "/rfp-2026",
-    title: "RFP 2026: Battery Site Map",
+    path: "/austin-der-planning",
+    title: "Austin DER Planning",
     description: "Candidate battery sites ranked by existing solar and ZIP-level new load, with a map and ranked table.",
     icon: TrendingUp,
   },

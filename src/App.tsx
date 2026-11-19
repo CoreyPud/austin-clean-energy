@@ -169,7 +169,7 @@ const AppRoutes = () => {
           <Route path="/austin-irp-planning" element={<AustinIRPPlanning />} />
           <Route path="/austin-load-zone-outlook" element={<AustinLoadZoneOutlook />} />
           <Route path="/digital-twin-map" element={<DigitalTwinMap />} />
-          <Route path="/rfp-2026" element={<Rfp2026 />} />
+          <Route path="/austin-der-planning" element={<Rfp2026 />} />
           <Route path="/peak-savings-irr-calculator" element={<PeakSavingsCalculatorPage />} />
           <Route path="/building-load-curves-battery" element={<BuildingLoadCurves />} />
           <Route path="/innovation-gap" element={<InnovationGapPage />} />
