@@ -2630,6 +2630,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_shared_assessment_by_code: {
+        Args: { _code: string }
+        Returns: {
+          address: string
+          calculator_state: Json
+          label: string
+          property_type: string
+          results: Json
+          updated_at: string
+        }[]
+      }
       get_sync_solar_cron_secret: { Args: never; Returns: string }
       gettransactionid: { Args: never; Returns: unknown }
       has_role: {

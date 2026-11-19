@@ -1,3 +1,4 @@
+import { sharePathFor } from "@/lib/share-slug";
 import { useEffect, useState, useCallback } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +32,8 @@ interface Props {
   onOpenSaved: (row: AssessmentSnapshot) => void;
 }
 
-export const shareUrlFor = (token: string) =>
-  `${window.location.origin}/solar-savings-austin?share=${token}`;
+export const shareUrlFor = (token: string, address?: string | null) =>
+  `${window.location.origin}${sharePathFor(address, token)}`;
 
 const PENDING_KEY = "ace_pending_save";
 
@@ -134,7 +135,7 @@ const SavedPropertiesDrawer = ({ getSnapshot, onOpenSaved }: Props) => {
   };
 
   const copyLink = async (token: string) => {
-    const url = shareUrlFor(token);
+    const url = shareUrlFor(token, rows.find((r) => r.share_token === token)?.address);
     try { await navigator.clipboard.writeText(url); toast.success("Share link copied", { description: "Anyone with the link can view it — no login needed." }); }
     catch { window.prompt("Copy this link:", url); }
   };

@@ -1,3 +1,5 @@
+import { useParams } from "react-router-dom";
+import { shareCodeFromSlug } from "@/lib/share-slug";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -428,7 +430,7 @@ const PropertyAssessment = () => {
   };
 
   useEffect(() => {
-    if (!address.trim() || manualPropertyType.current || searchParams.get("share")) return;
+    if (!address.trim() || manualPropertyType.current || searchParams.get("share") || window.location.pathname.startsWith("/solar-savings-austin/")) return;
     let cancelled = false;
     setTypeLookupStatus("checking");
     const timer = setTimeout(async () => {
@@ -526,11 +528,15 @@ const PropertyAssessment = () => {
     }
   }, [restoreStep, needsResize]);
 
+  const { shareSlug } = useParams();
+  const shareCode = shareCodeFromSlug(shareSlug);
   const shareToken = searchParams.get("share");
   useEffect(() => {
-    if (!shareToken) return;
+    if (!shareToken && !shareCode) return;
     (async () => {
-      const { data, error } = await supabase.rpc("get_shared_assessment", { _token: shareToken });
+      const { data, error } = shareToken
+        ? await supabase.rpc("get_shared_assessment", { _token: shareToken })
+        : await supabase.rpc("get_shared_assessment_by_code", { _code: shareCode! });
       const row = Array.isArray(data) ? data[0] : null;
       if (error || !row) {
         toast({ title: "Shared link not found", description: "It may have been deleted.", variant: "destructive" });
@@ -540,7 +546,7 @@ const PropertyAssessment = () => {
       openSaved(row as AssessmentSnapshot);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shareToken]);
+  }, [shareToken, shareCode]);
 
   return (
     <div className="min-h-screen bg-background">

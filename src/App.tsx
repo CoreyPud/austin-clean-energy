@@ -121,6 +121,7 @@ const AppRoutes = () => {
           <Route path="/city-overview" element={<CityOverview />} />
           <Route path="/solar-permits" element={<SolarPermits />} />
           <Route path="/solar-savings-austin" element={<PropertyAssessment />} />
+          <Route path="/solar-savings-austin/:shareSlug" element={<PropertyAssessment />} />
           <Route path="/rebate-applications" element={<RebateApplications />} />
           <Route path="/installation/:id" element={<InstallationDetail />} />
           <Route path="/data-sources" element={<DataSources />} />
