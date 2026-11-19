@@ -32,6 +32,11 @@ export interface ContractorTiming {
 }
 export type ContractorSort = 'contractor' | 'permits' | 'totalKw' | 'appliedToIssued' | 'issuedToFinal';
 
+/** First click on a column header: contractor names go A→Z, every number puts its largest value on top. */
+export function firstClickAscending(field: ContractorSort) {
+  return field === 'contractor';
+}
+
 export function contractorTiming(rows: SolarPermit[]): { contractors: ContractorTiming[]; excluded: number } {
   const groups = new Map<string, { permits: number; kw: number; ai: number[]; if: number[] }>();
   let excluded = 0;

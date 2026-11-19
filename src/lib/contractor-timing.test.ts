@@ -1,6 +1,6 @@
 import { test as it } from 'node:test';
 import assert from 'node:assert/strict';
-import { contractorTiming, daysAppliedToIssued, sortContractors } from './contractor-timing';
+import { contractorTiming, daysAppliedToIssued, firstClickAscending, sortContractors } from './contractor-timing';
 import type { SolarPermit } from './solar-permits';
 
 const p = (o: Partial<SolarPermit>): SolarPermit => ({ id: Math.random().toString(), project_id: null, permit_number: null, address: null, installed_kw: null, contractor_company: 'A', permit_class: null, status_current: 'Final', applied_date: null, issued_date: null, completed_date: null, original_zip: null, council_district: null, description: null, total_job_valuation: null, link: null, has_correction: null, host: null, host_pid: null, ...o });
@@ -23,3 +23,23 @@ const p = (o: Partial<SolarPermit>): SolarPermit => ({ id: Math.random().toStrin
     assert.deepEqual(sortContractors(list, 'appliedToIssued', false).map(c => c.contractor), ['Y', 'X']);
   });
 
+  it('puts the largest numbers on top for a first click', () => {
+    assert.equal(firstClickAscending('permits'), false);
+    assert.equal(firstClickAscending('totalKw'), false);
+    assert.equal(firstClickAscending('appliedToIssued'), false);
+    assert.equal(firstClickAscending('issuedToFinal'), false);
+    assert.equal(firstClickAscending('contractor'), true);
+  });
+  it('moves the largest values to the top, then the bottom, when the order flips', () => {
+    const list = sortContractors([
+      { contractor: 'Small Co', permits: 12, totalKw: 40, appliedToIssued: 3, appliedToIssuedCount: 12, issuedToFinal: 9, issuedToFinalCount: 12 },
+      { contractor: 'Big Co', permits: 60, totalKw: 900, appliedToIssued: 21, appliedToIssuedCount: 60, issuedToFinal: 44, issuedToFinalCount: 60 },
+      { contractor: 'No Final Co', permits: 30, totalKw: 200, appliedToIssued: 7, appliedToIssuedCount: 30, issuedToFinal: null, issuedToFinalCount: 0 },
+    ], 'issuedToFinal', false).map(c => c.contractor);
+    assert.deepEqual(list, ['Big Co', 'Small Co', 'No Final Co']);
+    assert.deepEqual(sortContractors([
+      { contractor: 'Small Co', permits: 12, totalKw: 40, appliedToIssued: 3, appliedToIssuedCount: 12, issuedToFinal: 9, issuedToFinalCount: 12 },
+      { contractor: 'Big Co', permits: 60, totalKw: 900, appliedToIssued: 21, appliedToIssuedCount: 60, issuedToFinal: 44, issuedToFinalCount: 60 },
+      { contractor: 'No Final Co', permits: 30, totalKw: 200, appliedToIssued: 7, appliedToIssuedCount: 30, issuedToFinal: null, issuedToFinalCount: 0 },
+    ], 'issuedToFinal', true).map(c => c.contractor), ['Small Co', 'Big Co', 'No Final Co']);
+  });

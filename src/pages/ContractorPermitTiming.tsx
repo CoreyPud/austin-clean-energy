@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, X } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeo } from '@/hooks/use-seo';
@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { emptyPermitFilters, equipmentLabels, filterPermits, mergeFilterOptions, type PermitFilters, type SolarPermit } from '@/lib/solar-permits';
-import { contractorTiming, sortContractors, MIN_VALID_APPLIED_TO_FINAL_DAYS, type ContractorSort, type ContractorTiming } from '@/lib/contractor-timing';
+import { contractorTiming, firstClickAscending, sortContractors, MIN_VALID_APPLIED_TO_FINAL_DAYS, type ContractorSort, type ContractorTiming } from '@/lib/contractor-timing';
 
 const COLS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
 const sortNames: Record<ContractorSort, string> = { issuedToFinal: 'Issued → final (median days)', appliedToIssued: 'Applied → issued (median days)', permits: 'Number of permits', totalKw: 'Total reported kW', contractor: 'Contractor name' };
+const tableColumns: [ContractorSort, string][] = [['contractor', 'Contractor'], ['permits', 'Permits'], ['totalKw', 'Total reported kW'], ['appliedToIssued', 'Applied → issued (median days)'], ['issuedToFinal', 'Issued → final (median days)']];
 
 function TimingChart({ title, data, field, count, color }: { title: string; data: ContractorTiming[]; field: 'appliedToIssued' | 'issuedToFinal'; count: 'appliedToIssuedCount' | 'issuedToFinalCount'; color: string }) {
   const rows = data.filter(d => d[field] !== null);
@@ -80,6 +82,7 @@ export default function ContractorPermitTiming() {
   const statuses = useMemo(() => mergeFilterOptions([], rows.map(r => r.status_current)), [rows]);
   const classes = useMemo(() => mergeFilterOptions([], rows.map(r => r.permit_class)), [rows]);
   const update = (k: keyof PermitFilters, v: string) => setFilters(f => ({ ...f, [k]: v }));
+  const clickSort = (field: ContractorSort) => { if (sort === field) setAscending(a => !a); else { setSort(field); setAscending(firstClickAscending(field)); } };
   const text = (k: keyof PermitFilters, label: string, type = 'text', ph?: string) => <div className="space-y-1.5"><Label htmlFor={`ct-${k}`}>{label}</Label><Input id={`ct-${k}`} type={type} min={type === 'number' ? 0 : undefined} value={filters[k]} onChange={e => update(k, e.target.value)} placeholder={ph} /></div>;
   const opt = (k: 'status' | 'type' | 'equipment', label: string, options: string[], names: Record<string, string> = {}) => <div className="space-y-1.5"><Label htmlFor={`ct-${k}`}>{label}</Label><Select value={filters[k]} onValueChange={v => update(k, v)}><SelectTrigger id={`ct-${k}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All {label.toLowerCase()}</SelectItem>{options.map(s => <SelectItem key={s} value={s}>{names[s] || s}</SelectItem>)}</SelectContent></Select></div>;
 
@@ -105,6 +108,24 @@ export default function ContractorPermitTiming() {
             <TimingChart title="Applied → issued" data={shown} field="appliedToIssued" count="appliedToIssuedCount" color="hsl(var(--primary))" />
             <TimingChart title="Issued → final" data={shown} field="issuedToFinal" count="issuedToFinalCount" color="hsl(var(--accent-foreground))" />
           </div>
+          <section aria-label="Contractor timing table" className="border border-border rounded-md overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h2 className="text-lg font-semibold">Contractor details</h2>
+              <p className="text-sm text-muted-foreground mt-1">Click a column heading to sort it. The first click puts the largest numbers on top; click the same heading again to put them on the bottom. The two charts above follow this table's order.</p>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow>{tableColumns.map(([field, title]) => <TableHead key={field} aria-sort={sort === field ? ascending ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" onClick={() => clickSort(field)} className="px-1 whitespace-nowrap text-xs">{title}{sort === field ? ascending ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" /> : <ArrowUpDown className="ml-1 h-3 w-3" />}</Button></TableHead>)}</TableRow></TableHeader>
+                <TableBody>{shown.map(c => <TableRow key={c.contractor}>
+                  <TableCell className="max-w-64 text-sm break-words">{c.contractor}</TableCell>
+                  <TableCell className="tabular-nums text-sm text-right">{c.permits.toLocaleString()}</TableCell>
+                  <TableCell className="tabular-nums text-sm text-right">{c.totalKw.toLocaleString(undefined, { maximumFractionDigits: 1 })}</TableCell>
+                  <TableCell className="tabular-nums text-sm text-right whitespace-nowrap">{c.appliedToIssued === null ? '—' : <>{c.appliedToIssued.toLocaleString(undefined, { maximumFractionDigits: 1 })} <span className="text-muted-foreground">· {c.appliedToIssuedCount.toLocaleString()} permits</span></>}</TableCell>
+                  <TableCell className="tabular-nums text-sm text-right whitespace-nowrap">{c.issuedToFinal === null ? '—' : <>{c.issuedToFinal.toLocaleString(undefined, { maximumFractionDigits: 1 })} <span className="text-muted-foreground">· {c.issuedToFinalCount.toLocaleString()} permits</span></>}</TableCell>
+                </TableRow>)}{shown.length === 0 && <TableRow><TableCell colSpan={5} className="py-12 text-center text-muted-foreground">No contractors match these filters.</TableCell></TableRow>}</TableBody>
+              </Table>
+            </div>
+          </section>
         </>}
     </main>
   </div>;
