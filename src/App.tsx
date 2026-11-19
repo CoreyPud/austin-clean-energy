@@ -10,6 +10,7 @@ import AustinAtGlance from "./pages/AustinAtGlance";
 import WhatYouCanDo from "./pages/WhatYouCanDo";
 import CityOverview from "./pages/CityOverview";
 import SolarPermits from "./pages/SolarPermits";
+import ContractorPermitTiming from "./pages/ContractorPermitTiming";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
 import { Navigate } from "react-router-dom";
@@ -120,6 +121,7 @@ const AppRoutes = () => {
           <Route path="/progress-resources" element={<Navigate to="/austin-at-a-glance" replace />} />
           <Route path="/city-overview" element={<CityOverview />} />
           <Route path="/solar-permits" element={<SolarPermits />} />
+          <Route path="/solar-permits/contractors" element={<ContractorPermitTiming />} />
           <Route path="/solar-savings-austin" element={<PropertyAssessment />} />
           <Route path="/solar-savings-austin/:shareSlug" element={<PropertyAssessment />} />
           <Route path="/rebate-applications" element={<RebateApplications />} />

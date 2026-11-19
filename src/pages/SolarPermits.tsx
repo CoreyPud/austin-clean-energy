@@ -139,6 +139,7 @@ export default function SolarPermits() {
       <div className="text-sm text-muted-foreground space-y-2">
         <p>Source: <a href="https://data.austintexas.gov/Building-and-Development/Issued-Construction-Permits/3syk-w9eu" target="_blank" rel="noopener noreferrer" className="text-primary underline">City of Austin permit records</a>, with site corrections and flagged duplicates/exclusions removed. Size is as reported; missing kW does not mean zero.</p>
         <p>Host / owner is the TCAD recorded property owner when a parcel is linked, not a verified solar-system host or current account holder. Unmatched owners are not reported. Dates filter by final, then issuance, then application. Every record here comes from the City's issued-permit dataset, so all have an issue date; Status shows where each permit stands now. Equipment is read from the permit description (same terms as the Solar Progress charts). Day filters exclude permits without a final date.</p>
+        <p><Link to="/solar-permits/contractors" className="text-primary underline font-medium">See permit timing charts by contractor →</Link></p>
         {ownerWarning && <p role="status" className="text-destructive">Property-owner data is temporarily unavailable. Permit records remain available.</p>}
       </div>
       <section aria-label="Permit filters" onFocusCapture={() => setFullRequested(true)} className="border-y border-border py-5 space-y-4">

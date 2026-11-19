@@ -1,0 +1,25 @@
+import { test as it } from 'node:test';
+import assert from 'node:assert/strict';
+import { contractorTiming, daysAppliedToIssued, sortContractors } from './contractor-timing';
+import type { SolarPermit } from './solar-permits';
+
+const p = (o: Partial<SolarPermit>): SolarPermit => ({ id: Math.random().toString(), project_id: null, permit_number: null, address: null, installed_kw: null, contractor_company: 'A', permit_class: null, status_current: 'Final', applied_date: null, issued_date: null, completed_date: null, original_zip: null, council_district: null, description: null, total_job_valuation: null, link: null, has_correction: null, host: null, host_pid: null, ...o });
+
+  it('computes applied to issued days', () => {
+    assert.equal(daysAppliedToIssued({ applied_date: '2025-01-01', issued_date: '2025-01-11' }), 10);
+  });
+  it('excludes permits under 10 days applied to final', () => {
+    const r = contractorTiming([p({ applied_date: '2025-01-01', issued_date: '2025-01-02', completed_date: '2025-01-05' }), p({ applied_date: '2025-01-01', issued_date: '2025-01-11', completed_date: '2025-02-10' })]);
+    assert.equal(r.excluded, 1);
+    assert.deepEqual([r.contractors[0].permits, r.contractors[0].appliedToIssued, r.contractors[0].issuedToFinal], [1, 10, 30]);
+  });
+  it('ignores issued to final for non-final permits', () => {
+    const r = contractorTiming([p({ status_current: 'Active', applied_date: '2025-01-01', issued_date: '2025-01-05', completed_date: '2025-03-01' })]);
+    assert.equal(r.contractors[0].issuedToFinal, null);
+    assert.equal(r.contractors[0].appliedToIssued, 4);
+  });
+  it('sorts by median days with missing last', () => {
+    const list = [{ contractor: 'X', permits: 1, totalKw: 0, appliedToIssued: null, appliedToIssuedCount: 0, issuedToFinal: 5, issuedToFinalCount: 1 }, { contractor: 'Y', permits: 1, totalKw: 0, appliedToIssued: 3, appliedToIssuedCount: 1, issuedToFinal: 9, issuedToFinalCount: 1 }];
+    assert.deepEqual(sortContractors(list, 'appliedToIssued', false).map(c => c.contractor), ['Y', 'X']);
+  });
+
