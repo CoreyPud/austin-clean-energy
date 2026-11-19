@@ -118,8 +118,8 @@ function SatelliteMap({
       style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: [lon, lat],
       zoom: 18,
-      cooperativeGestures: true,
     });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
     map.once("load", () => { styleLoadedRef.current = true; });
     map.on("click", (e) => clickRef.current?.(e.lngLat.lat, e.lngLat.lng));
@@ -300,7 +300,7 @@ function SatelliteMap({
         const padFrac = 0.25 - t * 0.15;
         const padX = el ? el.clientWidth  * padFrac : 80;
         const padY = el ? el.clientHeight * padFrac : 80;
-        map.fitBounds(bounds, { padding: { top: padY, bottom: padY, left: padX, right: padX }, animate: false });
+        map.fitBounds(bounds, { padding: { top: padY, bottom: padY, left: padX, right: padX }, maxZoom: 19.5, animate: false });
       } finally {
         if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
       }
@@ -515,7 +515,7 @@ export default function SatellitePane({
         />
       </MapTokenLoader>
       {onPickLocation ? (
-        <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-2 pointer-events-none">
+        <div className="absolute top-3 left-3 right-14 flex flex-wrap items-center gap-2 pointer-events-none">
           <button
             type="button"
             onClick={() => setPicking((v) => !v)}

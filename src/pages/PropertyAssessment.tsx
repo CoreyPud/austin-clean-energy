@@ -825,6 +825,7 @@ const PropertyAssessment = () => {
                             panelWidthM={results.panelDims?.w}
                             segmentAzimuths={assessmentAzimuths}
                             segmentPitches={assessmentPitches}
+                            fitKey={`${results.solarCenter?.lat ?? ""},${results.solarCenter?.lon ?? ""},${assessmentRun}`}
                             onPickLocation={loading ? undefined : handleRoofPick}
                             onSegmentClick={roofSurfaces.length > 1 ? toggleSegment : undefined}
                             selectedPanelCount={
