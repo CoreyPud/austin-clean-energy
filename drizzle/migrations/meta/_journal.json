@@ -127,6 +127,13 @@
       "when": 1795100547228,
       "tag": "0017_shared_assessment_short_code",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795132716295,
+      "tag": "0018_scope_gantt_updates",
+      "breakpoints": true
     }
   ]
 }
