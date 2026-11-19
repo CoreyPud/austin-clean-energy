@@ -27,10 +27,12 @@ export interface ContractorTiming {
   totalKw: number;
   appliedToIssued: number | null;
   appliedToIssuedCount: number;
+  appliedToFinal: number | null;
+  appliedToFinalCount: number;
   issuedToFinal: number | null;
   issuedToFinalCount: number;
 }
-export type ContractorSort = 'contractor' | 'permits' | 'totalKw' | 'appliedToIssued' | 'issuedToFinal';
+export type ContractorSort = 'contractor' | 'permits' | 'totalKw' | 'appliedToIssued' | 'appliedToFinal' | 'issuedToFinal';
 
 /** First click on a column header: contractor names go A→Z, every number puts its largest value on top. */
 export function firstClickAscending(field: ContractorSort) {
@@ -38,18 +40,19 @@ export function firstClickAscending(field: ContractorSort) {
 }
 
 export function contractorTiming(rows: SolarPermit[]): { contractors: ContractorTiming[]; excluded: number } {
-  const groups = new Map<string, { permits: number; kw: number; ai: number[]; if: number[] }>();
+  const groups = new Map<string, { permits: number; kw: number; ai: number[]; af: number[]; if: number[] }>();
   let excluded = 0;
   for (const row of rows) {
     if (isSuspectTiming(row)) { excluded++; continue; }
     const name = (row.contractor_company || '').trim() || 'Not reported';
-    const g = groups.get(name) ?? { permits: 0, kw: 0, ai: [], if: [] };
+    const g = groups.get(name) ?? { permits: 0, kw: 0, ai: [], af: [], if: [] };
     g.permits++; g.kw += row.installed_kw ?? 0;
     const ai = daysAppliedToIssued(row); if (ai !== null) g.ai.push(ai);
+    const af = daysAppliedToFinal(row); if (af !== null) g.af.push(af);
     const fi = daysIssuedToFinal(row); if (fi !== null) g.if.push(fi);
     groups.set(name, g);
   }
-  return { excluded, contractors: [...groups].map(([contractor, g]) => ({ contractor, permits: g.permits, totalKw: g.kw, appliedToIssued: median(g.ai), appliedToIssuedCount: g.ai.length, issuedToFinal: median(g.if), issuedToFinalCount: g.if.length })) };
+  return { excluded, contractors: [...groups].map(([contractor, g]) => ({ contractor, permits: g.permits, totalKw: g.kw, appliedToIssued: median(g.ai), appliedToIssuedCount: g.ai.length, appliedToFinal: median(g.af), appliedToFinalCount: g.af.length, issuedToFinal: median(g.if), issuedToFinalCount: g.if.length })) };
 }
 
 export function sortContractors(list: ContractorTiming[], field: ContractorSort, ascending: boolean) {
