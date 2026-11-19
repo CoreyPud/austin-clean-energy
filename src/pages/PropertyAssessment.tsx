@@ -124,8 +124,26 @@ const PropertyAssessment = () => {
   // Same buildable-layout derate (setbacks, low-TSRF panels, rooftop walkways removed) that
   // PropertyPage.tsx applies -- without this, every downstream number here is sized off
   // Google's raw maximum instead of what can actually be built, and the two pages disagree.
+  // Roof surfaces (Google Solar segments) the user switched off -- e.g. trees, ground, carports.
+  const [excludedSegments, setExcludedSegments] = useState<Set<number>>(new Set());
+  useEffect(() => { setExcludedSegments(new Set()); }, [results]);
+  const toggleSegment = (seg: number) => setExcludedSegments(prev => {
+    const next = new Set(prev);
+    if (next.has(seg)) next.delete(seg); else next.add(seg);
+    return next;
+  });
+  const roofSurfaces = useMemo(() => {
+    const m = new Map<number, number>();
+    (assessmentPanels ?? []).forEach(p => m.set(p.segmentIndex, (m.get(p.segmentIndex) ?? 0) + 1));
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([seg, count]) => ({ seg, count }));
+  }, [assessmentPanels]);
+  const selectedSurfacePanels = useMemo(
+    () => assessmentPanels?.filter(p => !excludedSegments.has(p.segmentIndex)),
+    [assessmentPanels, excludedSegments],
+  );
+
   const solarFilter = useSolarFilter({
-    panels: assessmentPanels,
+    panels: selectedSurfacePanels,
     propertyType,
     azimuths: assessmentAzimuths,
   });
@@ -808,6 +826,7 @@ const PropertyAssessment = () => {
                             segmentAzimuths={assessmentAzimuths}
                             segmentPitches={assessmentPitches}
                             onPickLocation={loading ? undefined : handleRoofPick}
+                            onSegmentClick={roofSurfaces.length > 1 ? toggleSegment : undefined}
                             selectedPanelCount={
                               assessmentPanels && si?.panelCapacityWatts
                                 ? Math.round(systemKw * 1000 / si.panelCapacityWatts)
@@ -815,6 +834,31 @@ const PropertyAssessment = () => {
                             }
                           />
                         </MapTokenLoader>
+                        {roofSurfaces.length > 1 && (
+                          <div className="p-3 border-t border-border space-y-2">
+                            <p className="text-xs text-muted-foreground">
+                              Roof surfaces — click a surface on the map or below to include or remove it (for example panels placed on trees, ground or a carport). System size and savings update automatically.
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {roofSurfaces.map(({ seg, count }) => {
+                                const on = !excludedSegments.has(seg);
+                                const az = assessmentAzimuths[seg];
+                                const dir = az == null ? "" : ["N","NE","E","SE","S","SW","W","NW"][Math.round(((az % 360) + 360) % 360 / 45) % 8] + "-facing, ";
+                                return (
+                                  <Button key={seg} type="button" size="sm" variant={on ? "default" : "outline"}
+                                    aria-pressed={on} onClick={() => toggleSegment(seg)} className="h-7 text-xs">
+                                    Surface {seg + 1} · {dir}{count} panels
+                                  </Button>
+                                );
+                              })}
+                              {excludedSegments.size > 0 && (
+                                <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setExcludedSegments(new Set())}>
+                                  Reset
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 

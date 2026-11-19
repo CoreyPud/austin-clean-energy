@@ -25,6 +25,8 @@ interface Props {
   fitKey?: string | number;
   /** When set, shows a "Wrong building?" control; clicking the map reports the picked roof. */
   onPickLocation?: (lat: number, lon: number) => void;
+  /** When set, clicking a panel reports its roof surface (segment) so the page can toggle it. */
+  onSegmentClick?: (segmentIndex: number) => void;
 }
 
 const PANEL_OPACITY = 0.9;
@@ -73,14 +75,19 @@ function fillOpacityExpr(opacity: number, selectedCount: number | undefined): an
 }
 
 interface MapProps extends Omit<Props, "className" | "onPickLocation"> {
+  onSegmentClick?: (segmentIndex: number) => void;
   panelsVisible: boolean;
   onMapClick?: (lat: number, lon: number) => void;
 }
 
 function SatelliteMap({
   lat, lon, panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
-  segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey, onMapClick,
+  segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick,
 }: MapProps) {
+  const segmentClickRef = useRef(onSegmentClick);
+  segmentClickRef.current = onSegmentClick;
+  const pickingRef = useRef(false);
+  pickingRef.current = !!onMapClick;
   const clickRef = useRef(onMapClick);
   clickRef.current = onMapClick;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -267,7 +274,7 @@ function SatelliteMap({
         return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] },
-          properties: { id: i, tsrf, rank: rankOf[i] },
+          properties: { id: i, tsrf, rank: rankOf[i], seg: p.segmentIndex },
         };
       }),
     };
@@ -422,8 +429,15 @@ function SatelliteMap({
           if (tsrf == null) return;
           popupRef.current!
             .setLngLat(e.lngLat)
-            .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% of optimal</strong>`)
+            .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% of optimal</strong>${segmentClickRef.current ? '<br/><span style="font-size:11px">Click to remove this roof surface</span>' : ''}`)
             .addTo(map);
+        });
+        map.on("click", "panels-fill", (e) => {
+          if (pickingRef.current) return;
+          const seg = e.features?.[0]?.properties?.seg;
+          if (seg == null || !segmentClickRef.current) return;
+          popupRef.current?.remove();
+          segmentClickRef.current(Number(seg));
         });
         map.on("mousemove", "panels-fill", (e) => {
           popupRef.current?.setLngLat(e.lngLat);
@@ -480,7 +494,7 @@ export default function SatellitePane({
   lat, lon,
   className = "w-full h-64 rounded-lg overflow-hidden border border-border",
   panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM,
-  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey, onPickLocation,
+  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey, onPickLocation, onSegmentClick,
 }: Props) {
   const [panelsVisible, setPanelsVisible] = useState(true);
   const [picking, setPicking] = useState(false);
@@ -496,6 +510,7 @@ export default function SatellitePane({
           segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches}
           panelsVisible={panelsVisible} selectedPanelCount={selectedPanelCount}
           fitKey={fitKey}
+          onSegmentClick={onSegmentClick}
           onMapClick={picking && onPickLocation ? (la, lo) => { setPicking(false); onPickLocation(la, lo); } : undefined}
         />
       </MapTokenLoader>
