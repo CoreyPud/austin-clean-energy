@@ -18,9 +18,13 @@ const sortNames: Record<ContractorSort, string> = { issuedToFinal: 'Issued → f
 const tableColumns: [ContractorSort, string][] = [['contractor', 'Contractor'], ['permits', 'Permits'], ['totalKw', 'Total reported kW'], ['appliedToIssued', 'Applied → issued (median days)'], ['issuedToFinal', 'Issued → final (median days)']];
 
 function TimingChart({ title, data, field, count, color }: { title: string; data: ContractorTiming[]; field: 'appliedToIssued' | 'issuedToFinal'; count: 'appliedToIssuedCount' | 'issuedToFinalCount'; color: string }) {
-  const rows = data.filter(d => d[field] !== null);
+  const [longestFirst, setLongestFirst] = useState(true);
+  const rows = data.filter(d => d[field] !== null).sort((a, b) => longestFirst ? (b[field] as number) - (a[field] as number) : (a[field] as number) - (b[field] as number));
   return <section className="border border-border rounded-md p-4 space-y-2">
-    <h2 className="text-lg font-semibold">{title}</h2>
+    <div className="flex items-center justify-between gap-3 flex-wrap">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <Button variant="outline" size="sm" onClick={() => setLongestFirst(v => !v)} aria-pressed={!longestFirst}>{longestFirst ? 'Longest median times on top' : 'Shortest median times on top'}</Button>
+    </div>
     {rows.length === 0 ? <p className="text-sm text-muted-foreground py-8 text-center">No contractors with this timing match these filters.</p> :
       <div style={{ height: Math.max(200, rows.length * 28 + 40) }}><ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 48 }}>
@@ -89,7 +93,7 @@ export default function ContractorPermitTiming() {
   return <div className="min-h-screen bg-background text-foreground">
     <PageHeader title="Permit Timing by Contractor" backTo="/solar-permits" backLabel="Back to Permit Deep Dive" subtitle="Median days from application to issuance, and issuance to final, for each contractor." contentClassName="max-w-7xl mx-auto px-4" />
     <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-      <p className="text-sm text-muted-foreground">Uses the same City permit records and filters as the <Link to="/solar-permits" className="text-primary underline">permit deep dive</Link>. Bars show the median (middle) permit for each contractor. Applied → issued counts any permit with both dates; issued → final counts only permits the City marks Final. Permits under {MIN_VALID_APPLIED_TO_FINAL_DAYS} days from application to final are treated as data errors and left out.</p>
+      <p className="text-sm text-muted-foreground">Uses the same City permit records and filters as the <Link to="/solar-permits" className="text-primary underline">permit deep dive</Link>. Bars show the median (middle) permit for each contractor. Applied → issued counts any permit with both dates; issued → final counts only permits the City marks Final. Permits under {MIN_VALID_APPLIED_TO_FINAL_DAYS} days from application to final are treated as data errors and left out. Filters plus <strong>Sort contractors by</strong> and <strong>Show</strong> choose which contractors appear; each chart then orders its own bars by its own median time — use the button in a chart's corner to flip it.</p>
       <section aria-label="Filters" className="border-y border-border py-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {text('search', 'Address, permit, ZIP or description')}{text('host', 'Host / owner')}{text('contractor', 'Contractor')}
         {opt('status', 'Status', statuses)}{opt('type', 'Permit class', classes)}{opt('equipment', 'Equipment', Object.keys(equipmentLabels), equipmentLabels)}
@@ -111,7 +115,7 @@ export default function ContractorPermitTiming() {
           <section aria-label="Contractor timing table" className="border border-border rounded-md overflow-hidden">
             <div className="p-4 border-b border-border">
               <h2 className="text-lg font-semibold">Contractor details</h2>
-              <p className="text-sm text-muted-foreground mt-1">Click a column heading to sort it. The first click puts the largest numbers on top; click the same heading again to put them on the bottom. The two charts above follow this table's order.</p>
+              <p className="text-sm text-muted-foreground mt-1">Click a column heading to sort it. The first click puts the largest numbers on top; click the same heading again to put them on the bottom.</p>
             </div>
             <div className="overflow-x-auto">
               <Table>
