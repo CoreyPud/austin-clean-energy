@@ -7,10 +7,15 @@ import { supabase } from "@/integrations/supabase/client";
 // tools re-read that row on load and whenever the tab regains focus, so later edits show up.
 export type FinanceMode = "cash" | "finance";
 
+export const GRID_VOLTAGE_OPTIONS = ["480V 3-Phase", "208V 3-Phase", "240V Single-Phase"] as const;
+export const ROOF_TYPE_OPTIONS = ["TPO", "EPDM", "PVC", "Built-Up", "Shingle", "Metal"] as const;
+
 export type SharedProject = {
   projectName: string;
   address: string;
   systemSizeKw: number;
+  gridVoltage: string;
+  roofType: string;
   costPerW: number | null;
   financeMode: FinanceMode;
   loanTermYears: number | null;
@@ -26,6 +31,8 @@ export const defaultSharedProject: SharedProject = {
   projectName: "Austin Commercial Rooftop",
   address: "Austin, Texas",
   systemSizeKw: 250,
+  gridVoltage: "480V 3-Phase",
+  roofType: "TPO",
   costPerW: null,
   financeMode: "cash",
   loanTermYears: null,

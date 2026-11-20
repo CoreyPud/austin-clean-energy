@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fromTemplate, insertTask, moveTask, removeTask, scheduleTasks, wouldCycle, dayToIso } from "./schedule";
+import { fromTemplate, insertTask, moveTask, removeTask, scheduleTasks, wouldCycle, dayToIso, filterSchedulesForProperty, scheduleProgress } from "./schedule";
 import { PERMIT_TEMPLATE } from "./template";
 import type { GanttTask } from "./types";
 
@@ -63,4 +63,31 @@ test("spreadsheet template has 108 tasks with first start on project start", () 
   assert.equal(s[0].start, 0);
   assert.equal(dayToIso("2026-11-10", s[0].start), "2026-11-10");
   assert.ok(s.every((x) => Number.isFinite(x.end)));
+});
+
+test("schedules are strictly filtered to the active property and never leak across properties", () => {
+  const all = [
+    { id: "s1", saved_assessment_id: "prop-a" },
+    { id: "s2", saved_assessment_id: "prop-b" },
+    { id: "s3", saved_assessment_id: null },
+  ];
+  assert.deepEqual(filterSchedulesForProperty(all, "prop-a").map((s) => s.id), ["s1"]);
+  assert.deepEqual(filterSchedulesForProperty(all, "prop-b").map((s) => s.id), ["s2"]);
+  assert.deepEqual(filterSchedulesForProperty(all, "prop-c").map((s) => s.id), []);
+  assert.deepEqual(filterSchedulesForProperty(all, null).map((s) => s.id), ["s3"]);
+});
+
+test("scheduleProgress summarizes completion and blocked tasks while ignoring contingency rows", () => {
+  const tasks: GanttTask[] = [
+    { ...t("a", 2), status: "Done" },
+    { ...t("b", 2), status: "In Progress" },
+    { ...t("c", 2), status: "Blocked" },
+    { ...t("d", 2), status: "To Do" },
+    { ...t("x", 10, [], "Rework/Exception"), status: "Blocked" },
+  ];
+  const p = scheduleProgress(tasks);
+  assert.equal(p.overall, 38);
+  assert.equal(p.doneCount, 1);
+  assert.equal(p.blockedCount, 1);
+  assert.equal(p.totalCount, 4);
 });

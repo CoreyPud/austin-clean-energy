@@ -17,7 +17,6 @@ import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 import {
   SSO_RATE_UNDER_1MW,
   SSO_RATE_OVER_1MW,
-  SSO_OM_PER_KW_YEAR,
   SSO_OM_ESCALATION,
   SSO_INVERTER_REPLACEMENT_PER_KW,
   SSO_INVERTER_REPLACEMENT_YEAR,
@@ -41,7 +40,7 @@ import {
   AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW,
 } from "@/lib/solar-model";
 
-import { buildProgramFinancials, isSsoEligible, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
+import { buildProgramFinancials, defaultOmPerKwYear, isSsoEligible, type SolarRecommendation, type PropertyClass } from "@/lib/property-solar";
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const fmtKwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`;
@@ -100,6 +99,11 @@ interface SolarProgramViewProps {
    *  caller owns the state and re-derives `rec` with computeRecommendation's
    *  costPerWOverride. Omit for a static, data-derived cost-per-watt display. */
   onCostPerWChange?: (v: number) => void;
+  /** Annual O&M rate ($/kW-yr). Defaults to $3/kW-yr for residential and $12/kW-yr for
+   *  commercial, nonprofit, and multifamily when omitted. */
+  omPerKwYear?: number;
+  /** Presence enables an interactive O&M slider in the cost breakdown. */
+  onOmPerKwYearChange?: (v: number) => void;
   /** Calculator-only financing controls (cash/finance tabs, loan sliders), rendered between
    *  the cost breakdown and the charts -- a page-specific control this view doesn't own. */
   financingSlot?: React.ReactNode;
@@ -128,6 +132,8 @@ export default function SolarProgramView({
   imageryQuality,
   imageryDate,
   onCostPerWChange,
+  omPerKwYear,
+  onOmPerKwYearChange,
   financingSlot,
   federalOptions,
   onFederalOptionsChange,
@@ -141,6 +147,11 @@ export default function SolarProgramView({
   const isResidential = propertyClass === "residential";
   const isMultifamily = propertyClass === "multifamily";
   const isCommercial = propertyClass === "commercial";
+  const defaultOm = defaultOmPerKwYear(
+    rec.federalPropertyType ?? (isResidential ? "single-family" : isMultifamily ? "multi-family" : "commercial"),
+  );
+  const liveOmPerKwYear = Math.max(0, omPerKwYear ?? defaultOm);
+  const annualOmYear1 = Math.round(liveSystemKw * liveOmPerKwYear);
   const ssoEligible = isSsoEligible(rec, propertyClass, isNonProfit);
   const isSSO = ssoEligible && billingMode === "sso";
   const tenantCreditMode = isMultifamily && !isSSO;
@@ -157,10 +168,11 @@ export default function SolarProgramView({
     loanTermYears,
     loanInterestRate,
     monthlyUsageKwh,
+    omPerKwYear: liveOmPerKwYear,
   });
   const { yearOne, sso, net25, paybackYear, annualAmount } = financials;
   const breakdown = buildSolarFinancialBreakdown(rec, {
-    annualUsageKwh, productionPerKw, isSSO, loanTermYears, loanInterestRate, monthlyUsageKwh,
+    annualUsageKwh, productionPerKw, isSSO, loanTermYears, loanInterestRate, monthlyUsageKwh, omPerKwYear: liveOmPerKwYear,
   }, financials);
 
   const installCost = rec.federal?.netCostUsd ?? (isSSO ? rec.grossCost : rec.netCost);
@@ -302,6 +314,38 @@ export default function SolarProgramView({
                 onValueChange={([v]) => onCostPerWChange(v)}
               />
               <p className="text-xs text-muted-foreground">Drag to match an installer's quote.</p>
+            </>
+          )}
+        </div>
+        <div className="space-y-2 pt-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span className="text-muted-foreground">Annual O&amp;M</span>
+              <span className="font-semibold tabular-nums">${liveOmPerKwYear}/kW-yr</span>
+              <span className="text-muted-foreground tabular-nums">({fmt$(annualOmYear1)}/yr in Year 1)</span>
+            </div>
+            {onOmPerKwYearChange && liveOmPerKwYear !== defaultOm && (
+              <button
+                type="button"
+                onClick={() => onOmPerKwYearChange(defaultOm)}
+                className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums transition-colors hover:text-primary"
+              >
+                <RotateCcw className="h-3 w-3 shrink-0" />
+                Reset to ${defaultOm}/kW-yr
+              </button>
+            )}
+          </div>
+          {onOmPerKwYearChange && (
+            <>
+              <Slider
+                aria-label="Annual O&M ($/kW-yr)"
+                min={0} max={30} step={1}
+                value={[liveOmPerKwYear]}
+                onValueChange={([v]) => onOmPerKwYearChange(v)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Estimated operations &amp; maintenance, escalating {(SSO_OM_ESCALATION * 100).toFixed(0)}%/yr. Drag to adjust.
+              </p>
             </>
           )}
         </div>
@@ -483,7 +527,8 @@ export default function SolarProgramView({
             Modeled on Austin Energy's current tiered rates and Value of Solar
             credit, {(UTILITY_RATE_ESCALATION * 100).toFixed(1)}% a year electricity price
             escalation, {(PANEL_DEGRADATION_RATE * 100).toFixed(1)}% a year panel output loss,
-            and one inverter replacement in year {INVERTER_REPLACEMENT_YEAR}.
+            ${liveOmPerKwYear}/kW-yr annual O&amp;M (escalating {(SSO_OM_ESCALATION * 100).toFixed(0)}%/yr),
+            and one inverter replacement in year {isSSO ? SSO_INVERTER_REPLACEMENT_YEAR : INVERTER_REPLACEMENT_YEAR}.
           </p>
         </div>
         )}
@@ -547,6 +592,7 @@ export default function SolarProgramView({
           <p className="font-medium text-foreground">How we calculated this</p>
           <ul className="space-y-1 list-disc list-inside">
             <li>Install cost: ${(rec.costPerW * 1000).toLocaleString()}/kW (${rec.costPerW.toFixed(2)}/W; the default is Berkeley Lab's 2024 Austin average, get real quotes to verify)</li>
+            <li>Annual O&amp;M: ${liveOmPerKwYear}/kW-yr ({fmt$(annualOmYear1)}/yr in Year 1), escalating {(SSO_OM_ESCALATION * 100).toFixed(0)}% per year</li>
             <li>Production: Google Solar peak-sun-hours × {SYSTEM_DERATE} performance ratio (NREL PVWatts standard; accounts for inverter losses, wiring, soiling, and heat derating)</li>
             {isResidential && <li>Savings rate: Austin Energy Value of Solar ({VOS_RATE_DISPLAY} on all production)</li>}
             {isResidential && <li>System sized to offset estimated annual usage; AE residential rebate (${AUSTIN_ENERGY_SOLAR_REBATE.toLocaleString()} for systems {AUSTIN_ENERGY_SOLAR_REBATE_MIN_KW} kW and up) applied</li>}
@@ -598,7 +644,7 @@ export default function SolarProgramView({
                     <li>
                       Rate: {(SSO_RATE_UNDER_1MW * 100).toFixed(2)}¢/kWh for years 1–10, then rising 0.5% per year. Systems 1 MW-AC and above start at {(SSO_RATE_OVER_1MW * 100).toFixed(2)}¢/kWh instead, with the same schedule. This escalation is our own simplifying assumption, not a rate Austin Energy has committed to. The actual tariff resets the rate every 3 years based on trailing ERCOT market prices, which can rise or fall.
                     </li>
-                    <li>Ongoing operations and maintenance: ${SSO_OM_PER_KW_YEAR} per kilowatt per year, increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually (covers insurance, monitoring, and maintenance)</li>
+                    <li>Ongoing operations and maintenance: ${liveOmPerKwYear} per kilowatt per year ({fmt$(annualOmYear1)}/yr in Year 1), increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually (covers insurance, monitoring, and maintenance)</li>
                     <li>Inverter replacement: about ${SSO_INVERTER_REPLACEMENT_PER_KW.toFixed(2)} per kilowatt, a one-time cost in year {SSO_INVERTER_REPLACEMENT_YEAR}</li>
                   </ul>
                 </div>
@@ -607,6 +653,7 @@ export default function SolarProgramView({
                   <p className="font-medium text-foreground mb-1">Value of Solar revenue</p>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Rate: {VOS_RATE_DISPLAY} on all production, credited against your bill up to what you use each month -- production beyond your usage isn't credited or paid out</li>
+                    <li>Ongoing operations and maintenance: ${liveOmPerKwYear} per kilowatt per year ({fmt$(annualOmYear1)}/yr in Year 1), increasing {(SSO_OM_ESCALATION * 100).toFixed(0)}% annually</li>
                     {!ssoEligible && !isNonProfit && <li>Below the {SSO_MIN_KW} kW Standard Offer program minimum, so billed under Value of Solar instead</li>}
                   </ul>
                 </div>

@@ -18,6 +18,7 @@ import {
   getCtaCopy,
   DEFAULT_MONTHLY_BILL,
   isSsoEligible,
+  defaultOmPerKwYear,
 } from "@/lib/property-solar";
 import SolarProgramView, { SolarBillingToggle } from "@/components/assessment/SolarProgramView";
 import { formatAssessorAddress } from "@/lib/address-utils";
@@ -118,6 +119,7 @@ export default function PropertyPage() {
   // null = follow the default sizing; a number = user has chosen a system size.
   const [systemKwOverride, setSystemKwOverride] = useState<number | null>(null);
   const [costPerWOverride, setCostPerWOverride] = useState<number | null>(null);
+  const [omPerKwYearOverride, setOmPerKwYearOverride] = useState<number | null>(null);
   // Only meaningful when ssoEligible; properties too small for SSO always show VoS regardless.
   const [billingMode, setBillingMode] = useState<"sso" | "vos">("sso");
   // undefined = we don't know yet (never checked, or a check is in flight); [] = checked and
@@ -423,6 +425,8 @@ export default function PropertyPage() {
               imageryQuality={property.solar_imagery_quality}
               imageryDate={property.solar_imagery_date}
               onCostPerWChange={setCostPerWOverride}
+              omPerKwYear={omPerKwYearOverride ?? defaultOmPerKwYear(property.property_type)}
+              onOmPerKwYearChange={setOmPerKwYearOverride}
             />
           </>
         )}

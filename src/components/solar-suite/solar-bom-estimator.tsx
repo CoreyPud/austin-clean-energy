@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { useSharedProject } from "@/lib/shared-project";
+import { GRID_VOLTAGE_OPTIONS, ROOF_TYPE_OPTIONS, useSharedProject } from "@/lib/shared-project";
 
 type WindZone = "Low" | "Moderate" | "High";
 type Category = "PV Modules" | "Inverters" | "Racking" | "Electrical BOS" | "Roof Protection";
@@ -86,9 +86,11 @@ export function SolarBomEstimator() {
   const systemKw = project.systemSizeKw;
   const setSystemKw = (value: number) => updateProject({ systemSizeKw: Math.max(0, value) });
   const [panelWatts, setPanelWatts] = useState(550);
-  const [gridVoltage, setGridVoltage] = useState("480V 3-Phase");
+  const gridVoltage = project.gridVoltage || "480V 3-Phase";
+  const setGridVoltage = (value: string) => updateProject({ gridVoltage: value });
   const [windZone, setWindZone] = useState<WindZone>("Moderate");
-  const [membrane, setMembrane] = useState("TPO");
+  const membrane = project.roofType || "TPO";
+  const setMembrane = (value: string) => updateProject({ roofType: value });
   const [pricing, setPricing] = useState(defaultPricing);
   const [pricingOpen, setPricingOpen] = useState(false);
   const jobName = project.projectName;
@@ -111,19 +113,23 @@ export function SolarBomEstimator() {
     const midClamps = modules * 2;
     const endClamps = Math.ceil(modules * 0.25);
     const windMultiplier = windZone === "Low" ? 2.5 : windZone === "Moderate" ? 3.5 : 5;
-    const pavers = Math.ceil(modules * windMultiplier);
+    const isSinglePhase = gridVoltage === "240V Single-Phase";
+    const isPitchedRoof = membrane === "Shingle" || membrane === "Metal";
+    const pavers = isPitchedRoof ? 0 : Math.ceil(modules * windMultiplier);
     const pvWire = modules * 12;
     const copperWire = Math.ceil(systemKw * 15);
     const inverterPrice = inverterSize === 60 ? pricing.inverter60 : pricing.inverter125;
 
     const rows = [
       { pricingKey: "module" as PricingKey, category: "PV Modules" as Category, item: "Monocrystalline PV Module", specification: `${panelWatts} W commercial module`, quantity: modules, unit: "ea", unitCost: pricing.module },
-      { pricingKey: (inverterSize === 60 ? "inverter60" : "inverter125") as PricingKey, category: "Inverters" as Category, item: "Three-Phase String Inverter", specification: `${inverterSize} kW · ${gridVoltage}`, quantity: inverters, unit: "ea", unitCost: inverterPrice },
-      { pricingKey: "tray" as PricingKey, category: "Racking" as Category, item: "Ballasted Racking Tray", specification: `10° flat-roof mount · ${membrane}`, quantity: trays, unit: "ea", unitCost: pricing.tray },
+      { pricingKey: (inverterSize === 60 ? "inverter60" : "inverter125") as PricingKey, category: "Inverters" as Category, item: isSinglePhase ? "Single-Phase String Inverter" : "Three-Phase String Inverter", specification: `${inverterSize} kW · ${gridVoltage}`, quantity: inverters, unit: "ea", unitCost: inverterPrice },
+      { pricingKey: "tray" as PricingKey, category: "Racking" as Category, item: isPitchedRoof ? (membrane === "Metal" ? "Metal Roof Rail & Clamp Kit" : "Shingle Roof Rail & Flashing Kit") : "Ballasted Racking Tray", specification: isPitchedRoof ? `Flush rail mount · ${membrane} roof` : `10° flat-roof mount · ${membrane}`, quantity: trays, unit: "ea", unitCost: pricing.tray },
       { pricingKey: "midClamp" as PricingKey, category: "Racking" as Category, item: "Module Mid Clamp", specification: "Commercial anodized aluminum", quantity: midClamps, unit: "ea", unitCost: pricing.midClamp },
       { pricingKey: "endClamp" as PricingKey, category: "Racking" as Category, item: "Module End Clamp", specification: "Commercial anodized aluminum", quantity: endClamps, unit: "ea", unitCost: pricing.endClamp },
-      { pricingKey: "paver" as PricingKey, category: "Racking" as Category, item: "Concrete Ballast Paver", specification: `35 lb · ${windZone} wind zone`, quantity: pavers, unit: "ea", unitCost: pricing.paver },
-      { pricingKey: "slipSheet" as PricingKey, category: "Roof Protection" as Category, item: "Rubber Slip Protection Sheet", specification: `${membrane}-compatible · one per tray`, quantity: trays, unit: "ea", unitCost: pricing.slipSheet },
+      ...(!isPitchedRoof ? [
+        { pricingKey: "paver" as PricingKey, category: "Racking" as Category, item: "Concrete Ballast Paver", specification: `35 lb · ${windZone} wind zone`, quantity: pavers, unit: "ea", unitCost: pricing.paver },
+        { pricingKey: "slipSheet" as PricingKey, category: "Roof Protection" as Category, item: "Rubber Slip Protection Sheet", specification: `${membrane}-compatible · one per tray`, quantity: trays, unit: "ea", unitCost: pricing.slipSheet },
+      ] : []),
       { pricingKey: "pvWire" as PricingKey, category: "Electrical BOS" as Category, item: "10 AWG PV Wire", specification: "PV-rated copper conductor", quantity: pvWire, unit: "ft", unitCost: pricing.pvWire },
       { pricingKey: "connector" as PricingKey, category: "Electrical BOS" as Category, item: "MC4 Connector Set", specification: "Male / female pair", quantity: modules * 2, unit: "set", unitCost: pricing.connector },
       { pricingKey: "groundingLug" as PricingKey, category: "Electrical BOS" as Category, item: "Solar Grounding Lug", specification: "UL 2703 listed", quantity: modules, unit: "ea", unitCost: pricing.groundingLug },
@@ -223,8 +229,8 @@ export function SolarBomEstimator() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <Field label="System capacity" suffix="kW DC"><input aria-label="System capacity in kilowatts DC" type="number" min="1" value={systemKw} onChange={(event) => setSystemKw(Number(event.target.value))} /></Field>
             <Field label="Panel wattage" suffix="W"><input aria-label="Panel wattage" type="number" min="400" max="700" step="5" value={panelWatts} onChange={(event) => setPanelWatts(Math.min(700, Math.max(400, Number(event.target.value))))} /></Field>
-            <SelectField label="Grid voltage" value={gridVoltage} onChange={setGridVoltage} options={["480V 3-Phase", "208V 3-Phase"]} />
-            <SelectField label="Roof membrane" value={membrane} onChange={setMembrane} options={["TPO", "EPDM", "PVC", "Built-Up"]} />
+            <SelectField label="Grid voltage" value={gridVoltage} onChange={setGridVoltage} options={[...GRID_VOLTAGE_OPTIONS]} />
+            <SelectField label="Roof type" value={membrane} onChange={setMembrane} options={[...ROOF_TYPE_OPTIONS]} />
             <div className="rounded-md border border-border bg-card p-3"><span className="font-mono text-[10px] uppercase tracking-wider text-primary">Wind zone</span><div className="mt-2 grid grid-cols-3 gap-1">{(["Low", "Moderate", "High"] as WindZone[]).map((zone) => <Button key={zone} type="button" size="sm" variant={windZone === zone ? "default" : "outline"} onClick={() => setWindZone(zone)} className="px-1 text-[10px]">{zone}</Button>)}</div></div>
           </div>
         </section>

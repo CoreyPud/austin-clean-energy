@@ -11,10 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSharedProject } from "@/lib/shared-project";
 import { cn } from "@/lib/utils";
 import { createSchedule, deleteSchedule, getSchedule, listComments, listSchedules, saveSchedule, type ScheduleRow } from "./api";
-import { dayToIso, fromTemplate, insertTask, isContingency, isMilestone, moveTask, parseIso, removeTask, scheduleTasks, toIso } from "./schedule";
+import { dayToIso, filterSchedulesForProperty, fromTemplate, insertTask, isContingency, isMilestone, moveTask, parseIso, removeTask, scheduleProgress, scheduleTasks, toIso } from "./schedule";
 import { PERMIT_TEMPLATE } from "./template";
 import { TaskPanel } from "./TaskPanel";
+import { PropertyBoardView, PropertyMilestonesView } from "./PropertyScheduleViews";
 import type { GanttComment, GanttTask, ScheduledTask } from "./types";
+
+export type SolarFlowView = "gantt" | "board" | "milestones";
+export type ScheduleSummary = { overall: number; finishIso: string | null; startIso: string | null; hasSchedule: boolean };
 
 type Scale = "days" | "weeks" | "months";
 const DAY_W: Record<Scale, number> = { days: 26, weeks: 12, months: 4 };
@@ -28,8 +32,10 @@ const colorFor = (ws: string) => { const n = parseInt(ws, 10); return COLORS[((N
 type Row = { kind: "group"; ws: string; count: number } | { kind: "task"; t: ScheduledTask };
 type Drag = { id: string; mode: "move" | "resize"; x0: number; start0: number; days0: number; dx: number };
 
-export function GanttWorkspace() {
+export function GanttWorkspace({ view = "gantt", onSummaryChange }: { view?: SolarFlowView; onSummaryChange?: (summary: ScheduleSummary) => void }) {
   const { project } = useSharedProject();
+  const propertyKey = project.savedId ?? null;
+  const lastKey = `${LAST_KEY}:${propertyKey ?? "unlinked"}`;
   const [user, setUser] = useState<User | null>(null);
   const [list, setList] = useState<Awaited<ReturnType<typeof listSchedules>>>([]);
   const [sched, setSched] = useState<ScheduleRow | null>(null);
@@ -49,7 +55,8 @@ export function GanttWorkspace() {
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setUser(s?.user ?? null));
     return () => data.subscription.unsubscribe();
   }, []);
-  const canEdit = !!user;
+  const canCreate = !!user;
+  const canEdit = !!user && (!sched || sched.created_by === user.id);
   const authorName = (user?.user_metadata?.full_name as string | undefined) || (user?.user_metadata?.name as string | undefined) || user?.email || "Unknown";
 
   const open = useCallback(async (id: string) => {
@@ -57,22 +64,30 @@ export function GanttWorkspace() {
     if (!row) return;
     dirty.current = false;
     setSched(row); setTasks(row.tasks ?? []); setSelected(null);
-    window.localStorage.setItem(LAST_KEY, id);
+    window.localStorage.setItem(lastKey, id);
     setComments(await listComments(id));
-  }, []);
+  }, [lastKey]);
 
-  const refreshList = useCallback(async () => { const l = await listSchedules(); setList(l); return l; }, []);
+  const refreshList = useCallback(async () => {
+    const l = filterSchedulesForProperty(await listSchedules(propertyKey), propertyKey);
+    setList(l);
+    return l;
+  }, [propertyKey]);
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setSched(null); setTasks([]); setComments([]); setSelected(null);
     (async () => {
       try {
         const l = await refreshList();
-        const last = window.localStorage.getItem(LAST_KEY);
-        const pick = l.find((s) => project.savedId && s.saved_assessment_id === project.savedId) ?? l.find((s) => s.id === last) ?? l[0];
+        if (cancelled) return;
+        const last = window.localStorage.getItem(lastKey);
+        const pick = l.find((s) => s.id === last) ?? l[0];
         if (pick) await open(pick.id);
-      } catch { toast.error("Could not load schedules"); } finally { setLoading(false); }
+      } catch { if (!cancelled) toast.error("Could not load schedules"); } finally { if (!cancelled) setLoading(false); }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { cancelled = true; };
+  }, [propertyKey, lastKey, refreshList, open]);
 
   // Debounced save of every edit.
   useEffect(() => {
@@ -93,6 +108,15 @@ export function GanttWorkspace() {
   const startIso = sched?.start_date ?? toIso(Date.now());
   const finish = scheduled.reduce((m, t) => Math.max(m, isContingency(t) ? 0 : t.end), 0);
   const totalCost = tasks.reduce((s, t) => s + (Number(t.cost) || 0), 0);
+  const { overall } = useMemo(() => scheduleProgress(tasks), [tasks]);
+  useEffect(() => {
+    onSummaryChange?.({
+      overall: sched ? overall : 0,
+      finishIso: sched ? dayToIso(startIso, finish) : null,
+      startIso: sched ? startIso : null,
+      hasSchedule: !!sched,
+    });
+  }, [onSummaryChange, sched, overall, startIso, finish]);
   const openCounts = useMemo(() => { const m = new Map<string, number>(); comments.forEach((c) => { if (!c.parent_id && !c.resolved) m.set(c.task_id, (m.get(c.task_id) ?? 0) + 1); }); return m; }, [comments]);
 
   const rows: Row[] = useMemo(() => {
@@ -164,7 +188,7 @@ export function GanttWorkspace() {
   };
 
   const create = async (template: boolean) => {
-    if (!canEdit) return;
+    if (!canCreate) return;
     const name = window.prompt("Schedule name", project.projectName || project.address || "New solar project");
     if (!name) return;
     try {
@@ -204,7 +228,7 @@ export function GanttWorkspace() {
         {sched && <div className="text-xs"><p className="text-muted-foreground">Estimated end date</p><p className="font-mono text-sm font-semibold">{dayToIso(startIso, finish)}</p></div>}
         {sched && <div className="text-xs"><p className="text-muted-foreground">Estimated costs</p><p className="font-mono text-sm font-semibold">${totalCost.toLocaleString()}</p></div>}
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {canEdit ? <>
+          {canCreate ? <>
             <Button size="sm" onClick={() => void create(true)}><Plus /> New from permit template</Button>
             <Button size="sm" variant="outline" onClick={() => void create(false)}>Blank schedule</Button>
           </> : <Button size="sm" onClick={() => void signIn()}><LogIn /> Sign in to edit & comment</Button>}
@@ -214,7 +238,20 @@ export function GanttWorkspace() {
       </div>
 
       {!sched ? (
-        <div className="p-8 text-center text-sm text-muted-foreground">{canEdit ? "Create a schedule from the permit template to get started." : "Sign in to create the first schedule."}</div>
+        <div className="p-8 text-center text-sm text-muted-foreground">
+          No schedule for <strong className="text-foreground">{project.address || project.projectName}</strong> yet.{" "}
+          {canCreate ? "Create a schedule from the permit template or start a blank schedule above." : "Sign in to create the first schedule for this property."}
+        </div>
+      ) : view === "board" ? (
+        <PropertyBoardView
+          tasks={scheduled}
+          startIso={startIso}
+          canEdit={canEdit}
+          onOpen={setSelected}
+          onStatus={(id, status) => edit((ts) => ts.map((t) => (t.id === id ? { ...t, status } : t)))}
+        />
+      ) : view === "milestones" ? (
+        <PropertyMilestonesView tasks={scheduled} startIso={startIso} finishDay={finish} onOpen={setSelected} />
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2 px-4 text-xs">

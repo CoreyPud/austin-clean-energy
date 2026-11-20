@@ -47,7 +47,7 @@ import {
   AUSTIN_INSTALL_COST_PER_KW,
   calculateAustinEnergyUsageBill,
 } from "@/lib/solar-model";
-import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, getCtaCopy, isSsoEligible, buildSolarSummary, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
+import { computeRecommendation, fromGoogleSolarInsights, estimateProductionPerKw, classifyProperty, defaultOmPerKwYear, getCtaCopy, isSsoEligible, buildSolarSummary, DEFAULT_MONTHLY_BILL } from "@/lib/property-solar";
 import CouncilOutreachCard from "@/components/assessment/CouncilOutreachCard";
 import ShareAssessmentCard from "@/components/assessment/ShareAssessmentCard";
 import SavedPropertiesDrawer, { type AssessmentSnapshot } from "@/components/assessment/SavedPropertiesDrawer";
@@ -88,6 +88,7 @@ const PropertyAssessment = () => {
   const [billParseError, setBillParseError] = useState<string | null>(null);
   const [billViewMode, setBillViewMode] = useState<"estimate" | "bill">("estimate");
   const [costPerW, setCostPerW] = useState<number>(DEFAULT_COST_PER_W);
+  const [omPerKwYear, setOmPerKwYear] = useState<number>(() => defaultOmPerKwYear("single-family"));
   const [federalOptions, setFederalOptions] = useState<FederalSolarOptions>({ eligible: true, lowIncome: false, domesticContent: false, rebateReducesBasis: false });
 
   // Derived solar values, recomputed on every render when bill/results change
@@ -223,6 +224,7 @@ const PropertyAssessment = () => {
     // Billing mode and a size-aware $/W are set by the resize effect above once results exist;
     // this only seeds $/W before then.
     setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : DEFAULT_COST_PER_W);
+    setOmPerKwYear(defaultOmPerKwYear(propertyType));
   }, [propertyType]);
 
   // The single recommendation for whatever's currently selected (billing mode, manual size
@@ -428,6 +430,7 @@ const PropertyAssessment = () => {
             productionPerKw,
             isSSO: billingMode === "sso" && isSsoEligible(rec, cls, propertyType === "non-profit"),
             monthlyUsageKwh: activeMonthlyKwh,
+            omPerKwYear,
           })
         : null;
       const data = await callUnified(lifestyleData, solar);
@@ -506,7 +509,7 @@ const PropertyAssessment = () => {
           results: { ...results, __quizCompleted: quizCompleted, __councilOutreachScript: councilOutreachScript },
           calculator_state: {
             monthlyBill, uploadedKwh, uploadedBillData, billParseSummary, billViewMode,
-            costPerW, systemKw, billingMode, financeMode, loanTermYears, loanRate, federalOptions,
+            costPerW, omPerKwYear, systemKw, billingMode, financeMode, loanTermYears, loanRate, federalOptions,
           },
         }
       : null;
@@ -555,6 +558,7 @@ const PropertyAssessment = () => {
       if (s.systemKw != null) setSystemKw(s.systemKw);
       else if (s.maxFit && solarMaxKw > 0) setSystemKw(solarMaxKw);
       if (s.costPerW != null) setCostPerW(s.costPerW);
+      if (typeof s.omPerKwYear === "number") setOmPerKwYear(s.omPerKwYear);
       pendingRestore.current = null;
       setRestoreStep(0);
     }
@@ -898,6 +902,8 @@ const PropertyAssessment = () => {
                         imageryQuality={si.imageryQuality}
                         imageryDate={imageryDateStr}
                         onCostPerWChange={setCostPerW}
+                        omPerKwYear={omPerKwYear}
+                        onOmPerKwYearChange={setOmPerKwYear}
                         federalOptions={federalOptions}
                         onFederalOptionsChange={setFederalOptions}
                         financingSlot={billingMode === "vos" && !isMultifamily && (

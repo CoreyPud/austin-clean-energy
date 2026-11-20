@@ -92,3 +92,28 @@ export const parseIso = (iso: string) => { const [y, m, d] = iso.split("-").map(
 export const toIso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export const dayToIso = (startIso: string, day: number) => toIso(parseIso(startIso) + Math.floor(day + 1e-9) * DAY);
 export const isoToDay = (startIso: string, iso: string) => Math.round((parseIso(iso) - parseIso(startIso)) / DAY);
+
+/** Keeps schedules strictly scoped to the active property (savedId), never leaking another property's schedule. */
+export function filterSchedulesForProperty<T extends { saved_assessment_id: string | null }>(
+  schedules: T[],
+  savedId: string | null,
+): T[] {
+  return savedId
+    ? schedules.filter((s) => s.saved_assessment_id === savedId)
+    : schedules.filter((s) => s.saved_assessment_id == null);
+}
+
+export function scheduleProgress(tasks: Pick<GanttTask, "status" | "type">[]) {
+  const active = tasks.filter((t) => !isContingency(t));
+  const list = active.length ? active : tasks;
+  if (!list.length) return { overall: 0, doneCount: 0, blockedCount: 0, totalCount: 0 };
+  let score = 0;
+  let doneCount = 0;
+  let blockedCount = 0;
+  for (const t of list) {
+    if (t.status === "Done") { score += 100; doneCount++; }
+    else if (t.status === "In Progress") { score += 50; }
+    else if (t.status === "Blocked") { blockedCount++; }
+  }
+  return { overall: Math.round(score / list.length), doneCount, blockedCount, totalCount: list.length };
+}

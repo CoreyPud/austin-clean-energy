@@ -14,6 +14,7 @@ export default function SolarFinancialBreakdown({ model }: { model: ReturnType<t
   const hasCbi = model.cbi > 0;
   const hasFederal = model.rows.some(row => row.federalReceipt > 0);
   const totalBenefit = model.rows.reduce((sum, row) => sum + row.benefit, 0);
+  const totalOm = model.rows.reduce((sum, row) => sum + row.maintenance, 0);
   const lastRow = model.rows[model.rows.length - 1];
   return (
     <section className="min-w-0 border-t border-border pt-4">
@@ -72,6 +73,7 @@ export default function SolarFinancialBreakdown({ model }: { model: ReturnType<t
           </Table>
           <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3 text-sm">
             <span>{model.tenantCredits ? "25-year tenant credits" : model.isSSO ? "25-year gross revenue" : "25-year bill savings"}: <strong>{money(totalBenefit)}</strong></span>
+            {totalOm > 0 && <span>25-year O&amp;M: <strong>{money(totalOm)}</strong></span>}
             {hasCbi && <span>Upfront CBI: <strong>{money(model.cbi)}</strong></span>}
             {hasPbi && <span>5-year PBI: <strong>{money(model.rows.reduce((sum, row) => sum + row.programPayment, 0))}</strong></span>}
             {!model.tenantCredits && <span>Net position at year 25: <strong>{money(lastRow?.cumulative ?? 0)}</strong></span>}
@@ -81,7 +83,9 @@ export default function SolarFinancialBreakdown({ model }: { model: ReturnType<t
             Upfront rebates reduce installation cost once; conditional federal benefits arrive in year 2 and do not reduce loan principal.
             {hasPbi && " PBI credits stop after year 5."}
             {model.isSSO && " Standard Offer rate escalation is a planning assumption, not an Austin Energy commitment. This is the property-owner scenario, separate from the investor pro forma."}
-            {!model.isSSO && " O&M beyond the modeled inverter replacement is not included."}
+            {model.omPerKwYear > 0
+              ? ` Annual O&M is modeled at $${model.omPerKwYear}/kW-yr, escalating 2%/yr.`
+              : " Annual O&M is set to $0/kW-yr."}
             {" "}Annual amounts are rounded for display.
           </p>
         </div>

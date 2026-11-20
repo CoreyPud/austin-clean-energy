@@ -94,6 +94,8 @@ export const UTILITY_RATE_ESCALATION = 0.025;
 // current replacement pricing including labor.
 export const INVERTER_REPLACEMENT_YEAR = 15;    // 1-indexed
 export const INVERTER_REPLACEMENT_PER_W = 0.20; // $/W of DC system size
+export const DEFAULT_RESIDENTIAL_OM_PER_KW_YEAR = 3;  // $/kW-yr for single-family and condo
+export const DEFAULT_COMMERCIAL_OM_PER_KW_YEAR = 12;  // $/kW-yr for commercial, nonprofit, and multifamily
 
 export const DEFAULT_MONTHLY_USAGE_KWH = 1167;
 
@@ -159,6 +161,7 @@ export interface CalcInputs {
   loanInterestRate: number;   // decimal
   productionPerKw: number;    // kWh/kW-year
   monthlyUsageKwh?: number[]; // 12-element array from uploaded bill; overrides annualUsageKwh profile
+  omPerKwYear?: number;       // $/kW-yr annual operations & maintenance (escalated at SSO_OM_ESCALATION)
 }
 
 export interface MonthRow {
@@ -267,17 +270,19 @@ export function buildThirtyYearModel(inputs: CalcInputs, installCost: number): T
 
   // Each year's bill savings are computed at today's rates (with panel degradation already
   // applied in buildYearModel), then escalated for electricity price inflation. The one-time
-  // inverter replacement is charged in its year, so breakeven reflects a real owner cost
-  // rather than assuming the hardware never needs work.
+  // inverter replacement and annual O&M are charged in each year so breakeven reflects real
+  // owner costs rather than assuming the hardware never needs work.
+  const omPerKwYear = Math.max(0, inputs.omPerKwYear ?? 0);
   yearlyResults.forEach((r, i) => {
     const year = i + 1;
     const loanPayment = i < inputs.loanTermYears ? annualLoanPayment : 0;
     const escalatedSavings = r.savings * Math.pow(1 + UTILITY_RATE_ESCALATION, i);
+    const omCost = inputs.systemKw * omPerKwYear * Math.pow(1 + SSO_OM_ESCALATION, i);
     const inverterCost = year === INVERTER_REPLACEMENT_YEAR
       ? inputs.systemKw * 1000 * INVERTER_REPLACEMENT_PER_W
       : 0;
-    totalSavings += escalatedSavings - inverterCost;
-    cumulative += escalatedSavings - inverterCost - loanPayment;
+    totalSavings += escalatedSavings - omCost - inverterCost;
+    cumulative += escalatedSavings - omCost - inverterCost - loanPayment;
     if (paybackYear === null && cumulative >= 0) paybackYear = year;
     cumulativeByYear.push({ year, cumulative: Math.round(cumulative) });
   });
@@ -390,10 +395,16 @@ export function ssoRate(systemKw: number, year = 1): number {
   return ssoEscalatedRate(base, year);
 }
 
-export function buildSsoModel(systemKw: number, productionPerKw: number, installCost: number) {
+export function buildSsoModel(
+  systemKw: number,
+  productionPerKw: number,
+  installCost: number,
+  omPerKwYear = DEFAULT_COMMERCIAL_OM_PER_KW_YEAR,
+) {
   const annualKwh = systemKw * productionPerKw;
   const rate = ssoRate(systemKw, 1);
   const annualRevenue = annualKwh * rate;
+  const safeOm = Math.max(0, omPerKwYear);
 
   let cumulative = -installCost;
   let paybackYear: number | null = null;
@@ -403,7 +414,7 @@ export function buildSsoModel(systemKw: number, productionPerKw: number, install
     const year = y + 1;
     const degradedKwh = annualKwh * Math.pow(1 - PANEL_DEGRADATION_RATE, y);
     const revenue = degradedKwh * ssoRate(systemKw, year);
-    const om = systemKw * SSO_OM_PER_KW_YEAR * Math.pow(1 + SSO_OM_ESCALATION, y);
+    const om = systemKw * safeOm * Math.pow(1 + SSO_OM_ESCALATION, y);
     const inverterCost = year === SSO_INVERTER_REPLACEMENT_YEAR
       ? systemKw * SSO_INVERTER_REPLACEMENT_PER_KW
       : 0;

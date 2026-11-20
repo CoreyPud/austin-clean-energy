@@ -6,8 +6,14 @@ export type ScheduleRow = { id: string; name: string; start_date: string; saved_
 // The generated types lag new tables in some editors; keep the casts in one place.
 const db = supabase as unknown as { from: (t: string) => any };
 
-export async function listSchedules(): Promise<Pick<ScheduleRow, "id" | "name" | "saved_assessment_id" | "updated_at">[]> {
-  const { data, error } = await db.from("gantt_schedules").select("id,name,saved_assessment_id,updated_at").order("updated_at", { ascending: false });
+export async function listSchedules(
+  savedAssessmentId?: string | null,
+): Promise<Pick<ScheduleRow, "id" | "name" | "saved_assessment_id" | "updated_at">[]> {
+  let query = db.from("gantt_schedules").select("id,name,saved_assessment_id,updated_at");
+  if (savedAssessmentId !== undefined) {
+    query = savedAssessmentId ? query.eq("saved_assessment_id", savedAssessmentId) : query.is("saved_assessment_id", null);
+  }
+  const { data, error } = await query.order("updated_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
 }

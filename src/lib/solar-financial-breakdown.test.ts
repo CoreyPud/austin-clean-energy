@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeRecommendation, buildProgramFinancials, buildSolarSummary, classifyProperty } from "./property-solar";
+import { computeRecommendation, buildProgramFinancials, buildSolarSummary, classifyProperty, defaultOmPerKwYear } from "./property-solar";
 import { buildSolarFinancialBreakdown } from "./solar-financial-breakdown";
 import { austinEnergyRebate, businessSolarIncentive, commercialPbiRate, FINANCIAL_HORIZON_YEARS, buildPbiModel } from "./solar-model";
 import { buildSsoProForma, SSO_PROFORMA_TERM_YEARS } from "./sso-proforma";
@@ -143,4 +143,35 @@ test("Standard Offer owner rows reconcile for commercial, nonprofit and multifam
     assert.ok(model.rows[13].inverter > 0);
     assert.equal(model.rows[14].inverter, 0);
   }
+});
+test("default O&M is $12/kW-yr for commercial, nonprofit, and multifamily and $3/kW-yr for residential", () => {
+  assert.equal(defaultOmPerKwYear("single-family"), 3);
+  assert.equal(defaultOmPerKwYear("single_family"), 3);
+  assert.equal(defaultOmPerKwYear("condo"), 3);
+  assert.equal(defaultOmPerKwYear("commercial"), 12);
+  assert.equal(defaultOmPerKwYear("non-profit"), 12);
+  assert.equal(defaultOmPerKwYear("multi-family"), 12);
+  assert.equal(defaultOmPerKwYear("multifamily"), 12);
+
+  assert.equal(scenario("single-family", 10).model.rows[0].maintenance, 30);
+  assert.equal(scenario("condo", 10).model.rows[0].maintenance, 30);
+  assert.equal(scenario("commercial", 100).model.rows[0].maintenance, 1200);
+  assert.equal(scenario("non-profit", 100).model.rows[0].maintenance, 1200);
+  assert.equal(scenario("multi-family", 100).model.rows[0].maintenance, 1200);
+});
+test("custom O&M slider rate updates 25-year breakdown and reconciles with cumulative cash flow", () => {
+  const rec = computeRecommendation({ maxPanels: 500, panelCapacityWatts: 400, sunshineHours: 1800, propertyType: "commercial" }, {
+    systemKwOverride: 100, costPerWOverride: 2, billingMode: "vos",
+  });
+  if (!rec) throw new Error("Missing recommendation");
+  const baseOpts = { annualUsageKwh: 500000, productionPerKw: 1548, isSSO: false };
+  const zeroOmFin = buildProgramFinancials(rec, { ...baseOpts, omPerKwYear: 0 });
+  const zeroOm = buildSolarFinancialBreakdown(rec, { ...baseOpts, omPerKwYear: 0 }, zeroOmFin);
+  const highOmFin = buildProgramFinancials(rec, { ...baseOpts, omPerKwYear: 20 });
+  const highOm = buildSolarFinancialBreakdown(rec, { ...baseOpts, omPerKwYear: 20 }, highOmFin);
+
+  assert.equal(zeroOm.rows[0].maintenance, 0);
+  assert.equal(highOm.rows[0].maintenance, 2000);
+  assert.ok(highOmFin.net25 < zeroOmFin.net25);
+  assert.equal(highOm.rows[24].cumulative, highOmFin.net25);
 });

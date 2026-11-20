@@ -5,6 +5,8 @@ import {
   SYSTEM_DERATE,
   DEFAULT_PRODUCTION_PER_KW,
   DEFAULT_MONTHLY_USAGE_KWH,
+  DEFAULT_RESIDENTIAL_OM_PER_KW_YEAR,
+  DEFAULT_COMMERCIAL_OM_PER_KW_YEAR,
   businessSolarIncentive,
   SOLAR_AC_DC_RATIO,
   SSO_MIN_KW,
@@ -77,6 +79,12 @@ export function classifyProperty(propertyType: string | null): PropertyClass {
     default:
       return "commercial";
   }
+}
+
+export function defaultOmPerKwYear(propertyType: string | null | undefined): number {
+  return classifyProperty(propertyType ?? null) === "residential"
+    ? DEFAULT_RESIDENTIAL_OM_PER_KW_YEAR
+    : DEFAULT_COMMERCIAL_OM_PER_KW_YEAR;
 }
 
 const RESIDENTIAL_ANNUAL_USAGE_KWH = DEFAULT_MONTHLY_USAGE_KWH * 12; // Austin avg
@@ -291,8 +299,10 @@ export function buildProgramFinancials(
     loanTermYears?: number;
     loanInterestRate?: number;
     monthlyUsageKwh?: number[];
+    omPerKwYear?: number;
   },
 ): ProgramFinancials {
+  const omPerKwYear = Math.max(0, opts.omPerKwYear ?? defaultOmPerKwYear(rec.federalPropertyType));
   const inputs: CalcInputs = {
     annualUsageKwh: opts.annualUsageKwh,
     systemKw: rec.recommendedKw,
@@ -300,6 +310,7 @@ export function buildProgramFinancials(
     loanInterestRate: opts.loanInterestRate ?? 0,
     productionPerKw: opts.productionPerKw,
     monthlyUsageKwh: opts.monthlyUsageKwh,
+    omPerKwYear,
   };
   const yearOne = buildYearModel(inputs, 0);
   const thirtyYearBase = buildThirtyYearModel(inputs, rec.netCost);
@@ -314,7 +325,7 @@ export function buildProgramFinancials(
   thirtyYear.totalSavings = thirtyYearWithPbi.totalSavings + vosFederal.creditUsd;
   // Gross cost, not netCost: Standard Offer systems don't qualify for the AE capacity rebate.
   const ssoFederal = calculateFederalSolarIncentive({ propertyType: rec.federalPropertyType ?? "single-family", systemKw: rec.recommendedKw, grossCost: rec.grossCost, aeRebate: 0, options: rec.federalOptions });
-  const sso = addFederalReceipt(buildSsoModel(rec.recommendedKw, opts.productionPerKw, rec.grossCost), ssoFederal.creditUsd);
+  const sso = addFederalReceipt(buildSsoModel(rec.recommendedKw, opts.productionPerKw, rec.grossCost, omPerKwYear), ssoFederal.creditUsd);
 
   const cumulativeSource = opts.isSSO ? sso.cumulativeByYear : thirtyYear.cumulativeByYear;
   const net25 = cumulativeSource[24]?.cumulative ?? 0;
@@ -335,7 +346,7 @@ export function buildProgramFinancials(
 export function buildSolarSummary(
   rec: SolarRecommendation,
   cls: PropertyClass,
-  opts: { annualUsageKwh: number; productionPerKw: number; isSSO: boolean; monthlyUsageKwh?: number[] },
+  opts: { annualUsageKwh: number; productionPerKw: number; isSSO: boolean; monthlyUsageKwh?: number[]; omPerKwYear?: number },
 ): SolarSummary {
   const f = buildProgramFinancials(rec, opts);
   const isMultifamily = cls === "multifamily" && !opts.isSSO;

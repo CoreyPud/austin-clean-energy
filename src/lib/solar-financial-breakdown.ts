@@ -1,12 +1,12 @@
 import {
   AUSTIN_ENERGY_RATES, PANEL_DEGRADATION_RATE, UTILITY_RATE_ESCALATION,
   INVERTER_REPLACEMENT_YEAR, INVERTER_REPLACEMENT_PER_W,
-  SSO_OM_PER_KW_YEAR, SSO_OM_ESCALATION,
+  SSO_OM_ESCALATION,
   SSO_INVERTER_REPLACEMENT_YEAR, SSO_INVERTER_REPLACEMENT_PER_KW,
   buildPbiModel, ssoRate, FINANCIAL_HORIZON_YEARS,
 } from "./solar-model";
 import { calculateFederalSolarIncentive, FEDERAL_SOLAR_RECEIPT_YEAR } from "./solar-federal-incentives";
-import { buildProgramFinancials, classifyProperty, type SolarRecommendation } from "./property-solar";
+import { buildProgramFinancials, classifyProperty, defaultOmPerKwYear, type SolarRecommendation } from "./property-solar";
 
 export const BREAKDOWN_YEARS = FINANCIAL_HORIZON_YEARS;
 
@@ -20,6 +20,7 @@ export function buildSolarFinancialBreakdown(
   const financed = !options.isSSO && !tenantCredits && financials.thirtyYear.hasLoan;
   const rebate = options.isSSO ? 0 : rec.aeRebate;
   const initialCost = options.isSSO ? rec.grossCost : rec.netCost;
+  const omPerKwYear = Math.max(0, options.omPerKwYear ?? defaultOmPerKwYear(rec.federalPropertyType));
   const federal = calculateFederalSolarIncentive({
     propertyType: rec.federalPropertyType ?? "single-family", systemKw: rec.recommendedKw,
     grossCost: rec.grossCost, aeRebate: rebate, options: rec.federalOptions,
@@ -35,7 +36,7 @@ export function buildSolarFinancialBreakdown(
       : result.savings * Math.pow(1 + UTILITY_RATE_ESCALATION, index);
     const programPayment = pbi?.yearlyRows[index]?.credit ?? 0;
     const federalReceipt = year === FEDERAL_SOLAR_RECEIPT_YEAR ? federal.creditUsd : 0;
-    const maintenance = options.isSSO ? rec.recommendedKw * SSO_OM_PER_KW_YEAR * Math.pow(1 + SSO_OM_ESCALATION, index) : 0;
+    const maintenance = rec.recommendedKw * omPerKwYear * Math.pow(1 + SSO_OM_ESCALATION, index);
     const inverter = options.isSSO
       ? year === SSO_INVERTER_REPLACEMENT_YEAR ? rec.recommendedKw * SSO_INVERTER_REPLACEMENT_PER_KW : 0
       : year === INVERTER_REPLACEMENT_YEAR ? rec.recommendedKw * 1000 * INVERTER_REPLACEMENT_PER_W : 0;
@@ -52,5 +53,6 @@ export function buildSolarFinancialBreakdown(
     loanPrincipal: financed ? initialCost : 0,
     initialCash: financed ? 0 : initialCost,
     federalKind: federal.kind,
+    omPerKwYear,
   };
 }
