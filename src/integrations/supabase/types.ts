@@ -2057,6 +2057,14 @@ export type Database = {
         }
         Relationships: []
       }
+      permit_date_coverage_view: {
+        Row: {
+          dated: number | null
+          earliest: string | null
+          latest: string | null
+        }
+        Relationships: []
+      }
       permit_filter_options_view: {
         Row: {
           filter_kind: string | null

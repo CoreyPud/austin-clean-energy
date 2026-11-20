@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { daysAppliedToFinal, filterPermits, sortPermits, emptyPermitFilters, mergeFilterOptions, PERMITS_PAGE_SIZE, permitPageRange, type SolarPermit } from './solar-permits';
+import { quickDateRange } from './contractor-timing';
 
 test('permit pages load 25 records with consecutive non-overlapping ranges', () => {
   assert.equal(PERMITS_PAGE_SIZE, 25);
@@ -46,4 +47,16 @@ test('permit class and status dropdowns list every value in the database, not ju
   assert.deepEqual(mergeFilterOptions(['Commercial', 'Residential'], loadedClasses), ['Commercial', 'Residential']);
   assert.deepEqual(mergeFilterOptions(['Final', 'Active'], ['Final', null, '']), ['Active', 'Final']);
   assert.deepEqual(mergeFilterOptions([], loadedClasses), ['Residential']);
+});
+test('quick date ranges filter the permit table inclusively using final, then issued, then applied dates', () => {
+  const range = quickDateRange('3m', new Date(2026, 10, 20));
+  const datedRows = [
+    make('from', { status_current: 'Final', issued_date: '2026-07-01', completed_date: range.from }),
+    make('to', { status_current: 'Final', issued_date: '2026-07-01', completed_date: range.to }),
+    make('issued', { status_current: 'Active', issued_date: '2026-09-01' }),
+    make('applied', { status_current: 'Active', applied_date: '2026-09-02' }),
+    make('final-precedence', { status_current: 'Final', issued_date: '2026-09-15', completed_date: '2026-08-19' }),
+    make('outside', { status_current: 'Active', issued_date: '2026-08-19' }),
+  ];
+  assert.deepEqual(filterPermits(datedRows, { ...emptyPermitFilters, ...range }).map(r => r.id), ['from', 'to', 'issued', 'applied']);
 });

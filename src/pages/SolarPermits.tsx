@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, mergeFilterOptions, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, isFinalPermit, permitEquipment, equipmentLabels, type PermitEquipment } from '@/lib/solar-permits';
+import { PERMITS_PAGE_SIZE, permitPageRange, emptyPermitFilters, filterPermits, sortPermits, mergeFilterOptions, type PermitFilters, type PermitSort, type SolarPermit, daysAppliedToFinal, daysIssuedToFinal, isFinalPermit, permitEquipment, equipmentLabels } from '@/lib/solar-permits';
+import { formatDate, permitDateRange, quickDateRange, QUICK_RANGES, type PermitDateRange, type QuickRange } from '@/lib/contractor-timing';
 
 const PAGE_SIZE = PERMITS_PAGE_SIZE;
 const PERMIT_COLUMNS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
@@ -35,6 +36,8 @@ export default function SolarPermits() {
   const [quick, setQuick] = useState<{ page: number; rows: SolarPermit[]; total: number } | null>(null);
   const [quickLoading, setQuickLoading] = useState(false);
   const [dbOptions, setDbOptions] = useState<{ status: string[]; type: string[] }>({ status: [], type: [] });
+  // Undefined means loading; null means the lightweight summary was unavailable.
+  const [dbCoverage, setDbCoverage] = useState<PermitDateRange | null | undefined>(undefined);
   const isDefaultView = sort === 'completed_date' && !ascending && JSON.stringify(filters) === JSON.stringify(emptyPermitFilters);
   const useQuick = loading && !error && isDefaultView;
 
@@ -71,6 +74,16 @@ export default function SolarPermits() {
         else if (row.filter_kind === 'permit_class') type.push(row.option_value || '');
       }
       setDbOptions({ status, type });
+    })();
+    return () => { cancelled = true; };
+  }, [attempt]);
+
+  // One aggregate row supplies full-file coverage without loading every permit.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.from('permit_date_coverage_view').select('earliest,latest,dated').maybeSingle();
+      if (!cancelled) setDbCoverage(error || !data ? null : data);
     })();
     return () => { cancelled = true; };
   }, [attempt]);
@@ -121,6 +134,18 @@ export default function SolarPermits() {
   }, [attempt, fullRequested]);
 
   const results = useMemo(() => sortPermits(filterPermits(rows, filters), sort, ascending), [rows, filters, sort, ascending]);
+  const today = useMemo(() => new Date(), []);
+  const loadedFullRange = useMemo(() => permitDateRange(rows), [rows]);
+  const shownRange = useMemo(() => permitDateRange(results), [results]);
+  const fullRange = rows.length ? loadedFullRange : dbCoverage;
+  const dateFilterOn = filters.from !== '' || filters.to !== '';
+  const quickFor = (kind: QuickRange) => quickDateRange(kind, today);
+  const activeQuick = QUICK_RANGES.find(q => { const r = quickFor(q.key); return filters.from === r.from && filters.to === r.to; })?.key;
+  const applyQuick = (kind: QuickRange) => { setFullRequested(true); setFilters(f => ({ ...f, ...quickFor(kind) })); setPage(0); };
+  const clearDates = () => { setFullRequested(true); setFilters(f => ({ ...f, from: '', to: '' })); setPage(0); };
+  const range = dateFilterOn ? shownRange : fullRange;
+  const rangeText = range?.earliest && range.latest ? `${dateFilterOn ? 'Showing permits dated' : 'Data covers'} ${formatDate(range.earliest)} – ${formatDate(range.latest)} · ${range.dated.toLocaleString()} permits with dates` : range === undefined ? 'Loading date coverage…' : dateFilterOn ? 'No permit dates match this range' : 'Date coverage unavailable';
+  const fullText = dateFilterOn && fullRange?.earliest && fullRange.latest ? `Full file: ${formatDate(fullRange.earliest)} – ${formatDate(fullRange.latest)}` : '';
   const optionRows = rows.length ? rows : quick?.rows ?? [];
   const statuses = useMemo(() => mergeFilterOptions(dbOptions.status, optionRows.map(r => r.status_current)), [dbOptions.status, optionRows]);
   const classes = useMemo(() => mergeFilterOptions(dbOptions.type, optionRows.map(r => r.permit_class)), [dbOptions.type, optionRows]);
@@ -142,6 +167,12 @@ export default function SolarPermits() {
         <p>Host / owner is the TCAD recorded property owner when a parcel is linked, not a verified solar-system host or current account holder. Unmatched owners are not reported. Dates filter by final, then issuance, then application. Every record here comes from the City's issued-permit dataset, so all have an issue date; Status shows where each permit stands now. Equipment is read from the permit description (same terms as the Solar Progress charts). Day filters exclude permits without a final date.</p>
         {ownerWarning && <p role="status" className="text-destructive">Property-owner data is temporarily unavailable. Permit records remain available.</p>}
       </div>
+      <section aria-label="Date range" className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">Quick date range</span>
+        {QUICK_RANGES.map(q => <Button key={q.key} size="sm" variant={activeQuick === q.key ? 'secondary' : 'outline'} aria-pressed={activeQuick === q.key} onClick={() => applyQuick(q.key)}>{q.label}</Button>)}
+        <Button size="sm" variant={dateFilterOn ? 'outline' : 'secondary'} aria-pressed={!dateFilterOn} onClick={clearDates}>All dates</Button>
+        <span className="text-xs text-muted-foreground sm:ml-auto" title="Dates compared: the final date for permits the City marks Final, otherwise the issued date, otherwise the applied date.">{rangeText}{fullText && ` · ${fullText}`}</span>
+      </section>
       <section aria-label="Permit filters" onFocusCapture={() => setFullRequested(true)} className="border-y border-border py-5 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="permit-search">Address, permit number, ZIP or description</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="permit-search" className="pl-9" value={filters.search} onChange={e => update('search', e.target.value)} placeholder="Search permits" /></div></div>

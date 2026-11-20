@@ -134,6 +134,13 @@
       "when": 1795132716295,
       "tag": "0018_scope_gantt_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795199007031,
+      "tag": "0019_add_permit_date_coverage_view",
+      "breakpoints": true
     }
   ]
 }
