@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCourseAuth } from "@/hooks/use-course-auth";
+import { LogIn, LogOut } from "lucide-react";
 import "./secret-vote-course.css";
 import {
   MODULES,
@@ -628,13 +629,13 @@ export default function SecretVoteCourse({ className = "" }: { className?: strin
                     Results
                   </Link>
                 )}
-                <button type="button" className="sv-account-btn" onClick={signOut}>
-                  Sign out
+                <button type="button" className="sv-account-btn inline-flex items-center gap-2" onClick={signOut}>
+                  <LogOut className="h-4 w-4" />Sign out
                 </button>
               </>
             ) : (
-              <Link className="sv-account-btn sv-account-primary" to="/course/login">
-                Sign in / Sign up
+              <Link className="sv-account-btn sv-account-primary inline-flex items-center gap-2" to="/course/login">
+                <LogIn className="h-4 w-4" />Sign in / Sign up
               </Link>
             )}
           </div>

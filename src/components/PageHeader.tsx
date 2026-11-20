@@ -8,6 +8,7 @@ interface PageHeaderProps {
   backTo?: string;
   backLabel?: string;
   contentClassName?: string;
+  action?: React.ReactNode;
 }
 
 const PageHeader = ({
@@ -16,6 +17,7 @@ const PageHeader = ({
   backTo = "/",
   backLabel = "Back to Home",
   contentClassName = "max-w-5xl mx-auto px-4",
+  action,
 }: PageHeaderProps) => {
   const navigate = useNavigate();
 
@@ -31,11 +33,14 @@ const PageHeader = ({
             <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
             {backLabel}
           </Button>
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-white/70" />
-            <span className="text-xs font-semibold text-white/70 uppercase tracking-widest">
-              Austin Clean Energy
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-white/70" />
+              <span className="hidden md:inline text-xs font-semibold text-white/70 uppercase tracking-widest">
+                Austin Clean Energy
+              </span>
+            </div>
+            {action}
           </div>
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">{title}</h1>

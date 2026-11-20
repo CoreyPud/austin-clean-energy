@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
+import AccountAuthButton from "@/components/AccountAuthButton";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,6 +39,7 @@ export default function RebateApplications() {
     return () => data.subscription.unsubscribe();
   }, []);
   const reload = async () => { const data = await rebateRequest({ action: "list" }); setRows(data.applications); };
+  const signIn = async () => { const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/rebate-applications` }); if (result.error) toast.error("Unable to sign in"); };
   useEffect(() => { if (user) reload().catch(() => toast.error("Unable to load applications")); }, [user?.id]);
   const reset = () => { setId(null); setDetails({ ...emptyRebate }); setConsent(false); setStatus("draft"); };
   const save = async (review: boolean) => {
@@ -50,10 +52,10 @@ export default function RebateApplications() {
     try { const data = await rebateRequest({ action: "get", id: row.id }); setId(row.id); setProgram(data.application.program); setStatus(data.application.status); setDetails(data.application.details); setConsent(false); }
     catch { toast.error("Unable to open application"); } finally { setBusy(false); }
   };
-  return <main className="min-h-screen bg-background"><header className="bg-primary text-primary-foreground"><div className="max-w-6xl mx-auto px-4 py-7"><Button asChild variant="ghost" className="mb-4"><Link to="/solar-savings-austin"><ArrowLeft className="h-4 w-4 mr-2" />Property assessment</Link></Button><h1 className="text-3xl font-bold">My rebate applications</h1></div></header>
+  return <main className="min-h-screen bg-background"><header className="bg-primary text-primary-foreground"><div className="max-w-6xl mx-auto px-4 py-7"><div className="flex items-center justify-between gap-3 mb-4"><Button asChild variant="ghost"><Link to="/solar-savings-austin"><ArrowLeft className="h-4 w-4 mr-2" />Property assessment</Link></Button><AccountAuthButton user={user} loading={authLoading} onSignIn={signIn} /></div><h1 className="text-3xl font-bold">My rebate applications</h1></div></header>
     <div className="max-w-6xl mx-auto px-4 py-8">
       <p className="flex gap-2 text-sm text-muted-foreground mb-6"><LockKeyhole className="h-4 w-4 shrink-0" />Personal details are encrypted and excluded from public property shares. Original bill PDFs are not saved.</p>
-      {authLoading ? <p>Loading…</p> : !user ? <div className="py-10"><h2 className="text-xl font-semibold mb-4">Sign in to save a private application</h2><Button onClick={async () => { const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/rebate-applications` }); if (result.error) toast.error("Unable to sign in"); }}>Continue with Google</Button></div> : <div className="grid lg:grid-cols-[260px_1fr] gap-8">
+      {authLoading ? <p>Loading…</p> : !user ? <div className="py-10"><h2 className="text-xl font-semibold mb-4">Sign in to save a private application</h2><Button onClick={() => void signIn()}>Continue with Google</Button></div> : <div className="grid lg:grid-cols-[260px_1fr] gap-8">
         <aside><div className="flex justify-between items-center mb-4"><h2 className="font-semibold">Saved applications</h2><Button variant="ghost" size="icon" title="New application" onClick={reset}><Plus className="h-4 w-4" /></Button></div>{rows.length === 0 && <p className="text-sm text-muted-foreground">No applications saved yet.</p>}<div className="space-y-2">{rows.map(row => <Button key={row.id} variant={id === row.id ? "secondary" : "outline"} className="w-full h-auto py-3 text-left justify-start whitespace-normal" disabled={busy} onClick={() => open(row)}><span>{row.program}<span className="block text-xs text-muted-foreground mt-1">{row.status.replace(/_/g, " ")} · {new Date(row.created_at).toLocaleDateString()}</span></span></Button>)}</div></aside>
         <section className="min-w-0 space-y-6"><div className="flex justify-between gap-3"><h2 className="text-xl font-semibold">{id ? "Application details" : "New application"}</h2><span className="text-sm text-muted-foreground">{status.replace(/_/g, " ")}</span></div>
           <div><Label>Rebate program</Label><Select value={program} onValueChange={setProgram}><SelectTrigger className="mt-2"><SelectValue /></SelectTrigger><SelectContent>{rebatePrograms.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></div>

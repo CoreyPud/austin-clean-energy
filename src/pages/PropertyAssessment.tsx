@@ -26,6 +26,7 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSeo } from "@/hooks/use-seo";
 import PageHeader from "@/components/PageHeader";
+import AccountAuthButton from "@/components/AccountAuthButton";
 import LifestyleAssessmentForm, { LifestyleData } from "@/components/LifestyleAssessmentForm";
 import NeighborhoodSnapshot from "@/components/assessment/NeighborhoodSnapshot";
 import ZipSolarAdoptionTrend from "@/components/assessment/ZipSolarAdoptionTrend";
@@ -584,6 +585,7 @@ const PropertyAssessment = () => {
       <PageHeader
         title="Calculate Solar Savings in Austin"
         subtitle="Find out your solar potential and estimated savings based on Austin's energy and solar buyback policies."
+        action={<AccountAuthButton />}
       />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
