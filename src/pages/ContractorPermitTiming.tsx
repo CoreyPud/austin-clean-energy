@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { emptyPermitFilters, equipmentLabels, filterPermits, mergeFilterOptions, type PermitFilters, type SolarPermit } from '@/lib/solar-permits';
-import { barThickness, contractorTiming, firstClickAscending, sortContractors, MIN_VALID_APPLIED_TO_FINAL_DAYS, type ContractorSort, type ContractorTiming } from '@/lib/contractor-timing';
+import { barThickness, contractorTiming, firstClickAscending, formatDate, permitDateRange, quickDateRange, QUICK_RANGES, sortContractors, MIN_VALID_APPLIED_TO_FINAL_DAYS, type ContractorSort, type ContractorTiming, type QuickRange } from '@/lib/contractor-timing';
 
 const COLS = 'id,project_id,permit_number,address,installed_kw,contractor_company,permit_class,status_current,applied_date,issued_date,completed_date,original_zip,council_district,description,total_job_valuation,link,has_correction';
 const sortNames: Record<ContractorSort, string> = { issuedToFinal: 'Issued → final (median days)', appliedToFinal: 'Applied → final (median days)', appliedToIssued: 'Applied → issued (median days)', permits: 'Number of permits', totalKw: 'Total reported kW', contractor: 'Contractor name' };
@@ -152,6 +152,16 @@ export default function ContractorPermitTiming() {
   const shown = useMemo(() => sortContractors(contractors.filter(c => c.permits >= (Number(minPermits) || 0)), sort, ascending).slice(0, Number(limit)), [contractors, minPermits, sort, ascending, limit]);
   const statuses = useMemo(() => mergeFilterOptions([], rows.map(r => r.status_current)), [rows]);
   const classes = useMemo(() => mergeFilterOptions([], rows.map(r => r.permit_class)), [rows]);
+  const today = useMemo(() => new Date(), []);
+  const fullRange = useMemo(() => permitDateRange(rows), [rows]);
+  const shownRange = useMemo(() => permitDateRange(filtered), [filtered]);
+  const dateFilterOn = filters.from !== '' || filters.to !== '';
+  const quickFor = (kind: QuickRange) => quickDateRange(kind, today);
+  const activeQuick = QUICK_RANGES.find(q => { const r = quickFor(q.key); return filters.from === r.from && filters.to === r.to; })?.key;
+  const applyQuick = (kind: QuickRange) => setFilters(f => ({ ...f, ...quickFor(kind) }));
+  const range = dateFilterOn ? shownRange : fullRange;
+  const rangeText = range.earliest && range.latest ? `${dateFilterOn ? 'Showing permits dated' : 'Data covers'} ${formatDate(range.earliest)} – ${formatDate(range.latest)} · ${range.dated.toLocaleString()} permits with dates` : 'No permit dates available';
+  const fullText = dateFilterOn && fullRange.earliest && fullRange.latest ? `Full file: ${formatDate(fullRange.earliest)} – ${formatDate(fullRange.latest)}` : '';
   const update = (k: keyof PermitFilters, v: string) => setFilters(f => ({ ...f, [k]: v }));
   const clickSort = (field: ContractorSort) => { if (sort === field) setAscending(a => !a); else { setSort(field); setAscending(firstClickAscending(field)); } };
   const text = (k: keyof PermitFilters, label: string, type = 'text', ph?: string) => <div className="space-y-1.5"><Label htmlFor={`ct-${k}`}>{label}</Label><Input id={`ct-${k}`} type={type} min={type === 'number' ? 0 : undefined} value={filters[k]} onChange={e => update(k, e.target.value)} placeholder={ph} /></div>;
@@ -160,7 +170,13 @@ export default function ContractorPermitTiming() {
   return <div className="min-h-screen bg-background text-foreground">
     <PageHeader title="Permit Timing by Contractor" backTo="/solar-permits" backLabel="Back to Permit Deep Dive" subtitle="Median days from application to issuance, and issuance to final, for each contractor." contentClassName="max-w-7xl mx-auto px-4" />
     <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-      <p className="text-sm text-muted-foreground">Uses the same City permit records and filters as the <Link to="/solar-permits" className="text-primary underline">permit deep dive</Link>. Bars show the median (middle) permit for each contractor, and the thickness of each bar shows how many permits that contractor had — thicker means more permits. Applied → issued counts any permit with both dates; applied → final and issued → final count only permits the City marks Final. Permits under {MIN_VALID_APPLIED_TO_FINAL_DAYS} days from application to final are treated as data errors and left out. Filters plus <strong>Sort contractors by</strong> and <strong>Show</strong> choose which contractors appear; each chart then orders its own bars by its own median time — use the button in a chart's corner to flip it.</p>
+      <p className="text-sm text-muted-foreground">Uses the same City permit records and filters as the <Link to="/solar-permits" className="text-primary underline">permit deep dive</Link>. Bars show the median (middle) permit for each contractor, and the thickness of each bar shows how many permits that contractor had — thicker means more permits. Applied → issued counts any permit with both dates; applied → final and issued → final count only permits the City marks Final. Permits under {MIN_VALID_APPLIED_TO_FINAL_DAYS} days from application to final are treated as data errors and left out. Filters plus <strong>Sort contractors by</strong> and <strong>Show</strong> choose which contractors appear; each chart then orders its own bars by its own median time — use the button in a chart's corner to flip it. The quick date buttons above the filters set the range to year to date, the last 3 months or the last 6 months, and the text beside them says which dates the data actually covers.</p>
+      <section aria-label="Date range" className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">Quick date range</span>
+        {QUICK_RANGES.map(q => <Button key={q.key} size="sm" variant={activeQuick === q.key ? 'secondary' : 'outline'} aria-pressed={activeQuick === q.key} onClick={() => applyQuick(q.key)}>{q.label}</Button>)}
+        <Button size="sm" variant={dateFilterOn ? 'outline' : 'secondary'} aria-pressed={!dateFilterOn} onClick={() => setFilters(f => ({ ...f, from: '', to: '' }))}>All dates</Button>
+        <span className="text-xs text-muted-foreground sm:ml-auto" title="Dates compared: the final date for permits the City marks Final, otherwise the issued date, otherwise the applied date.">{rangeText}{fullText && ` · ${fullText}`}</span>
+      </section>
       <section aria-label="Filters" className="border-y border-border py-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {text('search', 'Address, permit, ZIP or description')}{text('host', 'Host / owner')}{text('contractor', 'Contractor')}
         {opt('status', 'Status', statuses)}{opt('type', 'Permit class', classes)}{opt('equipment', 'Equipment', Object.keys(equipmentLabels), equipmentLabels)}

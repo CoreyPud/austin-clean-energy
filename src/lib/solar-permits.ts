@@ -44,10 +44,15 @@ export interface PermitFilters {
 }
 export const emptyPermitFilters: PermitFilters = { search: '', contractor: '', host: '', status: 'all', type: 'all', minKw: '', maxKw: '', from: '', to: '', equipment: 'all', minDays: '', maxDays: '' };
 
+/** The date the from/through filters compare against: the final date when the City marks the permit Final, otherwise issuance, otherwise application. */
+export function permitFilterDate(row: Pick<SolarPermit, 'status_current' | 'completed_date' | 'issued_date' | 'applied_date'>): string | null {
+  return (isFinalPermit(row) ? row.completed_date : null) || row.issued_date || row.applied_date;
+}
+
 export function filterPermits(rows: SolarPermit[], f: PermitFilters) {
   const contains = (value: string | null, text: string) => (value || '').toLowerCase().includes(text.trim().toLowerCase());
   return rows.filter(row => {
-    const date = (isFinalPermit(row) ? row.completed_date : null) || row.issued_date || row.applied_date;
+    const date = permitFilterDate(row);
     return (!f.search.trim() || [row.address, row.permit_number, row.project_id, row.original_zip, row.description].some(value => contains(value, f.search)))
       && contains(row.contractor_company, f.contractor) && contains(row.host, f.host)
       && (f.status === 'all' || row.status_current === f.status)

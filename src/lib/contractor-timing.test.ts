@@ -1,6 +1,6 @@
 import { test as it } from 'node:test';
 import assert from 'node:assert/strict';
-import { barThickness, BAR_THICKNESS, contractorTiming, daysAppliedToIssued, firstClickAscending, sortContractors } from './contractor-timing';
+import { barThickness, BAR_THICKNESS, contractorTiming, daysAppliedToIssued, firstClickAscending, formatDate, permitDateRange, quickDateRange, QUICK_RANGES, sortContractors } from './contractor-timing';
 import type { SolarPermit } from './solar-permits';
 
 const p = (o: Partial<SolarPermit>): SolarPermit => ({ id: Math.random().toString(), project_id: null, permit_number: null, address: null, installed_kw: null, contractor_company: 'A', permit_class: null, status_current: 'Final', applied_date: null, issued_date: null, completed_date: null, original_zip: null, council_district: null, description: null, total_job_valuation: null, link: null, has_correction: null, host: null, host_pid: null, ...o });
@@ -71,4 +71,34 @@ const p = (o: Partial<SolarPermit>): SolarPermit => ({ id: Math.random().toStrin
     assert.equal(barThickness(Number.NaN, 100), BAR_THICKNESS.min);
     assert.equal(barThickness(10, 0), BAR_THICKNESS.min);
     assert.ok(barThickness(1, 100) >= BAR_THICKNESS.min && barThickness(1, 100) <= BAR_THICKNESS.max);
+  });
+
+  it('reports the dates the permit data covers', () => {
+    const r = permitDateRange([
+      p({ status_current: 'Final', applied_date: '2020-01-05', issued_date: '2020-02-05', completed_date: '2021-06-10' }),
+      p({ status_current: 'Active', applied_date: '2019-03-01', issued_date: '2019-04-01', completed_date: null }),
+      p({ applied_date: null, issued_date: null, completed_date: null }),
+    ]);
+    assert.deepEqual([r.earliest, r.latest, r.dated], ['2019-04-01', '2021-06-10', 2]);
+  });
+  it('says nothing is covered when no permit has a date', () => {
+    assert.deepEqual(permitDateRange([]), { earliest: null, latest: null, dated: 0 });
+  });
+  it('builds quick date ranges from today', () => {
+    const today = new Date(2026, 10, 20);
+    assert.deepEqual(quickDateRange('ytd', today), { from: '2026-01-01', to: '2026-11-20' });
+    assert.deepEqual(quickDateRange('3m', today), { from: '2026-08-20', to: '2026-11-20' });
+    assert.deepEqual(quickDateRange('6m', today), { from: '2026-05-20', to: '2026-11-20' });
+  });
+  it('pulls a quick range back when that month has no such day', () => {
+    assert.equal(quickDateRange('3m', new Date(2026, 4, 31)).from, '2026-02-28');
+  });
+  it('offers the three quick ranges the page shows', () => {
+    assert.deepEqual(QUICK_RANGES.map(q => q.key), ['ytd', '3m', '6m']);
+    assert.deepEqual(QUICK_RANGES.map(q => q.label), ['Year to date', 'Last 3 months', 'Last 6 months']);
+  });
+  it('formats a permit date for reading', () => {
+    assert.equal(formatDate('2026-11-20'), 'Nov 20, 2026');
+    assert.equal(formatDate(null), '');
+    assert.equal(formatDate('not a date'), '');
   });
