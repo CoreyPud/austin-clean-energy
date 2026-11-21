@@ -88,6 +88,11 @@ export function removeTask(tasks: GanttTask[], taskId: string): GanttTask[] {
 
 export const fromTemplate = (rows: TemplateTask[]): GanttTask[] => rows.map((r) => ({ ...r, preds: [...r.preds], links: [] }));
 
+/** Every property starts with its own template unless a saved schedule (even blank) exists. */
+export function initialPropertyTasks(savedTasks: GanttTask[] | null, template: TemplateTask[]): GanttTask[] {
+  return savedTasks ?? fromTemplate(template);
+}
+
 export const parseIso = (iso: string) => { const [y, m, d] = iso.split("-").map(Number); return Date.UTC(y, (m || 1) - 1, d || 1); };
 export const toIso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export const dayToIso = (startIso: string, day: number) => toIso(parseIso(startIso) + Math.floor(day + 1e-9) * DAY);

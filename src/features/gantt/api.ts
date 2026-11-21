@@ -30,6 +30,17 @@ export async function createSchedule(row: { name: string; start_date: string; sa
   return data;
 }
 
+// Share in-flight initialization across remounts so a property's first template is inserted once.
+const initialSchedules = new Map<string, Promise<ScheduleRow>>();
+export function createPropertyTemplate(userId: string, row: Parameters<typeof createSchedule>[0]): Promise<ScheduleRow> {
+  const key = `${userId}:${row.saved_assessment_id}`;
+  const pending = initialSchedules.get(key);
+  if (pending) return pending;
+  const request = createSchedule(row).finally(() => initialSchedules.delete(key));
+  initialSchedules.set(key, request);
+  return request;
+}
+
 export async function saveSchedule(id: string, patch: Partial<Pick<ScheduleRow, "name" | "start_date" | "tasks" | "saved_assessment_id">>) {
   const { error } = await db.from("gantt_schedules").update(patch).eq("id", id);
   if (error) throw error;

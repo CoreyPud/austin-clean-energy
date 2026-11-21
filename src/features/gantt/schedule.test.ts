@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fromTemplate, insertTask, moveTask, removeTask, scheduleTasks, wouldCycle, dayToIso, filterSchedulesForProperty, scheduleProgress } from "./schedule";
+import { fromTemplate, initialPropertyTasks, insertTask, moveTask, removeTask, scheduleTasks, wouldCycle, dayToIso, filterSchedulesForProperty, scheduleProgress } from "./schedule";
 import { PERMIT_TEMPLATE } from "./template";
 import type { GanttTask } from "./types";
 
@@ -63,6 +63,24 @@ test("spreadsheet template has 108 tasks with first start on project start", () 
   assert.equal(s[0].start, 0);
   assert.equal(dayToIso("2026-11-10", s[0].start), "2026-11-10");
   assert.ok(s.every((x) => Number.isFinite(x.end)));
+});
+
+test("every property automatically gets an independent 108-task permit template", () => {
+  const first = initialPropertyTasks(null, PERMIT_TEMPLATE);
+  const second = initialPropertyTasks(null, PERMIT_TEMPLATE);
+  assert.equal(first.length, 108);
+  assert.equal(second.length, 108);
+  const originalDays = second[0].days;
+  first[0].days = originalDays + 10;
+  first[0].preds.push("other-property-task");
+  assert.equal(second[0].days, originalDays);
+  assert.equal(second[0].preds.includes("other-property-task"), false);
+});
+
+test("automatic template loading never overwrites an existing or intentionally blank schedule", () => {
+  const saved = [t("saved-task", 23)];
+  assert.equal(initialPropertyTasks(saved, PERMIT_TEMPLATE)[0].days, 23);
+  assert.deepEqual(initialPropertyTasks([], PERMIT_TEMPLATE), []);
 });
 
 test("schedules are strictly filtered to the active property and never leak across properties", () => {

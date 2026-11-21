@@ -1,0 +1,1 @@
+- The public financing comparison describes the same hosting, ownership, and lease assumptions as Solar Options without inventing site financials; lease figures remain explicitly illustrative until quoted terms exist.

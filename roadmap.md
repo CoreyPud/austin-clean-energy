@@ -1,4 +1,4 @@
-# Austin Solar Options
-- [x] Add a separate one-screen-per-step address/roof, triage, bill, and results workflow.
-- [x] Reuse solar assessment, roof controls, bill parsing, and ownership financial models; label lease placeholders explicitly.
-- [x] Verify screening rules and a real-address workflow; commit changes.
+# Automatic property Gantt and Austin Solar Financing
+- [x] Automatically show a property-specific permit schedule; preserve existing schedules and sign-in requirements for saving.
+- [x] Add Austin Solar Financing with the three-option comparison and a link from Solar Options.
+- [x] Test automatic loading, property isolation, and the financing page; commit changes.

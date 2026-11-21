@@ -1,0 +1,2 @@
+- Every saved property automatically loads its existing schedule or initializes a permit template; unsaved and signed-out views show an independent template without persisting it, so viewing never requires a creation button or exposes another property's schedule.
+- Deduplicate in-flight template creation per owner/property to prevent duplicate inserts during React remounts.

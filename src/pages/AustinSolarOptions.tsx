@@ -150,6 +150,7 @@ export default function AustinSolarOptions() {
   return <div className="min-h-screen bg-background text-foreground">
     <PageHeader title="Austin Solar Options" action={<AccountAuthButton />} />
     <main className="max-w-5xl mx-auto px-4 py-7 space-y-7">
+      <div className="flex justify-end"><Button asChild variant="link" className="h-auto whitespace-normal text-right"><Link to="/austin-solar-financing">Compare the three financing options<ArrowRight className="ml-2 h-4 w-4 shrink-0" /></Link></Button></div>
       <nav aria-label="Solar options steps" className="grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-border pb-5">
         {STEPS.map((name, index) => <Button key={name} variant={index === step ? "default" : "ghost"} disabled={index > step || loading} onClick={() => goTo(index)} aria-current={index === step ? "step" : undefined} className="h-auto min-h-12 justify-start whitespace-normal text-left gap-2 px-3">
           <span className="shrink-0 w-6 h-6 rounded-full border border-current flex items-center justify-center text-xs">{index < step ? <Check className="h-3 w-3" /> : index + 1}</span><span>{name}</span>
