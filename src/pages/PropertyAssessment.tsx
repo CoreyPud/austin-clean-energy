@@ -57,7 +57,7 @@ import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
 import { ASSESSMENT_PROPERTY_TYPES, detectAssessmentPropertyType } from "@/lib/assessment-property-type";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
-import { filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
+import { applySolarFilters, filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
 
 const DEFAULT_COST_PER_W = AUSTIN_INSTALL_COST_PER_KW / 1000;
 
@@ -150,6 +150,12 @@ const PropertyAssessment = () => {
     () => areaEligibleAssessmentPanels?.filter(p => !excludedSegments.has(p.segmentIndex)),
     [areaEligibleAssessmentPanels, excludedSegments],
   );
+  const inactiveSurfacePanels = useMemo(() => {
+    const candidates = areaEligibleAssessmentPanels?.filter(p => excludedSegments.has(p.segmentIndex)) ?? [];
+    return candidates.length
+      ? applySolarFilters(candidates, { propertyType, azimuths: assessmentAzimuths, segmentAreas: assessmentSegmentAreas }).panels
+      : [];
+  }, [areaEligibleAssessmentPanels, excludedSegments, propertyType, assessmentAzimuths, assessmentSegmentAreas]);
 
   const solarFilter = useSolarFilter({
     panels: selectedSurfacePanels,
@@ -836,11 +842,12 @@ const PropertyAssessment = () => {
                             lon={results.solarCenter?.lon ?? results.center?.[0] ?? -97.7431}
                             className="w-full h-[480px]"
                             {...solarFilter.paneProps}
+                            inactivePanels={inactiveSurfacePanels}
                             panelHeightM={results.panelDims?.h}
                             panelWidthM={results.panelDims?.w}
                             segmentAzimuths={assessmentAzimuths}
                             segmentPitches={assessmentPitches}
-                            fitKey={`${results.solarCenter?.lat ?? ""},${results.solarCenter?.lon ?? ""},${assessmentRun}`}
+                            fitKey={`${results.solarCenter?.lat ?? ""},${results.solarCenter?.lon ?? ""},${assessmentRun},${[...excludedSegments].sort((a, b) => a - b).join("-")}`}
                             onPickLocation={loading ? undefined : handleRoofPick}
                             onSegmentClick={roofSurfaces.length > 1 ? toggleSegment : undefined}
                             selectedPanelCount={
@@ -858,6 +865,10 @@ const PropertyAssessment = () => {
                             <p className="text-xs text-muted-foreground">
                               Roof surfaces — click a surface on the map or below to include or remove it (for example panels placed on trees, ground or a carport). System size and savings update automatically.
                             </p>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" aria-label="Roof surface color key">
+                              <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary" aria-hidden="true" />Green = included in system size and savings</span>
+                              <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-accent" aria-hidden="true" />Yellow = possible, but not included</span>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                               {roofSurfaces.map(({ seg, count }) => {
                                 const on = !excludedSegments.has(seg);
@@ -865,8 +876,11 @@ const PropertyAssessment = () => {
                                 const dir = az == null ? "" : ["N","NE","E","SE","S","SW","W","NW"][Math.round(((az % 360) + 360) % 360 / 45) % 8] + "-facing, ";
                                 return (
                                   <Button key={seg} type="button" size="sm" variant={on ? "default" : "outline"}
-                                    aria-pressed={on} onClick={() => toggleSegment(seg)} className="h-7 text-xs">
-                                    Surface {seg + 1} · {dir}{count} panels
+                                    aria-pressed={on} onClick={() => toggleSegment(seg)}
+                                    className={on
+                                      ? "h-auto min-h-8 whitespace-normal border border-primary bg-primary text-left text-xs text-primary-foreground hover:bg-primary/90"
+                                      : "h-auto min-h-8 whitespace-normal border-accent bg-accent text-left text-xs text-accent-foreground hover:bg-accent/90 hover:text-accent-foreground"}>
+                                    Surface {seg + 1} · {dir}{count} panels · {on ? "Included" : "Not included"}
                                   </Button>
                                 );
                               })}

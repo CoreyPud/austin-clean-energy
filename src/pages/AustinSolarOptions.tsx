@@ -19,7 +19,7 @@ import { detectAssessmentPropertyType } from "@/lib/assessment-property-type";
 import { billToMonthlyKwh } from "@/lib/solar-model";
 import { classifyProperty, computeRecommendation, defaultOmPerKwYear, DEFAULT_MONTHLY_BILL, estimateProductionPerKw, fromGoogleSolarInsights, isSsoEligible } from "@/lib/property-solar";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
-import { filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
+import { applySolarFilters, filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
 import OptionResults from "@/features/solar-options/OptionResults";
 import { annualizeBillUsage, screenSolarOptions, type BillPayer, type FinanceGoal, type SolarOption } from "@/features/solar-options/screening";
 
@@ -84,6 +84,10 @@ export default function AustinSolarOptions() {
   );
   const surfaces = useMemo(() => [...new Set(areaEligiblePanels?.map(panel => panel.segmentIndex) ?? [])], [areaEligiblePanels]);
   const chosenPanels = useMemo(() => areaEligiblePanels?.filter(panel => !excluded.has(panel.segmentIndex)), [areaEligiblePanels, excluded]);
+  const inactivePanels = useMemo(() => {
+    const candidates = areaEligiblePanels?.filter(panel => excluded.has(panel.segmentIndex)) ?? [];
+    return candidates.length ? applySolarFilters(candidates, { propertyType, azimuths, segmentAreas }).panels : [];
+  }, [areaEligiblePanels, excluded, propertyType, azimuths, segmentAreas]);
   const filter = useSolarFilter({ panels: chosenPanels, propertyType, azimuths, segmentAreas });
   const si = results?.solarInsights;
   const count = filter.filteredPanelCount ?? si?.maxPanels ?? 0;
@@ -191,8 +195,22 @@ export default function AustinSolarOptions() {
       </section>}
 
       {step === 3 && <section className="space-y-7">
-        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? []} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
-        {surfaces.length > 1 && <div className="flex flex-wrap gap-2" aria-label="Roof surfaces">{surfaces.map(segment => <Button key={segment} variant={excluded.has(segment) ? "outline" : "default"} size="sm" aria-pressed={!excluded.has(segment)} onClick={() => toggleSurface(segment)}>Roof surface {segment + 1}{!excluded.has(segment) && <Check className="ml-2 h-3 w-3" />}</Button>)}</div>}
+        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? []} inactivePanels={inactivePanels} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon},${[...excluded].sort((a, b) => a - b).join("-")}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
+        {surfaces.length > 1 && <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" aria-label="Roof surface color key">
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary" aria-hidden="true" />Green = included in system size and savings</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-accent" aria-hidden="true" />Yellow = possible, but not included</span>
+          </div>
+          <div className="flex flex-wrap gap-2" aria-label="Roof surfaces">{surfaces.map(segment => {
+            const included = !excluded.has(segment);
+            return <Button key={segment} variant={included ? "default" : "outline"} size="sm" aria-pressed={included} onClick={() => toggleSurface(segment)}
+              className={included
+                ? "border border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-accent bg-accent text-accent-foreground hover:bg-accent/90 hover:text-accent-foreground"}>
+              Roof surface {segment + 1} · {included ? "Included" : "Not included"}{included && <Check className="ml-2 h-3 w-3" />}
+            </Button>;
+          })}</div>
+        </div>}
         <p className="text-sm text-muted-foreground">Usage: {Math.round(annualUsage).toLocaleString()} kWh/year ({useBill ? "from bill; annualized if fewer than 12 months" : "unverified estimate"}). Layout uses the existing high-sunlight and buildable-roof filters.{!residential && " Individual roof surfaces under 2,000 square feet are excluded."} Roof selections and option changes do not request new Google lookups.</p>
         {vos && sso ? <OptionResults propertyType={propertyType} recommendation={recommendation} selected={residential ? "loan" : activeOption} onSelect={setSelected} vos={vos} sso={sso} eligible={eligible} annualUsageKwh={annualUsage} productionPerKw={estimateProductionPerKw(si?.sunshineHours ?? null)} om={om} onOmChange={setOm} loanRate={loanRate} onLoanRateChange={setLoanRate} loanYears={loanYears} onLoanYearsChange={setLoanYears} leasePercent={leasePercent} onLeasePercentChange={setLeasePercent} onSizeChange={setSizeOverride} onCostChange={setCostOverride} federalOptions={federal} onFederalChange={setFederal} /> : <Alert><AlertDescription>{si ? "No buildable panels remain in the selected roof surfaces. Select another surface or check a different building." : "No Google Solar roof data is available for this building. Financial options require a verified roof size; try a different building."}</AlertDescription></Alert>}
         <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => goTo(2)}><ArrowLeft className="h-4 w-4 mr-2" />Back to my bill</Button><Button asChild variant="link"><Link to={`/solar-savings-austin?address=${encodeURIComponent(assessedAddress)}&type=${propertyType}`}>Original solar potential page<ArrowRight className="h-4 w-4 ml-2" /></Link></Button></div>

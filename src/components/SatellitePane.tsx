@@ -14,6 +14,8 @@ interface Props {
   lon: number;
   className?: string;
   panels?: SolarPanel[];
+  /** Buildable panels on excluded roof surfaces; shown in yellow and clickable to re-include. */
+  inactivePanels?: SolarPanel[];
   walkwayPanels?: SolarPanel[];
   debugHoles?: LatLon[];
   edgeSegments?: LatLon[][];
@@ -30,7 +32,7 @@ interface Props {
 }
 
 const PANEL_OPACITY = 0.9;
-const PANEL_LAYERS = ["panels-fill", "panels-outline", "walkways-fill", "walkways-outline"];
+const PANEL_LAYERS = ["panels-fill-inactive", "panels-fill", "panels-outline", "walkways-fill", "walkways-outline"];
 const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
 
@@ -71,7 +73,12 @@ function panelPolygon(
 // rebuild and no re-run of the O(n²) selection ordering.
 function fillOpacityExpr(opacity: number, selectedCount: number | undefined): any {
   if (selectedCount == null) return opacity;
-  return ["case", ["<", ["get", "rank"], selectedCount], opacity, Math.max(0.07, opacity * 0.18)];
+  return [
+    "case",
+    ["==", ["get", "active"], false], opacity,
+    ["<", ["get", "rank"], selectedCount], opacity,
+    Math.max(0.07, opacity * 0.18),
+  ];
 }
 
 interface MapProps extends Omit<Props, "className" | "onPickLocation"> {
@@ -81,7 +88,7 @@ interface MapProps extends Omit<Props, "className" | "onPickLocation"> {
 }
 
 function SatelliteMap({
-  lat, lon, panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
+  lat, lon, panels, inactivePanels = [], walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
   segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick,
 }: MapProps) {
   const segmentClickRef = useRef(onSegmentClick);
@@ -123,7 +130,7 @@ function SatelliteMap({
     mapRef.current = map;
     map.once("load", () => { styleLoadedRef.current = true; });
     map.on("click", (e) => clickRef.current?.(e.lngLat.lat, e.lngLat.lng));
-    if (!panels?.length) {
+    if (!panels?.length && !inactivePanels.length) {
       markerRef.current = new mapboxgl.Marker({ color: "#ef4444" }).setLngLat([lon, lat]).addTo(map);
     }
     // Auto-resize Mapbox canvas whenever the CSS container is resized (e.g., panel drag)
@@ -146,9 +153,9 @@ function SatelliteMap({
   }, []);
 
   useLayoutEffect(() => {
-    if (!panels?.length) return;
+    if (!panels?.length && !inactivePanels.length) return;
     if (wrapperRef.current) wrapperRef.current.style.opacity = "0";
-  }, [panels, segmentAzimuths]);
+  }, [panels, inactivePanels, segmentAzimuths]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -183,7 +190,7 @@ function SatelliteMap({
       return;
     }
 
-    if (panels.length === 0) {
+    if (panels.length === 0 && inactivePanels.length === 0) {
       // Confirmed no panels — show satellite with marker at property location
       const show = () => {
         if (map.getSource("panels")) {
@@ -202,8 +209,10 @@ function SatelliteMap({
       return;
     }
 
-    // Has panels — remove marker
+    // Has active or inactive panels — remove marker and draw both states together.
     if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
+    // Draw excluded panels first so overlapping included surfaces remain visibly green.
+    const displayPanels = [...inactivePanels, ...panels];
 
     // Refit only when the property/data changes (fitKey), not when the filter toggles
     const fitKeyChanged    = fitKey !== fitKeyRef.current;
@@ -224,20 +233,21 @@ function SatelliteMap({
     // then <80% TSRF panels by production % descending.
     // Proximity growth ensures contiguous patches — distant sections aren't jumped to until nearby ones are full.
     const TSRF_THRESH = 0.80;
-    const withMeta = panels.map((p, i) => ({
+    const withMeta = displayPanels.map((p, i) => ({
       i, lat: p.lat, lon: p.lon,
       tsrf: panelTsrf(p.yearlyEnergyDcKwh),
+      active: i >= inactivePanels.length,
     }));
 
-    const highQ = withMeta.filter(x => x.tsrf >= TSRF_THRESH);
-    const lowQ  = withMeta.filter(x => x.tsrf <  TSRF_THRESH).sort((a, b) => b.tsrf - a.tsrf);
+    const highQ = withMeta.filter(x => x.active && x.tsrf >= TSRF_THRESH);
+    const lowQ  = withMeta.filter(x => x.active && x.tsrf < TSRF_THRESH).sort((a, b) => b.tsrf - a.tsrf);
 
     // Greedy nearest-neighbour through ≥80% panels; seed from northernmost
     const greedyOrder: typeof withMeta = [];
     if (highQ.length > 0) {
       const remaining = new Set(highQ.map(x => x.i));
       const seed = highQ.reduce((best, x) => x.lat > best.lat || (x.lat === best.lat && x.lon < best.lon) ? x : best);
-      const minDist = new Float64Array(panels.length).fill(Infinity);
+      const minDist = new Float64Array(displayPanels.length).fill(Infinity);
 
       const grow = (p: typeof withMeta[0]) => {
         greedyOrder.push(p);
@@ -261,12 +271,12 @@ function SatelliteMap({
     // Selection priority (best-first): the greedy proximity chain, then remaining low
     // panels by production. Baking each panel's rank lets the fill layer decide which
     // are "in the system" purely from the selected-count threshold.
-    const rankOf = new Int32Array(panels.length);
+    const rankOf = new Int32Array(displayPanels.length);
     [...greedyOrder, ...lowQ].forEach((x, r) => { rankOf[x.i] = r; });
 
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: panels.map((p, i) => {
+      features: displayPanels.map((p, i) => {
         const az    = segmentAzimuths[p.segmentIndex] ?? 180;
         const pitch = segmentPitches[p.segmentIndex] ?? 20;
         const tsrf  = panelTsrf(p.yearlyEnergyDcKwh);
@@ -274,13 +284,13 @@ function SatelliteMap({
         return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] },
-          properties: { id: i, tsrf, rank: rankOf[i], seg: p.segmentIndex },
+          properties: { id: i, tsrf, rank: rankOf[i], seg: p.segmentIndex, active: i >= inactivePanels.length },
         };
       }),
     };
 
-    const lats = panels.map(p => p.lat);
-    const lons = panels.map(p => p.lon);
+    const lats = displayPanels.map(p => p.lat);
+    const lons = displayPanels.map(p => p.lon);
     const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
     const mPerDegLon = M_PER_DEG_LAT * Math.cos(midLat * RAD);
     const dLat = halfH / M_PER_DEG_LAT;
@@ -307,6 +317,13 @@ function SatelliteMap({
     };
 
     const opacityExpr = fillOpacityExpr(PANEL_OPACITY, selectedPanelCount);
+    const rootStyle = getComputedStyle(document.documentElement);
+    // Mapbox's color parser expects comma-separated HSL rather than CSS Color 4 spaces.
+    const tokenColor = (name: string) => `hsl(${rootStyle.getPropertyValue(name).trim().split(/\s+/).join(", ")})`;
+    const activeColor = tokenColor("--primary");
+    const inactiveColor = tokenColor("--accent");
+    const activeFilter: mapboxgl.FilterSpecification = ["==", ["get", "active"], true];
+    const inactiveFilter: mapboxgl.FilterSpecification = ["==", ["get", "active"], false];
 
     // Walkway GeoJSON (gray tiles for removed walkway panels)
     const walkwayGeojson: GeoJSON.FeatureCollection = {
@@ -352,7 +369,13 @@ function SatelliteMap({
       if (map.getSource("panels")) {
         (map.getSource("panels") as mapboxgl.GeoJSONSource).setData(geojson);
         if (map.getLayer("panels-fill")) {
+          map.setFilter("panels-fill", activeFilter);
           map.setPaintProperty("panels-fill", "fill-opacity", opacityExpr);
+          map.setPaintProperty("panels-fill", "fill-color", activeColor);
+        }
+        if (map.getLayer("panels-fill-inactive")) {
+          map.setFilter("panels-fill-inactive", inactiveFilter);
+          map.setPaintProperty("panels-fill-inactive", "fill-color", inactiveColor);
         }
         if (map.getSource("walkways")) {
           (map.getSource("walkways") as mapboxgl.GeoJSONSource).setData(walkwayGeojson);
@@ -366,11 +389,21 @@ function SatelliteMap({
       } else {
         map.addSource("panels", { type: "geojson", data: geojson });
         map.addLayer({
+          id: "panels-fill-inactive",
+          type: "fill",
+          source: "panels",
+          filter: inactiveFilter,
+          paint: { "fill-color": inactiveColor, "fill-opacity": PANEL_OPACITY },
+        });
+        // Active is a separate upper layer: Mapbox does not guarantee feature order within
+        // one fill layer, and overlapping roof segments must not hide the included state.
+        map.addLayer({
           id: "panels-fill",
           type: "fill",
           source: "panels",
+          filter: activeFilter,
           paint: {
-            "fill-color": ["interpolate", ["linear"], ["get", "tsrf"], 0.6, "#f59e0b", 1.0, "#22c55e"],
+            "fill-color": activeColor,
             "fill-opacity": opacityExpr,
           },
         });
@@ -423,36 +456,40 @@ function SatelliteMap({
 
         popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
 
-        map.on("mouseenter", "panels-fill", (e) => {
-          map.getCanvas().style.cursor = "pointer";
-          const tsrf = e.features?.[0]?.properties?.tsrf;
-          if (tsrf == null) return;
-          popupRef.current!
-            .setLngLat(e.lngLat)
-            .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% of optimal</strong>${segmentClickRef.current ? '<br/><span style="font-size:11px">Click to remove this roof surface</span>' : ''}`)
-            .addTo(map);
-        });
-        map.on("click", "panels-fill", (e) => {
-          if (pickingRef.current) return;
-          const seg = e.features?.[0]?.properties?.seg;
-          if (seg == null || !segmentClickRef.current) return;
-          popupRef.current?.remove();
-          segmentClickRef.current(Number(seg));
-        });
-        map.on("mousemove", "panels-fill", (e) => {
-          popupRef.current?.setLngLat(e.lngLat);
-        });
-        map.on("mouseleave", "panels-fill", () => {
-          map.getCanvas().style.cursor = "";
-          popupRef.current?.remove();
-        });
+        for (const layerId of ["panels-fill", "panels-fill-inactive"]) {
+          map.on("mouseenter", layerId, (e) => {
+            map.getCanvas().style.cursor = "pointer";
+            const feature = e.features?.[0]?.properties;
+            const tsrf = feature?.tsrf;
+            if (tsrf == null) return;
+            const action = feature?.active === false ? "include" : "remove";
+            popupRef.current!
+              .setLngLat(e.lngLat)
+              .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% of optimal</strong>${segmentClickRef.current ? `<br/><span style="font-size:11px">Click to ${action} this roof surface</span>` : ''}`)
+              .addTo(map);
+          });
+          map.on("click", layerId, (e) => {
+            if (pickingRef.current) return;
+            const seg = e.features?.[0]?.properties?.seg;
+            if (seg == null || !segmentClickRef.current) return;
+            popupRef.current?.remove();
+            segmentClickRef.current(Number(seg));
+          });
+          map.on("mousemove", layerId, (e) => {
+            popupRef.current?.setLngLat(e.lngLat);
+          });
+          map.on("mouseleave", layerId, () => {
+            map.getCanvas().style.cursor = "";
+            popupRef.current?.remove();
+          });
+        }
       }
       if (shouldFit) fitView();
       else if (wrapperRef.current) wrapperRef.current.style.opacity = "1";
     };
 
     runWhenReady(addLayers);
-  }, [panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths]);
+  }, [panels, inactivePanels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths]);
 
   // Selected-count changes (e.g. a system-size slider) only move the dim threshold,
   // so update the paint expression in place rather than rebuilding the overlay.
@@ -478,7 +515,7 @@ function SatelliteMap({
   }, [onMapClick]);
 
   useEffect(() => {
-    if (panels === undefined || panels.length > 0) return;
+    if (panels === undefined || panels.length > 0 || inactivePanels.length > 0) return;
     mapRef.current?.jumpTo({ center: [lon, lat], zoom: 18 });
     markerRef.current?.setLngLat([lon, lat]);
   }, [lat, lon]);
@@ -493,7 +530,7 @@ function SatelliteMap({
 export default function SatellitePane({
   lat, lon,
   className = "w-full h-64 rounded-lg overflow-hidden border border-border",
-  panels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM,
+  panels, inactivePanels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM,
   segmentAzimuths, segmentPitches, selectedPanelCount, fitKey, onPickLocation, onSegmentClick,
 }: Props) {
   const [panelsVisible, setPanelsVisible] = useState(true);
@@ -504,7 +541,7 @@ export default function SatellitePane({
       <MapTokenLoader>
         <SatelliteMap
           lat={lat} lon={lon}
-          panels={panels} walkwayPanels={walkwayPanels}
+          panels={panels} inactivePanels={inactivePanels} walkwayPanels={walkwayPanels}
           debugHoles={debugHoles} edgeSegments={edgeSegments}
           panelHeightM={panelHeightM} panelWidthM={panelWidthM}
           segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches}
@@ -530,7 +567,7 @@ export default function SatellitePane({
           ) : null}
         </div>
       ) : null}
-      {panels?.length ? (
+      {panels?.length || inactivePanels?.length ? (
         <div className="absolute bottom-2 left-3 flex items-center gap-2 pointer-events-none">
           <label className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 pointer-events-auto cursor-pointer">
             <input
