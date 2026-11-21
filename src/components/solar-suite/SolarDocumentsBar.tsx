@@ -19,7 +19,7 @@ export function SolarDocumentsBar() {
           <p className="text-sm text-muted-foreground">Official Austin Energy forms. Confirm the current packet, eligibility and signatures with Austin Energy; the private application export is a worksheet, not a submitted or signed form.</p>
         </DialogContent>
       </Dialog>
-      <Button asChild variant="outline" size="sm"><Link to={`/rebate-applications${project.savedId ? `?saved=${encodeURIComponent(project.savedId)}` : ""}`} state={{ solarDesign: { service_address: project.address, system_kw_dc: project.systemSizeKw, ...(project.costPerW != null ? { installed_cost: project.systemSizeKw * project.costPerW * 1000 } : {}) } }}>Prepare rebate application</Link></Button>
+      <Button asChild variant="outline" size="sm"><Link to={`/rebate-applications${project.savedId ? `?saved=${encodeURIComponent(project.savedId)}` : ""}`} state={{ solarDesign: { service_address: project.address, system_kw_dc: project.systemSizeKw, ...(project.costPerW != null ? { installed_cost: project.systemSizeKw * project.costPerW * 1000 } : {}) } }}>Prepare a solar rebate application</Link></Button>
     </nav>
   );
 }

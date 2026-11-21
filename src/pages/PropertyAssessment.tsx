@@ -748,8 +748,6 @@ const PropertyAssessment = () => {
                       </div>
                     </div>
 
-                    <Button asChild variant="link" size="sm" className="px-0"><Link to="/rebate-applications">Prepare a private rebate application</Link></Button>
-
                     {billViewMode === "bill" && billParseState === "done" ? (
                       <div className="text-xs text-muted-foreground py-1">
                         {billParseSummary?.months} months of data · using real usage for calculations
