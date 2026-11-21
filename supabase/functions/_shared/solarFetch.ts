@@ -126,6 +126,7 @@ export function solarResponseFromCache(row: any, segRows: any[]): any | null {
     roofSegmentStats[s.segment_index] = {
       pitchDegrees: s.pitch_deg ?? undefined,
       azimuthDegrees: s.azimuth_deg ?? undefined,
+      stats: { areaMeters2: s.area_m2 ?? undefined },
     };
   }
   for (let i = 0; i < roofSegmentStats.length; i++) roofSegmentStats[i] ??= {};

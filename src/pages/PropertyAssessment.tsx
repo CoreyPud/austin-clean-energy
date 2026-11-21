@@ -57,6 +57,7 @@ import { buildRecommendationCards, type SolarSummary } from "@/lib/clean-energy-
 import { edgeFunctionErrorMessage } from "@/lib/edge-function-error";
 import { ASSESSMENT_PROPERTY_TYPES, detectAssessmentPropertyType } from "@/lib/assessment-property-type";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
+import { filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
 
 const DEFAULT_COST_PER_W = AUSTIN_INSTALL_COST_PER_KW / 1000;
 
@@ -107,15 +108,21 @@ const PropertyAssessment = () => {
     }));
   }, [results]);
 
-  const [assessmentAzimuths, assessmentPitches] = useMemo(() => {
+  const [assessmentAzimuths, assessmentPitches, assessmentSegmentAreas] = useMemo(() => {
     const az: Record<number, number> = {};
     const pt: Record<number, number> = {};
+    const areas: Record<number, number> = {};
     (results?.roofSegments ?? []).forEach((s: any) => {
       az[s.segmentIndex] = s.azimuthDeg;
       pt[s.segmentIndex] = s.pitchDeg;
+      if (typeof s.areaM2 === "number") areas[s.segmentIndex] = s.areaM2;
     });
-    return [az, pt];
+    return [az, pt, areas];
   }, [results]);
+  const areaEligibleAssessmentPanels = useMemo(
+    () => assessmentPanels ? filterPanelsByRoofSegmentArea(assessmentPanels, propertyType, assessmentSegmentAreas) : assessmentPanels,
+    [assessmentPanels, propertyType, assessmentSegmentAreas],
+  );
   // The uploaded bill drives the model only while "use my bill" is selected; switching back to
   // the estimate must drop its month-by-month figures too, not just its annual total.
   const activeMonthlyKwh = billViewMode === "bill" && uploadedKwh ? uploadedKwh : undefined;
@@ -136,18 +143,19 @@ const PropertyAssessment = () => {
   });
   const roofSurfaces = useMemo(() => {
     const counts: Record<number, number> = {};
-    (assessmentPanels ?? []).forEach(p => { counts[p.segmentIndex] = (counts[p.segmentIndex] ?? 0) + 1; });
+    (areaEligibleAssessmentPanels ?? []).forEach(p => { counts[p.segmentIndex] = (counts[p.segmentIndex] ?? 0) + 1; });
     return Object.entries(counts).map(([seg, count]) => ({ seg: Number(seg), count })).sort((a, b) => b.count - a.count);
-  }, [assessmentPanels]);
+  }, [areaEligibleAssessmentPanels]);
   const selectedSurfacePanels = useMemo(
-    () => assessmentPanels?.filter(p => !excludedSegments.has(p.segmentIndex)),
-    [assessmentPanels, excludedSegments],
+    () => areaEligibleAssessmentPanels?.filter(p => !excludedSegments.has(p.segmentIndex)),
+    [areaEligibleAssessmentPanels, excludedSegments],
   );
 
   const solarFilter = useSolarFilter({
     panels: selectedSurfacePanels,
     propertyType,
     azimuths: assessmentAzimuths,
+    segmentAreas: assessmentSegmentAreas,
   });
   const buildablePanels = solarFilter.filteredPanelCount ?? si?.maxPanels ?? null;
 
@@ -842,6 +850,9 @@ const PropertyAssessment = () => {
                             }
                           />
                         </MapTokenLoader>
+                        {classifyProperty(propertyType) !== "residential" && (
+                          <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">Potential arrays exclude individual roof surfaces under 2,000 square feet.</p>
+                        )}
                         {roofSurfaces.length > 1 && (
                           <div className="p-3 border-t border-border space-y-2">
                             <p className="text-xs text-muted-foreground">

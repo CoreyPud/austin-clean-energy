@@ -19,6 +19,7 @@ import { detectAssessmentPropertyType } from "@/lib/assessment-property-type";
 import { billToMonthlyKwh } from "@/lib/solar-model";
 import { classifyProperty, computeRecommendation, defaultOmPerKwYear, DEFAULT_MONTHLY_BILL, estimateProductionPerKw, fromGoogleSolarInsights, isSsoEligible } from "@/lib/property-solar";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
+import { filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
 import OptionResults from "@/features/solar-options/OptionResults";
 import { annualizeBillUsage, screenSolarOptions, type BillPayer, type FinanceGoal, type SolarOption } from "@/features/solar-options/screening";
 
@@ -29,7 +30,7 @@ interface RoofAssessment {
   solarInsights?: { maxPanels: number; panelCapacityWatts: number; sunshineHours: number; imageryDate?: { year: number; month: number; day: number } };
   solarPanels?: number[][];
   panelDims?: { h: number; w: number };
-  roofSegments?: { segmentIndex: number; azimuthDeg: number; pitchDeg: number }[];
+  roofSegments?: { segmentIndex: number; azimuthDeg: number; pitchDeg: number; areaM2?: number | null }[];
 }
 const STEPS = ["Your building", "Your priorities", "Your electricity bill", "Your solar options"];
 const TYPES = [{ value: "single-family", label: "Residential — single family" }, { value: "condo", label: "Residential — condo" }, { value: "commercial", label: "Business / commercial" }, { value: "non-profit", label: "School / nonprofit / public organization" }, { value: "multi-family", label: "Multifamily" }];
@@ -68,14 +69,22 @@ export default function AustinSolarOptions() {
     if (!center || !results?.solarPanels?.length) return undefined;
     return results.solarPanels.map(([dlat, dlon, orientation, kwh, segmentIndex]) => ({ lat: center.lat + dlat / 1e6, lon: center.lon + dlon / 1e6, orientation: orientation ? "LANDSCAPE" : "PORTRAIT", yearlyEnergyDcKwh: kwh, segmentIndex }));
   }, [results]);
-  const { azimuths, pitches } = useMemo(() => {
-    const azimuths: Record<number, number> = {}, pitches: Record<number, number> = {};
-    results?.roofSegments?.forEach(segment => { azimuths[segment.segmentIndex] = segment.azimuthDeg; pitches[segment.segmentIndex] = segment.pitchDeg; });
-    return { azimuths, pitches };
+  const { azimuths, pitches, segmentAreas } = useMemo(() => {
+    const azimuths: Record<number, number> = {}, pitches: Record<number, number> = {}, segmentAreas: Record<number, number> = {};
+    results?.roofSegments?.forEach(segment => {
+      azimuths[segment.segmentIndex] = segment.azimuthDeg;
+      pitches[segment.segmentIndex] = segment.pitchDeg;
+      if (typeof segment.areaM2 === "number") segmentAreas[segment.segmentIndex] = segment.areaM2;
+    });
+    return { azimuths, pitches, segmentAreas };
   }, [results]);
-  const surfaces = useMemo(() => [...new Set(panels?.map(panel => panel.segmentIndex) ?? [])], [panels]);
-  const chosenPanels = useMemo(() => panels?.filter(panel => !excluded.has(panel.segmentIndex)), [panels, excluded]);
-  const filter = useSolarFilter({ panels: chosenPanels, propertyType, azimuths });
+  const areaEligiblePanels = useMemo(
+    () => panels ? filterPanelsByRoofSegmentArea(panels, propertyType, segmentAreas) : panels,
+    [panels, propertyType, segmentAreas],
+  );
+  const surfaces = useMemo(() => [...new Set(areaEligiblePanels?.map(panel => panel.segmentIndex) ?? [])], [areaEligiblePanels]);
+  const chosenPanels = useMemo(() => areaEligiblePanels?.filter(panel => !excluded.has(panel.segmentIndex)), [areaEligiblePanels, excluded]);
+  const filter = useSolarFilter({ panels: chosenPanels, propertyType, azimuths, segmentAreas });
   const si = results?.solarInsights;
   const count = filter.filteredPanelCount ?? si?.maxPanels ?? 0;
   const site = si && count > 0 ? fromGoogleSolarInsights({ ...si, maxPanels: count }, propertyType) : null;
@@ -184,7 +193,7 @@ export default function AustinSolarOptions() {
       {step === 3 && <section className="space-y-7">
         {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? []} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
         {surfaces.length > 1 && <div className="flex flex-wrap gap-2" aria-label="Roof surfaces">{surfaces.map(segment => <Button key={segment} variant={excluded.has(segment) ? "outline" : "default"} size="sm" aria-pressed={!excluded.has(segment)} onClick={() => toggleSurface(segment)}>Roof surface {segment + 1}{!excluded.has(segment) && <Check className="ml-2 h-3 w-3" />}</Button>)}</div>}
-        <p className="text-sm text-muted-foreground">Usage: {Math.round(annualUsage).toLocaleString()} kWh/year ({useBill ? "from bill; annualized if fewer than 12 months" : "unverified estimate"}). Layout uses the existing high-sunlight and buildable-roof filters. Roof selections and option changes do not request new Google lookups.</p>
+        <p className="text-sm text-muted-foreground">Usage: {Math.round(annualUsage).toLocaleString()} kWh/year ({useBill ? "from bill; annualized if fewer than 12 months" : "unverified estimate"}). Layout uses the existing high-sunlight and buildable-roof filters.{!residential && " Individual roof surfaces under 2,000 square feet are excluded."} Roof selections and option changes do not request new Google lookups.</p>
         {vos && sso ? <OptionResults propertyType={propertyType} recommendation={recommendation} selected={residential ? "loan" : activeOption} onSelect={setSelected} vos={vos} sso={sso} eligible={eligible} annualUsageKwh={annualUsage} productionPerKw={estimateProductionPerKw(si?.sunshineHours ?? null)} om={om} onOmChange={setOm} loanRate={loanRate} onLoanRateChange={setLoanRate} loanYears={loanYears} onLoanYearsChange={setLoanYears} leasePercent={leasePercent} onLeasePercentChange={setLeasePercent} onSizeChange={setSizeOverride} onCostChange={setCostOverride} federalOptions={federal} onFederalChange={setFederal} /> : <Alert><AlertDescription>{si ? "No buildable panels remain in the selected roof surfaces. Select another surface or check a different building." : "No Google Solar roof data is available for this building. Financial options require a verified roof size; try a different building."}</AlertDescription></Alert>}
         <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => goTo(2)}><ArrowLeft className="h-4 w-4 mr-2" />Back to my bill</Button><Button asChild variant="link"><Link to={`/solar-savings-austin?address=${encodeURIComponent(assessedAddress)}&type=${propertyType}`}>Original solar potential page<ArrowRight className="h-4 w-4 ml-2" /></Link></Button></div>
       </section>}

@@ -234,7 +234,7 @@ serve(async (req) => {
       if (row && isSolarCacheFresh(row.solar_fetched_at)) {
         const { data: segRows } = await supabase
           .from("tcad_roof_segments")
-          .select("segment_index, pitch_deg, azimuth_deg")
+          .select("segment_index, pitch_deg, azimuth_deg, area_m2")
           .eq("pid", row.pid);
         const cached = solarResponseFromCache(row, segRows ?? []);
         if (cached) return { resp: cached, fromCache: true };
@@ -340,8 +340,10 @@ serve(async (req) => {
       let maxPanels = sp.maxArrayPanelsCount;
       if (sp.solarPanels?.length) {
         const azimuths: Record<number, number> = {};
+        const segmentAreas: Record<number, number> = {};
         (sp.roofSegmentStats ?? []).forEach((seg: any, i: number) => {
           if (seg.azimuthDegrees != null) azimuths[i] = seg.azimuthDegrees;
+          if (seg.stats?.areaMeters2 != null) segmentAreas[i] = seg.stats.areaMeters2;
         });
         const panels: SolarPanel[] = sp.solarPanels.map((p: any) => ({
           lat: p.center.latitude,
@@ -350,7 +352,7 @@ serve(async (req) => {
           yearlyEnergyDcKwh: p.yearlyEnergyDcKwh,
           segmentIndex: p.segmentIndex,
         }));
-        const buildable = applySolarFilters(panels, { propertyType, azimuths });
+        const buildable = applySolarFilters(panels, { propertyType, azimuths, segmentAreas });
         maxPanels = buildable.panels.length;
       }
 
@@ -395,6 +397,7 @@ serve(async (req) => {
         segmentIndex: i,
         azimuthDeg: seg.azimuthDegrees,
         pitchDeg: seg.pitchDegrees,
+        areaM2: seg.stats?.areaMeters2 ?? null,
       }));
       solarPanelsCompact = sp.solarPanels.map((p: any) => [
         +((p.center.latitude - refLat) * 1e6).toFixed(6),

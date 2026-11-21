@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   applySolarFilters,
+  filterPanelsByRoofSegmentArea,
   type CommercialFilterResult,
   type SolarPanel,
 } from "@/lib/solar-filters";
@@ -9,6 +10,7 @@ export interface UseSolarFilterOpts {
   panels?: SolarPanel[];
   propertyType?: string | null;
   azimuths?: Record<number, number>;
+  segmentAreas?: Record<number, number | null | undefined>;
 }
 
 /**
@@ -19,35 +21,39 @@ export interface UseSolarFilterOpts {
  * Commercial roofs additionally get roof-edge detection: a perimeter setback measured
  * off the traced border, plus walkways routed out from interior HVAC voids.
  */
-export function useSolarFilter({ panels, propertyType, azimuths }: UseSolarFilterOpts) {
+export function useSolarFilter({ panels, propertyType, azimuths, segmentAreas }: UseSolarFilterOpts) {
   const [showRaw,      setShowRaw]      = useState(false);
   const [showDetected, setShowDetected] = useState(false);
 
   const isCommercial = propertyType === "commercial";
+  const areaFilteredPanels = useMemo(
+    () => panels ? filterPanelsByRoofSegmentArea(panels, propertyType, segmentAreas) : panels,
+    [panels, propertyType, segmentAreas],
+  );
 
   const result = useMemo<CommercialFilterResult | null>(() => {
-    if (!panels?.length) return null;
-    return applySolarFilters(panels, { propertyType, azimuths });
-  }, [panels, propertyType, azimuths]);
+    if (!areaFilteredPanels?.length) return null;
+    return applySolarFilters(areaFilteredPanels, { propertyType, azimuths });
+  }, [areaFilteredPanels, propertyType, azimuths]);
 
-  // Spread straight onto <SatellitePane>. The roof edge / hole overlays are independent
-  // of which layout is being shown, so they stay available in the raw view too.
+  // Spread straight onto <SatellitePane>. Small commercial surfaces stay hidden even in
+  // the raw Google view; "raw" only bypasses the additional setback and TSRF derates.
   const applied = !showRaw;
   const paneProps = {
-    panels:        applied ? (result?.panels ?? panels) : panels,
+    panels:        applied ? (result?.panels ?? areaFilteredPanels) : areaFilteredPanels,
     walkwayPanels: applied ? result?.walkwayPanels : undefined,
     debugHoles:    showDetected ? result?.debugHoles   : undefined,
     edgeSegments:  showDetected ? result?.edgeSegments : undefined,
   };
 
-  /** Buildable panel count after the derate; falls back to the raw count. */
-  const filteredPanelCount = result?.panels.length ?? panels?.length ?? null;
+  /** Buildable panel count after the derate; falls back to the area-eligible raw count. */
+  const filteredPanelCount = result?.panels.length ?? areaFilteredPanels?.length ?? null;
 
   return {
     showRaw, setShowRaw,
     showDetected, setShowDetected,
-    result, isCommercial, paneProps, filteredPanelCount,
-    available: !!panels?.length,
+    result, isCommercial, paneProps, filteredPanelCount, areaFilteredPanels,
+    available: !!areaFilteredPanels?.length,
   };
 }
 

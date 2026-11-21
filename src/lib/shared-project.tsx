@@ -61,13 +61,17 @@ function parseProject(raw: string | null): SharedProject | null {
 }
 
 function buildablePanelCount(results: unknown, propertyType: string | null): number | null {
-  const res = (results ?? {}) as { solarCenter?: { lat: number; lon: number }; solarPanels?: number[][]; roofSegments?: { segmentIndex: number; azimuthDeg: number }[] };
+  const res = (results ?? {}) as { solarCenter?: { lat: number; lon: number }; solarPanels?: number[][]; roofSegments?: { segmentIndex: number; azimuthDeg: number; areaM2?: number | null }[] };
   const sc = res.solarCenter; const sp = res.solarPanels;
   if (!sc || !sp?.length) return null;
   const panels: SolarPanel[] = sp.map(([dlat, dlon, o, kwh, seg]) => ({ lat: sc.lat + dlat / 1e6, lon: sc.lon + dlon / 1e6, orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT", yearlyEnergyDcKwh: kwh, segmentIndex: seg }));
   const azimuths: Record<number, number> = {};
-  (res.roofSegments ?? []).forEach((g) => { azimuths[g.segmentIndex] = g.azimuthDeg; });
-  try { return applySolarFilters(panels, { propertyType, azimuths }).panels.length; } catch { return null; }
+  const segmentAreas: Record<number, number> = {};
+  (res.roofSegments ?? []).forEach((g) => {
+    azimuths[g.segmentIndex] = g.azimuthDeg;
+    if (typeof g.areaM2 === "number") segmentAreas[g.segmentIndex] = g.areaM2;
+  });
+  try { return applySolarFilters(panels, { propertyType, azimuths, segmentAreas }).panels.length; } catch { return null; }
 }
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);

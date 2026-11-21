@@ -118,6 +118,7 @@ export default function PropertyViewer() {
     dims: { h: number; w: number };
     azimuths: Record<number, number>;
     pitches: Record<number, number>;
+    segmentAreas: Record<number, number>;
   } | null>(null);
 
   const selectedProperty = useMemo(
@@ -129,6 +130,7 @@ export default function PropertyViewer() {
     panels:       panelOverlay?.panels,
     propertyType: selectedProperty?.property_type,
     azimuths:     panelOverlay?.azimuths,
+    segmentAreas: panelOverlay?.segmentAreas,
   });
 
   const [rightPanelOpen,  setRightPanelOpen]  = useState(true);
@@ -310,11 +312,16 @@ export default function PropertyViewer() {
           }));
           const azimuths: Record<number, number> = {};
           const pitches: Record<number, number> = {};
-          segs.forEach(s => { azimuths[s.segment_index] = s.azimuth_deg; pitches[s.segment_index] = s.pitch_deg; });
-          setPanelOverlay({ panels, dims: GOOGLE_PANEL_DIMS, azimuths, pitches });
+          const segmentAreas: Record<number, number> = {};
+          segs.forEach(s => {
+            azimuths[s.segment_index] = s.azimuth_deg;
+            pitches[s.segment_index] = s.pitch_deg;
+            if (typeof s.area_m2 === "number") segmentAreas[s.segment_index] = s.area_m2;
+          });
+          setPanelOverlay({ panels, dims: GOOGLE_PANEL_DIMS, azimuths, pitches, segmentAreas });
         } else {
           // Signal "loaded, no panels" so SatellitePane shows satellite instead of staying hidden
-          setPanelOverlay({ panels: [], dims: GOOGLE_PANEL_DIMS, azimuths: {}, pitches: {} });
+          setPanelOverlay({ panels: [], dims: GOOGLE_PANEL_DIMS, azimuths: {}, pitches: {}, segmentAreas: {} });
         }
       });
   }, [focusPid, solarRefreshKey]);

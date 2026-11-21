@@ -130,6 +130,7 @@ export default function PropertyPage() {
   const [panelDims,        setPanelDims]        = useState<{ h: number; w: number } | null>(null);
   const [segmentAzimuths,  setSegmentAzimuths]  = useState<Record<number, number>>({});
   const [segmentPitches,   setSegmentPitches]   = useState<Record<number, number>>({});
+  const [segmentAreas,     setSegmentAreas]     = useState<Record<number, number>>({});
 
 
   const loadProperty = async (pid: string) => {
@@ -141,16 +142,22 @@ export default function PropertyPage() {
         .single(),
       supabase
         .from("tcad_roof_segments")
-        .select("segment_index, azimuth_deg, pitch_deg")
+        .select("segment_index, azimuth_deg, pitch_deg, area_m2")
         .eq("pid", pid),
     ]);
     if (error || !data) { setNotFound(true); return; }
     setProperty(data as PropertyData);
     const az: Record<number, number> = {};
     const pt: Record<number, number> = {};
-    (segs ?? []).forEach((s: any) => { az[s.segment_index] = s.azimuth_deg; pt[s.segment_index] = s.pitch_deg; });
+    const areas: Record<number, number> = {};
+    (segs ?? []).forEach((s: any) => {
+      az[s.segment_index] = s.azimuth_deg;
+      pt[s.segment_index] = s.pitch_deg;
+      if (typeof s.area_m2 === "number") areas[s.segment_index] = s.area_m2;
+    });
     setSegmentAzimuths(az);
     setSegmentPitches(pt);
+    setSegmentAreas(areas);
     const layout = (data as any).solar_panels_layout as { ref: [number, number]; p: number[][] } | null;
     if (layout?.p?.length) {
       const [refLat, refLon] = layout.ref;
@@ -207,6 +214,7 @@ export default function PropertyPage() {
     panels:       solarPanels,
     propertyType: property?.property_type,
     azimuths:     segmentAzimuths,
+    segmentAreas,
   });
 
   if (loading) {

@@ -62,11 +62,13 @@ function calcBuildable(sp, propertyType) {
   }));
 
   const azimuths = {};
+  const segmentAreas = {};
   (sp.roofSegmentStats ?? []).forEach((seg, i) => {
     if (seg.azimuthDegrees != null) azimuths[i] = seg.azimuthDegrees;
+    if (seg.stats?.areaMeters2 != null) segmentAreas[i] = seg.stats.areaMeters2;
   });
 
-  const res = applySolarFilters(panels, { propertyType, azimuths });
+  const res = applySolarFilters(panels, { propertyType, azimuths, segmentAreas });
   const panelKw = (sp.panelCapacityWatts ?? 400) / 1000;
   return { kw: +(res.panels.length * panelKw).toFixed(2) };
 }

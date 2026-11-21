@@ -24,7 +24,7 @@ export interface CommercialFilterResult {
  * Bump when the algorithm changes in a way that invalidates stored results, so rows
  * written by an older version can be found and recomputed.
  */
-export const SOLAR_FILTER_VERSION = 1;
+export const SOLAR_FILTER_VERSION = 2;
 
 /** Default closing radius used when tracing the roof border, in metres. */
 export const BORDER_SMOOTH_M = 4;
@@ -41,6 +41,27 @@ const M_PER_DEG_LAT = 111320;
 const SETBACK_M = 1.22; // 4 ft
 /** Minimum TSRF (total solar resource fraction) for a panel to count as buildable. */
 export const TSRF_MIN = 0.75;
+/** Minimum individual roof-surface area for non-residential potential arrays. */
+export const COMMERCIAL_MIN_ROOF_SEGMENT_SQFT = 2_000;
+export const COMMERCIAL_MIN_ROOF_SEGMENT_M2 = COMMERCIAL_MIN_ROOF_SEGMENT_SQFT * 0.09290304;
+
+export function hasCommercialRoofSegmentMinimum(propertyType?: string | null): boolean {
+  return propertyType === "commercial" || propertyType === "non-profit" || propertyType === "nonprofit" || propertyType === "multi-family" || propertyType === "multifamily";
+}
+
+/** Exclude small roof surfaces before either drawing or sizing a non-residential array.
+ * Missing area measurements remain eligible rather than making older saved layouts disappear. */
+export function filterPanelsByRoofSegmentArea(
+  panels: SolarPanel[],
+  propertyType?: string | null,
+  segmentAreas: Record<number, number | null | undefined> = {},
+): SolarPanel[] {
+  if (!hasCommercialRoofSegmentMinimum(propertyType)) return panels;
+  return panels.filter(panel => {
+    const area = segmentAreas[panel.segmentIndex];
+    return typeof area !== "number" || !Number.isFinite(area) || area >= COMMERCIAL_MIN_ROOF_SEGMENT_M2;
+  });
+}
 
 /** A panel's TSRF: its yearly output relative to an ideal Austin panel of the same size. */
 export function panelTsrf(yearlyEnergyDcKwh: number, panelKw = GOOGLE_PANEL_KW): number {
@@ -725,12 +746,14 @@ export function applySolarFilters(
   opts: {
     propertyType?: string | null;
     azimuths?: Record<number, number>;
+    segmentAreas?: Record<number, number | null | undefined>;
     smoothM?: number;
   } = {},
 ): CommercialFilterResult {
-  const { propertyType, azimuths = {}, smoothM = BORDER_SMOOTH_M } = opts;
+  const { propertyType, azimuths = {}, segmentAreas = {}, smoothM = BORDER_SMOOTH_M } = opts;
+  const eligiblePanels = filterPanelsByRoofSegmentArea(panels, propertyType, segmentAreas);
 
-  if (!panels.length) {
+  if (!eligiblePanels.length) {
     return {
       panels: [], walkwayPanels: [], debugHoles: [], edgeSegments: [],
       setbackCount: 0, tsrfCount: 0, walkwayCount: 0,
@@ -738,17 +761,17 @@ export function applySolarFilters(
   }
 
   if (propertyType === "commercial") {
-    return applyCommercialFilters(panels, azimuths, smoothM);
+    return applyCommercialFilters(eligiblePanels, azimuths, smoothM);
   }
 
-  const kept = panels.filter(p => panelTsrf(p.yearlyEnergyDcKwh) >= TSRF_MIN);
+  const kept = eligiblePanels.filter(p => panelTsrf(p.yearlyEnergyDcKwh) >= TSRF_MIN);
   return {
     panels: kept,
     walkwayPanels: [],
     debugHoles: [],
     edgeSegments: [],
     setbackCount: 0,
-    tsrfCount: panels.length - kept.length,
+    tsrfCount: eligiblePanels.length - kept.length,
     walkwayCount: 0,
   };
 }
