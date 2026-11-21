@@ -7,13 +7,14 @@ import { Link } from "react-router-dom";
 
 interface Props {
   onResult: (monthlyKwh: number[]) => void;
+  onClear?: () => void;
   applicationMode?: boolean;
   onApplicationResult?: (data: { applicant: Record<string, string>; raw_months: { label: string; kwh: number }[]; source: string }) => void;
 }
 
 type UploadState = "idle" | "parsing" | "done" | "error";
 
-const BillUpload = ({ onResult, applicationMode = false, onApplicationResult }: Props) => {
+const BillUpload = ({ onResult, onClear, applicationMode = false, onApplicationResult }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<UploadState>("idle");
   const [summary, setSummary] = useState<{ months: number; avgKwh: number } | null>(null);
@@ -83,6 +84,7 @@ const BillUpload = ({ onResult, applicationMode = false, onApplicationResult }: 
     setState("idle");
     setSummary(null);
     setError(null);
+    onClear?.();
     if (inputRef.current) inputRef.current.value = "";
   };
 

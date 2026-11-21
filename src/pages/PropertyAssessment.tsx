@@ -599,6 +599,9 @@ const PropertyAssessment = () => {
             </div>
             <SavedPropertiesDrawer getSnapshot={getSnapshot} onOpenSaved={openSaved} />
           </div>
+          <Button asChild variant="outline" className="mb-5">
+            <Link to={`/austin-solar-options${address.trim() ? `?address=${encodeURIComponent(address.trim())}` : ""}`}>Austin Solar Options — step by step</Link>
+          </Button>
 
 
           {/* Address Form */}

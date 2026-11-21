@@ -13,6 +13,7 @@ import SolarPermits from "./pages/SolarPermits";
 import ContractorPermitTiming from "./pages/ContractorPermitTiming";
 import EmbedAreaAnalysis from "./pages/EmbedAreaAnalysis";
 import PropertyAssessment from "./pages/PropertyAssessment";
+import AustinSolarOptions from "./pages/AustinSolarOptions";
 import { Navigate } from "react-router-dom";
 import InstallationDetail from "./pages/InstallationDetail";
 import ImportSolarData from "./pages/ImportSolarData";
@@ -123,6 +124,7 @@ const AppRoutes = () => {
           <Route path="/solar-permits" element={<SolarPermits />} />
           <Route path="/solar-permits/contractors" element={<ContractorPermitTiming />} />
           <Route path="/solar-savings-austin" element={<PropertyAssessment />} />
+          <Route path="/austin-solar-options" element={<AustinSolarOptions />} />
           <Route path="/solar-savings-austin/:shareSlug" element={<PropertyAssessment />} />
           <Route path="/rebate-applications" element={<RebateApplications />} />
           <Route path="/installation/:id" element={<InstallationDetail />} />

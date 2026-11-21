@@ -30,3 +30,4 @@
 - Clean Canvas URL imports use authenticated server-side Firecrawl structured extraction with untrusted-source prompts and draft review, never auto-publishing; Hot Topics queries rank all visible ideas by raw support/oppose totals separately so the newest-list limit cannot exclude leaders.
 - Digital Twin Map keeps its supplied hourly/model data in public/data and allocation engine in src/features/digital-twin-map, with a public wrapper for navigation and metadata; flows are balanced schematic allocations, never feeder assignments or power-flow results.
 - Utility Innovation Registry lives in src/features/utility-registry as the supplied six-tab component with a public wrapper; old sub-URLs render the same page — keeps uploaded source intact while preserving links.
+- Solar Options reuses roof/bill/owner models; screening stays in its feature module to keep host income separate from investor revenue.
