@@ -35,6 +35,8 @@ const PANEL_OPACITY = 0.9;
 const PANEL_LAYERS = ["panels-fill-inactive", "panels-fill", "panels-outline", "walkways-fill", "walkways-outline"];
 const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
+const EMPTY_PANELS: SolarPanel[] = [];
+const EMPTY_SEGMENTS: Record<number, number> = {};
 
 /** Top-down footprint of a tilted panel. Only the side running up/down the slope (along the
  *  azimuth) is foreshortened by cos(pitch); the side running across the slope is level. Which
@@ -88,8 +90,8 @@ interface MapProps extends Omit<Props, "className" | "onPickLocation"> {
 }
 
 function SatelliteMap({
-  lat, lon, panels, inactivePanels = [], walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
-  segmentAzimuths = {}, segmentPitches = {}, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick,
+  lat, lon, panels, inactivePanels = EMPTY_PANELS, walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
+  segmentAzimuths = EMPTY_SEGMENTS, segmentPitches = EMPTY_SEGMENTS, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick,
 }: MapProps) {
   const segmentClickRef = useRef(onSegmentClick);
   segmentClickRef.current = onSegmentClick;
