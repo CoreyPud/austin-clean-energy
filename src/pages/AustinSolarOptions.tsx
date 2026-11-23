@@ -23,6 +23,8 @@ import { applySolarFilters, filterPanelsByRoofSegmentArea } from "@/lib/solar-fi
 import OptionResults from "@/features/solar-options/OptionResults";
 import { annualizeBillUsage, screenSolarOptions, type BillPayer, type FinanceGoal, type SolarOption } from "@/features/solar-options/screening";
 
+const EMPTY_PANELS: SolarPanel[] = [];
+
 interface RoofAssessment {
   address?: string;
   center?: number[];
@@ -165,7 +167,7 @@ export default function AustinSolarOptions() {
           <div className="flex-1 space-y-2"><Label htmlFor="options-address">Property address</Label><AddressAutocomplete id="options-address" value={address} onChange={value => { ++requestId.current; setLoading(false); setAddress(value); setResults(null); setError(null); }} /></div>
           <Button type="submit" disabled={loading || !address.trim()}><MapPin className="h-4 w-4 mr-2" />Find building</Button>
         </form>
-        {hasMap && <SatellitePane key={`confirm-${assessedAddress}-${mapLat}-${mapLon}`} lat={mapLat} lon={mapLon} panels={[]} fitKey={`${mapLat},${mapLon}`} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} />}
+        {hasMap && <SatellitePane key={`confirm-${assessedAddress}-${mapLat}-${mapLon}`} lat={mapLat} lon={mapLon} panels={EMPTY_PANELS} fitKey={`${mapLat},${mapLon}`} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} />}
         {results && !si && <Alert><AlertDescription>Solar roof data is unavailable for this location. Confirm the building, then try another roof on the map; no layout or financial estimate will be invented.</AlertDescription></Alert>}
         <div className="flex justify-end"><Button disabled={!results || !hasMap || loading || !!error} onClick={() => goTo(1)}>This is my building<Check className="ml-2 h-4 w-4" /></Button></div>
       </section>}
@@ -196,7 +198,7 @@ export default function AustinSolarOptions() {
       </section>}
 
       {step === 3 && <section className="space-y-7">
-        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? []} inactivePanels={inactivePanels} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon},${[...excluded].sort((a, b) => a - b).join("-")}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
+        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? EMPTY_PANELS} inactivePanels={inactivePanels} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon},${[...excluded].sort((a, b) => a - b).join("-")}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
         {surfaces.length > 1 && <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" aria-label="Roof surface color key">
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary" aria-hidden="true" />Green = included in system size and savings</span>
