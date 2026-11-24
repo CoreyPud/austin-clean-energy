@@ -90,6 +90,8 @@ export function defaultOmPerKwYear(propertyType: string | null | undefined): num
 const RESIDENTIAL_ANNUAL_USAGE_KWH = DEFAULT_MONTHLY_USAGE_KWH * 12; // Austin avg
 const VOS_RATE = AUSTIN_ENERGY_RATES.vosRate; // single-sourced from solar-model.ts
 const MIN_SYSTEM_KW = 2;                     // floor for usage-based (VoS) default sizing
+/** Default Standard Offer layout size as a fraction of buildable roof capacity. */
+export const SSO_DEFAULT_SIZE_FACTOR = 0.6;
 // Default monthly bill assumption when no real usage is known, by AE property type (matches
 // the calculator's existing defaults), used both as the static-render default and as the
 // starting point a user's own bill input overrides.
@@ -182,7 +184,7 @@ export function computeRecommendation(
      *  the roof's maximum. */
     systemKwOverride?: number | null;
     /** "vos" (default): size to usage, floor MIN_SYSTEM_KW, ceiling the roof max.
-     *  "sso": bill-independent, size to the full buildable roof capacity. */
+     *  "sso": bill-independent, default to 60% of buildable roof capacity. */
     billingMode?: "vos" | "sso";
     /** User-supplied installer quote ($/W), overriding the default tiered/flat rate below.
      *  A manual override, not a data-derived default. Omit for the data-driven figure. */
@@ -199,12 +201,12 @@ export function computeRecommendation(
   const billingMode = opts.billingMode ?? "vos";
 
   let recommendedKw: number;
-  if (cls === "multifamily") {
+  if ((cls === "commercial" || cls === "multifamily") && billingMode === "sso") {
+    recommendedKw = maxKw * SSO_DEFAULT_SIZE_FACTOR;
+  } else if (cls === "multifamily") {
     // AE's multifamily program splits Value of Solar credits across the tenants' own meters,
     // so there's no single owner bill to size against -- always size to the full buildable
-    // roof capacity, independent of billingMode.
-    recommendedKw = maxKw;
-  } else if (cls === "commercial" && billingMode === "sso") {
+    // roof capacity under Value of Solar.
     recommendedKw = maxKw;
   } else {
     // Residential, or commercial/non-profit on VoS: usage-based, floored, roof-capped.

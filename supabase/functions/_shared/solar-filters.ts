@@ -24,7 +24,7 @@ export interface CommercialFilterResult {
  * Bump when the algorithm changes in a way that invalidates stored results, so rows
  * written by an older version can be found and recomputed.
  */
-export const SOLAR_FILTER_VERSION = 2;
+export const SOLAR_FILTER_VERSION = 3;
 
 /** Default closing radius used when tracing the roof border, in metres. */
 export const BORDER_SMOOTH_M = 4;
@@ -40,7 +40,7 @@ const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
 const SETBACK_M = 1.22; // 4 ft
 /** Minimum TSRF (total solar resource fraction) for a panel to count as buildable. */
-export const TSRF_MIN = 0.75;
+export const TSRF_MIN = 0.80;
 /** Minimum individual roof-surface area for non-residential potential arrays. */
 export const COMMERCIAL_MIN_ROOF_SEGMENT_SQFT = 2_000;
 export const COMMERCIAL_MIN_ROOF_SEGMENT_M2 = COMMERCIAL_MIN_ROOF_SEGMENT_SQFT * 0.09290304;
@@ -559,29 +559,29 @@ export function applyCommercialFilters(
 
   // traceRings winds filled regions counter-clockwise (positive shoelace area) and
   // interior voids clockwise, so discarding negative rings drops the channels and
-  // courtyards inside the array. Of the outer walls that remain we keep only the
-  // largest: the result is a single polygon wrapping the building.
+  // courtyards inside the array. Keep every outer wall so multi-building commercial
+  // campuses (and user-added roofs) each get their own setback polygon.
   const outerRings = traceRings(closed)
     .filter(ring => ringArea(ring) > 0)
     .sort((a, b) => ringArea(b) - ringArea(a));
 
   // Simplify in metres, not grid cells, so the tolerance means a real distance and the
-  // resulting edges are free to sit at any angle. This polygon is kept in (u,v) metres
+  // resulting edges are free to sit at any angle. Polygons are kept in (u,v) metres
   // because the setback below is measured against it directly.
   const simplifyTolM = Math.max(0.75, smoothM * 0.4);
-  const borderUV: [number, number][] = outerRings.length
-    ? simplifyClosed(
-        outerRings[0].map(([cu, cv]) => [guToU(cu - 0.5), gvToV(cv - 0.5)] as [number, number]),
+  const borderPolys: [number, number][][] = outerRings
+    .map(ring =>
+      simplifyClosed(
+        ring.map(([cu, cv]) => [guToU(cu - 0.5), gvToV(cv - 0.5)] as [number, number]),
         simplifyTolM,
-      )
-    : [];
+      ),
+    )
+    .filter(poly => poly.length >= 3);
 
-  const edgeSegments = borderUV.length
-    ? [(() => {
-        const pts = borderUV.map(([u, v]) => uvToLatLon(u, v));
-        return [...pts, pts[0]]; // close the ring
-      })()]
-    : [];
+  const edgeSegments = borderPolys.map(poly => {
+    const pts = poly.map(([u, v]) => uvToLatLon(u, v));
+    return [...pts, pts[0]]; // close each ring
+  });
 
   // === Setback: remove panels within SETBACK_M of the border polygon ===
   // Measured as a true perpendicular distance to the polygon that gets drawn, rather
@@ -590,10 +590,11 @@ export function applyCommercialFilters(
   // would cut against a boundary that is not the one on screen. Panels that the
   // simplification left outside the polygon are dropped as well.
   const setbackRemoved = new Set<number>();
-  if (borderUV.length >= 3) {
+  if (borderPolys.length > 0) {
     for (let i = 0; i < allPanels.length; i++) {
       const p: [number, number] = [uvs[i].u, uvs[i].v];
-      if (!pointInPolygon(p, borderUV) || distToPolygon(p, borderUV) < SETBACK_M) {
+      const containing = borderPolys.find(poly => pointInPolygon(p, poly));
+      if (!containing || distToPolygon(p, containing) < SETBACK_M) {
         setbackRemoved.add(i);
       }
     }
@@ -734,7 +735,7 @@ export function applyCommercialFilters(
 }
 
 /**
- * The derate policy, in one place: every property type gets the 75% TSRF cut, and
+ * The derate policy, in one place: every property type gets the 80% TSRF cut, and
  * commercial roofs additionally get roof-edge detection (perimeter setback measured off
  * the traced border, plus walkways routed out from interior HVAC voids).
  *

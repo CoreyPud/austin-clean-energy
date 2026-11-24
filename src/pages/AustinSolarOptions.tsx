@@ -20,6 +20,7 @@ import { billToMonthlyKwh } from "@/lib/solar-model";
 import { classifyProperty, computeRecommendation, defaultOmPerKwYear, DEFAULT_MONTHLY_BILL, estimateProductionPerKw, fromGoogleSolarInsights, isSsoEligible } from "@/lib/property-solar";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 import { applySolarFilters, filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
+import { filterBlockedPanels, mergeAddedRoof, type AddedRoofPayload, type BlockedArea } from "@/lib/roof-layout-edits";
 import OptionResults from "@/features/solar-options/OptionResults";
 import { annualizeBillUsage, screenSolarOptions, type BillPayer, type FinanceGoal, type SolarOption } from "@/features/solar-options/screening";
 
@@ -56,6 +57,9 @@ export default function AustinSolarOptions() {
   const [useBill, setUseBill] = useState(false);
   const [billKey, setBillKey] = useState(0);
   const [excluded, setExcluded] = useState<Set<number>>(new Set());
+  const [addedRoofs, setAddedRoofs] = useState<AddedRoofPayload[]>([]);
+  const [addingRoof, setAddingRoof] = useState(false);
+  const [blockedAreas, setBlockedAreas] = useState<BlockedArea[]>([]);
   const [selected, setSelected] = useState<SolarOption>("loan");
   const [sizeOverride, setSizeOverride] = useState<number | null>(null);
   const [costOverride, setCostOverride] = useState<number | null>(null);
@@ -66,20 +70,29 @@ export default function AustinSolarOptions() {
   const [federal, setFederal] = useState<FederalSolarOptions>({ eligible: true, lowIncome: false, domesticContent: false, rebateReducesBasis: false });
   useSeo({ title: "Austin Solar Options | Austin Clean Energy", description: "Confirm your Austin building, share your electricity needs, and compare solar ownership, Standard Offer, and an illustrative equipment lease one step at a time." });
 
-  const panels = useMemo<SolarPanel[] | undefined>(() => {
+  const { mergedPanels, azimuths, pitches, segmentAreas } = useMemo(() => {
     const center = results?.solarCenter;
-    if (!center || !results?.solarPanels?.length) return undefined;
-    return results.solarPanels.map(([dlat, dlon, orientation, kwh, segmentIndex]) => ({ lat: center.lat + dlat / 1e6, lon: center.lon + dlon / 1e6, orientation: orientation ? "LANDSCAPE" : "PORTRAIT", yearlyEnergyDcKwh: kwh, segmentIndex }));
-  }, [results]);
-  const { azimuths, pitches, segmentAreas } = useMemo(() => {
+    const basePanels: SolarPanel[] | undefined = center && results?.solarPanels?.length
+      ? results.solarPanels.map(([dlat, dlon, orientation, kwh, segmentIndex]) => ({ lat: center.lat + dlat / 1e6, lon: center.lon + dlon / 1e6, orientation: orientation ? "LANDSCAPE" : "PORTRAIT", yearlyEnergyDcKwh: kwh, segmentIndex }))
+      : undefined;
     const azimuths: Record<number, number> = {}, pitches: Record<number, number> = {}, segmentAreas: Record<number, number> = {};
     results?.roofSegments?.forEach(segment => {
       azimuths[segment.segmentIndex] = segment.azimuthDeg;
       pitches[segment.segmentIndex] = segment.pitchDeg;
       if (typeof segment.areaM2 === "number") segmentAreas[segment.segmentIndex] = segment.areaM2;
     });
-    return { azimuths, pitches, segmentAreas };
-  }, [results]);
+    if (!basePanels) return { mergedPanels: undefined, azimuths, pitches, segmentAreas };
+    let curPanels = basePanels, curAz = azimuths, curPt = pitches, curAreas = segmentAreas;
+    for (const extra of addedRoofs) {
+      const m = mergeAddedRoof(curPanels, curAz, curPt, curAreas, extra);
+      curPanels = m.panels; curAz = m.azimuths; curPt = m.pitches; curAreas = m.segmentAreas;
+    }
+    return { mergedPanels: curPanels, azimuths: curAz, pitches: curPt, segmentAreas: curAreas };
+  }, [results, addedRoofs]);
+  const panels = useMemo<SolarPanel[] | undefined>(
+    () => mergedPanels ? filterBlockedPanels(mergedPanels, blockedAreas) : mergedPanels,
+    [mergedPanels, blockedAreas],
+  );
   const areaEligiblePanels = useMemo(
     () => panels ? filterPanelsByRoofSegmentArea(panels, propertyType, segmentAreas) : panels,
     [panels, propertyType, segmentAreas],
@@ -139,10 +152,26 @@ export default function AustinSolarOptions() {
         setBillMonths(null); setUseBill(false); setBillKey(key => key + 1); setPayer(""); setGoal(""); setLeasePercent(null);
       }
       if (!location) { changeType(type); setTypeMatched(!!detected); }
-      setAssessedAddress(fullAddress); setResults(data); setExcluded(new Set()); setSizeOverride(null); setCostOverride(null); setStep(0);
+      setAssessedAddress(fullAddress); setResults(data); setExcluded(new Set()); setAddedRoofs([]); setBlockedAreas([]); setSizeOverride(null); setCostOverride(null); setStep(0);
     } catch (failure) {
       if (id === requestId.current) setError(failure instanceof Error ? failure.message : "Could not check that building. Please try again.");
     } finally { if (id === requestId.current) setLoading(false); }
+  };
+  const handleAddRoof = async (lat: number, lng: number) => {
+    setAddingRoof(true); setError(null);
+    try {
+      const { data, error: responseError } = await supabase.functions.invoke("unified-assessment", { body: { mode: "add-roof", location: { lat, lng }, propertyType } });
+      if (responseError) throw new Error(await edgeFunctionErrorMessage(responseError));
+      if (data?.error) throw new Error(data.error);
+      const incoming: AddedRoofPayload = { panels: Array.isArray(data?.panels) ? data.panels : [], roofSegments: Array.isArray(data?.roofSegments) ? data.roofSegments : [] };
+      const preview = mergeAddedRoof(mergedPanels ?? [], azimuths, pitches, segmentAreas, incoming);
+      if (preview.addedCount > 0) {
+        setAddedRoofs(prev => [...prev, incoming]);
+        setSizeOverride(null);
+      }
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Could not add that roof. Please try again.");
+    } finally { setAddingRoof(false); }
   };
   const toggleSurface = (segment: number) => {
     setExcluded(previous => { const next = new Set(previous); if (next.has(segment)) next.delete(segment); else next.add(segment); return next; });
@@ -198,7 +227,7 @@ export default function AustinSolarOptions() {
       </section>}
 
       {step === 3 && <section className="space-y-7">
-        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? EMPTY_PANELS} inactivePanels={inactivePanels} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon},${[...excluded].sort((a, b) => a - b).join("-")}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
+        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? EMPTY_PANELS} inactivePanels={inactivePanels} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon},${addedRoofs.length},${[...excluded].sort((a, b) => a - b).join("-")}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onAddRoof={loading ? undefined : handleAddRoof} addingRoof={addingRoof} blockedAreas={blockedAreas} onAddBlockedArea={(area) => { setBlockedAreas(prev => [...prev, area]); setSizeOverride(null); }} onClearBlockedAreas={() => { setBlockedAreas([]); setSizeOverride(null); }} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
         {surfaces.length > 1 && <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" aria-label="Roof surface color key">
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary" aria-hidden="true" />Green = included in system size and savings</span>

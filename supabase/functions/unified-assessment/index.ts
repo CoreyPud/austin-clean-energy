@@ -17,7 +17,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { resolveCouncilMember } from "../_shared/councilLookup.ts";
-import { applySolarFilters, GOOGLE_PANEL_DIMS, panelTsrf, type SolarPanel } from "../_shared/solar-filters.ts";
+import { applySolarFilters, GOOGLE_PANEL_DIMS, panelTsrf, TSRF_MIN, type SolarPanel } from "../_shared/solar-filters.ts";
 import { tcadAddressMatch } from "../_shared/tcad-address.ts";
 import {
   buildSolarRecord,
@@ -82,12 +82,61 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { address, propertyType, lifestyleData, solarSummary } = body;
+    const { address, propertyType, lifestyleData, solarSummary, mode } = body;
     // Optional roof the user picked on the map; when present it replaces geocoding entirely.
     const picked =
       body.location && Number.isFinite(Number(body.location.lat)) && Number.isFinite(Number(body.location.lng))
         ? { lat: Number(body.location.lat), lng: Number(body.location.lng) }
         : null;
+
+    const GOOGLE_KEY = Deno.env.get("GOOGLE_SOLAR_API_KEY");
+    const AUSTIN_BOUNDS = { swLat: 29.90, swLng: -98.15, neLat: 30.75, neLng: -97.35 };
+    const isInAustinArea = (lat: number, lng: number) =>
+      lat >= AUSTIN_BOUNDS.swLat && lat <= AUSTIN_BOUNDS.neLat &&
+      lng >= AUSTIN_BOUNDS.swLng && lng <= AUSTIN_BOUNDS.neLng;
+
+    // Fast single-roof lookup for the "Add more panels" map tool: skips geocoding, TCAD, and AI.
+    if (mode === "add-roof") {
+      if (!picked || !isInAustinArea(picked.lat, picked.lng)) {
+        return new Response(JSON.stringify({ error: "Click a roof inside the Austin area." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!GOOGLE_KEY) {
+        return new Response(JSON.stringify({ error: "Solar roof lookup is unavailable right now." }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const solarResp = await fetch(
+        `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${picked.lat}&location.longitude=${picked.lng}&key=${GOOGLE_KEY}`,
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      const sp = solarResp?.solarPotential;
+      if (!sp?.solarPanels?.length) {
+        return new Response(JSON.stringify({ panels: [], roofSegments: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const panels: SolarPanel[] = sp.solarPanels.map((p: any) => ({
+        lat: p.center.latitude,
+        lon: p.center.longitude,
+        orientation: p.orientation === "LANDSCAPE" ? "LANDSCAPE" : "PORTRAIT",
+        yearlyEnergyDcKwh: p.yearlyEnergyDcKwh ?? 0,
+        segmentIndex: p.segmentIndex ?? 0,
+      }));
+      const roofSegments = (sp.roofSegmentStats ?? []).map((seg: any, i: number) => ({
+        segmentIndex: i,
+        azimuthDeg: seg.azimuthDegrees ?? 180,
+        pitchDeg: seg.pitchDegrees ?? 20,
+        areaM2: seg.stats?.areaMeters2 ?? null,
+      }));
+      return new Response(JSON.stringify({ panels, roofSegments }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const v = validateAddress(address);
     if (!v.valid) {
@@ -103,8 +152,6 @@ serve(async (req) => {
       });
     }
 
-    const GOOGLE_KEY = Deno.env.get("GOOGLE_SOLAR_API_KEY");
-
     // 1. Resolve the address via Places "Find Place From Text" -- backed by Google's actual
     // place/building database (the same one Places Autocomplete searches), not just address-
     // string parsing. The plain Geocoding API this replaced was observed landing 200m+ off for
@@ -115,10 +162,6 @@ serve(async (req) => {
     // address typed with no city ("1100 Congress Ave") could resolve to a same-named street in
     // another city, which the bounds check below then rejected as "not in Austin" -- and which
     // candidate Google ranked first varied between calls, so it failed intermittently.
-    const AUSTIN_BOUNDS = { swLat: 29.90, swLng: -98.15, neLat: 30.75, neLng: -97.35 };
-    const isInAustinArea = (lat: number, lng: number) =>
-      lat >= AUSTIN_BOUNDS.swLat && lat <= AUSTIN_BOUNDS.neLat &&
-      lng >= AUSTIN_BOUNDS.swLng && lng <= AUSTIN_BOUNDS.neLng;
     type Candidate = { formatted_address?: string; geometry: { location: { lat: number; lng: number } } };
     let lookupFailed = false;
     const pickBest = (candidates: any[]): Candidate | null =>
@@ -920,7 +963,7 @@ function generateCouncilOutreachScript(opts: {
 const EXTRA_BUILDINGS_MAX = 4; // main building + 4 = top 5 per property
 const EXTRA_MIN_AREA_M2 = 140; // ~1,500 sq ft of usable roof; skips sheds and carports
 const EXTRA_MAX_DIST_M = 160;
-const EXTRA_TSRF_MIN = 0.8;
+const EXTRA_TSRF_MIN = TSRF_MIN;
 const PROBE_OFFSET_M = 70;
 
 // deno-lint-ignore no-explicit-any

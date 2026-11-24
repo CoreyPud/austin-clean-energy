@@ -39,6 +39,7 @@ import { pickSsoScenario } from "@/lib/sso-proforma";
 
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
 import { useSolarFilter } from "@/components/SolarFilterPanel";
+import { filterBlockedPanels, mergeAddedRoof, type AddedRoofPayload, type BlockedArea } from "@/lib/roof-layout-edits";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -94,21 +95,26 @@ const PropertyAssessment = () => {
 
   // Derived solar values, recomputed on every render when bill/results change
   const si = results?.solarInsights ?? null;
-
-  const assessmentPanels = useMemo<SolarPanel[] | undefined>(() => {
-    const sc = results?.solarCenter;
-    const sp = results?.solarPanels as number[][] | undefined;
-    if (!sc || !sp?.length) return undefined;
-    return sp.map(([dlat, dlon, o, kwh, seg]) => ({
-      lat: sc.lat + dlat / 1e6,
-      lon: sc.lon + dlon / 1e6,
-      orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT",
-      yearlyEnergyDcKwh: kwh,
-      segmentIndex: seg,
-    }));
+  const [addedRoofs, setAddedRoofs] = useState<AddedRoofPayload[]>([]);
+  const [addingRoof, setAddingRoof] = useState(false);
+  const [blockedAreas, setBlockedAreas] = useState<BlockedArea[]>([]);
+  useEffect(() => {
+    setAddedRoofs([]);
+    setBlockedAreas([]);
   }, [results]);
 
-  const [assessmentAzimuths, assessmentPitches, assessmentSegmentAreas] = useMemo(() => {
+  const { mergedPanels, assessmentAzimuths, assessmentPitches, assessmentSegmentAreas } = useMemo(() => {
+    const sc = results?.solarCenter;
+    const sp = results?.solarPanels as number[][] | undefined;
+    const basePanels: SolarPanel[] | undefined = sc && sp?.length
+      ? sp.map(([dlat, dlon, o, kwh, seg]) => ({
+          lat: sc.lat + dlat / 1e6,
+          lon: sc.lon + dlon / 1e6,
+          orientation: (o ? "LANDSCAPE" : "PORTRAIT") as "LANDSCAPE" | "PORTRAIT",
+          yearlyEnergyDcKwh: kwh,
+          segmentIndex: seg,
+        }))
+      : undefined;
     const az: Record<number, number> = {};
     const pt: Record<number, number> = {};
     const areas: Record<number, number> = {};
@@ -117,8 +123,27 @@ const PropertyAssessment = () => {
       pt[s.segmentIndex] = s.pitchDeg;
       if (typeof s.areaM2 === "number") areas[s.segmentIndex] = s.areaM2;
     });
-    return [az, pt, areas];
-  }, [results]);
+    if (!basePanels) {
+      return { mergedPanels: undefined, assessmentAzimuths: az, assessmentPitches: pt, assessmentSegmentAreas: areas };
+    }
+    let panels = basePanels;
+    let azimuths = az;
+    let pitches = pt;
+    let segmentAreas = areas;
+    for (const extra of addedRoofs) {
+      const m = mergeAddedRoof(panels, azimuths, pitches, segmentAreas, extra);
+      panels = m.panels;
+      azimuths = m.azimuths;
+      pitches = m.pitches;
+      segmentAreas = m.segmentAreas;
+    }
+    return { mergedPanels: panels, assessmentAzimuths: azimuths, assessmentPitches: pitches, assessmentSegmentAreas: segmentAreas };
+  }, [results, addedRoofs]);
+
+  const assessmentPanels = useMemo<SolarPanel[] | undefined>(
+    () => mergedPanels ? filterBlockedPanels(mergedPanels, blockedAreas) : mergedPanels,
+    [mergedPanels, blockedAreas],
+  );
   const areaEligibleAssessmentPanels = useMemo(
     () => assessmentPanels ? filterPanelsByRoofSegmentArea(assessmentPanels, propertyType, assessmentSegmentAreas) : assessmentPanels,
     [assessmentPanels, propertyType, assessmentSegmentAreas],
@@ -240,6 +265,13 @@ const PropertyAssessment = () => {
     setCostPerW(propertyType === "commercial" ? pickSsoScenario(0).costPerWatt : DEFAULT_COST_PER_W);
     setOmPerKwYear(defaultOmPerKwYear(propertyType));
   }, [propertyType]);
+
+  // Keep slider size within the roof's current buildable max after blocking areas or toggling surfaces.
+  useEffect(() => {
+    if (solarMaxKw > 0 && systemKw > solarMaxKw) {
+      setSystemKw(solarMaxKw);
+    }
+  }, [solarMaxKw, systemKw]);
 
   // The single recommendation for whatever's currently selected (billing mode, manual size
   // override, and cost-per-watt override, if any) -- single-sourced with PropertyPage.tsx.
@@ -374,6 +406,57 @@ const PropertyAssessment = () => {
     pickedLocation.current = { address: address.trim(), lat, lng };
     toast({ title: "Re-checking that roof", description: "Analyzing the building you picked…" });
     void handleAssess();
+  };
+
+  const handleAddRoof = async (lat: number, lng: number) => {
+    setAddingRoof(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("unified-assessment", {
+        body: { mode: "add-roof", location: { lat, lng }, propertyType },
+      });
+      if (error) throw new Error(await edgeFunctionErrorMessage(error));
+      if (data?.error) throw new Error(data.error);
+      const incoming: AddedRoofPayload = {
+        panels: Array.isArray(data?.panels) ? data.panels : [],
+        roofSegments: Array.isArray(data?.roofSegments) ? data.roofSegments : [],
+      };
+      if (!incoming.panels.length) {
+        toast({ title: "No solar roof data there", description: "Try clicking the center of another building roof." });
+        return;
+      }
+      const preview = mergeAddedRoof(mergedPanels ?? [], assessmentAzimuths, assessmentPitches, assessmentSegmentAreas, incoming);
+      if (preview.addedCount === 0) {
+        toast({ title: "Roof already included", description: "Panels on that building are already on the map." });
+        return;
+      }
+      const extraAz: Record<number, number> = {};
+      const extraAreas: Record<number, number> = {};
+      for (const s of incoming.roofSegments) {
+        extraAz[s.segmentIndex] = s.azimuthDeg;
+        if (typeof s.areaM2 === "number") extraAreas[s.segmentIndex] = s.areaM2;
+      }
+      const addedBuildable = applySolarFilters(incoming.panels, {
+        propertyType,
+        azimuths: extraAz,
+        segmentAreas: extraAreas,
+      }).panels.length;
+      const panelW = si?.panelCapacityWatts ?? 400;
+      const addedKw = Math.round(((addedBuildable * panelW) / 1000) * 10) / 10;
+      setAddedRoofs((prev) => [...prev, incoming]);
+      if (addedKw > 0) {
+        setSystemKw((prev) => Math.round((prev + addedKw) * 10) / 10);
+      }
+      toast({
+        title: addedBuildable > 0 ? "Added roof panels" : "Roof checked",
+        description: addedBuildable > 0
+          ? `Added ${addedBuildable} buildable panels (${addedKw} kW) to your layout.`
+          : "That roof had no panels above the 80% sun and size rules.",
+      });
+    } catch (e: any) {
+      toast({ title: "Could not add roof", description: e?.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setAddingRoof(false);
+    }
   };
 
   const handleAssess = async () => {
@@ -847,8 +930,13 @@ const PropertyAssessment = () => {
                             panelWidthM={results.panelDims?.w}
                             segmentAzimuths={assessmentAzimuths}
                             segmentPitches={assessmentPitches}
-                            fitKey={`${results.solarCenter?.lat ?? ""},${results.solarCenter?.lon ?? ""},${assessmentRun},${[...excludedSegments].sort((a, b) => a - b).join("-")}`}
+                            fitKey={`${results.solarCenter?.lat ?? ""},${results.solarCenter?.lon ?? ""},${assessmentRun},${addedRoofs.length},${[...excludedSegments].sort((a, b) => a - b).join("-")}`}
                             onPickLocation={loading ? undefined : handleRoofPick}
+                            onAddRoof={loading ? undefined : handleAddRoof}
+                            addingRoof={addingRoof}
+                            blockedAreas={blockedAreas}
+                            onAddBlockedArea={(area) => setBlockedAreas((prev) => [...prev, area])}
+                            onClearBlockedAreas={() => setBlockedAreas([])}
                             onSegmentClick={roofSurfaces.length > 1 ? toggleSegment : undefined}
                             selectedPanelCount={
                               assessmentPanels && si?.panelCapacityWatts

@@ -17,7 +17,7 @@ export interface UseSolarFilterOpts {
  * Shared derate model for both the property viewer and the public property page.
  *
  * The derate is always applied — it is the realistic buildable layout, so it drives the
- * system size numbers everywhere. The 75% TSRF cut applies to every property type.
+ * system size numbers everywhere. The 80% TSRF cut applies to every property type.
  * Commercial roofs additionally get roof-edge detection: a perimeter setback measured
  * off the traced border, plus walkways routed out from interior HVAC voids.
  */

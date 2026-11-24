@@ -5,6 +5,7 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 // Defined in the filter lib (which must stay import-free so scripts can load it);
 // re-exported here since components already import the type from this module.
 import { panelTsrf, GOOGLE_PANEL_DIMS, type SolarPanel } from "@/lib/solar-filters";
+import type { BlockedArea } from "@/lib/roof-layout-edits";
 export type { SolarPanel };
 
 interface LatLon { lat: number; lon: number }
@@ -27,6 +28,13 @@ interface Props {
   fitKey?: string | number;
   /** When set, shows a "Wrong building?" control; clicking the map reports the picked roof. */
   onPickLocation?: (lat: number, lon: number) => void;
+  /** When set, shows an "Add more panels" control; clicking another roof adds its panels. */
+  onAddRoof?: (lat: number, lon: number) => void;
+  addingRoof?: boolean;
+  /** Geographic boxes blocked out by the user (e.g. nearby neighbor buildings). */
+  blockedAreas?: BlockedArea[];
+  onAddBlockedArea?: (area: BlockedArea) => void;
+  onClearBlockedAreas?: () => void;
   /** When set, clicking a panel reports its roof surface (segment) so the page can toggle it. */
   onSegmentClick?: (segmentIndex: number) => void;
 }
@@ -37,6 +45,7 @@ const RAD = Math.PI / 180;
 const M_PER_DEG_LAT = 111320;
 const EMPTY_PANELS: SolarPanel[] = [];
 const EMPTY_SEGMENTS: Record<number, number> = {};
+const EMPTY_BLOCKED: BlockedArea[] = [];
 
 /** Top-down footprint of a tilted panel. Only the side running up/down the slope (along the
  *  azimuth) is foreshortened by cos(pitch); the side running across the slope is level. Which
@@ -87,18 +96,24 @@ interface MapProps extends Omit<Props, "className" | "onPickLocation"> {
   onSegmentClick?: (segmentIndex: number) => void;
   panelsVisible: boolean;
   onMapClick?: (lat: number, lon: number) => void;
+  blockingMode?: boolean;
+  onBoxDrawn?: (area: BlockedArea) => void;
 }
 
 function SatelliteMap({
   lat, lon, panels, inactivePanels = EMPTY_PANELS, walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
-  segmentAzimuths = EMPTY_SEGMENTS, segmentPitches = EMPTY_SEGMENTS, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick,
+  segmentAzimuths = EMPTY_SEGMENTS, segmentPitches = EMPTY_SEGMENTS, blockedAreas = EMPTY_BLOCKED, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick, blockingMode, onBoxDrawn,
 }: MapProps) {
   const segmentClickRef = useRef(onSegmentClick);
   segmentClickRef.current = onSegmentClick;
   const pickingRef = useRef(false);
-  pickingRef.current = !!onMapClick;
+  pickingRef.current = !!onMapClick || !!blockingMode;
   const clickRef = useRef(onMapClick);
   clickRef.current = onMapClick;
+  const boxDrawnRef = useRef(onBoxDrawn);
+  boxDrawnRef.current = onBoxDrawn;
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [dragRect, setDragRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
@@ -513,8 +528,65 @@ function SatelliteMap({
 
   useEffect(() => {
     const canvas = mapRef.current?.getCanvas();
-    if (canvas) canvas.style.cursor = onMapClick ? "crosshair" : "";
-  }, [onMapClick]);
+    if (canvas) canvas.style.cursor = onMapClick || blockingMode ? "crosshair" : "";
+  }, [onMapClick, blockingMode]);
+
+  // Disable map panning while drawing a block-out rectangle.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (blockingMode) {
+      map.dragPan.disable();
+    } else {
+      map.dragPan.enable();
+      dragStartRef.current = null;
+      setDragRect(null);
+    }
+  }, [blockingMode]);
+
+  // Draw user-blocked areas as translucent red dashed boxes on the map.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const blockedGeojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: blockedAreas.map((b, i) => ({
+        type: "Feature",
+        geometry: {
+          type: "Polygon",
+          coordinates: [[[b.minLon, b.minLat], [b.maxLon, b.minLat], [b.maxLon, b.maxLat], [b.minLon, b.maxLat], [b.minLon, b.minLat]]],
+        },
+        properties: { id: i },
+      })),
+    };
+    const updateBlocked = () => {
+      if (map.getSource("blocked-areas")) {
+        (map.getSource("blocked-areas") as mapboxgl.GeoJSONSource).setData(blockedGeojson);
+        return;
+      }
+      const rootStyle = getComputedStyle(document.documentElement);
+      const destructiveColor = `hsl(${rootStyle.getPropertyValue("--destructive").trim().split(/\s+/).join(", ")})`;
+      map.addSource("blocked-areas", { type: "geojson", data: blockedGeojson });
+      map.addLayer({
+        id: "blocked-areas-fill",
+        type: "fill",
+        source: "blocked-areas",
+        paint: { "fill-color": destructiveColor, "fill-opacity": 0.2 },
+      });
+      map.addLayer({
+        id: "blocked-areas-outline",
+        type: "line",
+        source: "blocked-areas",
+        paint: { "line-color": destructiveColor, "line-width": 2, "line-dasharray": [4, 3], "line-opacity": 0.9 },
+      });
+    };
+    if (styleLoadedRef.current || map.isStyleLoaded()) {
+      styleLoadedRef.current = true;
+      updateBlocked();
+    } else {
+      map.once("load", () => { styleLoadedRef.current = true; updateBlocked(); });
+    }
+  }, [blockedAreas]);
 
   useEffect(() => {
     if (panels === undefined || panels.length > 0 || inactivePanels.length > 0) return;
@@ -522,9 +594,68 @@ function SatelliteMap({
     markerRef.current?.setLngLat([lon, lat]);
   }, [lat, lon]);
 
+  const getLocalPoint = (clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!blockingMode || e.button !== 0) return;
+    const pt = getLocalPoint(e.clientX, e.clientY);
+    if (!pt) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStartRef.current = pt;
+    setDragRect({ left: pt.x, top: pt.y, width: 0, height: 0 });
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!blockingMode || !dragStartRef.current) return;
+    const pt = getLocalPoint(e.clientX, e.clientY);
+    if (!pt) return;
+    const start = dragStartRef.current;
+    setDragRect({
+      left: Math.min(start.x, pt.x),
+      top: Math.min(start.y, pt.y),
+      width: Math.abs(pt.x - start.x),
+      height: Math.abs(pt.y - start.y),
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!blockingMode || !dragStartRef.current) return;
+    const start = dragStartRef.current;
+    dragStartRef.current = null;
+    const pt = getLocalPoint(e.clientX, e.clientY);
+    setDragRect(null);
+    const map = mapRef.current;
+    if (!pt || !map) return;
+    if (Math.abs(pt.x - start.x) < 8 || Math.abs(pt.y - start.y) < 8) return;
+    const a = map.unproject([Math.min(start.x, pt.x), Math.min(start.y, pt.y)]);
+    const b = map.unproject([Math.max(start.x, pt.x), Math.max(start.y, pt.y)]);
+    boxDrawnRef.current?.({
+      minLat: Math.min(a.lat, b.lat),
+      maxLat: Math.max(a.lat, b.lat),
+      minLon: Math.min(a.lng, b.lng),
+      maxLon: Math.max(a.lng, b.lng),
+    });
+  };
+
   return (
-    <div ref={wrapperRef} className="w-full h-full">
+    <div
+      ref={wrapperRef}
+      className="w-full h-full relative"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
       <div ref={containerRef} className="w-full h-full" />
+      {dragRect && dragRect.width > 2 && dragRect.height > 2 && (
+        <div
+          className="pointer-events-none absolute border-2 border-dashed border-destructive bg-destructive/20"
+          style={{ left: dragRect.left, top: dragRect.top, width: dragRect.width, height: dragRect.height }}
+        />
+      )}
     </div>
   );
 }
@@ -533,10 +664,13 @@ export default function SatellitePane({
   lat, lon,
   className = "w-full h-64 rounded-lg overflow-hidden border border-border",
   panels, inactivePanels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM,
-  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey, onPickLocation, onSegmentClick,
+  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey, onPickLocation, onAddRoof, addingRoof,
+  blockedAreas, onAddBlockedArea, onClearBlockedAreas, onSegmentClick,
 }: Props) {
   const [panelsVisible, setPanelsVisible] = useState(true);
-  const [picking, setPicking] = useState(false);
+  const [toolMode, setToolMode] = useState<"idle" | "pick" | "add-roof" | "block-area">("idle");
+  const toggleTool = (next: "pick" | "add-roof" | "block-area") => setToolMode((cur) => (cur === next ? "idle" : next));
+  const hasToolbar = Boolean(onPickLocation || onAddRoof || onAddBlockedArea || (blockedAreas?.length && onClearBlockedAreas));
 
   return (
     <div className={`${className} relative`}>
@@ -547,24 +681,83 @@ export default function SatellitePane({
           debugHoles={debugHoles} edgeSegments={edgeSegments}
           panelHeightM={panelHeightM} panelWidthM={panelWidthM}
           segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches}
+          blockedAreas={blockedAreas}
           panelsVisible={panelsVisible} selectedPanelCount={selectedPanelCount}
           fitKey={fitKey}
           onSegmentClick={onSegmentClick}
-          onMapClick={picking && onPickLocation ? (la, lo) => { setPicking(false); onPickLocation(la, lo); } : undefined}
+          blockingMode={toolMode === "block-area" && !!onAddBlockedArea}
+          onBoxDrawn={onAddBlockedArea ? (area) => { setToolMode("idle"); onAddBlockedArea(area); } : undefined}
+          onMapClick={
+            toolMode === "pick" && onPickLocation
+              ? (la, lo) => { setToolMode("idle"); onPickLocation(la, lo); }
+              : toolMode === "add-roof" && onAddRoof
+                ? (la, lo) => { setToolMode("idle"); onAddRoof(la, lo); }
+                : undefined
+          }
         />
       </MapTokenLoader>
-      {onPickLocation ? (
+      {hasToolbar ? (
         <div className="absolute top-3 left-3 right-14 flex flex-wrap items-center gap-2 pointer-events-none">
-          <button
-            type="button"
-            onClick={() => setPicking((v) => !v)}
-            className="pointer-events-auto rounded-full bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow border border-border hover:bg-background"
-          >
-            {picking ? "Cancel" : "Wrong building? Pick your roof"}
-          </button>
-          {picking ? (
+          {onAddRoof ? (
+            <button
+              type="button"
+              disabled={addingRoof}
+              onClick={() => toggleTool("add-roof")}
+              className={`pointer-events-auto rounded-full px-3 py-1.5 text-xs font-medium shadow border transition-colors disabled:opacity-60 ${
+                toolMode === "add-roof"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background/90 text-foreground border-border hover:bg-background"
+              }`}
+            >
+              {addingRoof ? "Adding roof…" : toolMode === "add-roof" ? "Cancel" : "Add more panels"}
+            </button>
+          ) : null}
+          {onAddBlockedArea ? (
+            <button
+              type="button"
+              onClick={() => toggleTool("block-area")}
+              className={`pointer-events-auto rounded-full px-3 py-1.5 text-xs font-medium shadow border transition-colors ${
+                toolMode === "block-area"
+                  ? "bg-destructive text-destructive-foreground border-destructive"
+                  : "bg-background/90 text-foreground border-border hover:bg-background"
+              }`}
+            >
+              {toolMode === "block-area" ? "Cancel" : "Block out area"}
+            </button>
+          ) : null}
+          {blockedAreas?.length && onClearBlockedAreas ? (
+            <button
+              type="button"
+              onClick={onClearBlockedAreas}
+              className="pointer-events-auto rounded-full bg-background/90 px-3 py-1.5 text-xs font-medium text-destructive shadow border border-destructive/40 hover:bg-background"
+            >
+              Clear blocked ({blockedAreas.length})
+            </button>
+          ) : null}
+          {onPickLocation ? (
+            <button
+              type="button"
+              onClick={() => toggleTool("pick")}
+              className={`pointer-events-auto rounded-full px-3 py-1.5 text-xs font-medium shadow border transition-colors ${
+                toolMode === "pick"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background/90 text-foreground border-border hover:bg-background"
+              }`}
+            >
+              {toolMode === "pick" ? "Cancel" : onAddRoof ? "Wrong building?" : "Wrong building? Pick your roof"}
+            </button>
+          ) : null}
+          {toolMode === "pick" ? (
             <span className="rounded-full bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow">
               Move the map, then click the middle of your roof
+            </span>
+          ) : toolMode === "add-roof" ? (
+            <span className="rounded-full bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow">
+              Click another roof on the map to add panels there
+            </span>
+          ) : toolMode === "block-area" ? (
+            <span className="rounded-full bg-destructive px-3 py-1.5 text-xs text-destructive-foreground shadow">
+              Drag a box over any area to block out
             </span>
           ) : null}
         </div>
