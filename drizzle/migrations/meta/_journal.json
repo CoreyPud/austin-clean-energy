@@ -141,6 +141,13 @@
       "when": 1795199007031,
       "tag": "0019_add_permit_date_coverage_view",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795551216148,
+      "tag": "0020_scope_gantt_select_policies",
+      "breakpoints": true
     }
   ]
 }

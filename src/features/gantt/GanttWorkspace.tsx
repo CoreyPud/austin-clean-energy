@@ -70,10 +70,10 @@ export function GanttWorkspace({ view = "gantt", onSummaryChange }: { view?: Sol
   }, [lastKey]);
 
   const refreshList = useCallback(async () => {
-    const l = propertyKey ? filterSchedulesForProperty(await listSchedules(propertyKey), propertyKey) : [];
+    const l = user && propertyKey ? filterSchedulesForProperty(await listSchedules(propertyKey), propertyKey) : [];
     setList(l);
     return l;
-  }, [propertyKey]);
+  }, [user, propertyKey]);
   useEffect(() => {
     if (!authReady) return;
     let cancelled = false;
