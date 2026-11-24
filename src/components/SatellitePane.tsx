@@ -5,7 +5,7 @@ import MapTokenLoader from "@/components/MapTokenLoader";
 // Defined in the filter lib (which must stay import-free so scripts can load it);
 // re-exported here since components already import the type from this module.
 import { panelTsrf, GOOGLE_PANEL_DIMS, type SolarPanel } from "@/lib/solar-filters";
-import type { BlockedArea } from "@/lib/roof-layout-edits";
+import { orderedLayoutPanels, type BlockedArea } from "@/lib/roof-layout-edits";
 export type { SolarPanel };
 
 interface LatLon { lat: number; lon: number }
@@ -25,6 +25,7 @@ interface Props {
   segmentAzimuths?: Record<number, number>;
   segmentPitches?: Record<number, number>;
   selectedPanelCount?: number;
+  preferredSegments?: number[];
   fitKey?: string | number;
   /** When set, shows a "Wrong building?" control; clicking the map reports the picked roof. */
   onPickLocation?: (lat: number, lon: number) => void;
@@ -46,6 +47,7 @@ const M_PER_DEG_LAT = 111320;
 const EMPTY_PANELS: SolarPanel[] = [];
 const EMPTY_SEGMENTS: Record<number, number> = {};
 const EMPTY_BLOCKED: BlockedArea[] = [];
+const EMPTY_PREFERRED: number[] = [];
 
 /** Top-down footprint of a tilted panel. Only the side running up/down the slope (along the
  *  azimuth) is foreshortened by cos(pitch); the side running across the slope is level. Which
@@ -78,17 +80,16 @@ function panelPolygon(
   ]);
 }
 
-// Panels are dimmed by comparing each feature's baked "rank" against the number
+// Panels are colored by comparing each feature's baked "rank" against the number
 // selected. Because the threshold is a paint expression, changing the selected count
 // (e.g. dragging a system-size slider) is a one-line setPaintProperty — no geojson
 // rebuild and no re-run of the O(n²) selection ordering.
-function fillOpacityExpr(opacity: number, selectedCount: number | undefined): any {
-  if (selectedCount == null) return opacity;
+function fillColorExpr(activeColor: string, availableColor: string, selectedCount: number | undefined): any {
+  if (selectedCount == null) return activeColor;
   return [
     "case",
-    ["==", ["get", "active"], false], opacity,
-    ["<", ["get", "rank"], selectedCount], opacity,
-    Math.max(0.07, opacity * 0.18),
+    ["<", ["get", "rank"], selectedCount], activeColor,
+    availableColor,
   ];
 }
 
@@ -102,10 +103,13 @@ interface MapProps extends Omit<Props, "className" | "onPickLocation"> {
 
 function SatelliteMap({
   lat, lon, panels, inactivePanels = EMPTY_PANELS, walkwayPanels, debugHoles, edgeSegments, panelHeightM = GOOGLE_PANEL_DIMS.h, panelWidthM = GOOGLE_PANEL_DIMS.w,
-  segmentAzimuths = EMPTY_SEGMENTS, segmentPitches = EMPTY_SEGMENTS, blockedAreas = EMPTY_BLOCKED, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick, blockingMode, onBoxDrawn,
+  segmentAzimuths = EMPTY_SEGMENTS, segmentPitches = EMPTY_SEGMENTS, blockedAreas = EMPTY_BLOCKED, preferredSegments = EMPTY_PREFERRED, panelsVisible, selectedPanelCount, fitKey, onMapClick, onSegmentClick, blockingMode, onBoxDrawn,
 }: MapProps) {
   const segmentClickRef = useRef(onSegmentClick);
   segmentClickRef.current = onSegmentClick;
+  const selectedCountRef = useRef(selectedPanelCount);
+  selectedCountRef.current = selectedPanelCount;
+  const panelColorsRef = useRef({ active: "", available: "" });
   const pickingRef = useRef(false);
   pickingRef.current = !!onMapClick || !!blockingMode;
   const clickRef = useRef(onMapClick);
@@ -246,50 +250,9 @@ function SatelliteMap({
     const halfH = panelHeightM / 2 * 0.95;
     const halfW = panelWidthM / 2 * 0.95;
 
-    // Selection order: greedy proximity growth through ≥80% TSRF panels (seed = northernmost),
-    // then <80% TSRF panels by production % descending.
-    // Proximity growth ensures contiguous patches — distant sections aren't jumped to until nearby ones are full.
-    const TSRF_THRESH = 0.80;
-    const withMeta = displayPanels.map((p, i) => ({
-      i, lat: p.lat, lon: p.lon,
-      tsrf: panelTsrf(p.yearlyEnergyDcKwh),
-      active: i >= inactivePanels.length,
-    }));
-
-    const highQ = withMeta.filter(x => x.active && x.tsrf >= TSRF_THRESH);
-    const lowQ  = withMeta.filter(x => x.active && x.tsrf < TSRF_THRESH).sort((a, b) => b.tsrf - a.tsrf);
-
-    // Greedy nearest-neighbour through ≥80% panels; seed from northernmost
-    const greedyOrder: typeof withMeta = [];
-    if (highQ.length > 0) {
-      const remaining = new Set(highQ.map(x => x.i));
-      const seed = highQ.reduce((best, x) => x.lat > best.lat || (x.lat === best.lat && x.lon < best.lon) ? x : best);
-      const minDist = new Float64Array(displayPanels.length).fill(Infinity);
-
-      const grow = (p: typeof withMeta[0]) => {
-        greedyOrder.push(p);
-        remaining.delete(p.i);
-        for (const ri of remaining) {
-          const r = withMeta[ri];
-          const d2 = (r.lat - p.lat) ** 2 + (r.lon - p.lon) ** 2;
-          if (d2 < minDist[ri]) minDist[ri] = d2;
-        }
-      };
-
-      grow(seed);
-      while (remaining.size > 0) {
-        let bestI = -1, bestD = Infinity;
-        for (const ri of remaining) { if (minDist[ri] < bestD) { bestD = minDist[ri]; bestI = ri; } }
-        if (bestI === -1) break;
-        grow(withMeta[bestI]);
-      }
-    }
-
-    // Selection priority (best-first): the greedy proximity chain, then remaining low
-    // panels by production. Baking each panel's rank lets the fill layer decide which
-    // are "in the system" purely from the selected-count threshold.
-    const rankOf = new Int32Array(displayPanels.length);
-    [...greedyOrder, ...lowQ].forEach((x, r) => { rankOf[x.i] = r; });
+    // Share selection order with the roof buttons so colors and DC sizing agree.
+    const ranks = new Map<SolarPanel, number>();
+    orderedLayoutPanels(panels, preferredSegments).forEach((panel, rank) => ranks.set(panel, rank));
 
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
@@ -301,7 +264,7 @@ function SatelliteMap({
         return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] },
-          properties: { id: i, tsrf, rank: rankOf[i], seg: p.segmentIndex, active: i >= inactivePanels.length },
+          properties: { id: i, tsrf, rank: ranks.get(p) ?? -1, seg: p.segmentIndex, active: i >= inactivePanels.length },
         };
       }),
     };
@@ -333,12 +296,14 @@ function SatelliteMap({
       }
     };
 
-    const opacityExpr = fillOpacityExpr(PANEL_OPACITY, selectedPanelCount);
     const rootStyle = getComputedStyle(document.documentElement);
     // Mapbox's color parser expects comma-separated HSL rather than CSS Color 4 spaces.
     const tokenColor = (name: string) => `hsl(${rootStyle.getPropertyValue(name).trim().split(/\s+/).join(", ")})`;
     const activeColor = tokenColor("--primary");
     const inactiveColor = tokenColor("--accent");
+    const availableColor = tokenColor("--chart-blue");
+    panelColorsRef.current = { active: activeColor, available: availableColor };
+    const colorExpr = fillColorExpr(activeColor, availableColor, selectedCountRef.current);
     const activeFilter: mapboxgl.FilterSpecification = ["==", ["get", "active"], true];
     const inactiveFilter: mapboxgl.FilterSpecification = ["==", ["get", "active"], false];
 
@@ -387,8 +352,8 @@ function SatelliteMap({
         (map.getSource("panels") as mapboxgl.GeoJSONSource).setData(geojson);
         if (map.getLayer("panels-fill")) {
           map.setFilter("panels-fill", activeFilter);
-          map.setPaintProperty("panels-fill", "fill-opacity", opacityExpr);
-          map.setPaintProperty("panels-fill", "fill-color", activeColor);
+          map.setPaintProperty("panels-fill", "fill-opacity", PANEL_OPACITY);
+          map.setPaintProperty("panels-fill", "fill-color", colorExpr);
         }
         if (map.getLayer("panels-fill-inactive")) {
           map.setFilter("panels-fill-inactive", inactiveFilter);
@@ -420,8 +385,8 @@ function SatelliteMap({
           source: "panels",
           filter: activeFilter,
           paint: {
-            "fill-color": activeColor,
-            "fill-opacity": opacityExpr,
+            "fill-color": colorExpr,
+            "fill-opacity": PANEL_OPACITY,
           },
         });
         map.addLayer({
@@ -479,9 +444,9 @@ function SatelliteMap({
             const feature = e.features?.[0]?.properties;
             const tsrf = feature?.tsrf;
             if (tsrf == null) return;
-            const action = feature?.active === false ? "include" : "remove";
-            popupRef.current!
-              .setLngLat(e.lngLat)
+            const available = feature?.active === false || (selectedCountRef.current != null && feature?.rank >= selectedCountRef.current);
+            const action = available ? "include" : "remove";
+            popupRef.current?.setLngLat(e.lngLat)
               .setHTML(`<strong style="font-size:13px">${Math.round(tsrf * 100)}% of optimal</strong>${segmentClickRef.current ? `<br/><span style="font-size:11px">Click to ${action} this roof surface</span>` : ''}`)
               .addTo(map);
           });
@@ -506,14 +471,15 @@ function SatelliteMap({
     };
 
     runWhenReady(addLayers);
-  }, [panels, inactivePanels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths]);
+  }, [panels, inactivePanels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM, segmentAzimuths, preferredSegments]);
 
-  // Selected-count changes (e.g. a system-size slider) only move the dim threshold,
+  // Selected-count changes (e.g. a system-size slider) only move the color threshold,
   // so update the paint expression in place rather than rebuilding the overlay.
   useEffect(() => {
     const map = mapRef.current;
     if (!map?.getLayer("panels-fill")) return;
-    map.setPaintProperty("panels-fill", "fill-opacity", fillOpacityExpr(PANEL_OPACITY, selectedPanelCount));
+    const colors = panelColorsRef.current;
+    map.setPaintProperty("panels-fill", "fill-color", fillColorExpr(colors.active, colors.available, selectedPanelCount));
   }, [selectedPanelCount]);
 
   useEffect(() => {
@@ -664,7 +630,7 @@ export default function SatellitePane({
   lat, lon,
   className = "w-full h-64 rounded-lg overflow-hidden border border-border",
   panels, inactivePanels, walkwayPanels, debugHoles, edgeSegments, panelHeightM, panelWidthM,
-  segmentAzimuths, segmentPitches, selectedPanelCount, fitKey, onPickLocation, onAddRoof, addingRoof,
+  segmentAzimuths, segmentPitches, selectedPanelCount, preferredSegments, fitKey, onPickLocation, onAddRoof, addingRoof,
   blockedAreas, onAddBlockedArea, onClearBlockedAreas, onSegmentClick,
 }: Props) {
   const [panelsVisible, setPanelsVisible] = useState(true);
@@ -682,7 +648,7 @@ export default function SatellitePane({
           panelHeightM={panelHeightM} panelWidthM={panelWidthM}
           segmentAzimuths={segmentAzimuths} segmentPitches={segmentPitches}
           blockedAreas={blockedAreas}
-          panelsVisible={panelsVisible} selectedPanelCount={selectedPanelCount}
+          panelsVisible={panelsVisible} selectedPanelCount={selectedPanelCount} preferredSegments={preferredSegments}
           fitKey={fitKey}
           onSegmentClick={onSegmentClick}
           blockingMode={toolMode === "block-area" && !!onAddBlockedArea}

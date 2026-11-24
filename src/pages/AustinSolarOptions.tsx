@@ -20,7 +20,7 @@ import { billToMonthlyKwh } from "@/lib/solar-model";
 import { classifyProperty, computeRecommendation, defaultOmPerKwYear, DEFAULT_MONTHLY_BILL, estimateProductionPerKw, fromGoogleSolarInsights, isSsoEligible } from "@/lib/property-solar";
 import type { FederalSolarOptions } from "@/lib/solar-federal-incentives";
 import { applySolarFilters, filterPanelsByRoofSegmentArea } from "@/lib/solar-filters";
-import { filterBlockedPanels, mergeAddedRoof, type AddedRoofPayload, type BlockedArea } from "@/lib/roof-layout-edits";
+import { activeRoofPanelCounts, orderedLayoutPanels, roofToggleSystemKw, filterBlockedPanels, mergeAddedRoof, type AddedRoofPayload, type BlockedArea } from "@/lib/roof-layout-edits";
 import OptionResults from "@/features/solar-options/OptionResults";
 import { annualizeBillUsage, screenSolarOptions, type BillPayer, type FinanceGoal, type SolarOption } from "@/features/solar-options/screening";
 
@@ -57,6 +57,7 @@ export default function AustinSolarOptions() {
   const [useBill, setUseBill] = useState(false);
   const [billKey, setBillKey] = useState(0);
   const [excluded, setExcluded] = useState<Set<number>>(new Set());
+  const [preferredSegments, setPreferredSegments] = useState<number[]>([]);
   const [addedRoofs, setAddedRoofs] = useState<AddedRoofPayload[]>([]);
   const [addingRoof, setAddingRoof] = useState(false);
   const [blockedAreas, setBlockedAreas] = useState<BlockedArea[]>([]);
@@ -97,7 +98,8 @@ export default function AustinSolarOptions() {
     () => panels ? filterPanelsByRoofSegmentArea(panels, propertyType, segmentAreas) : panels,
     [panels, propertyType, segmentAreas],
   );
-  const surfaces = useMemo(() => [...new Set(areaEligiblePanels?.map(panel => panel.segmentIndex) ?? [])], [areaEligiblePanels]);
+  const surfacePanels = useMemo(() => applySolarFilters(areaEligiblePanels ?? EMPTY_PANELS, { propertyType, azimuths, segmentAreas }).panels, [areaEligiblePanels, propertyType, azimuths, segmentAreas]);
+  const surfaces = useMemo(() => [...new Set(surfacePanels.map(panel => panel.segmentIndex))], [surfacePanels]);
   const chosenPanels = useMemo(() => areaEligiblePanels?.filter(panel => !excluded.has(panel.segmentIndex)), [areaEligiblePanels, excluded]);
   const inactivePanels = useMemo(() => {
     const candidates = areaEligiblePanels?.filter(panel => excluded.has(panel.segmentIndex)) ?? [];
@@ -110,10 +112,13 @@ export default function AustinSolarOptions() {
   const annualBillUsage = billMonths ? annualizeBillUsage(billMonths) : null;
   const annualUsage = useBill && annualBillUsage != null ? annualBillUsage : Number(estimatedUsage);
   const vos = computeRecommendation(site, { annualUsageKwh: annualUsage, billingMode: "vos", systemKwOverride: sizeOverride, costPerWOverride: costOverride, federalOptions: federal });
-  const sso = computeRecommendation(site, { billingMode: "sso", federalOptions: federal });
+  const sso = computeRecommendation(site, { billingMode: "sso", systemKwOverride: sizeOverride, federalOptions: federal });
   const eligible = !!sso && isSsoEligible(sso, classifyProperty(propertyType), propertyType === "non-profit");
   const recommendation = screenSolarOptions(propertyType, payer || "unknown", goal || "unsure", eligible);
   const activeOption = selected === "sso" && !eligible ? recommendation.option : selected;
+  const displayedKw = (activeOption === "sso" ? sso : vos)?.recommendedKw ?? 0;
+  const orderedPanels = useMemo(() => orderedLayoutPanels(filter.paneProps.panels ?? EMPTY_PANELS, preferredSegments), [filter.paneProps.panels, preferredSegments]);
+  const activeSurfaceCounts = useMemo(() => activeRoofPanelCounts(orderedPanels, displayedKw, si?.panelCapacityWatts ?? 0), [orderedPanels, displayedKw, si?.panelCapacityWatts]);
   const mapLat = results?.solarCenter?.lat ?? results?.center?.[1];
   const mapLon = results?.solarCenter?.lon ?? results?.center?.[0];
   const hasMap = mapLat != null && mapLon != null && Number.isFinite(mapLat) && Number.isFinite(mapLon);
@@ -152,7 +157,7 @@ export default function AustinSolarOptions() {
         setBillMonths(null); setUseBill(false); setBillKey(key => key + 1); setPayer(""); setGoal(""); setLeasePercent(null);
       }
       if (!location) { changeType(type); setTypeMatched(!!detected); }
-      setAssessedAddress(fullAddress); setResults(data); setExcluded(new Set()); setAddedRoofs([]); setBlockedAreas([]); setSizeOverride(null); setCostOverride(null); setStep(0);
+      setAssessedAddress(fullAddress); setResults(data); setExcluded(new Set()); setPreferredSegments([]); setAddedRoofs([]); setBlockedAreas([]); setSizeOverride(null); setCostOverride(null); setStep(0);
     } catch (failure) {
       if (id === requestId.current) setError(failure instanceof Error ? failure.message : "Could not check that building. Please try again.");
     } finally { if (id === requestId.current) setLoading(false); }
@@ -174,8 +179,11 @@ export default function AustinSolarOptions() {
     } finally { setAddingRoof(false); }
   };
   const toggleSurface = (segment: number) => {
-    setExcluded(previous => { const next = new Set(previous); if (next.has(segment)) next.delete(segment); else next.add(segment); return next; });
-    setSizeOverride(null);
+    const active = activeSurfaceCounts[segment] ?? 0;
+    const available = surfacePanels.filter(panel => panel.segmentIndex === segment).length;
+    setExcluded(previous => { const next = new Set(previous); if (active > 0) next.add(segment); else next.delete(segment); return next; });
+    setSizeOverride(roofToggleSystemKw(displayedKw, active, available, si?.panelCapacityWatts ?? 0));
+    setPreferredSegments(prev => active > 0 ? prev.filter(s => s !== segment) : [segment, ...prev.filter(s => s !== segment)]);
   };
 
   return <div className="min-h-screen bg-background text-foreground">
@@ -227,19 +235,23 @@ export default function AustinSolarOptions() {
       </section>}
 
       {step === 3 && <section className="space-y-7">
-        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? EMPTY_PANELS} inactivePanels={inactivePanels} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon},${addedRoofs.length},${[...excluded].sort((a, b) => a - b).join("-")}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onAddRoof={loading ? undefined : handleAddRoof} addingRoof={addingRoof} blockedAreas={blockedAreas} onAddBlockedArea={(area) => { setBlockedAreas(prev => [...prev, area]); setSizeOverride(null); }} onClearBlockedAreas={() => { setBlockedAreas([]); setSizeOverride(null); }} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
-        {surfaces.length > 1 && <div className="space-y-2">
+        {hasMap && <SatellitePane key={`layout-${assessedAddress}`} lat={mapLat} lon={mapLon} {...filter.paneProps} panels={filter.paneProps.panels ?? EMPTY_PANELS} inactivePanels={inactivePanels} preferredSegments={preferredSegments} panelHeightM={results?.panelDims?.h} panelWidthM={results?.panelDims?.w} segmentAzimuths={azimuths} segmentPitches={pitches} className="w-full h-[420px] md:h-[480px] overflow-hidden border-y border-border" fitKey={`${mapLat},${mapLon},${addedRoofs.length},${[...excluded].sort((a, b) => a - b).join("-")}`} onPickLocation={loading ? undefined : (lat, lng) => void assess({ lat, lng })} onAddRoof={loading ? undefined : handleAddRoof} addingRoof={addingRoof} blockedAreas={blockedAreas} onAddBlockedArea={(area) => { setBlockedAreas(prev => [...prev, area]); setSizeOverride(null); }} onClearBlockedAreas={() => { setBlockedAreas([]); setSizeOverride(null); }} onSegmentClick={toggleSurface} selectedPanelCount={si?.panelCapacityWatts && vos && sso ? Math.round((activeOption === "sso" ? sso : vos).recommendedKw * 1000 / si.panelCapacityWatts) : undefined} />}
+        {surfaces.length > 0 && <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" aria-label="Roof surface color key">
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary" aria-hidden="true" />Green = included in system size and savings</span>
-            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-accent" aria-hidden="true" />Yellow = possible, but not included</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-accent" aria-hidden="true" />Yellow = deselected</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-roof-available" aria-hidden="true" />Blue = available to add</span>
           </div>
           <div className="flex flex-wrap gap-2" aria-label="Roof surfaces">{surfaces.map(segment => {
-            const included = !excluded.has(segment);
+            const activeCount = activeSurfaceCounts[segment] ?? 0;
+            const included = activeCount > 0;
+            const deselected = excluded.has(segment);
             return <Button key={segment} variant={included ? "default" : "outline"} size="sm" aria-pressed={included} onClick={() => toggleSurface(segment)}
               className={included
                 ? "border border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-                : "border-accent bg-accent text-accent-foreground hover:bg-accent/90 hover:text-accent-foreground"}>
-              Roof surface {segment + 1} · {included ? "Included" : "Not included"}{included && <Check className="ml-2 h-3 w-3" />}
+                : deselected ? "border-accent bg-accent text-accent-foreground hover:bg-accent/90 hover:text-accent-foreground"
+                : "border-roof-available bg-roof-available/15 text-foreground hover:bg-roof-available/25"}>
+              Roof surface {segment + 1} · {included ? `${activeCount} included` : deselected ? "Deselected" : "Available to add"}{included && <Check className="ml-2 h-3 w-3" />}
             </Button>;
           })}</div>
         </div>}

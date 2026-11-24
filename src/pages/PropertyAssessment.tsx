@@ -39,7 +39,7 @@ import { pickSsoScenario } from "@/lib/sso-proforma";
 
 import SatellitePane, { SolarPanel } from "@/components/SatellitePane";
 import { useSolarFilter } from "@/components/SolarFilterPanel";
-import { filterBlockedPanels, mergeAddedRoof, type AddedRoofPayload, type BlockedArea } from "@/lib/roof-layout-edits";
+import { activeRoofPanelCounts, orderedLayoutPanels, roofToggleSystemKw, filterBlockedPanels, mergeAddedRoof, type AddedRoofPayload, type BlockedArea } from "@/lib/roof-layout-edits";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -160,17 +160,25 @@ const PropertyAssessment = () => {
   // Google's raw maximum instead of what can actually be built, and the two pages disagree.
   // Roof surfaces (Google Solar segments) the user switched off -- e.g. trees, ground, carports.
   const [excludedSegments, setExcludedSegments] = useState<Set<number>>(new Set());
-  useEffect(() => { setExcludedSegments(new Set()); }, [results]);
-  const toggleSegment = (seg: number) => setExcludedSegments(prev => {
-    const next = new Set(prev);
-    if (next.has(seg)) next.delete(seg); else next.add(seg);
-    return next;
-  });
+  const [preferredSegments, setPreferredSegments] = useState<number[]>([]);
+  useEffect(() => { setExcludedSegments(new Set()); setPreferredSegments([]); }, [results]);
+  const toggleSegment = (seg: number) => {
+    const active = activeSurfaceCounts[seg] ?? 0;
+    const available = roofSurfaces.find(surface => surface.seg === seg)?.count ?? 0;
+    setSystemKw(roofToggleSystemKw(systemKw, active, available, si?.panelCapacityWatts ?? 0));
+    setPreferredSegments(prev => active > 0 ? prev.filter(s => s !== seg) : [seg, ...prev.filter(s => s !== seg)]);
+    setExcludedSegments(prev => {
+      const next = new Set(prev);
+      if (active > 0) next.add(seg); else next.delete(seg);
+      return next;
+    });
+  };
   const roofSurfaces = useMemo(() => {
     const counts: Record<number, number> = {};
-    (areaEligibleAssessmentPanels ?? []).forEach(p => { counts[p.segmentIndex] = (counts[p.segmentIndex] ?? 0) + 1; });
+    const eligible = applySolarFilters(areaEligibleAssessmentPanels ?? [], { propertyType, azimuths: assessmentAzimuths, segmentAreas: assessmentSegmentAreas }).panels;
+    eligible.forEach(p => { counts[p.segmentIndex] = (counts[p.segmentIndex] ?? 0) + 1; });
     return Object.entries(counts).map(([seg, count]) => ({ seg: Number(seg), count })).sort((a, b) => b.count - a.count);
-  }, [areaEligibleAssessmentPanels]);
+  }, [areaEligibleAssessmentPanels, propertyType, assessmentAzimuths, assessmentSegmentAreas]);
   const selectedSurfacePanels = useMemo(
     () => areaEligibleAssessmentPanels?.filter(p => !excludedSegments.has(p.segmentIndex)),
     [areaEligibleAssessmentPanels, excludedSegments],
@@ -193,9 +201,8 @@ const PropertyAssessment = () => {
   // Single-sourced with PropertyPage.tsx via computeRecommendation: same sizing, rebate/PBI
   // eligibility, and production-per-kW (including the 0.86 NREL PVWatts derate) logic either
   // way, adapted from the live Google Solar response instead of a TCAD row.
-  const siteInput = (si && buildablePanels)
-    ? fromGoogleSolarInsights({ ...si, maxPanels: buildablePanels }, propertyType)
-    : null;
+  const baseSiteInput = si ? fromGoogleSolarInsights(si, propertyType) : null;
+  const siteInput = baseSiteInput ? { ...baseSiteInput, maxPanels: buildablePanels ?? baseSiteInput.maxPanels } : null;
   const recVos = computeRecommendation(siteInput, { annualUsageKwh, billingMode: "vos" });
   const recSso = computeRecommendation(siteInput, { billingMode: "sso" });
   const solarMaxKw = recVos?.maxKw ?? recSso?.maxKw ?? 0; // identical either way -- doesn't vary by billing mode
@@ -210,6 +217,8 @@ const PropertyAssessment = () => {
     : null;
 
   const [systemKw, setSystemKw] = useState<number>(4);
+  const orderedPanels = useMemo(() => orderedLayoutPanels(solarFilter.paneProps.panels ?? [], preferredSegments), [solarFilter.paneProps.panels, preferredSegments]);
+  const activeSurfaceCounts = useMemo(() => activeRoofPanelCounts(orderedPanels, systemKw, si?.panelCapacityWatts ?? 0), [orderedPanels, systemKw, si?.panelCapacityWatts]);
   const [billingMode, setBillingMode] = useState<"vos" | "sso">("vos");
   const [financeMode, setFinanceMode] = useState<"cash" | "finance">("cash");
   const [loanTermYears, setLoanTermYears] = useState(20);
@@ -268,7 +277,7 @@ const PropertyAssessment = () => {
 
   // Keep slider size within the roof's current buildable max after blocking areas or toggling surfaces.
   useEffect(() => {
-    if (solarMaxKw > 0 && systemKw > solarMaxKw) {
+    if (siteInput && systemKw > solarMaxKw) {
       setSystemKw(solarMaxKw);
     }
   }, [solarMaxKw, systemKw]);
@@ -926,6 +935,7 @@ const PropertyAssessment = () => {
                             className="w-full h-[480px]"
                             {...solarFilter.paneProps}
                             inactivePanels={inactiveSurfacePanels}
+                            preferredSegments={preferredSegments}
                             panelHeightM={results.panelDims?.h}
                             panelWidthM={results.panelDims?.w}
                             segmentAzimuths={assessmentAzimuths}
@@ -937,7 +947,7 @@ const PropertyAssessment = () => {
                             blockedAreas={blockedAreas}
                             onAddBlockedArea={(area) => setBlockedAreas((prev) => [...prev, area])}
                             onClearBlockedAreas={() => setBlockedAreas([])}
-                            onSegmentClick={roofSurfaces.length > 1 ? toggleSegment : undefined}
+                            onSegmentClick={roofSurfaces.length > 0 ? toggleSegment : undefined}
                             selectedPanelCount={
                               assessmentPanels && si?.panelCapacityWatts
                                 ? Math.round(systemKw * 1000 / si.panelCapacityWatts)
@@ -948,18 +958,21 @@ const PropertyAssessment = () => {
                         {classifyProperty(propertyType) !== "residential" && (
                           <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">Potential arrays exclude individual roof surfaces under 2,000 square feet.</p>
                         )}
-                        {roofSurfaces.length > 1 && (
+                        {roofSurfaces.length > 0 && (
                           <div className="p-3 border-t border-border space-y-2">
                             <p className="text-xs text-muted-foreground">
                               Roof surfaces — click a surface on the map or below to include or remove it (for example panels placed on trees, ground or a carport). System size and savings update automatically.
                             </p>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" aria-label="Roof surface color key">
                               <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-primary" aria-hidden="true" />Green = included in system size and savings</span>
-                              <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-accent" aria-hidden="true" />Yellow = possible, but not included</span>
+                              <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-accent" aria-hidden="true" />Yellow = deselected</span>
+                              <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-roof-available" aria-hidden="true" />Blue = available to add</span>
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {roofSurfaces.map(({ seg, count }) => {
-                                const on = !excludedSegments.has(seg);
+                                const activeCount = activeSurfaceCounts[seg] ?? 0;
+                                const on = activeCount > 0;
+                                const deselected = excludedSegments.has(seg);
                                 const az = assessmentAzimuths[seg];
                                 const dir = az == null ? "" : ["N","NE","E","SE","S","SW","W","NW"][Math.round(((az % 360) + 360) % 360 / 45) % 8] + "-facing, ";
                                 return (
@@ -967,13 +980,14 @@ const PropertyAssessment = () => {
                                     aria-pressed={on} onClick={() => toggleSegment(seg)}
                                     className={on
                                       ? "h-auto min-h-8 whitespace-normal border border-primary bg-primary text-left text-xs text-primary-foreground hover:bg-primary/90"
-                                      : "h-auto min-h-8 whitespace-normal border-accent bg-accent text-left text-xs text-accent-foreground hover:bg-accent/90 hover:text-accent-foreground"}>
-                                    Surface {seg + 1} · {dir}{count} panels · {on ? "Included" : "Not included"}
+                                      : deselected ? "h-auto min-h-8 whitespace-normal border-accent bg-accent text-left text-xs text-accent-foreground hover:bg-accent/90 hover:text-accent-foreground"
+                                      : "h-auto min-h-8 whitespace-normal border-roof-available bg-roof-available/15 text-left text-xs text-foreground hover:bg-roof-available/25"}>
+                                    Surface {seg + 1} · {dir}{count} panels · {on ? `${activeCount} included` : deselected ? "Deselected" : "Available to add"}
                                   </Button>
                                 );
                               })}
                               {excludedSegments.size > 0 && (
-                                <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setExcludedSegments(new Set())}>
+                                <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setExcludedSegments(new Set()); setPreferredSegments([]); setNeedsResize(true); }}>
                                   Reset
                                 </Button>
                               )}

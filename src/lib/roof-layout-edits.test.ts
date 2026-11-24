@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { filterBlockedPanels, mergeAddedRoof, type BlockedArea } from "./roof-layout-edits";
+import { activeRoofPanelCounts, orderedLayoutPanels, roofToggleSystemKw, filterBlockedPanels, mergeAddedRoof, type BlockedArea } from "./roof-layout-edits";
 import type { SolarPanel } from "./solar-filters";
 
 const makePanel = (lat: number, lon: number, segmentIndex = 0): SolarPanel => ({
@@ -9,6 +9,29 @@ const makePanel = (lat: number, lon: number, segmentIndex = 0): SolarPanel => ({
   orientation: "PORTRAIT",
   yearlyEnergyDcKwh: 700,
   segmentIndex,
+});
+
+test("deselecting an active array reduces DC size by its selected panel capacity, not the entire possible roof", () => {
+  const ordered = orderedLayoutPanels([makePanel(30.3, -97.7, 0), makePanel(30.29999, -97.7, 0), makePanel(30.29, -97.7, 1)]);
+  const counts = activeRoofPanelCounts(ordered, 0.8, 400);
+  assert.deepEqual(counts, { 0: 2 });
+  assert.equal(roofToggleSystemKw(0.8, counts[0], 3, 400), 0);
+});
+
+test("including a possible but inactive array adds its panel capacity to DC size", () => {
+  assert.equal(roofToggleSystemKw(8, 0, 10, 400), 12);
+});
+
+test("blue available panels are not included in active roof counts", () => {
+  const ordered = orderedLayoutPanels([makePanel(30.3, -97.7, 0), makePanel(30.29999, -97.7, 0), makePanel(30.29, -97.7, 1)]);
+  assert.deepEqual(activeRoofPanelCounts(ordered, 0.4, 400), { 0: 1 });
+  assert.deepEqual(activeRoofPanelCounts(ordered, 0, 400), {});
+});
+
+test("adding a blue roof selects that roof rather than increasing panels on unrelated roofs", () => {
+  const panels = [makePanel(30.3, -97.7, 0), makePanel(30.29999, -97.7, 0), makePanel(30.29, -97.7, 1)];
+  const ordered = orderedLayoutPanels(panels, [1]);
+  assert.deepEqual(activeRoofPanelCounts(ordered, 0.4, 400), { 1: 1 });
 });
 
 test("filterBlockedPanels removes panels inside any blocked box and keeps panels outside", () => {

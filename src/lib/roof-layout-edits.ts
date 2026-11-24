@@ -1,4 +1,52 @@
-import type { SolarPanel } from "@/lib/solar-filters";
+import { panelTsrf, type SolarPanel } from "@/lib/solar-filters";
+
+/** Same contiguous, high-sunlight priority for map colors and roof selection sizing. */
+export function orderedLayoutPanels(panels: SolarPanel[], preferredSegments: number[] = []): SolarPanel[] {
+  if (preferredSegments.length) {
+    const preferred = new Set(preferredSegments);
+    return [
+      ...preferredSegments.flatMap(segment => orderedLayoutPanels(panels.filter(p => p.segmentIndex === segment))),
+      ...orderedLayoutPanels(panels.filter(p => !preferred.has(p.segmentIndex))),
+    ];
+  }
+  const high = panels.filter(p => panelTsrf(p.yearlyEnergyDcKwh) >= 0.8);
+  const low = panels.filter(p => panelTsrf(p.yearlyEnergyDcKwh) < 0.8)
+    .sort((a, b) => b.yearlyEnergyDcKwh - a.yearlyEnergyDcKwh);
+  if (!high.length) return low;
+  const remaining = new Set(high.map((_, i) => i));
+  const distances = new Float64Array(high.length).fill(Infinity);
+  const ordered: SolarPanel[] = [];
+  let next = high.reduce((best, p, i) => p.lat > high[best].lat || (p.lat === high[best].lat && p.lon < high[best].lon) ? i : best, 0);
+  while (remaining.size) {
+    const panel = high[next];
+    ordered.push(panel);
+    remaining.delete(next);
+    let nearest = -1, distance = Infinity;
+    for (const i of remaining) {
+      const candidate = high[i];
+      distances[i] = Math.min(distances[i], (candidate.lat - panel.lat) ** 2 + (candidate.lon - panel.lon) ** 2);
+      if (distances[i] < distance) { nearest = i; distance = distances[i]; }
+    }
+    if (nearest < 0) break;
+    next = nearest;
+  }
+  return [...ordered, ...low];
+}
+
+export function activeRoofPanelCounts(orderedPanels: SolarPanel[], systemKw: number, panelWatts: number): Record<number, number> {
+  const counts: Record<number, number> = {};
+  if (!(panelWatts > 0)) return counts;
+  const selected = Math.max(0, Math.round(systemKw * 1000 / panelWatts));
+  for (const panel of orderedPanels.slice(0, selected)) {
+    counts[panel.segmentIndex] = (counts[panel.segmentIndex] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/** Remove only selected panels, or include all available panels on a blue/yellow roof. */
+export function roofToggleSystemKw(systemKw: number, activeCount: number, availableCount: number, panelWatts: number): number {
+  return Math.max(0, Math.round((systemKw + (activeCount > 0 ? -activeCount : availableCount) * panelWatts / 1000) * 1000) / 1000);
+}
 
 export interface BlockedArea {
   minLat: number;
