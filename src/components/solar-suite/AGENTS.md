@@ -1,0 +1,1 @@
+- Site questions live in the shared Solar Suite document bar; notes and private storage files are scoped to the authenticated saved-property owner, never placed in shared-project local storage or public shares, so the tools share intake without exposing it.

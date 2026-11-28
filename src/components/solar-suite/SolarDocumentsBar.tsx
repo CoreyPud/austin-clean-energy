@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSharedProject } from "@/lib/shared-project";
 import { solarForms } from "../../../supabase/functions/_shared/rebate-form-model";
+import { SiteInformation } from "./SiteInformation";
 
 export function SolarDocumentsBar() {
   const { project } = useSharedProject();
   return (
     <nav aria-label="Austin Energy paperwork" className="no-print flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-2 sm:px-6">
+      <SiteInformation />
       <Dialog>
         <DialogTrigger asChild><Button variant="outline" size="sm"><FileText /> Austin Energy Documents</Button></DialogTrigger>
         <DialogContent>

@@ -1683,6 +1683,35 @@ export type Database = {
           },
         ]
       }
+      solar_site_intake: {
+        Row: {
+          notes: Json
+          saved_assessment_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          notes?: Json
+          saved_assessment_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          notes?: Json
+          saved_assessment_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solar_site_intake_saved_assessment_id_fkey"
+            columns: ["saved_assessment_id"]
+            isOneToOne: true
+            referencedRelation: "saved_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spatial_ref_sys: {
         Row: {
           auth_name: string | null
